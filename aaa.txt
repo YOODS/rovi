@@ -6,3 +6,5 @@ branch1 line
 branch2 line!
 
 developブランチでGitHubブラウザ内から直接編集。
+
+developブランチをpullして、dev_b1ブランチ
