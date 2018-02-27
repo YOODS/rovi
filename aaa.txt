@@ -2,3 +2,5 @@
 かきくけこ
 
 branch1 line
+
+branch2 line!
