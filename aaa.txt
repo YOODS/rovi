@@ -8,3 +8,5 @@ branch2 line!
 developブランチでGitHubブラウザ内から直接編集。
 
 developブランチをpullして、dev_b1ブランチ
+
+dev_b1ブランチをpushしてdevelopへmergeし、non fast-forward merge設定して、dev_b2ブランチ
