@@ -1,0 +1,49 @@
+<launch>
+
+<!--カメラID clid, crid は arv-tool-0.4 から取得するのが正しい? --> 
+
+
+<!--   実行例1(デフォルト値使用。)：-->
+<!--    roslaunch camera.launch -->
+
+<!--   実行例2(カメラID指定。左右を逆に。)：-->
+<!--    roslaunch camera.launch clid:=SENTECH-17AB756 crid:=SENTECH-17AB755 -->
+
+<!--
+  <node name="camera" pkg="camera_aravis" type="camnode" args="SENTECH-17AB755">
+    <param name="AcquisitionFrameRate" type="double" value="2.5" />
+    <param name="ExposureTimeAbs" type="int" value="56666" />
+  </node> 
+
+  <node name="dynparam_cam" pkg="dynamic_reconfigure" type="dynparam" args="set /camera &quot;{'AcquisitionFrameRate':'4.6', 'ExposureTimeAbs':'23666'}&quot;" />
+
+  <node name="dynparam_cam" pkg="dynamic_reconfigure" type="dynparam" args="load /camera $(find rovi)/camera_dump.yaml" />
+  <node name="dynparam_cam1" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/cam_l/camera $(find rovi)/cam_l_dynparam_dump.yaml" />
+  <node name="dynparam_cam2" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/cam_r/camera $(find rovi)/cam_r_dynparam_dump.yaml" />
+-->
+
+
+
+  <arg name="clid" default="SENTECH-17AB755" />
+  <arg name="crid" default="SENTECH-17AB756" />
+
+  <rosparam command="load" ns="/rovi/cam_l" file="$(find rovi)/yaml/cam_l_rosparam_dump.yaml" />
+  <rosparam command="load" ns="/rovi/cam_r" file="$(find rovi)/yaml/cam_r_rosparam_dump.yaml" />
+
+  <node ns="/rovi/cam_l" name="camera" pkg="camera_aravis" type="camnode" args="$(arg clid)" />
+  <node ns="/rovi/cam_r" name="camera" pkg="camera_aravis" type="camnode" args="$(arg crid)" />
+
+
+
+  <node ns="/rovi" name="tools_node" pkg="rovi" type="tools_node" />
+  <node ns="/rovi" name="setgain_js" pkg="rovi" type="setgain.js" />
+  <node ns="/rovi" name="swtrigger_js" pkg="rovi" type="swtrigger.js" />
+  <node ns="/rovi" name="projector_js" pkg="rovi" type="projector.js" />
+  <node ns="/rovi" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
+  <node ns="/rovi" name="main_node" pkg="rovi" type="main_node" />
+
+
+</launch>
+
+
