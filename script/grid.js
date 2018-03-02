@@ -19,7 +19,7 @@ function camOK(){
 	clearTimeout(camTriggerWDT);
 }
 
-ros.initNode('gridjs').then((rosNode)=>{
+ros.initNode('/rovi/gridjs').then((rosNode)=>{
 	var cl1=rosNode.serviceClient('GetGrid',rovi_srvs.GetGrid,{persist:true});
 	rosNode.waitForService(cl1.getService(),2000).then(function(available){
 		if(!available){
@@ -28,7 +28,7 @@ ros.initNode('gridjs').then((rosNode)=>{
 		}
 		var getGridClient=cl1;
 		var getGridRequest=new rovi_srvs.GetGrid.Request();
-		let pub=rosNode.advertise('GetGrid/image',sensor_msgs.Image);
+		let pub=rosNode.advertise('/rovi/GetGrid/image',sensor_msgs.Image);
 		let sub=rosNode.subscribe('/camera/image_raw',sensor_msgs.Image,(img)=>{
 			camOK();
 			getGridRequest.img=img;

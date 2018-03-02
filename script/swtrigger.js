@@ -19,7 +19,7 @@ function camOK(){
 	clearTimeout(camTriggerWDT);
 }
 
-ros.initNode('swtriggerjs').then((rosNode)=>{
+ros.initNode('/rovi/swtriggerjs').then((rosNode)=>{
 	let sub=rosNode.subscribe('/camera/image_raw',sensor_msgs.Image,(img)=>{
 		camOK();
 		ros.log.info('image_raw subscribed');

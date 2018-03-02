@@ -8,7 +8,7 @@ const dyn_msgs = ros.require('dynamic_reconfigure').msg;
 
 var target=null;
 
-ros.initNode('setgainjs').then((rosNode)=>{
+ros.initNode('/rovi/setgainjs').then((rosNode)=>{
 	var cli=rosNode.serviceClient('camera/set_parameters',dyn_srvs.Reconfigure,{persist:true});
 	rosNode.waitForService(cli.getService(),2000).then(function(available){
 		if(!available){
