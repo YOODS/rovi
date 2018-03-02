@@ -5,7 +5,7 @@ const ros = require('rosnodejs');
 const std_msgs = ros.require('std_msgs').msg;
 const geometry_msgs = ros.require('geometry_msgs').msg;
 const sensor_msgs = ros.require('sensor_msgs').msg;
-const rovi_srvs = ros.require('rovi_srvs').srv;
+const rovi_srvs = ros.require('rovi').srv;
 const std_srvs = ros.require('std_srvs').srv;
 
 var camTriggerClient=null;

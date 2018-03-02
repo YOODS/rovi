@@ -3,7 +3,7 @@
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/SetCameraInfo.h>
 #include <sensor_msgs/image_encodings.h>
-#include "rovi_srvs/ImageFilter.h"
+#include "rovi/ImageFilter.h"
 #include <vector>
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -23,7 +23,7 @@ bool set_caminfo(sensor_msgs::SetCameraInfo::Request &req,sensor_msgs::SetCamera
 //	cv::initUndistortRectifyMap(camMat,dstCef,R0,newCam,image_size,CV_32FC1,rmapx,rmapy);
 	return true;
 }
-bool remap(rovi_srvs::ImageFilter::Request &req,rovi_srvs::ImageFilter::Response &res){
+bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 	cv_bridge::CvImagePtr cv_ptr;
 	try{
 		cv_ptr=cv_bridge::toCvCopy(req.img,sensor_msgs::image_encodings::MONO8);

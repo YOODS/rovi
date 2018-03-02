@@ -6,8 +6,8 @@
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <sensor_msgs/ChannelFloat32.h>
-#include "rovi_srvs/DigitalFilter.h"
-#include "rovi_srvs/GenPC.h"
+#include "rovi/DigitalFilter.h"
+#include "rovi/GenPC.h"
 #include <vector>
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -16,11 +16,11 @@
 ros::NodeHandle *nh;
 ros::Publisher *pub1,*pub2;
 
-bool setup(rovi_srvs::DigitalFilter::Request &req,rovi_srvs::DigitalFilter::Response &res){
+bool setup(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res){
 	ROS_INFO("genpc::setup called: %d",req.data.size());
 	return true;
 }
-bool genpc(rovi_srvs::GenPC::Request &req,rovi_srvs::GenPC::Response &res){
+bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_INFO("genpc called: %d %d",req.imgL.size(),req.imgR.size());
 	sensor_msgs::PointCloud pts;
 	pts.header.stamp = ros::Time::now();
@@ -48,7 +48,7 @@ bool genpc(rovi_srvs::GenPC::Request &req,rovi_srvs::GenPC::Response &res){
 	return true;
 }
 bool trypc(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
-	rovi_srvs::GenPC srv;
+	rovi::GenPC srv;
 	return genpc(srv.request,srv.response);
 }
 int main(int argc, char **argv){

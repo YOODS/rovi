@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include "rovi_srvs/dialog.h"
+#include "rovi/dialog.h"
 #include <string>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
@@ -9,7 +9,7 @@
 ros::NodeHandle *nh;
 ros::Publisher pub;
 
-bool load_img(rovi_srvs::dialog::Request &req,rovi_srvs::dialog::Response &res){
+bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	cv_bridge::CvImage cv_img;
 	cv_img.encoding="mono8";
 	cv_img.image=cv::imread(req.hello,CV_LOAD_IMAGE_GRAYSCALE);

@@ -6,7 +6,7 @@ const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const dyn_srvs = ros.require('dynamic_reconfigure').srv;
 const dyn_msgs = ros.require('dynamic_reconfigure').msg;
-const rovi_srvs = ros.require('rovi_srvs').srv;
+const rovi_srvs = ros.require('rovi').srv;
 
 var url,port;
 
