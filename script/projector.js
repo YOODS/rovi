@@ -10,7 +10,7 @@ const rovi_srvs = ros.require('rovi').srv;
 
 var url,port;
 
-ros.initNode('/rovi/projectorjs').then((rosNode)=>{
+ros.initNode('/rovi/projector').then((rosNode)=>{
 	const svc0=rosNode.advertiseService('/rovi/projector/set_parameters',dyn_srvs.Reconfigure, (req,res)=>{
 		req.config.ints.forEach(function(elm){
 			ros.log.info('projector::IntParam '+elm.name+'='+elm.value);

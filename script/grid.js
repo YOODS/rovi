@@ -19,7 +19,7 @@ function camOK(){
 	clearTimeout(camTriggerWDT);
 }
 
-ros.initNode('/rovi/gridjs').then((rosNode)=>{
+ros.initNode('/rovi/grid').then((rosNode)=>{
 	var cl1=rosNode.serviceClient('GetGrid',rovi_srvs.GetGrid,{persist:true});
 	rosNode.waitForService(cl1.getService(),2000).then(function(available){
 		if(!available){

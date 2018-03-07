@@ -54,9 +54,9 @@ include_directories(
 #add_executable(${PROJECT_NAME}_node src/rovi_node.cpp)
 #add_executable(grid_node src/grid_node.cpp src/libs/CircleCalibBoard.cpp)
 
-add_executable(main_node src/main_node.cpp)
-target_link_libraries(main_node ${catkin_LIBRARIES})
-add_dependencies(main_node rovi_gencpp)
+#add_executable(main_node src/main_node.cpp)
+#target_link_libraries(main_node ${catkin_LIBRARIES})
+#add_dependencies(main_node rovi_gencpp)
 
 add_executable(remap_node src/remap_node.cpp)
 target_link_libraries(remap_node ${catkin_LIBRARIES})
