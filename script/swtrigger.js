@@ -25,52 +25,65 @@ function usage()
 }
 
 
-var camTriggerClient = null;
-var camTriggerRequest = null;
-var camTriggerWDT = null;
+let camTriggerClient = null;
+//let camTriggerRequest = null;
+let camTriggerRequest = new std_srvs.Trigger.Request();
+//let camTriggerWDT = null;
 
 
 function camTrigger()
 {
-  if (camTriggerClient == null) {
-    ros.log.error("lll");
+  ros.log.debug("called camTrigger()");
+
+  if (camTriggerClient == null)
+  {
+    ros.log.warn("camTriggerClient is null");
     return;
   }
 
   camTriggerClient.call(camTriggerRequest).then(function(resp){});
-  camTriggerWDT = setTimeout(
-    function()
-    {
-      camTrigger();
-    }, 100
-  );
+  ros.log.debug("service call " + camTriggerClient.getService() + " done");
+
+//  camTriggerWDT = setTimeout(
+//    function()
+//    {
+//      ros.log.info("call camTrigger in timer");
+//      camTrigger();
+//    }, 100
+//  );
+
 }
 
 
-function camOK()
-{
-  clearTimeout(camTriggerWDT);
-}
+//function camOK()
+//{
+//  clearTimeout(camTriggerWDT);
+//}
 
 
 async function lowDoLiveSet(req, res)
 {
   ros.log.info("lowDoLiveSet start.");
 
-  let toON = req.data;
+  const toON = req.data;
 
   ros.log.info("service called: '" + path_SrvSr_DoLiveSet + "' toON=" + toON);
 
   res.success = false;
   res.message = "before low live set toON=" + toON;
 
-  let srvCl_setparam = gRosNode.serviceClient(path_SrvCl_SetParam, dyn_srvs.Reconfigure, {persist:true});
+  // stop live anyway
+//  clearTimeout(camTriggerWDT);
+  gRosNode.unsubscribe(path_TpcSub_ImageRaw);
+  camTriggerClient = null;
+
+  const srvCl_setparam = gRosNode.serviceClient(path_SrvCl_SetParam, dyn_srvs.Reconfigure, {persist:true});
 
   await gRosNode.waitForService(srvCl_setparam.getService(), 500).then(async function(available)
   {
     if (!available)
     {
-      let err_msg = 'service NOT available: ' + srvCl_setparam.getService();
+      const err_msg = 'service NOT available: ' + srvCl_setparam.getService();
       ros.log.error(err_msg);
 
       res.success = false;
@@ -101,22 +114,69 @@ async function lowDoLiveSet(req, res)
       }
       request.config.strs.push(param2);
 
-      await srvCl_setparam.call(request).then(function(clresp)
+      await srvCl_setparam.call(request).then(async function(clresp)
       {
-        let info_msg = 'call ' + srvCl_setparam.getService() + ' toON=' + toON + ' returned';
+        const info_msg = 'call ' + srvCl_setparam.getService() + ' toON=' + toON + ' returned';
         ros.log.info(info_msg);
 
-        res.success = clresp.success;
-        res.message = info_msg; 
+        if (!toON)
+        {
+          res.success = true;
+          res.message = "OK: '" + path_SrvSr_DoLiveSet + " " + toON + "'";
 
-        if (toON) {
-          // TODO
-          ros.log.error("TODO queue!");
+          ros.log.info("service done:   '" + path_SrvSr_DoLiveSet + "' toON=" + toON);
+
+          return true;
+        }
+        // toON call camera/queue
+        else
+        {
+          ros.log.info("call camera/queue");
+
+          const tpcSub_imageraw = gRosNode.subscribe(path_TpcSub_ImageRaw, sensor_msgs.Image, (img_raw) =>
+          {
+            //camOK();
+            ros.log.debug('subscribed: ' + path_TpcSub_ImageRaw);
+            ros.log.debug("call camera/queue after subscribe"); 
+            camTrigger();
+          }
+          );
+
+          const srvCl_queue = gRosNode.serviceClient(path_SrvCl_Queue, std_srvs.Trigger, {persist:true});
+
+          await gRosNode.waitForService(srvCl_queue.getService(), 500).then(async function(available)
+          {
+            if (!available)
+            {
+              const err_msg = 'service NOT available: ' + srvCl_queue.getService();
+              ros.log.error(err_msg);
+
+              res.success = false;
+              res.message = err_msg; 
+
+              return false;
+            }
+            else
+            {
+              camTriggerClient = srvCl_queue;
+              //camTriggerRequest = new std_srvs.Trigger.Request();
+              ros.log.info("call camera/queue first"); 
+              camTrigger();
+
+              res.success = true;
+              res.message = "OK: '" + path_SrvSr_DoLiveSet + " " + toON + "'";
+
+              ros.log.info("service done:   '" + path_SrvSr_DoLiveSet + "' toON=" + toON);
+
+              return true;
+            }
+          }
+          );
         }
 
-        return true;
       }
       );
+
     }
   }
   );
@@ -144,47 +204,6 @@ function init()
   );
 }
 
-/*
-    let sub =
-      rosNode.subscribe(
-        topicImageRaw,
-        sensor_msgs.Image,
-        (img) =>
-        {
-          camOK();
-          ros.log.info('subscribed: ' + topicImageRaw);
-          camTrigger();
-        }
-      );
-
-    var cl =
-      rosNode.serviceClient(
-        srvCl_Queue,
-        std_srvs.Trigger,
-        {persist:true}
-      );
-
-
-    rosNode.waitForService(cl.getService(), 2000).then(function(available)
-    {
-      if (!available)
-      {
-        ros.log.warn('Service not available: ' + srvCl_Queue);
-        return;
-      }
-
-      camTriggerClient = cl;
-      camTriggerRequest = new std_srvs.Trigger.Request();
-      camTrigger();
-    }
-    );
-
-  }
-  );
-
-}
-
-*/
 
 
 
