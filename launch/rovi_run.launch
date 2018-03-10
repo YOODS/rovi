@@ -35,13 +35,18 @@
 
 
 
+  <!-- The 'name' value of type='*.js' is required but not used. -->
+  <!--   ros.initNode() argument in script/*.js specifies the actual name. -->
   <node ns="/rovi" name="tools_node" pkg="rovi" type="tools_node" />
-  <node ns="/rovi" name="setgain_js" pkg="rovi" type="setgain.js" />
-  <node ns="/rovi" name="swtrigger_js" pkg="rovi" type="swtrigger.js" />
-  <node ns="/rovi" name="projector_js" pkg="rovi" type="projector.js" />
+  <node ns="/rovi" name="setgain" pkg="rovi" type="setgain.js" />
+  <node ns="/rovi/cam_l" name="swtrigger_l" pkg="rovi" type="swtrigger.js" args="--lr l" />
+  <node ns="/rovi/cam_r" name="swtrigger_r" pkg="rovi" type="swtrigger.js" args="--lr r" />
+  <node ns="/rovi" name="livestream" pkg="rovi" type="livestream.js" />
+  <node ns="/rovi" name="projector" pkg="rovi" type="projector.js" />
   <node ns="/rovi" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
-  <node ns="/rovi" name="main_node" pkg="rovi" type="main_node" />
+  <node ns="/rovi" name="main_node" pkg="rovi" type="main_node.js" />
+
 
 
 </launch>

@@ -7,13 +7,31 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   cv_bridge
-  rovi_srvs
+  message_generation
+)
+
+add_service_files(
+  FILES
+  dialog.srv
+  DigitalFilter.srv
+  ImageFilter.srv
+  GenPC.srv
+  GetGrid.srv
+  GetCalibs.srv
+)
+
+generate_messages(
+  DEPENDENCIES
+  std_msgs
+  geometry_msgs
+  sensor_msgs
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES rovi
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge rovi_srvs
+#  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge message_runtime
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge
 #  DEPENDS system_lib
 )
 
@@ -35,27 +53,23 @@ include_directories(
 
 #add_executable(${PROJECT_NAME}_node src/rovi_node.cpp)
 #add_executable(grid_node src/grid_node.cpp src/libs/CircleCalibBoard.cpp)
-add_executable(main_node src/main_node.cpp)
+
+#add_executable(main_node src/main_node.cpp)
+#target_link_libraries(main_node ${catkin_LIBRARIES})
+#add_dependencies(main_node rovi_gencpp)
+
 add_executable(remap_node src/remap_node.cpp)
+target_link_libraries(remap_node ${catkin_LIBRARIES})
+add_dependencies(remap_node rovi_gencpp)
+
 add_executable(genpc_node src/genpc_node.cpp)
+target_link_libraries(genpc_node ${catkin_LIBRARIES})
+add_dependencies(genpc_node rovi_gencpp)
+
 add_executable(tools_node src/tools_node.cpp)
+target_link_libraries(tools_node ${catkin_LIBRARIES})
+add_dependencies(tools_node rovi_gencpp)
 
-#set_target_properties(${PROJECT_NAME}_node PROPERTIES OUTPUT_NAME node PREFIX "")
-
-#add_dependencies(${PROJECT_NAME}_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(main_node
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(remap_node
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(genpc_node
-   ${catkin_LIBRARIES}
-)
-target_link_libraries(tools_node
-   ${catkin_LIBRARIES}
-)
 #target_link_libraries(grid_node
 #   ${catkin_LIBRARIES}
 #)

@@ -1,0 +1,3 @@
+geometry_msgs/Point[] img
+---
+geometry_msgs/Point[] grids

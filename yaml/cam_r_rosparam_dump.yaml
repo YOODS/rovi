@@ -7,7 +7,7 @@ camera:
   FocusPos: 0
   Gain: 1.0
   GainAuto: 'Off'
-  TriggerMode: 'Off'
+  TriggerMode: 'On'
   TriggerSource: Line1
   frame_id: camera
   image_raw:
