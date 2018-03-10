@@ -16,7 +16,7 @@ cv::Mat rmapx,rmapy;
 sensor_msgs::CameraInfo cam_info;
 
 bool set_caminfo(sensor_msgs::SetCameraInfo::Request &req,sensor_msgs::SetCameraInfo::Response &res){
-	cv::Size image_size=cv::Size(req.camera_info.width,req.camera_info.height);
+//	cv::Size image_size=cv::Size(req.camera_info.width,req.camera_info.height);
 	cv::Mat P0;
 	cv::Mat newCam,newVec,newRot;
 //	cv::decomposeProjectionMatrix(P0, newCam, newRot, newVec);
