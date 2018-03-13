@@ -16,11 +16,12 @@ cv::Mat rmapx,rmapy;
 sensor_msgs::CameraInfo cam_info;
 
 bool set_caminfo(sensor_msgs::SetCameraInfo::Request &req,sensor_msgs::SetCameraInfo::Response &res){
-	cv::Size image_size=cv::Size(req.camera_info.width,req.camera_info.height);
+//	cv::Size image_size=cv::Size(req.camera_info.width,req.camera_info.height);
 	cv::Mat P0;
 	cv::Mat newCam,newVec,newRot;
 //	cv::decomposeProjectionMatrix(P0, newCam, newRot, newVec);
 //	cv::initUndistortRectifyMap(camMat,dstCef,R0,newCam,image_size,CV_32FC1,rmapx,rmapy);
+	pub.publish(req.camera_info);
 	return true;
 }
 bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
@@ -36,7 +37,7 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 //	cv::remap(cv_ptr->image,result,rmapx,rmapy,cv::INTER_LINEAR,cv::BORDER_TRANSPARENT,0);
 //	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
-	pub.publish(res.img);
+//	pub.publish(res.img);
 	return true;
 }
 
@@ -47,7 +48,8 @@ int main(int argc, char **argv){
 	nh=&n;
 	ros::ServiceServer svc0=n.advertiseService("remap/setup",set_caminfo);
 	ros::ServiceServer svc1=n.advertiseService("remap/do",remap);
-	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+//	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+	pub=n.advertise<sensor_msgs::CameraInfo>("remap/camera_info",1);
 	ros::spin();
 	return 0;
 }
