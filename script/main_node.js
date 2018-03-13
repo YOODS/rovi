@@ -36,7 +36,7 @@ async function callLowLiveSet(toON, req, res)
         res.success = false;
         res.message = err_msg; 
       }
-      return false;
+      return true;
     }
     else
     {
@@ -50,29 +50,18 @@ async function callLowLiveSet(toON, req, res)
         if (res)
         {
           res.success = clresp.success;
-          res.message = info_msg; 
+          res.message = clresp.message; 
         }
-        return (clresp.success == true);
+        return true;
       }
       );
     }
   }
   );
 
-  if (res)
-  {
-    res.success = true;
-    res.message = "callLowLiveSet done. toON=" + toON;
-  }
-
   ros.log.info("callLowLiveSet() end.   toON=" + toON);
 
-  if (res) {
-    return (res.success == true);
-  }
-  else {
-    return true;
-  }
+  return true;
 }
 
 
@@ -85,12 +74,14 @@ async function upperLiveStart(req, res)
 
   await callLowLiveSet(true, req, res);
 
-  res.success = true;
-  res.message = "OK: '/rovi/upper/live_start'";
+  if (res.success)
+  {
+    res.message = "OK: '/rovi/upper/live_start'";
+  }
 
   ros.log.info("service done:   '/rovi/upper/live_start'");
 
-  return (res.success == true);
+  return true;
 }
 
 
@@ -103,12 +94,14 @@ async function upperLiveStop(req, res)
 
   await callLowLiveSet(false, req, res);
 
-  res.success = true;
-  res.message = "OK: '/rovi/upper/live_stop'";
+  if (res.success)
+  {
+    res.message = "OK: '/rovi/upper/live_stop'";
+  }
 
   ros.log.info("service done:   '/rovi/upper/live_stop'");
 
-  return (res.success == true);
+  return true;
 }
 
 

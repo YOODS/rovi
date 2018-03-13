@@ -89,7 +89,7 @@ async function lowDoLiveSet(req, res)
       res.success = false;
       res.message = err_msg; 
 
-      return false;
+      return true;
     }
     else
     {
@@ -154,7 +154,7 @@ async function lowDoLiveSet(req, res)
               res.success = false;
               res.message = err_msg; 
 
-              return false;
+              return true;
             }
             else
             {
@@ -181,14 +181,9 @@ async function lowDoLiveSet(req, res)
   }
   );
 
-  res.success = true;
-  res.message = 'low do_live_set to ' + toON + ' OK';
-
-  ros.log.info("service done:   '" + path_SrvSr_DoLiveSet + "' toON=" + toON);
-
   ros.log.info("lowDoLiveSet end.");
 
-  return (res.success == true);
+  return true;
 }
 
 

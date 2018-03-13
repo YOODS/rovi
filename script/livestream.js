@@ -24,7 +24,7 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
       ros.log.error(err_msg);
       res.success = false;
       res.message = err_msg; 
-      return false;
+      return true;
     }
     else
     {
@@ -34,16 +34,13 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
         let info_msg = 'call ' + srvCl.getService() + ' toON=' + toON + ' returned';
         ros.log.info(info_msg);
         res.success = clresp.success;
-        res.message = info_msg; 
-        return (clresp.success == true);
+        res.message = clresp.message; 
+        return true;
       }
       );
     }
   }
   );
-
-  res.success = true;
-  res.message = "callLowDoLiveSet() done. srvClPath=" + srvClPath + ", toON=" + toON;
 
   ros.log.info("callLowDoLiveSet() end.   srvClPath=" + srvClPath + ", toON=" + toON);
 
@@ -64,14 +61,19 @@ async function lrLowLiveSet(toON, req, res)
   ]);
   ros.log.info("result=" + result);
 
+  ros.log.info("res_l.message=" + res_l.message);
+  ros.log.info("res_r.message=" + res_r.message);
+
   if (res_l.success && res_r.success)
   {
     ros.log.info("all OK!");
     res.success = true;
+    res.message = "OK: '/rovi/low/live_set " + toON + "'";
   }
   else {
-    ros.log.info("not all OK");
+    ros.log.error("not all OK");
     res.success = false;
+    res.message = "Failed: '/rovi/low/live_set " + toON + "' ... Left[" + res_l.message + "], Right[" + res_r.message + "]";
   }
 
   ros.log.info("lrLowLiveSet() end.   toON=" + toON);
@@ -91,14 +93,9 @@ async function lowLiveSet(req, res)
 
   await lrLowLiveSet(toON, req, res);
 
-  if (res.success)
-  {
-    res.message = "OK: '/rovi/low/live_set " + toON + "'";
-  }
-
   ros.log.info("service done:   '/rovi/low/live_set' toON=" + toON);
 
-  return (res.success == true);
+  return true;
 }
 
 
