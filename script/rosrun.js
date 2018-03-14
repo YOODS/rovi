@@ -24,7 +24,7 @@ popen.run=function(args,ns){
 		}
 		else clearTimeout(stm);
 		setTimeout(function(){
-			popen.start(cmd);
+			popen.run(args,ns);
 		},3000);
 	});
 	return ev;
