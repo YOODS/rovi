@@ -37,6 +37,14 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
         res.message = clresp.message; 
         return true;
       }
+      ).catch(function(error)
+      {
+        let err_msg = "service call ERROR: '" + srvCl.getService() + " " + toON + "'";
+        ros.log.error(err_msg);
+        res.success = false;
+        res.message = err_msg; 
+        return true;
+      }
       );
     }
   }

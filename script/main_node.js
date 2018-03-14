@@ -54,6 +54,14 @@ async function callLowLiveSet(toON, req, res)
         }
         return true;
       }
+      ).catch(function(error)
+      {
+        let err_msg = "service call ERROR: '" + srvCl.getService() + " " + toON + "'";
+        ros.log.error(err_msg);
+        res.success = false;
+        res.message = err_msg; 
+        return true;
+      }
       );
     }
   }
