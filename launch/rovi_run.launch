@@ -43,7 +43,8 @@
   <node ns="/rovi/cam_r" name="swtrigger_r" pkg="rovi" type="swtrigger.js" args="--lr r" />
   <node ns="/rovi" name="livestream" pkg="rovi" type="livestream.js" />
   <node ns="/rovi" name="projector" pkg="rovi" type="projector.js" />
-  <node ns="/rovi" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi/cam_l" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi/cam_r" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
   <node ns="/rovi" name="main_node" pkg="rovi" type="main_node.js" />
 

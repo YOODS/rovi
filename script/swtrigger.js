@@ -173,10 +173,16 @@ async function lowDoLiveSet(req, res)
           }
           );
         }
-
+      }
+      ).catch(function(error)
+      {
+        let err_msg = "service call ERROR: '" + srvCl_setparam.getService() + "'";
+        ros.log.error(err_msg);
+        res.success = false;
+        res.message = err_msg; 
+        return true;
       }
       );
-
     }
   }
   );
