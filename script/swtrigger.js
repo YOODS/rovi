@@ -8,6 +8,7 @@ const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const dyn_msgs = ros.require('dynamic_reconfigure').msg;
 const dyn_srvs = ros.require('dynamic_reconfigure').srv;
+const rovi_srvs = ros.require('rovi').srv;
 
 
 let gRosNode = null;
@@ -15,8 +16,11 @@ let gRosNode = null;
 let myNodeName;
 let path_SrvSr_DoLiveSet;
 let path_TpcSub_ImageRaw;
-let path_SrvCl_Queue;
+let path_TpcPub_Live_ImageRaw;
+let path_TpcPub_Live_ImageRect;
 let path_SrvCl_SetParam;
+let path_SrvCl_Queue;
+let path_SrvCl_RemapDo;
 
 
 function usage()
@@ -61,6 +65,50 @@ function camTrigger()
 //}
 
 
+async function callLowRemapDoAndPubRawRect(img_raw, tpcPub_live_imageraw, tpcPub_live_imagerect)
+{
+  ros.log.debug("callLowRemapDoAndPubRawRect() start.");
+
+  let srvCl = gRosNode.serviceClient(path_SrvCl_RemapDo, rovi_srvs.ImageFilter);
+
+  await gRosNode.waitForService(srvCl.getService(), 500).then(async function(available)
+  {
+    if (!available)
+    {
+      ros.log.error('service NOT available: ' + srvCl.getService());
+      return false;
+    }
+    else
+    {
+      ros.log.debug('waitForService ' + srvCl.getService() + ' OK');
+      let clreq = new rovi_srvs.ImageFilter.Request();
+      clreq.img = img_raw;
+      await srvCl.call(clreq).then(function(clres)
+      {
+        ros.log.debug('call ' + srvCl.getService() + ' returned');
+
+        tpcPub_live_imageraw.publish(img_raw);
+        tpcPub_live_imagerect.publish(clres.img);
+        ros.log.debug('published: ' + path_TpcPub_Live_ImageRaw + ' and ' + path_TpcPub_Live_ImageRect);
+
+        return true;
+      }
+      ).catch(function(error)
+      {
+        ros.log.error("service call ERROR: '" + srvCl.getService() + "'");
+        return false;
+      }
+      );
+    }
+  }
+  );
+
+  ros.log.debug("callLowRemapDoAndPubRawRect() end.");
+
+  return true;
+}
+
+
 async function lowDoLiveSet(req, res)
 {
   ros.log.info("lowDoLiveSet start.");
@@ -75,6 +123,8 @@ async function lowDoLiveSet(req, res)
   // stop live anyway
 //  clearTimeout(camTriggerWDT);
   gRosNode.unsubscribe(path_TpcSub_ImageRaw);
+  gRosNode.unadvertise(path_TpcPub_Live_ImageRaw);
+  gRosNode.unadvertise(path_TpcPub_Live_ImageRect);
   camTriggerClient = null;
 
   const srvCl_setparam = gRosNode.serviceClient(path_SrvCl_SetParam, dyn_srvs.Reconfigure, {persist:true});
@@ -114,7 +164,7 @@ async function lowDoLiveSet(req, res)
       }
       request.config.strs.push(param2);
 
-      await srvCl_setparam.call(request).then(async function(clresp)
+      await srvCl_setparam.call(request).then(async function(clres)
       {
         const info_msg = 'call ' + srvCl_setparam.getService() + ' toON=' + toON + ' returned';
         ros.log.info(info_msg);
@@ -128,16 +178,24 @@ async function lowDoLiveSet(req, res)
 
           return true;
         }
-        // toON call camera/queue
+        // toON ... advertise images and call camera/queue
         else
         {
+          ros.log.info("advertise live/image_raw and live/image_rect");
+          const tpcPub_live_imageraw = gRosNode.advertise(path_TpcPub_Live_ImageRaw, sensor_msgs.Image);
+          const tpcPub_live_imagerect = gRosNode.advertise(path_TpcPub_Live_ImageRect, sensor_msgs.Image);
+
           ros.log.info("call camera/queue");
 
-          const tpcSub_imageraw = gRosNode.subscribe(path_TpcSub_ImageRaw, sensor_msgs.Image, (img_raw) =>
+          const tpcSub_imageraw = gRosNode.subscribe(path_TpcSub_ImageRaw, sensor_msgs.Image, async (img_raw) =>
           {
             //camOK();
+
             ros.log.debug('subscribed: ' + path_TpcSub_ImageRaw);
-            ros.log.debug("call camera/queue after subscribe"); 
+
+            await callLowRemapDoAndPubRawRect(img_raw, tpcPub_live_imageraw, tpcPub_live_imagerect);
+
+            ros.log.debug("call camera/queue after callLowRemapDoAndPubRawRect()"); 
             camTrigger();
           }
           );
@@ -224,8 +282,11 @@ if (lr == 'l')
   myNodeName = '/rovi/cam_l/swtrigger';
   path_SrvSr_DoLiveSet = '/rovi/low/cam_l/do_live_set';
   path_TpcSub_ImageRaw = '/rovi/cam_l/camera/image_raw';
-  path_SrvCl_Queue = '/rovi/cam_l/camera/queue';
+  path_TpcPub_Live_ImageRaw = '/rovi/cam_l/live/image_raw';
+  path_TpcPub_Live_ImageRect = '/rovi/cam_l/live/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_l/camera/set_parameters';
+  path_SrvCl_Queue = '/rovi/cam_l/camera/queue';
+  path_SrvCl_RemapDo = '/rovi/cam_l/remap/do';
   init();
 }
 else if (lr == 'r')
@@ -233,8 +294,11 @@ else if (lr == 'r')
   myNodeName = '/rovi/cam_r/swtrigger';
   path_SrvSr_DoLiveSet = '/rovi/low/cam_r/do_live_set';
   path_TpcSub_ImageRaw = '/rovi/cam_r/camera/image_raw';
-  path_SrvCl_Queue = '/rovi/cam_r/camera/queue';
+  path_TpcPub_Live_ImageRaw = '/rovi/cam_r/live/image_raw';
+  path_TpcPub_Live_ImageRect = '/rovi/cam_r/live/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_r/camera/set_parameters';
+  path_SrvCl_Queue = '/rovi/cam_r/camera/queue';
+  path_SrvCl_RemapDo = '/rovi/cam_r/remap/do';
   init();
 }
 else

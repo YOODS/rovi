@@ -25,6 +25,7 @@ bool set_caminfo(sensor_msgs::SetCameraInfo::Request &req,sensor_msgs::SetCamera
 	return true;
 }
 bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
+	ROS_DEBUG("remap:start");
 	cv_bridge::CvImagePtr cv_ptr;
 	try{
 		cv_ptr=cv_bridge::toCvCopy(req.img,sensor_msgs::image_encodings::MONO8);
@@ -38,6 +39,7 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 //	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
 //	pub.publish(res.img);
+	ROS_DEBUG("remap:end");
 	return true;
 }
 
