@@ -9,11 +9,11 @@ const std_srvs = ros.require('std_srvs').srv;
 let gRosNode = null;
 
 
-async function callLowDoLiveSet(srvClPath, toON, req, res)
+async function callLowDoStillCapture(srvClPath, req, res)
 {
-  ros.log.info("callLowDoLiveSet() start. srvClPath=" + srvClPath + ", toON=" + toON);
+  ros.log.info("callLowDoStillCapture() start. srvClPath=" + srvClPath);
 
-  const srvCl = gRosNode.serviceClient(srvClPath, std_srvs.SetBool);
+  const srvCl = gRosNode.serviceClient(srvClPath, std_srvs.Trigger);
 
   await gRosNode.waitForService(srvClPath, 2000).then(async function(available)
   {
@@ -30,7 +30,7 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
       ros.log.info('waitForService ' + srvCl.getService() + ' OK');
       await srvCl.call(req).then(function(clres)
       {
-        ros.log.info('call ' + srvCl.getService() + ' toON=' + toON + ' returned');
+        ros.log.info('call ' + srvCl.getService() + ' returned');
         res.success = clres.success;
         res.message = clres.message;
         return true;
@@ -48,22 +48,22 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
   }
   );
 
-  ros.log.info("callLowDoLiveSet() end.   srvClPath=" + srvClPath + ", toON=" + toON);
+  ros.log.info("callLowDoStillCapture() end.   srvClPath=" + srvClPath);
 
   return (res.success == true);
 }
 
 
-async function lrLowLiveSet(toON, req, res)
+async function lrLowStillCapture(req, res)
 {
-  ros.log.info("lrLowLiveSet() start. toON=" + toON);
+  ros.log.info("lrLowStillCapture() start.");
 
-  const res_l = new std_srvs.SetBool.Response();
-  const res_r = new std_srvs.SetBool.Response();
+  const res_l = new std_srvs.Trigger.Response();
+  const res_r = new std_srvs.Trigger.Response();
 
   const result = await Promise.all([
-    callLowDoLiveSet('/rovi/low/cam_l/do_live_set', toON, req, res_l),
-    callLowDoLiveSet('/rovi/low/cam_r/do_live_set', toON, req, res_r)
+    callLowDoStillCapture('/rovi/low/cam_l/do_still_capture', req, res_l),
+    callLowDoStillCapture('/rovi/low/cam_r/do_still_capture', req, res_r)
   ]);
   ros.log.info("result=" + result);
 
@@ -74,43 +74,41 @@ async function lrLowLiveSet(toON, req, res)
   {
     ros.log.info("all OK!");
     res.success = true;
-    res.message = "OK: '/rovi/low/live_set " + toON + "'";
+    res.message = "OK: '/rovi/low/still_capture'";
   }
   else {
     ros.log.error("not all OK");
     res.success = false;
-    res.message = "Failed: '/rovi/low/live_set " + toON + "' ... Left[" + res_l.message + "], Right[" + res_r.message + "]";
+    res.message = "Failed: '/rovi/low/still_capture' ... Left[" + res_l.message + "], Right[" + res_r.message + "]";
   }
 
-  ros.log.info("lrLowLiveSet() end.   toON=" + toON);
+  ros.log.info("lrLowStillCapture() end.");
 
   return;
 }
 
 
-async function lowLiveSet(req, res)
+async function lowStillCapture(req, res)
 {
-  const toON = req.data;
-
-  ros.log.info("service called: '/rovi/low/live_set' toON=" + toON);
+  ros.log.info("service called: '/rovi/low/still_capture'");
 
   res.success = false;
-  res.message = "before await lrLowLiveSet(" + toON+ ")";
+  res.message = "before await lrLowStillCapture()";
 
-  await lrLowLiveSet(toON, req, res);
+  await lrLowStillCapture(req, res);
 
-  ros.log.info("service done:   '/rovi/low/live_set' toON=" + toON);
+  ros.log.info("service done:   '/rovi/low/still_capture'");
 
   return true;
 }
 
 
-ros.initNode('/rovi/livestream').then((rosNode)=>
+ros.initNode('/rovi/stillcapture').then((rosNode)=>
 {
   gRosNode = rosNode;
 
-  // Low Service live_set
-  const lowsrv_live_set = rosNode.advertiseService('/rovi/low/live_set', std_srvs.SetBool, lowLiveSet);
+  // Low Service still_capture
+  const lowsrv_still_capture = rosNode.advertiseService('/rovi/low/still_capture', std_srvs.Trigger, lowStillCapture);
 }
 );
 
