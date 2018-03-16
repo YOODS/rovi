@@ -42,6 +42,7 @@
   <node ns="/rovi/cam_l" name="swtrigger_l" pkg="rovi" type="swtrigger.js" args="--lr l" />
   <node ns="/rovi/cam_r" name="swtrigger_r" pkg="rovi" type="swtrigger.js" args="--lr r" />
   <node ns="/rovi" name="livestream" pkg="rovi" type="livestream.js" />
+  <node ns="/rovi" name="stillcapture" pkg="rovi" type="stillcapture.js" />
   <node ns="/rovi" name="projector" pkg="rovi" type="projector.js" />
   <node ns="/rovi/cam_l" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/cam_r" name="remap_node" pkg="rovi" type="remap_node" />

@@ -3,11 +3,7 @@
 'use strict';
 
 const ros = require('rosnodejs');
-const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
-const dyn_srvs = ros.require('dynamic_reconfigure').srv;
-const dyn_msgs = ros.require('dynamic_reconfigure').msg;
-const rovi_srvs = ros.require('rovi').srv;
 
 
 let gRosNode = null;
@@ -23,13 +19,13 @@ async function callLowLiveSet(toON, req, res)
 {
   ros.log.info("callLowLiveSet() start. toON=" + toON);
 
-  let srvCl = gRosNode.serviceClient('/rovi/low/live_set', std_srvs.SetBool);
+  const srvCl = gRosNode.serviceClient('/rovi/low/live_set', std_srvs.SetBool);
 
-  await gRosNode.waitForService(srvCl.getService(), 500).then(async function(available)
+  await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
     if (!available)
     {
-      let err_msg = 'service NOT available: ' + srvCl.getService();
+      const err_msg = 'service NOT available: ' + srvCl.getService();
       ros.log.error(err_msg);
       if (res)
       {
@@ -41,22 +37,21 @@ async function callLowLiveSet(toON, req, res)
     else
     {
       ros.log.info('waitForService ' + srvCl.getService() + ' OK');
-      let clreq = new std_srvs.SetBool.Request();
+      const clreq = new std_srvs.SetBool.Request();
       clreq.data = toON;
-      await srvCl.call(clreq).then(function(clresp)
+      await srvCl.call(clreq).then(function(clres)
       {
-        let info_msg = 'call ' + srvCl.getService() + ' toON=' + toON + ' returned';
-        ros.log.info(info_msg);
+        ros.log.info('call ' + srvCl.getService() + ' toON=' + toON + ' returned');
         if (res)
         {
-          res.success = clresp.success;
-          res.message = clresp.message; 
+          res.success = clres.success;
+          res.message = clres.message;
         }
         return true;
       }
       ).catch(function(error)
       {
-        let err_msg = "service call ERROR: '" + srvCl.getService() + " " + toON + "'";
+        const err_msg = "service call ERROR: '" + srvCl.getService() + " " + toON + "' (" + error + ")";
         ros.log.error(err_msg);
         res.success = false;
         res.message = err_msg; 
@@ -68,6 +63,58 @@ async function callLowLiveSet(toON, req, res)
   );
 
   ros.log.info("callLowLiveSet() end.   toON=" + toON);
+
+  return true;
+}
+
+
+async function callLowStillCapture(req, res)
+{
+  ros.log.info("callLowStillCapture() start.");
+
+  const srvCl = gRosNode.serviceClient('/rovi/low/still_capture', std_srvs.Trigger);
+
+  await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
+  {
+    if (!available)
+    {
+      const err_msg = 'service NOT available: ' + srvCl.getService();
+      ros.log.error(err_msg);
+      if (res)
+      {
+        res.success = false;
+        res.message = err_msg; 
+      }
+      return true;
+    }
+    else
+    {
+      ros.log.info('waitForService ' + srvCl.getService() + ' OK');
+      const clreq = new std_srvs.Trigger.Request();
+      await srvCl.call(clreq).then(function(clres)
+      {
+        ros.log.info('call ' + srvCl.getService() + ' returned');
+        if (res)
+        {
+          res.success = clres.success;
+          res.message = clres.message;
+        }
+        return true;
+      }
+      ).catch(function(error)
+      {
+        const err_msg = "service call ERROR: '" + srvCl.getService() + "' (" + error + ")";
+        ros.log.error(err_msg);
+        res.success = false;
+        res.message = err_msg; 
+        return true;
+      }
+      );
+    }
+  }
+  );
+
+  ros.log.info("callLowStillCapture() end.");
 
   return true;
 }
@@ -108,6 +155,26 @@ async function upperLiveStop(req, res)
   }
 
   ros.log.info("service done:   '/rovi/upper/live_stop'");
+
+  return true;
+}
+
+
+async function upperStillCapture(req, res)
+{
+  ros.log.info("service called: '/rovi/upper/still_capture'");
+
+  res.success = false;
+  res.message = "before await callLowStillCapture()";
+
+  await callLowStillCapture(req, res);
+
+  if (res.success)
+  {
+    res.message = "OK: '/rovi/upper/still_capture'";
+  }
+
+  ros.log.info("service done:   '/rovi/upper/still_capture'");
 
   return true;
 }
@@ -160,14 +227,7 @@ function testMode()
     const upsrv_live_stop = rosNode.advertiseService('/rovi/upper/live_stop', std_srvs.Trigger, upperLiveStop);
 
     // Upper Service still_capture
-    const upsrv_still_capture = rosNode.advertiseService( '/rovi/upper/still_capture', std_srvs.Trigger, (req,res) =>
-    {
-      ros.log.info("service called: '/rovi/upper/still_capture'");
-      res.success = true;
-      res.message = 'TODO: still_capture';
-      return true;
-    }
-    );
+    const upsrv_still_capture = rosNode.advertiseService( '/rovi/upper/still_capture', std_srvs.Trigger, upperStillCapture); 
 
     // TODO /rovi/upper/phaseshift_capture_and_genpc
     // TODO /rovi/middle/phaseshift_capture
