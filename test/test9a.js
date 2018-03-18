@@ -15,7 +15,7 @@ perf.msec=function(){
 
 async function main(){
 	const rosNode=await ros.initNode('/test9');
-	const pub_ct=rosNode.advertise('/cam_L/interval',std_msgs.Float32);
+	const pub_ct=rosNode.advertise('/test9/data',std_msgs.Float32);
 	const msg_ct=new std_msgs.Float32();
 
 	const pub_L=rosNode.advertise('/cam_L/image', sensor_msgs.Image);
@@ -41,10 +41,6 @@ async function main(){
 		msg_ct.data=ct-ct_start;
 		pub_ct.publish(msg_ct);
 	});
-	const svc1=rosNode.advertiseService('/cam_L/extern',std_srvs.SetBool, (req,res)=>{
-		sens.set({'TriggerMode':req.data? 'On':'Off','AcquisitionFrameRate':10.0});
-		return res.success=true;
-	});
 	const svc_parse=rosNode.advertiseService('/test9/parse',rovi_srvs.dialog,(req,res)=>{
 		let cmd=req.hello;
 		let lbk=cmd.indexOf('{');
@@ -55,14 +51,15 @@ async function main(){
 		}
 		ros.log.info('parsed:'+cmd+' arg:'+JSON.stringify(obj));
 		switch(cmd){
-		case 'get':
+		case 'stat':
 			return new Promise((resolve)=>{
+				res.answer='{"camera":'+sens.stat()+'}';
 				resolve(true);
 			});
-		case 'ext':
+		case 'ext':  //external(Line1 or Software) trigger
 			sens.set({'TriggerMode':'On','AcquisitionFrameRate':10.0});
 			return Promise.resolve(true);
-		case 'int':
+		case 'int':  //internal(hardware) trigger
 			sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 			return Promise.resolve(true);
 		}
