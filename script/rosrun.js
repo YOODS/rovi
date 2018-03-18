@@ -2,12 +2,13 @@ const EventEmitter=require('events').EventEmitter;
 let ev=new EventEmitter();
 ev.running=false;
 
-let popen=require('child_process').exec;
+let popen=require('child_process');
 popen.run=function(node,ns){
 	let env=process.env;
 	let args=arguments;
 	if(args.length>1) env=Object.assign(env,{ROS_NAMESPACE:ns});
-	let proc=popen('rosrun '+node,{env:process.env});
+	let proc=popen.exec('rosrun '+node,{env:process.env});
+//	let proc=popen.spawn('rosrun',node.slice(' '),{env:process.env});
 	let stm=setTimeout(function(){
 		ev.running=true;
 		ev.emit('start'); //rosrun success
@@ -19,6 +20,7 @@ popen.run=function(node,ns){
 		console.log('child_process:stderr:'+data);
 	});
 	proc.on('close',function(code){
+		console.log('rosrun closed:'+code);
 		if(ev.running){
 			ev.running=false;
 			ev.emit('stop');

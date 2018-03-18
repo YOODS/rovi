@@ -73,7 +73,7 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 	cv::remap(cv_ptr->image,result,rmapx,rmapy,cv::INTER_LINEAR,cv::BORDER_TRANSPARENT,0);
 	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
-	pub.publish(res.img);
+//	pub.publish(res.img);
 	return true;
 }
 
@@ -83,7 +83,7 @@ int main(int argc, char **argv){
 	nh=&n;
 	ros::ServiceServer svc0=n.advertiseService("remap/reload",reload);
 	ros::ServiceServer svc1=n.advertiseService("remap/do",remap);
-	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+//	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
 	std_srvs::Trigger::Request req;
 	std_srvs::Trigger::Response res;
 	reload(req,res);
