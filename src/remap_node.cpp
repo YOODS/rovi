@@ -56,6 +56,7 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	cv::initUndistortRectifyMap(Cam.reshape(1,3),D,Rot.reshape(1,3),nCam,imgsz,CV_32FC1,rmapx,rmapy);
 	res.success=true;
 	res.message="Remap table ready";
+	ROS_INFO("remap:reload ok");
 	return true;
 }
 bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
@@ -73,7 +74,6 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
 	pub.publish(res.img);
-	ROS_DEBUG("remap:end");
 	return true;
 }
 
@@ -84,6 +84,9 @@ int main(int argc, char **argv){
 	ros::ServiceServer svc0=n.advertiseService("remap/reload",reload);
 	ros::ServiceServer svc1=n.advertiseService("remap/do",remap);
 	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+	std_srvs::Trigger::Request req;
+	std_srvs::Trigger::Response res;
+	reload(req,res);
 	ros::spin();
 	return 0;
 }
