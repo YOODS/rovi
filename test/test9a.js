@@ -61,29 +61,28 @@ setImmediate(async function(){
 				resolve(true);
 			});
 		case 'ext':  //external(Line1 or Software) trigger
-			sens.set({'TriggerMode':'On','AcquisitionFrameRate':10.0});
+			sens.set({'TriggerMode':'On'});
 			return Promise.resolve(true);
 		case 'int':  //internal(hardware) trigger
 			sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 			return Promise.resolve(true);
 		case 'scan':
 			return new Promise((resolve)=>{
-				let count=0;
-				let imgs=new Array();
 				let wdt=setTimeout(function(){
 					resolve(false);
 					hook_L=null;
 					sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 				},2000);
-				sens.set({'TriggerMode':'On','AcquisitionFrameRate':10.0});
+				sens.set({'TriggerMode':'On'});
+				let imgs_L=new Array();
 				hook_L=function(img){
-					imgs.push(img);
-					count++;
-					if(count==13){
+					imgs_L.push(img);
+					if(imgs_L.length==13){
+						clearTimeout(wdt);
 						resolve(true);
 						hook_L=null;
 						sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
-						res.answer='scan compelete:'+imgs.length;
+						res.answer='scan compelete:'+imgs_L.length;
 					}
 				}
 			});
