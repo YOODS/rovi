@@ -7,10 +7,11 @@ const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 
-let perf=ros.Time;
-perf.msec=function(){
-	let t=this.now();
-	return t.secs*1e3+t.nsecs*1e-6;
+ros.Time.diff=function(t0){
+	let t1=ros.Time.now();
+	t1.secs-=t0.secs;
+	t1.nsecs-=t0.nsecs;
+	return ros.Time.toSeconds(t1);
 }
 
 setImmediate(async function(){
@@ -31,15 +32,18 @@ setImmediate(async function(){
 	const id_L=await rosNode.getParam('/cam_L/ID');
 //	const id_R=await rosNode.getParam('/cam_R/ID');
 	const ev=sens.start(rosNode,id_L);
+	let hook_L=null;
 	ev.on('cam_L',async function(img){
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
-		let ct_start=perf.msec();
+		let ct=ros.Time.now();
 		let res=await remap_L.call(req);
-		let ct=perf.msec();
-		pub_L.publish(res.img);
-		msg_ct.data=ct-ct_start;
-		pub_ct.publish(msg_ct);
+		msg_ct.data=ros.Time.diff(ct);
+		if(hook_L==null){
+			pub_L.publish(res.img);
+			pub_ct.publish(msg_ct);
+		}
+		else hook_L(res.img);
 	});
 	const svc_parse=rosNode.advertiseService('/test9/parse',rovi_srvs.dialog,(req,res)=>{
 		let cmd=req.hello;
@@ -62,6 +66,27 @@ setImmediate(async function(){
 		case 'int':  //internal(hardware) trigger
 			sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 			return Promise.resolve(true);
+		case 'scan':
+			return new Promise((resolve)=>{
+				let count=0;
+				let imgs=new Array();
+				let wdt=setTimeout(function(){
+					resolve(false);
+					hook_L=null;
+					sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
+				},2000);
+				sens.set({'TriggerMode':'On','AcquisitionFrameRate':10.0});
+				hook_L=function(img){
+					imgs.push(img);
+					count++;
+					if(count==13){
+						resolve(true);
+						hook_L=null;
+						sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
+						res.answer='scan compelete:'+imgs.length;
+					}
+				}
+			});
 		}
 	});
 });
