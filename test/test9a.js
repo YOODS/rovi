@@ -31,9 +31,10 @@ setImmediate(async function(){
 //	}
 	const id_L=await rosNode.getParam('/cam_L/ID');
 //	const id_R=await rosNode.getParam('/cam_R/ID');
-	const ev=sens.start(rosNode,id_L);
+	const sensEv=sens.start(rosNode,id_L);
 	let hook_L=null;
-	ev.on('cam_L',async function(img){
+	let hook_R=null;
+	sensEv.on('cam_L',async function(img){//<--------a left eye image comes up
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let ct=ros.Time.now();
@@ -55,36 +56,41 @@ setImmediate(async function(){
 		}
 		ros.log.info('parsed:'+cmd+' arg:'+JSON.stringify(obj));
 		switch(cmd){
-		case 'stat':
+		case 'stat'://<--------sensor(maybe YCAM) status query
 			return new Promise((resolve)=>{
 				res.answer='{"camera":'+sens.stat()+'}';
 				resolve(true);
 			});
-		case 'ext':  //external(Line1 or Software) trigger
+		case 'ext'://<--------switch to external(Line1 or Software) trigger
 			sens.set({'TriggerMode':'On'});
 			return Promise.resolve(true);
-		case 'int':  //internal(hardware) trigger
+		case 'int'://<--------switch to internal(hardware) trigger
 			sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 			return Promise.resolve(true);
-		case 'scan':
-			return new Promise((resolve)=>{
+		case 'scan'://<--------sample code for 3D scan command
+			return new Promise(async (resolve)=>{
 				let wdt=setTimeout(function(){
 					resolve(false);
-					hook_L=null;
+					hook_L=hook_R=null;
 					sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
 				},2000);
-				sens.set({'TriggerMode':'On'});
-				let imgs_L=new Array();
-				hook_L=function(img){
-					imgs_L.push(img);
-					if(imgs_L.length==13){
-						clearTimeout(wdt);
-						resolve(true);
-						hook_L=null;
-						sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
-						res.answer='scan compelete:'+imgs_L.length;
-					}
-				}
+//				sens.set({'TriggerMode':'On'});
+				let imgs=await Promise.all([
+					new Promise((resolve)=>{
+						let imgs=new Array();
+						hook_L=function(img){
+							imgs.push(img);
+							if(imgs.length==13){
+								resolve(imgs);
+								hook_L=null;
+							}
+						}
+					})
+				]);
+				clearTimeout(wdt);
+				sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
+				res.answer='scan compelete:'+imgs[0].length;
+				resolve(true);
 			});
 		}
 	});
