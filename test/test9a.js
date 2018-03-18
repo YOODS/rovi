@@ -13,7 +13,7 @@ perf.msec=function(){
 	return t.secs*1e3+t.nsecs*1e-6;
 }
 
-async function main(){
+setImmediate(async function(){
 	const rosNode=await ros.initNode('/test9');
 	const pub_ct=rosNode.advertise('/test9/data',std_msgs.Float32);
 	const msg_ct=new std_msgs.Float32();
@@ -64,7 +64,4 @@ async function main(){
 			return Promise.resolve(true);
 		}
 	});
-}
-
-
-main();
+});
