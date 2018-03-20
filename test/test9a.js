@@ -31,7 +31,7 @@ setImmediate(async function(){
 //	}
 	const id_L=await rosNode.getParam('/cam_L/ID');
 //	const id_R=await rosNode.getParam('/cam_R/ID');
-	const sensEv=sens.start(rosNode,id_L);
+	const sensEv=sens.open(rosNode,id_L);
 	let hook_L=null;
 	let hook_R=null;
 	sensEv.on('cam_L',async function(img){//<--------a left eye image comes up
@@ -69,12 +69,14 @@ setImmediate(async function(){
 			return Promise.resolve(true);
 		case 'scan'://<--------sample code for 3D scan command
 			return new Promise(async (resolve)=>{
+//				sens.set({'TriggerMode':'On'});
+				let po=await sens.get(['AcquisitionFrameRate','Gain']);
+				ros.log.info('param:'+JSON.stringify(po));
 				let wdt=setTimeout(function(){
 					resolve(false);
 					hook_L=hook_R=null;
-					sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
+					sens.set(Object.assign({'TriggerMode':'Off'},po));
 				},2000);
-//				sens.set({'TriggerMode':'On'});
 				let imgs=await Promise.all([
 					new Promise((resolve)=>{
 						let imgs=new Array();
@@ -88,7 +90,7 @@ setImmediate(async function(){
 					})
 				]);
 				clearTimeout(wdt);
-				sens.set({'TriggerMode':'Off','AcquisitionFrameRate':10.0});
+				sens.set(Object.assign({'TriggerMode':'Off'},po));
 				res.answer='scan compelete:'+imgs[0].length;
 				resolve(true);
 			});

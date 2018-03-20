@@ -14,10 +14,12 @@ popen.run=function(node,ns){
 		ev.emit('start'); //rosrun success
 	},3000);
 	proc.stdout.on('data',function(data){
-		console.log('child_process:stdout:'+data);
+		console.log('rosrun:stdout:'+data);
+		ev.emit('cout',data);
 	});
 	proc.stderr.on('data',function(data){
-		console.log('child_process:stderr:'+data);
+		console.log('rosrun:stderr:'+data);
+		ev.emit('cerr',data);
 	});
 	proc.on('close',function(code){
 		console.log('rosrun closed:'+code);

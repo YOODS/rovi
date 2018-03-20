@@ -20,10 +20,10 @@
   - 戻り値:EventEmitter。詳細は後述
 2. set(obj)
   - obj:YCAMに設定するパラメータリスト。以下Key:Value一覧
-  - TriggerMode:'On'または'Off'
-  - AcquisitionFrameRate:Number
-  - Gain:Number
-  - ExposureTimeAbs:Number(&micro;秒)
+    - TriggerMode:'On'または'Off'
+    - AcquisitionFrameRate:Number
+    - Gain:Number
+    - ExposureTimeAbs:Number(&micro;秒)
 3. get(Array)
   - Array:YCAMから取得するパラメータ名の配列
   - 戻り値:YCAMから取得したパラメータリスト。
@@ -31,6 +31,11 @@
   - 戻り値:boolean。YCAMが管理するノードがすべて正常のときTrue
 5. pset(cmd)
   - cmd:String。Projectorに送信するコマンド。詳細は後述
+
+## Namespace(prefix)
+1. 左カメラ      /rovi/cam_L
+2. 右カメラ      /rovi/cam_R
+3. プロジェクタ  /rovi/projector
 
 ## EventEmitter
 openメソッドの戻り値から、以下のYCAMイベントがキャッチできます。
@@ -43,10 +48,17 @@ openメソッドの戻り値から、以下のYCAMイベントがキャッチで
 
 ## Projectorコマンド
 1. コマンド
-  - l 
-  -
-  -
-
+  - xNumber   //露光時間設定 Number=ミリ秒 トリガ周期もこれなのか？
+  - d         //自己診断出力
+  - r         //ソフトリセット
+  - q[0|1|2]  //シーケンス制御
+    - 0       //ストップ
+    - 1       //スタート
+    - 2       //リスタート
+  - p[0|1|2]  //モード選択
+    - 0       //発光のみ
+    - 1       //ワンショット
+    - 2       //連続(13)ショット
 ## 使用例
 ~~~
 const ros=require('rosnodejs');
