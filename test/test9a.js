@@ -31,7 +31,7 @@ setImmediate(async function(){
 //	}
 	const id_L=await rosNode.getParam('/cam_L/ID');
 //	const id_R=await rosNode.getParam('/cam_R/ID');
-	const sensEv=sens.open(rosNode,id_L);
+	const sensEv=sens.open(rosNode,id_L,'ID','localhost',5070);
 	let hook_L=null;
 	let hook_R=null;
 	sensEv.on('cam_L',async function(img){//<--------a left eye image comes up
@@ -46,6 +46,9 @@ setImmediate(async function(){
 		}
 		else hook_L(res.img);
 	});
+	sensEv.on('ypj',function(str){//<--------cout from YPJ
+		console.log('ypj:'+str);
+	});
 	const svc_parse=rosNode.advertiseService('/test9/parse',rovi_srvs.dialog,(req,res)=>{
 		let cmd=req.hello;
 		let lbk=cmd.indexOf('{');
@@ -54,8 +57,12 @@ setImmediate(async function(){
 			cmd=req.hello.substring(0,lbk).trim();
 			obj=JSON.parse(req.hello.substring(lbk));
 		}
-		ros.log.info('parsed:'+cmd+' arg:'+JSON.stringify(obj));
+		let cmds=cmd.split(' ');
+		if(cmds.length>1) cmd=cmds.shift();
 		switch(cmd){
+		case 'pout':
+			sens.pout(cmds[0]);
+			return Promise.resolve(true);
 		case 'stat'://<--------sensor(maybe YCAM) status query
 			return new Promise((resolve)=>{
 				res.answer='{"camera":'+sens.stat()+'}';
