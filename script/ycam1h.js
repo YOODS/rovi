@@ -84,22 +84,22 @@ async function openCamera(rosrun,ns,evname){
 
 function openYPJ(port,url,sock){
 	if(arguments.length<3) sock=new Net.Socket();
-	sock.connect(port,url,function(){
+	sock.on('connect',function(){
 		ros.log.info('YPJ connected');
 	});
 	sock.on('error',function(){
-		console.log('YPJ error');
+		ros.log.error('YPJ error');
 	});
 	sock.on('close',function(){
-		console.log('YPJ closed');
+		ros.log.info('YPJ closed');
 		setTimeout(function(){
-			openYPJ(port,url,sock);
+			sock.connect(port,url);
 		},3000);
 	});
 	sock.on('data',function(data){
-		console.log('YPJ received: '+data);
 		Notifier.emit('ypj',data);
 	});
+	sock.connect(port,url);
 	return sock;
 }
 
