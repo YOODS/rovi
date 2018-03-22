@@ -27,7 +27,7 @@ async function callLowDoParamGet(req, res)
       ros.log.error(err_msg);
       res.success = false;
       res.message = err_msg; 
-      res.yamlval = '';
+      res.value = '';
       return true;
     }
 
@@ -37,7 +37,7 @@ async function callLowDoParamGet(req, res)
       ros.log.info('getParam(' + paramName + ') returned. paramValue=' + yamlValue);
       res.success = true;
       res.message = "OK: '/rovi/low/param_get'";
-      res.yamlval = yamlValue;
+      res.value = yamlValue;
       return true; 
     }
     ).catch(function(error)
@@ -46,7 +46,7 @@ async function callLowDoParamGet(req, res)
       ros.log.error(err_msg);
       res.success = false;
       res.message = err_msg; 
-      res.yamlval = '';
+      res.value = '';
       return true;
     }
     );
@@ -62,7 +62,7 @@ async function callLowDoParamGet(req, res)
 async function callLowDoParamSet(req, res)
 {
   const paramName = req.name;
-  const paramVal = yaml.safeLoad(req.yamlval);
+  const paramVal = yaml.safeLoad(req.value);
 
   ros.log.info("callLowDoParamSet() start. paramName=" + paramName + ", paramVal=" + paramVal);
 

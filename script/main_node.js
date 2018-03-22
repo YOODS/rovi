@@ -139,7 +139,7 @@ async function callLowParamGet(req, res)
         ros.log.info('call ' + srvCl.getService() + ' returned');
         res.success = clres.success;
         res.message = clres.message;
-        res.yamlval = clres.yamlval;
+        res.value = clres.value;
         return true;
       }
       ).catch(function(error)
@@ -272,7 +272,7 @@ async function upperParamGet(req, res)
 
   res.success = false;
   res.message = "before await callLowParamGet()";
-  res.yamlval = "";
+  res.value = "";
 
   await callLowParamGet(req, res);
 

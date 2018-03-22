@@ -1,5 +1,5 @@
 string name
-string yamlval
+string value
 ---
 bool success
 string message
