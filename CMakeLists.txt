@@ -9,6 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   message_generation
 )
+find_package(OpenCV REQUIRED)
 
 add_service_files(
   FILES
@@ -31,10 +32,9 @@ generate_messages(
 
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES rovi
-#  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge message_runtime
+#  LIBRARIES
   CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge
-#  DEPENDS system_lib
+  DEPENDS OpenCV
 )
 
 ###########
@@ -44,6 +44,7 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 #add_library(${PROJECT_NAME}
@@ -61,7 +62,7 @@ include_directories(
 #add_dependencies(main_node rovi_gencpp)
 
 add_executable(remap_node src/remap_node.cpp)
-target_link_libraries(remap_node ${catkin_LIBRARIES})
+target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
 add_executable(genpc_node src/genpc_node.cpp)
@@ -71,10 +72,6 @@ add_dependencies(genpc_node rovi_gencpp)
 add_executable(tools_node src/tools_node.cpp)
 target_link_libraries(tools_node ${catkin_LIBRARIES})
 add_dependencies(tools_node rovi_gencpp)
-
-#target_link_libraries(grid_node
-#   ${catkin_LIBRARIES}
-#)
 
 #############
 ## Install ##
