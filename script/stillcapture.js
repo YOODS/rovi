@@ -50,7 +50,7 @@ async function callLowDoStillCapture(srvClPath, req, res)
 
   ros.log.info("callLowDoStillCapture() end.   srvClPath=" + srvClPath);
 
-  return (res.success == true);
+  return true;
 }
 
 

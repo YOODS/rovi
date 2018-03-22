@@ -18,6 +18,8 @@ add_service_files(
   GenPC.srv
   GetGrid.srv
   GetCalibs.srv
+  GetParam.srv
+  SetParam.srv
 )
 
 generate_messages(

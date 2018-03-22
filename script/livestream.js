@@ -50,7 +50,7 @@ async function callLowDoLiveSet(srvClPath, toON, req, res)
 
   ros.log.info("callLowDoLiveSet() end.   srvClPath=" + srvClPath + ", toON=" + toON);
 
-  return (res.success == true);
+  return true;
 }
 
 
