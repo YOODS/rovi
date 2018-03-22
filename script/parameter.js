@@ -161,7 +161,7 @@ async function callLowDoParamSet(req, res)
     else
     {
       gRosNode.setParam(paramName, paramVal);
-      ros.log.error('setParam(' + paramName + ', ' + paramVal + ') returned');
+      ros.log.info('setParam(' + paramName + ', ' + paramVal + ') returned');
       res.success = true;
       res.message = "OK: '/rovi/low/param_set'";
       return true; 
