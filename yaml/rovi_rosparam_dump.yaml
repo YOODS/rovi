@@ -1,40 +1,63 @@
+pshift_genpc:
+  camera:
+    ExposureTimeAbs: 2000.0
+    Gain: 10.0
+  projector:
+    ExposureTime: 8400
+    Intencity: 255
+    Interval: 33400
 cam_l:
+  ID: SENTECH-17AB755
   camera:
-    Acquire: true
-    AcquisitionFrameRate: 1.1
-    AcquisitionMode: Continuous
+    AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
-    ExposureTimeAbs: 12345.0
-    FocusPos: 0
-    Gain: 1.0
+    ExposureTimeAbs: 2000.0
+    Gain: 10.0
     GainAuto: 'Off'
-    TriggerMode: 'On'
-    TriggerSource: Line1
-    frame_id: camera
-    image_raw:
-      compressed: {format: jpeg, jpeg_quality: 80, png_level: 9}
-      compressedDepth: {depth_max: 10.0, depth_quantization: 100.0, png_level: 9}
-      theora: {keyframe_frequency: 64, optimize_for: 1, quality: 31, target_bitrate: 800000}
-    mtu: 1500
-    softwaretriggerrate: 100.0
+    TriggerMode: 'Off'
+    TriggerSource: 'Line1'
+    mtu: 9000
+  remap:
+    height: 1024
+    width: 1280
+    D: [-9.3241866262604056e-02, 3.6475856757324268e+00, 7.6237976002111873e-04, 1.1064188158426392e-03, -4.6724345474345988e+01]
+    K: [2.4697740294171904e+03, 0.0, 6.4117535991703062e+02,
+        0.0,2.4697740294171904e+03, 5.1280216665484579e+02,
+        0.0, 0.0, 1.0]
+    R: [9.9740658751143607e-01, -1.6511867466993966e-03, 7.1953962859038018e-02,
+        1.9353356032934246e-03, 9.9999060194173828e-01, -3.8794979446371051e-03,
+        -7.1946880855912859e-02, 4.0086918723372753e-03, 9.9740040942671448e-01]
+    P: [2.4697740294171904e+03, 0.0, 6.4117535991703062e+02, 0.0,
+        0.0, 2.4697740294171904e+03, 5.1280216665484579e+02, 0.0,
+        0.0, 0.0, 1.0, 0.0]
 cam_r:
+  ID: SENTECH-17AB756
   camera:
-    Acquire: true
-    AcquisitionFrameRate: 1.2
-    AcquisitionMode: Continuous
+    AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
-    ExposureTimeAbs: 23456.0
-    FocusPos: 0
-    Gain: 1.0
+    ExposureTimeAbs: 2000.0
+    Gain: 10.0
     GainAuto: 'Off'
-    TriggerMode: 'On'
+    TriggerMode: 'Off'
     TriggerSource: Line1
-    frame_id: camera
-    image_raw:
-      compressed: {format: jpeg, jpeg_quality: 80, png_level: 9}
-      compressedDepth: {depth_max: 10.0, depth_quantization: 100.0, png_level: 9}
-      theora: {keyframe_frequency: 64, optimize_for: 1, quality: 31, target_bitrate: 800000}
-    mtu: 1500
-    softwaretriggerrate: 100.0
-testparam: {d: 3, i: str, p: 1}
-testparam2: [0, 1.1, 2.2]
+    mtu: 9000
+  remap:
+    height: 1024
+    width: 1280
+    D: [-1.9884670633901827e-02, -2.2123118590609390e+00, 9.2970283538845397e-04, -3.2460238252517439e-03, 3.6015185092877090e+01]
+    K: [2.5613861538561137e+03, 0.0, 6.0624344785393760e+02,
+        0.0, 2.5613861538561137e+03, 5.2989502181551381e+02,
+        0.0, 0.0, 1.0]
+    R: [9.5603285572861685e-01, -4.5294847811642638e-03, -2.9322459401455941e-01,
+        5.6996388047406508e-03, 9.9997883850974889e-01, 3.1363434424465748e-03,
+        2.9320418292528072e-01, -4.6697216523776241e-03, 9.5603844107588465e-01]
+    P: [2.1694135102509604e+03, 1.8084327197100631e+01, 1.4904858690648759e+03, -2.9217405048276897e+05,
+       -1.9717444769313371e+02, 2.5652283674424907e+03, 4.7139518809160455e+02, 2.1482670294796677e+04,
+       -3.6124205562711925e-01, 7.4529460587342260e-03, 9.3244229357174635e-01, 3.7724558711294691e+01]
+phase_shift:
+
+genpc:
+  Q: [1.0, 0.0, 0.0, -4.5331934356689453e+02,
+      0.0, 1.0, 0.0, -5.2216248703002930e+02,
+      0.0, 0.0, 0.0, 2.8358398066409436e+03,
+      0.0, 0.0, 7.7727773108918624e-03, 7.3986864880126735e+00]
