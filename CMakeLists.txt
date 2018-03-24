@@ -17,8 +17,8 @@ add_service_files(
   DigitalFilter.srv
   ImageFilter.srv
   GenPC.srv
-  GetGrid.srv
-  GetCalibs.srv
+#  GetGrid.srv
+#  GetCalibs.srv
   GetParam.srv
   SetParam.srv
 )

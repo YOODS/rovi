@@ -3,6 +3,7 @@
 #include <sensor_msgs/Image.h>
 #include <std_srvs/Trigger.h>
 #include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Float64.h>
 #include "rovi/dialog.h"
 #include "rovi/ImageFilter.h"
 #include <vector>
@@ -61,7 +62,7 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	return true;
 }
 bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
-	ROS_DEBUG("remap:start");
+	ros::Time t0=ros::Time::now();
 	cv_bridge::CvImagePtr cv_ptr;
 	try{
 		cv_ptr=cv_bridge::toCvCopy(req.img,sensor_msgs::image_encodings::MONO8);
@@ -74,7 +75,9 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 	cv::remap(cv_ptr->image,result,rmapx,rmapy,cv::INTER_LINEAR,cv::BORDER_TRANSPARENT,0);
 	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
-//	pub.publish(res.img);
+	std_msgs::Float64 tat;
+	tat.data=(ros::Time::now()-t0).toSec();
+	pub.publish(tat);
 	return true;
 }
 
@@ -83,8 +86,8 @@ int main(int argc, char **argv){
 	ros::NodeHandle n;
 	nh=&n;
 	ros::ServiceServer svc0=n.advertiseService("remap/reload",reload);
-	ros::ServiceServer svc1=n.advertiseService("remap/do",remap);
-//	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+	ros::ServiceServer svc1=n.advertiseService("remap",remap);
+	pub=n.advertise<std_msgs::Float64>("remap/tat",1);
 	std_srvs::Trigger::Request req;
 	std_srvs::Trigger::Response res;
 	reload(req,res);

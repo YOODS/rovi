@@ -3,12 +3,14 @@ pshift_genpc:
     ExposureTimeAbs: 2000.0
     Gain: 10.0
   projector:
+    Url: localhost
+    Port: 5070
     ExposureTime: 8400
     Intencity: 255
     Interval: 33400
 cam_l:
-  ID: SENTECH-17AB755
   camera:
+    ID: SENTECH-17AB755
     AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
     ExposureTimeAbs: 2000.0
@@ -22,7 +24,7 @@ cam_l:
     width: 1280
     D: [-9.3241866262604056e-02, 3.6475856757324268e+00, 7.6237976002111873e-04, 1.1064188158426392e-03, -4.6724345474345988e+01]
     K: [2.4697740294171904e+03, 0.0, 6.4117535991703062e+02,
-        0.0,2.4697740294171904e+03, 5.1280216665484579e+02,
+        0.0, 2.4697740294171904e+03, 5.1280216665484579e+02,
         0.0, 0.0, 1.0]
     R: [9.9740658751143607e-01, -1.6511867466993966e-03, 7.1953962859038018e-02,
         1.9353356032934246e-03, 9.9999060194173828e-01, -3.8794979446371051e-03,
@@ -31,8 +33,8 @@ cam_l:
         0.0, 2.4697740294171904e+03, 5.1280216665484579e+02, 0.0,
         0.0, 0.0, 1.0, 0.0]
 cam_r:
-  ID: SENTECH-17AB756
   camera:
+    ID: SENTECH-17AB756
     AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
     ExposureTimeAbs: 2000.0
