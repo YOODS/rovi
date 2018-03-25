@@ -41,14 +41,6 @@ var ycam={
 //		let res_r=await run_r.dynparam_set.call(request);
 		return true;
 	},
-	cget:async function(ary){
-		let ret={};
-		for(let i=0;i<ary.length;i++){
-			let key=ary[i];
-			ret[key]=await rosNode.getParam(camera_l+key);
-		}
-		return ret;
-	},
 	pset:function(str){
 		run_p.write(str+'\n');
 	},

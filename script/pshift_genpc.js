@@ -51,12 +51,12 @@ setImmediate(async function(){
 		ros.log.info('remap_R service not available');
 		return;
 	}
-	const id_L=await rosNode.getParam(NScamL+'/camera/ID');
-	const id_R=await rosNode.getParam(NScamR+'/camera/ID');
-	const purl=await rosNode.getParam(NS+'/projector/Url');
-	const pport=await rosNode.getParam(NS+'/projector/Port');
+	let param_L=await rosNode.getParam(NScamL+'/camera');
+	let param_R=await rosNode.getParam(NScamR+'/camera');
+	let param_P=await rosNode.getParam(NS+'/projector');
+	let param_C=await rosNode.getParam(NS+'/camera');
 
-	const sensEv=sens.open(rosNode,NScamL,id_L,NScamR,id_R,purl,pport);//<--------open ycam
+	const sensEv=sens.open(rosNode,NScamL,param_L.ID,NScamR,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
 	let hook_L=null;
 	let hook_R=null;
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
@@ -78,26 +78,27 @@ setImmediate(async function(){
 		else hook_R(res.img);
 	});
 	sensEv.on('pout',function(str){//<--------cout from YPJ
-		console.log('ypj:'+str);
+		console.log('projector :'+str);
 	});
-	sensCheck(pub_stat);
+	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
 	let capt_L=[];
 	let capt_R=[];
 	const svc_do=rosNode.advertiseService(NS,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
 		return new Promise(async (resolve)=>{
 			sens.cset({'TriggerMode':'On'});
+			param_C=await rosNode.getParam(NS+'/camera');
+			sens.cset(param_C);
+			param_L=await rosNode.getParam(NScamL+'/camera');
+			for(let key in param_L) if(!param_C.hasOwnProperty(key)) delete param_L[key];
+			param_P=await rosNode.getParam(NS+'/projector');
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				hook_L=hook_R=null;
-				sens.cset(Object.assign({'TriggerMode':'Off'},cprm));
+				sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
 			},2000);
-			let cprm=await sens.cget(['ExposureTimeAbs','Gain']);
-			let val=await rosNode.getParam(NS+'/projector/ExposureTime');
-			sens.pset('x'+val);
-			val=await rosNode.getParam(NS+'/projector/Interval');
-			sens.pset('p'+val);
-			val=await rosNode.getParam(NS+'/projector/Intencity');
-			if(val>255) val=255;
+			sens.pset('x'+param_P.ExposureTime);
+			sens.pset('p'+param_P.Interval);
+			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('p'+val+val+val);
 			sens.pset('p2');//<--------projector sequence start
@@ -126,7 +127,7 @@ setImmediate(async function(){
 				})
 			]);
 			clearTimeout(wdt);
-			sens.cset(Object.assign({'TriggerMode':'Off'},po));
+			sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
 			tat.data=ros.Time.diff(tat.data);
 			pub_tat.publish(tat);
 			res.answer='scan compelete:'+imgs[0].length;
