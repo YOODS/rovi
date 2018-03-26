@@ -91,3 +91,152 @@ remap:
 ~~~
 - ROSのクセですが、：の後にはスペースが必要なので注意しましょう
 - １行の文字数が長すぎるとエラーになるので、行列は複数行で入力しましょう
+
+
+
+
+
+
+
+前提条件
+・PCでOSはUbuntu 16.04 LTS。
+・ROS Kineticをインストール済み。
+・gitをインストール済み。
+・~/catkin_wsがROSワークスペースとする。
+  (~/catkin_ws以外のROSワークスペースでも可。その場合は以下の例を読み替えること。)
+
+
+①汎用GigEライブラリ(libaravis)をビルド、インストール
+
+1. ビルド用の前準備
+sudo apt-get install automake intltool
+
+2. ソースをDL
+cd ~
+mkdir aravis
+cd aravis
+wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.4/aravis-0.4.1.tar.xz
+
+3. 解凍先でmakeしてインストール
+tar xvf aravis-0.4.1.tar.xz
+cd aravis-0.4.1
+./configure
+make
+sudo make install
+
+4. 動作用の設定
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> ~/.bashrc
+. ~/.bashrc
+
+5. 動作確認
+arv-tool-0.4
+
+↓ と表示されればひとまずOK
+No device found
+
+②ROSのGigEカメラ汎用ドライバをDL (YOODS版なので注意）
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/camera_aravis
+cd ..
+catkin_make
+
+<3>
+YCAM3Dに接続するGigEインターフェースに適切なIPアドレスを設定する。
+
+YCAM3DのIPアドレスは、
+	カメラ2つ(192.168.222.1,2)とプロジェクター(192.168.222.10)。
+
+Ubuntuの[システム設定]->[ネットワーク]で、
+カメラに接続するGigEインターフェースにIPアドレス(192.168.222.99/24)を設定する。
+
+	[IPv4設定]タブで
+		方式：手動
+		アドレス：192.168.222.99	24	空
+
+	カメラ2つ(192.168.222.1,2)とプロジェクター(192.168.222.10)へpingが通る。
+
+<4>
+物理的に接続して、
+take@ubuntu:~$ arv-tool-0.4
+SENTECH-17AB755
+SENTECH-17AB756
+のようにカメラ2台のIDが表示されればOK
+（もちろんカメラによってIDはこれらと異なる。）
+
+
+①OpenCVインストール
+sudo apt-get install libopencv-dev
+
+
+<Node.jsのインストール>
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install nodejs
+
+<rosnodejsその他のインストール>
+cd ~
+npm install rosnodejs
+npm install ws
+npm install opencv
+npm install canvas
+
+上記でインストールされるrosnodejsは、
+RoVIで必要とする機能(ROS Serviceの同期呼び出し機能)が含まれていない。
+rosnodejsの最新Gitソースにはその機能が含まれているので、
+以下のようにして、最新Gitソースで上書きする。
+
+cd ~
+git clone https://github.com/RethinkRobotics-opensource/rosnodejs
+cd ~/node_modules/rosnodejs
+rm -rf dist
+cp -a ~/rosnodejs/src/ dist
+
+
+<RoVI>
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/rovi
+cd ..
+catkin_make
+
+TODO:
+Eigenが必要ならば
+cd ~
+wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
+mv eigen-eigen-5a0156e40feb/Eigen/ ~/catkin_ws/src/rovi/include/
+rm -rf eigen-eigen-5a0156e40feb/
+
+
+	TODO 名前空間は
+	/rovi/
+		pshift_genpc（＝位相シフト撮影、計算、点群生成）◆サービス
+			parse（13枚撮影は置いといて、ここかも。）
+
+		cam_l/
+			camera/
+			remap/
+		cam_r/
+			camera/
+			remap/
+
+		phase_shift/
+			calc（＝視差マップを作る）
+			parse（ここで細々したものを実装）
+
+		genpc/
+			do
+			setup
+			try
+			pcl
+			pcl2
+
+		recog/
+
+	4/1時点でユーザに呼んでもらうのは◆のみ。
+	（常時ライブとpshift_genpcのみでいい。）
+
+yaml/rovi_rosparam_dump.yaml の、camera idやremapのユーザ側での編集など。
+
+現状はdumpは↓の手作業でやってください、と。
+rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_rosparam_dump.yaml /rovi
+
+それら手順の下に、/rovi/pshift_genpc を呼んで、なども書く。
+
