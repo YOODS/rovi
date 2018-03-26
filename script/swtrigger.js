@@ -422,7 +422,7 @@ if (lr == 'l')
   path_TpcPub_Still_ImageRect = '/rovi/cam_l/still/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_l/camera/set_parameters';
   path_SrvCl_Queue = '/rovi/cam_l/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_l/remap/do';
+  path_SrvCl_RemapDo = '/rovi/cam_l/remap';
   init();
 }
 else if (lr == 'r')
@@ -437,7 +437,7 @@ else if (lr == 'r')
   path_TpcPub_Still_ImageRect = '/rovi/cam_r/still/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_r/camera/set_parameters';
   path_SrvCl_Queue = '/rovi/cam_r/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_r/remap/do';
+  path_SrvCl_RemapDo = '/rovi/cam_r/remap';
   init();
 }
 else
