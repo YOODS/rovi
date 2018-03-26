@@ -19,7 +19,9 @@ ros.Time.diff=function(t0){
 
 function sensCheck(pub){
 	let f=new std_msgs.Bool();
-	f.data=sens.stat();
+	let s=sens.stat();
+	f.data=true;
+	for(let key in s) f.data=f.data && s[key];
 	pub.publish(f);
 	setTimeout(function(){ sensCheck(pub);},1000);
 }
@@ -153,7 +155,7 @@ setImmediate(async function(){
 			return Promise.resolve(true);
 		case 'stat'://<--------sensor(maybe YCAM) status query
 			return new Promise((resolve)=>{
-				res.answer='{"camera":'+sens.stat()+'}';
+				res.answer=JSON.stringify(sens.stat());
 				resolve(true);
 			});
 		case 'view':

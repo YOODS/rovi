@@ -16,7 +16,7 @@
 ros::NodeHandle *nh;
 ros::Publisher *pub1,*pub2;
 
-bool setup(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res){
+bool reload(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res){
 	ROS_INFO("genpc::setup called: %d",req.data.size());
 	return true;
 }
@@ -40,6 +40,7 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		}
 	}
 	pub1->publish(pts);
+	res.pc=pts;
 	sensor_msgs::PointCloud2 pts2;
 	sensor_msgs::convertPointCloudToPointCloud2(pts,pts2);
 	ROS_INFO("genpc::do %d %d %d\n",pts2.width,pts2.height,pts2.point_step);
@@ -55,8 +56,8 @@ int main(int argc, char **argv){
 	ros::init(argc,argv,"genpc_node");
 	ros::NodeHandle n;
 	nh=&n;
-	ros::ServiceServer svc0=n.advertiseService("genpc/setup",setup);
-	ros::ServiceServer svc1=n.advertiseService("genpc/do",genpc);
+	ros::ServiceServer svc0=n.advertiseService("genpc/reload",reload);
+	ros::ServiceServer svc1=n.advertiseService("genpc",genpc);
 	ros::ServiceServer svc2=n.advertiseService("genpc/try",trypc);
 	ros::Publisher p1=n.advertise<sensor_msgs::PointCloud>("genpc/pcl",1);
 	pub1=&p1;

@@ -45,7 +45,7 @@ var ycam={
 		run_p.write(str+'\n');
 	},
 	stat:function(){
-		return run_l.running && !run_p.destroyed;
+		return {'cam_l':run_l.running, /*'cam_r':run_r.running,*/ 'projector':!run_p.destroyed};
 	},
 	open:function(nh,nsl,idl,nsr,idr,url,port){
 		rosNode=nh;
