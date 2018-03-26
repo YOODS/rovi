@@ -3,6 +3,7 @@
 #include <sensor_msgs/Image.h>
 #include <std_srvs/Trigger.h>
 #include <sensor_msgs/image_encodings.h>
+#include <std_msgs/Float64.h>
 #include "rovi/dialog.h"
 #include "rovi/ImageFilter.h"
 #include <vector>
@@ -17,29 +18,30 @@ cv::Mat rmapx,rmapy;
 
 bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	res.success=false;
+	res.message="";
 	std::vector<double> D;
    nh->getParam("remap/D",D);
-	if(D.size()<5){
-		res.message="D NG";
-		return true;
+	if(D.size()!=5){
+		ROS_ERROR("Param D NG");
+		res.message+="D NG/";
 	}
 	std::vector<double> K;
 	nh->getParam("remap/K",K);
-	if(K.size()<9){
-		res.message="K NG";
-		return true;
+	if(K.size()!=9){
+		ROS_ERROR("Param K NG");
+		res.message+="K NG/";
 	}
 	std::vector<double> R;
 	nh->getParam("remap/R",R);
-	if(R.size()<9){
-		res.message="R NG";
-		return true;
+	if(R.size()!=9){
+		ROS_ERROR("Param R NG");
+		res.message+="R NG/";
 	}
 	std::vector<double> P;
 	nh->getParam("remap/P",P);
-	if(P.size()<12){
-		res.message="P NG";
-		return true;
+	if(P.size()!=12){
+		ROS_ERROR("Param P NG");
+		res.message+="P NG/";
 	}
 	cv::Mat Pro(P),nCam,nRot,nTrans;
 	cv::OutputArray oCam(nCam),oRot(nRot),oTrans(nTrans);
@@ -49,9 +51,9 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	nh->getParam("remap/height",height);
 	cv::Size imgsz(width,height);
 	if(imgsz.area()==0){
-		res.message="Size NG";
-		return true;
+		res.message+="Size NG/";
 	}
+	if(res.message.size()>0) return true;
 	cv::Mat Cam(K),Rot(R);
 	cv::initUndistortRectifyMap(Cam.reshape(1,3),D,Rot.reshape(1,3),nCam,imgsz,CV_32FC1,rmapx,rmapy);
 	res.success=true;
@@ -60,7 +62,7 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	return true;
 }
 bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
-	ROS_DEBUG("remap:start");
+	ros::Time t0=ros::Time::now();
 	cv_bridge::CvImagePtr cv_ptr;
 	try{
 		cv_ptr=cv_bridge::toCvCopy(req.img,sensor_msgs::image_encodings::MONO8);
@@ -73,7 +75,9 @@ bool remap(rovi::ImageFilter::Request &req,rovi::ImageFilter::Response &res){
 	cv::remap(cv_ptr->image,result,rmapx,rmapy,cv::INTER_LINEAR,cv::BORDER_TRANSPARENT,0);
 	cv_ptr->image=result;
 	cv_ptr->toImageMsg(res.img);
-//	pub.publish(res.img);
+	std_msgs::Float64 tat;
+	tat.data=(ros::Time::now()-t0).toSec();
+	pub.publish(tat);
 	return true;
 }
 
@@ -82,11 +86,12 @@ int main(int argc, char **argv){
 	ros::NodeHandle n;
 	nh=&n;
 	ros::ServiceServer svc0=n.advertiseService("remap/reload",reload);
-	ros::ServiceServer svc1=n.advertiseService("remap/do",remap);
-//	pub=n.advertise<sensor_msgs::Image>("remap/image",1);
+	ros::ServiceServer svc1=n.advertiseService("remap",remap);
+	pub=n.advertise<std_msgs::Float64>("remap/tat",1);
 	std_srvs::Trigger::Request req;
 	std_srvs::Trigger::Response res;
 	reload(req,res);
-	ros::spin();
+	if(res.success) ros::spin();
+	else ROS_ERROR("remap:unmatched parameters");
 	return 0;
 }
