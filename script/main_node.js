@@ -20,7 +20,7 @@ async function callLowLiveSet(toON, req, res)
 {
   ros.log.info("callLowLiveSet() start. toON=" + toON);
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/live_set', std_srvs.SetBool);
+  const srvCl = gRosNode.serviceClient('/rovi/do_live_set', std_srvs.SetBool);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -73,7 +73,7 @@ async function callLowStillCapture(req, res)
 {
   ros.log.info("callLowStillCapture() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/still_capture', std_srvs.Trigger);
+  const srvCl = gRosNode.serviceClient('/rovi/do_still_capture', std_srvs.Trigger);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -119,7 +119,7 @@ async function callLowParamGet(req, res)
 {
   ros.log.info("callLowParamGet() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/param_get', rovi_srvs.GetParam);
+  const srvCl = gRosNode.serviceClient('/rovi/do_param_get', rovi_srvs.GetParam);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -165,7 +165,7 @@ async function callLowParamSet(req, res)
 {
   ros.log.info("callLowParamSet() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/param_set', rovi_srvs.SetParam);
+  const srvCl = gRosNode.serviceClient('/rovi/do_param_set', rovi_srvs.SetParam);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {

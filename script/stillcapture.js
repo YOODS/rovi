@@ -62,8 +62,8 @@ async function lrLowStillCapture(req, res)
   const res_r = new std_srvs.Trigger.Response();
 
   const result = await Promise.all([
-    callLowDoStillCapture('/rovi/low/cam_l/do_still_capture', req, res_l),
-    callLowDoStillCapture('/rovi/low/cam_r/do_still_capture', req, res_r)
+    callLowDoStillCapture('/rovi/cam_l/do_still_capture', req, res_l),
+    callLowDoStillCapture('/rovi/cam_r/do_still_capture', req, res_r)
   ]);
   ros.log.info("result=" + result);
 
@@ -74,12 +74,12 @@ async function lrLowStillCapture(req, res)
   {
     ros.log.info("all OK!");
     res.success = true;
-    res.message = "OK: '/rovi/low/still_capture'";
+    res.message = "OK: '/rovi/do_still_capture'";
   }
   else {
     ros.log.error("not all OK");
     res.success = false;
-    res.message = "Failed: '/rovi/low/still_capture' ... Left[" + res_l.message + "], Right[" + res_r.message + "]";
+    res.message = "Failed: '/rovi/do_still_capture' ... Left[" + res_l.message + "], Right[" + res_r.message + "]";
   }
 
   ros.log.info("lrLowStillCapture() end.");
@@ -90,14 +90,14 @@ async function lrLowStillCapture(req, res)
 
 async function lowStillCapture(req, res)
 {
-  ros.log.info("service called: '/rovi/low/still_capture'");
+  ros.log.info("service called: '/rovi/do_still_capture'");
 
   res.success = false;
   res.message = "before await lrLowStillCapture()";
 
   await lrLowStillCapture(req, res);
 
-  ros.log.info("service done:   '/rovi/low/still_capture'");
+  ros.log.info("service done:   '/rovi/do_still_capture'");
 
   return true;
 }
@@ -107,8 +107,8 @@ ros.initNode('/rovi/stillcapture').then((rosNode)=>
 {
   gRosNode = rosNode;
 
-  // Low Service still_capture
-  const lowsrv_still_capture = rosNode.advertiseService('/rovi/low/still_capture', std_srvs.Trigger, lowStillCapture);
+  // Low Service
+  rosNode.advertiseService('/rovi/do_still_capture', std_srvs.Trigger, lowStillCapture);
 }
 );
 
