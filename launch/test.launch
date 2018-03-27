@@ -27,7 +27,7 @@
   <arg name="clid" default="SENTECH-17AB755" />
   <arg name="crid" default="SENTECH-17AB756" />
 
-  <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/rovi_rosparam_dump.yaml" />
+  <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/rovi_param.yaml" />
 
   <node ns="/rovi/cam_l" name="camera" pkg="camera_aravis" type="camnode" args="$(arg clid)" />
   <node ns="/rovi/cam_r" name="camera" pkg="camera_aravis" type="camnode" args="$(arg crid)" />
@@ -47,7 +47,7 @@
   <node ns="/rovi/cam_l" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/cam_r" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
-  <node ns="/rovi" name="main_node" pkg="rovi" type="main_node.js" />
+  <node ns="/rovi" name="main_node" pkg="rovi" type="main_node.js" args="--mode test" />
 
 
 
