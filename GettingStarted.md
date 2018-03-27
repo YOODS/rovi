@@ -120,13 +120,11 @@ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
 
-### 2-3. rosnodejsとそのパッケージ類のインストール
+### 2-3. rosnodejsなどのインストール
 ~~~
 cd ~
 npm install rosnodejs
-npm install ws
 npm install opencv
-npm install canvas
 ~~~
 
 *上記でインストールされるrosnodejsは、
@@ -161,7 +159,7 @@ catkin_make
 
 ## 4. RoVIの動作設定
 実際の環境に合わせて、RoVIのROS Parameterファイル
-`~/catkin_ws/src/rovi/yaml/rovi_rosparam_dump.yaml`  
+`~/catkin_ws/src/rovi/yaml/rovi_param.yaml`  
 の以下の部分を、編集する。
 
 ~~~
@@ -193,7 +191,7 @@ TODO:
 
 ## A. RoVIの起動
 ~~~
-roslaunch rovi rovi_run.launch
+roslaunch rovi run.launch
 ~~~
 
 ## B. TODO RoVIの名前空間 ?
@@ -234,7 +232,7 @@ TODO 詳細説明。camnodeはdynparam get/setしてもらう。
 
 TODO rosparm setやdynparam setしたParameter値を、次回RoVIの起動時にも引き継ぎたい場合は、以下を実行する。
 ~~~
-rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_rosparam_dump.yaml /rovi
+rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
 ~~~
 
 ### C-2. 常時ライブ
