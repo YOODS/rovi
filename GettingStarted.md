@@ -199,7 +199,7 @@ roslaunch rovi rovi_run.launch
 ## B. TODO RoVIの名前空間 ?
 node, topic, param, serviceなどすべて書く?
 
-TODO 名前空間は
+    TODO 名前空間は
 	/rovi/
 		pshift_genpc（＝位相シフト撮影、計算、点群生成）◆サービス
 			parse（13枚撮影は置いといて、ここかも。）
