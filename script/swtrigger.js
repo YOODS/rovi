@@ -387,11 +387,9 @@ function init()
     tpcPub_still_imageraw = rosNode.advertise(path_TpcPub_Still_ImageRaw, sensor_msgs.Image);
     tpcPub_still_imagerect = rosNode.advertise(path_TpcPub_Still_ImageRect, sensor_msgs.Image);
 
-    // Low Service do_live_set
-    const lowsrv_doliveset = rosNode.advertiseService(path_SrvSr_DoLiveSet, std_srvs.SetBool, lowDoLiveSet);
-
-    // Low Service do_still_capture
-    const lowsrv_dostillcapture = rosNode.advertiseService(path_SrvSr_DoStillCapture, std_srvs.Trigger, lowDoStillCapture);
+    // Low Services
+    rosNode.advertiseService(path_SrvSr_DoLiveSet, std_srvs.SetBool, lowDoLiveSet);
+    rosNode.advertiseService(path_SrvSr_DoStillCapture, std_srvs.Trigger, lowDoStillCapture);
   }
   );
 }
@@ -413,8 +411,8 @@ ros.log.info('lr=[' + lr + ']');
 if (lr == 'l')
 {
   myNodeName = '/rovi/cam_l/swtrigger';
-  path_SrvSr_DoLiveSet = '/rovi/low/cam_l/do_live_set';
-  path_SrvSr_DoStillCapture = '/rovi/low/cam_l/do_still_capture';
+  path_SrvSr_DoLiveSet = '/rovi/cam_l/do_live_set';
+  path_SrvSr_DoStillCapture = '/rovi/cam_l/do_still_capture';
   path_TpcSub_ImageRaw = '/rovi/cam_l/camera/image_raw';
   path_TpcPub_Live_ImageRaw = '/rovi/cam_l/live/image_raw';
   path_TpcPub_Live_ImageRect = '/rovi/cam_l/live/image_rect';
@@ -422,14 +420,14 @@ if (lr == 'l')
   path_TpcPub_Still_ImageRect = '/rovi/cam_l/still/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_l/camera/set_parameters';
   path_SrvCl_Queue = '/rovi/cam_l/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_l/remap/do';
+  path_SrvCl_RemapDo = '/rovi/cam_l/remap';
   init();
 }
 else if (lr == 'r')
 {
   myNodeName = '/rovi/cam_r/swtrigger';
-  path_SrvSr_DoLiveSet = '/rovi/low/cam_r/do_live_set';
-  path_SrvSr_DoStillCapture = '/rovi/low/cam_r/do_still_capture';
+  path_SrvSr_DoLiveSet = '/rovi/cam_r/do_live_set';
+  path_SrvSr_DoStillCapture = '/rovi/cam_r/do_still_capture';
   path_TpcSub_ImageRaw = '/rovi/cam_r/camera/image_raw';
   path_TpcPub_Live_ImageRaw = '/rovi/cam_r/live/image_raw';
   path_TpcPub_Live_ImageRect = '/rovi/cam_r/live/image_rect';
@@ -437,7 +435,7 @@ else if (lr == 'r')
   path_TpcPub_Still_ImageRect = '/rovi/cam_r/still/image_rect';
   path_SrvCl_SetParam = '/rovi/cam_r/camera/set_parameters';
   path_SrvCl_Queue = '/rovi/cam_r/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_r/remap/do';
+  path_SrvCl_RemapDo = '/rovi/cam_r/remap';
   init();
 }
 else

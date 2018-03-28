@@ -20,7 +20,7 @@ async function callLowLiveSet(toON, req, res)
 {
   ros.log.info("callLowLiveSet() start. toON=" + toON);
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/live_set', std_srvs.SetBool);
+  const srvCl = gRosNode.serviceClient('/rovi/do_live_set', std_srvs.SetBool);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -73,7 +73,7 @@ async function callLowStillCapture(req, res)
 {
   ros.log.info("callLowStillCapture() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/still_capture', std_srvs.Trigger);
+  const srvCl = gRosNode.serviceClient('/rovi/do_still_capture', std_srvs.Trigger);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -119,7 +119,7 @@ async function callLowParamGet(req, res)
 {
   ros.log.info("callLowParamGet() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/param_get', rovi_srvs.GetParam);
+  const srvCl = gRosNode.serviceClient('/rovi/do_param_get', rovi_srvs.GetParam);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -165,7 +165,7 @@ async function callLowParamSet(req, res)
 {
   ros.log.info("callLowParamSet() start.");
 
-  const srvCl = gRosNode.serviceClient('/rovi/low/param_set', rovi_srvs.SetParam);
+  const srvCl = gRosNode.serviceClient('/rovi/do_param_set', rovi_srvs.SetParam);
 
   await gRosNode.waitForService(srvCl.getService(), 2000).then(async function(available)
   {
@@ -208,7 +208,7 @@ async function callLowParamSet(req, res)
 
 async function upperLiveStart(req, res)
 {
-  ros.log.info("service called: '/rovi/upper/live_start'");
+  ros.log.info("service called: '/rovi/live_start'");
 
   res.success = false;
   res.message = "before await callLowLiveSet(true)";
@@ -217,10 +217,10 @@ async function upperLiveStart(req, res)
 
   if (res.success)
   {
-    res.message = "OK: '/rovi/upper/live_start'";
+    res.message = "OK: '/rovi/live_start'";
   }
 
-  ros.log.info("service done:   '/rovi/upper/live_start'");
+  ros.log.info("service done:   '/rovi/live_start'");
 
   return true;
 }
@@ -228,7 +228,7 @@ async function upperLiveStart(req, res)
 
 async function upperLiveStop(req, res)
 {
-  ros.log.info("service called: '/rovi/upper/live_stop'");
+  ros.log.info("service called: '/rovi/live_stop'");
 
   res.success = false;
   res.message = "before await callLowLiveSet(false)";
@@ -237,10 +237,10 @@ async function upperLiveStop(req, res)
 
   if (res.success)
   {
-    res.message = "OK: '/rovi/upper/live_stop'";
+    res.message = "OK: '/rovi/live_stop'";
   }
 
-  ros.log.info("service done:   '/rovi/upper/live_stop'");
+  ros.log.info("service done:   '/rovi/live_stop'");
 
   return true;
 }
@@ -248,7 +248,7 @@ async function upperLiveStop(req, res)
 
 async function upperStillCapture(req, res)
 {
-  ros.log.info("service called: '/rovi/upper/still_capture'");
+  ros.log.info("service called: '/rovi/still_capture'");
 
   res.success = false;
   res.message = "before await callLowStillCapture()";
@@ -257,10 +257,10 @@ async function upperStillCapture(req, res)
 
   if (res.success)
   {
-    res.message = "OK: '/rovi/upper/still_capture'";
+    res.message = "OK: '/rovi/still_capture'";
   }
 
-  ros.log.info("service done:   '/rovi/upper/still_capture'");
+  ros.log.info("service done:   '/rovi/still_capture'");
 
   return true;
 }
@@ -268,7 +268,7 @@ async function upperStillCapture(req, res)
 
 async function upperParamGet(req, res)
 {
-  ros.log.info("service called: '/rovi/upper/param_get'");
+  ros.log.info("service called: '/rovi/param_get'");
 
   res.success = false;
   res.message = "before await callLowParamGet()";
@@ -278,10 +278,10 @@ async function upperParamGet(req, res)
 
   if (res.success)
   {
-    res.message = "OK: '/rovi/upper/param_get'";
+    res.message = "OK: '/rovi/param_get'";
   }
 
-  ros.log.info("service done:   '/rovi/upper/param_get'");
+  ros.log.info("service done:   '/rovi/param_get'");
 
   return true;
 }
@@ -289,7 +289,7 @@ async function upperParamGet(req, res)
 
 async function upperParamSet(req, res)
 {
-  ros.log.info("service called: '/rovi/upper/param_set'");
+  ros.log.info("service called: '/rovi/param_set'");
 
   res.success = false;
   res.message = "before await callLowParamSet()";
@@ -298,10 +298,10 @@ async function upperParamSet(req, res)
 
   if (res.success)
   {
-    res.message = "OK: '/rovi/upper/param_set'";
+    res.message = "OK: '/rovi/param_set'";
   }
 
-  ros.log.info("service done:   '/rovi/upper/param_set'");
+  ros.log.info("service done:   '/rovi/param_set'");
 
   return true;
 }
@@ -319,18 +319,16 @@ function runMode()
     // Run Mode starts with Live ON
     callLowLiveSet(true);
 
-    // Upper Service param_get
-    const upsrv_param_get = rosNode.advertiseService('/rovi/upper/param_get', rovi_srvs.GetParam, upperParamGet);
+    // Upper Services
+    rosNode.advertiseService('/rovi/param_get', rovi_srvs.GetParam, upperParamGet);
+    rosNode.advertiseService('/rovi/param_set', rovi_srvs.SetParam, upperParamSet);
 
-    // Upper Service param_set
-    const upsrv_param_set = rosNode.advertiseService('/rovi/upper/param_set', rovi_srvs.SetParam, upperParamSet);
-
-    // TODO /rovi/upper/phaseshift_capture_and_genpc
-    // TODO /rovi/middle/phaseshift_capture
-    // TODO /rovi/middle/phaseshift_genpc
-    // TODO /rovi/upper/status_get
-    // TODO /rovi/upper/recipe_save
-    // TODO /rovi/upper/recipe_load
+    // TODO /rovi/pshift_capture_and_genpc
+    // TODO /rovi/pshift_capture
+    // TODO /rovi/pshift_genpc
+    // TODO /rovi/status_get
+    // TODO /rovi/recipe_save
+    // TODO /rovi/recipe_load
 
   }
   );
@@ -351,29 +349,21 @@ function testMode()
     // Test Mode starts with Live OFF
     callLowLiveSet(false);
 
-    // Upper Service live_start
-    const upsrv_live_start = rosNode.advertiseService('/rovi/upper/live_start', std_srvs.Trigger, upperLiveStart);
+    // Upper Services
+    rosNode.advertiseService('/rovi/live_start', std_srvs.Trigger, upperLiveStart);
+    rosNode.advertiseService('/rovi/live_stop', std_srvs.Trigger, upperLiveStop);
+    rosNode.advertiseService( '/rovi/still_capture', std_srvs.Trigger, upperStillCapture); 
+    rosNode.advertiseService('/rovi/param_get', rovi_srvs.GetParam, upperParamGet);
+    rosNode.advertiseService('/rovi/param_set', rovi_srvs.SetParam, upperParamSet);
 
-    // Upper Service live_stop
-    const upsrv_live_stop = rosNode.advertiseService('/rovi/upper/live_stop', std_srvs.Trigger, upperLiveStop);
-
-    // Upper Service still_capture
-    const upsrv_still_capture = rosNode.advertiseService( '/rovi/upper/still_capture', std_srvs.Trigger, upperStillCapture); 
-
-    // Upper Service param_get
-    const upsrv_param_get = rosNode.advertiseService('/rovi/upper/param_get', rovi_srvs.GetParam, upperParamGet);
-
-    // Upper Service param_set
-    const upsrv_param_set = rosNode.advertiseService('/rovi/upper/param_set', rovi_srvs.SetParam, upperParamSet);
-
-    // TODO /rovi/upper/phaseshift_capture_and_genpc
-    // TODO /rovi/middle/phaseshift_capture
-    // TODO /rovi/middle/phaseshift_genpc
-    // TODO /rovi/upper/status_get
-    // TODO /rovi/upper/recipe_save
-    // TODO /rovi/upper/recipe_load
-    // TODO /rovi/upper/calib_capture
-    // TODO /rovi/upper/calib_calc
+    // TODO /rovi/pshift_capture_and_genpc
+    // TODO /rovi/pshift_capture
+    // TODO /rovi/pshift_genpc
+    // TODO /rovi/status_get
+    // TODO /rovi/recipe_save
+    // TODO /rovi/recipe_load
+    // TODO /rovi/calib_capture
+    // TODO /rovi/calib_calc
 
     // TODO
     rosNode.setParam('/rovi/testparam', {'p': 1, 'i': 'str', 'd': 3});

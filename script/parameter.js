@@ -36,7 +36,7 @@ async function callLowDoParamGet(req, res)
       const yamlValue = yaml.safeDump(paramValue);
       ros.log.info('getParam(' + paramName + ') returned. paramValue=' + yamlValue);
       res.success = true;
-      res.message = "OK: '/rovi/low/param_get'";
+      res.message = "OK: '/rovi/do_param_get'";
       res.value = yamlValue;
       return true; 
     }
@@ -142,7 +142,7 @@ async function callLowDoParamSet(req, res)
           {
             ros.log.info('call ' + srvCl_dynsetparam.getService() + ' returned');
             res.success = true;
-            res.message = "OK: '/rovi/low/param_set'";
+            res.message = "OK: '/rovi/do_param_set'";
             return true;
           }
           ).catch(function(error)
@@ -163,7 +163,7 @@ async function callLowDoParamSet(req, res)
       gRosNode.setParam(paramName, paramVal);
       ros.log.info('setParam(' + paramName + ', ' + paramVal + ') returned');
       res.success = true;
-      res.message = "OK: '/rovi/low/param_set'";
+      res.message = "OK: '/rovi/do_param_set'";
       return true; 
     }
   }
@@ -177,14 +177,14 @@ async function callLowDoParamSet(req, res)
 
 async function lowParamGet(req, res)
 {
-  ros.log.info("service called: '/rovi/low/param_get'");
+  ros.log.info("service called: '/rovi/do_param_get'");
 
   res.success = false;
   res.message = "before await callLowDoParamGet()";
 
   await callLowDoParamGet(req, res),
 
-  ros.log.info("service done:   '/rovi/low/param_get'");
+  ros.log.info("service done:   '/rovi/do_param_get'");
 
   return true;
 }
@@ -192,14 +192,14 @@ async function lowParamGet(req, res)
 
 async function lowParamSet(req, res)
 {
-  ros.log.info("service called: '/rovi/low/param_set'");
+  ros.log.info("service called: '/rovi/do_param_set'");
 
   res.success = false;
   res.message = "before await callLowDoParamSet()";
 
   await callLowDoParamSet(req, res),
 
-  ros.log.info("service done:   '/rovi/low/param_set'");
+  ros.log.info("service done:   '/rovi/do_param_set'");
 
   return true;
 }
@@ -209,11 +209,9 @@ ros.initNode('/rovi/parameter').then((rosNode)=>
 {
   gRosNode = rosNode;
 
-  // Low Service param_get
-  const lowsrv_param_get = rosNode.advertiseService('/rovi/low/param_get', rovi_srvs.GetParam, lowParamGet);
-
-  // Low Service param_set
-  const lowsrv_param_set = rosNode.advertiseService('/rovi/low/param_set', rovi_srvs.SetParam, lowParamSet);
+  // Low Services
+  rosNode.advertiseService('/rovi/do_param_get', rovi_srvs.GetParam, lowParamGet);
+  rosNode.advertiseService('/rovi/do_param_set', rovi_srvs.SetParam, lowParamSet);
 }
 );
 
