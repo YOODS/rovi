@@ -9,6 +9,7 @@ const sens=require('../script/ycam1h.js');
 const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
+const EventEmitter=require('events').EventEmitter;
 
 ros.Time.diff=function(t0){
 	let t1=ros.Time.now();
@@ -26,11 +27,13 @@ function sensCheck(pub){
 	setTimeout(function(){ sensCheck(pub);},1000);
 }
 function viewOut(n,pubL,capL,pubR,capR){
-	if(n<capL.length){
-ros.log.info('capture L image:'+n);
-		pubL.publish(capL[n]);
+	try{
+		if(n<capL.length) pubL.publish(capL[n]);
+		if(n<capR.length) pubR.publish(capR[n]);
 	}
-	if(n<capR.length) pubR.publish(capR[n]);
+	catch(err){
+		ros.log.warn('No image captured:'+err);
+	}
 }
 
 setImmediate(async function(){
@@ -59,82 +62,74 @@ setImmediate(async function(){
 	let param_C=await rosNode.getParam(NS+'/camera');
 
 	const sensEv=sens.open(rosNode,NScamL,param_L.ID,NScamR,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
-	let hook_L=null;
-	let hook_R=null;
+	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
-		if(hook_L==null){
-			pub_L.publish(res.img);
-		}
-		else hook_L(res.img);
+		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
+		else pub_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
-		if(hook_R==null){
-			pub_R.publish(res.img);
-		}
-		else hook_R(res.img);
+		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
+		else pub_R.publish(res.img);
 	});
 	sensEv.on('pout',function(str){//<--------cout from YPJ
 		console.log('projector :'+str);
 	});
 	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
-	let capt_L=[];
-	let capt_R=[];
+
+//---------Definition of services
+	let capt_L;//<--------captured images of the left camera
+	let capt_R;//<--------same as right
 	const svc_do=rosNode.advertiseService(NS,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
 		return new Promise(async (resolve)=>{
+			let wdt=setTimeout(function(){//<--------watch dog
+				resolve(false);
+				sensHook.removeAllListeners();
+				sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
+			},2000);
 			sens.cset({'TriggerMode':'On'});
 			param_C=await rosNode.getParam(NS+'/camera');
 			sens.cset(param_C);
 			param_L=await rosNode.getParam(NScamL+'/camera');
 			for(let key in param_L) if(!param_C.hasOwnProperty(key)) delete param_L[key];
 			param_P=await rosNode.getParam(NS+'/projector');
-			let wdt=setTimeout(function(){//<--------watch dog
-				resolve(false);
-				hook_L=hook_R=null;
-				sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
-			},2000);
 			sens.pset('x'+param_P.ExposureTime);
 			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
 			sens.pset('p2');//<--------projector sequence start
-			let tat=new std_msgs.Float32();
-			tat.data=ros.Time.now();
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
-					capt_L=[];
-					hook_L=function(img){
-						capt_L.push(img);
-						if(capt_L.length==13){
-							resolve(capt_L);
-							hook_L=null;
-						}
-					}
+					capt=[];
+					sensHook.on('cam_l',function(img){
+ros.log.info('capturing img_L:'+capt.length);
+						capt.push(img);
+						if(capt.length==13) resolve(capt);
+					});
 				}),
 				new Promise((resolve)=>{
-					capt_R=[];
-					hook_R=function(img){
-						capt_R.push(img);
-						if(capt_R.length==13){
-							resolve(capt_R);
-							hook_R=null;
-						}
-					}
+					capt=[];
+					sensHook.on('cam_r',function(img){
+						capt.push(img);
+						if(capt.length==13) resolve(capt);
+					});
 				})
 			]);
+			sensHook.removeAllListeners();
 			clearTimeout(wdt);
+			capt_L=imgs[0];
+			capt_R=imgs[1];
+//await genpc.call()
 			sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
-			tat.data=ros.Time.diff(tat.data);
-			pub_tat.publish(tat);
-			res.answer='scan compelete:'+imgs[0].length;
+			res.message='scan compelete:'+imgs[0].length;
 			res.success=true;
-			ros.log.info('capture completed');
+ros.log.info('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
 		});
