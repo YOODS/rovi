@@ -28,8 +28,12 @@ function sensCheck(pub){
 }
 function viewOut(n,pubL,capL,pubR,capR){
 	try{
+		ros.log.warn('before L');
 		if(n<capL.length) pubL.publish(capL[n]);
+		ros.log.warn('after L');
+		ros.log.warn('before R');
 		if(n<capR.length) pubR.publish(capR[n]);
+		ros.log.warn('after R');
 	}
 	catch(err){
 		ros.log.warn('No image captured:'+err);
@@ -86,13 +90,15 @@ setImmediate(async function(){
 	let capt_L;//<--------captured images of the left camera
 	let capt_R;//<--------same as right
 	const svc_do=rosNode.advertiseService(NS,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
+ros.log.warn('pshift_genpc called!');
 		return new Promise(async (resolve)=>{
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				sensHook.removeAllListeners();
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
+ros.log.warn('in setTimeout');
 			},2000);
-			sens.cset({'TriggerMode':'On'});
+//			sens.cset({'TriggerMode':'On'});
 			param_C=await rosNode.getParam(NS+'/camera');
 			sens.cset(param_C);
 			param_L=await rosNode.getParam(NScamL+'/camera');
@@ -106,30 +112,51 @@ setImmediate(async function(){
 			sens.pset('p2');//<--------projector sequence start
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
-					capt=[];
+					let capt=[];
 					sensHook.on('cam_l',function(img){
-ros.log.info('capturing img_L:'+capt.length);
-						capt.push(img);
-						if(capt.length==13) resolve(capt);
+ros.log.warn('capturing img_L:'+capt.length);
+						if (capt.length <= 11) {
+							capt.push(img);
+						}
+						else if (capt.length == 12) {
+							capt.push(img);
+							ros.log.warn('now 13 img_Ls. resolve.');
+							resolve(capt);
+						}
+						else { // already capt.length >= 13.
+							ros.log.warn('already 13 img_Ls. ignore this img.');
+						}
 					});
 				}),
 				new Promise((resolve)=>{
-					capt=[];
+					let capt=[];
 					sensHook.on('cam_r',function(img){
-						capt.push(img);
-						if(capt.length==13) resolve(capt);
+ros.log.warn('capturing img_R:'+capt.length);
+						if (capt.length <= 11) {
+							capt.push(img);
+						}
+						else if (capt.length == 12) {
+							capt.push(img);
+							ros.log.warn('now 13 img_Rs. resolve.');
+							resolve(capt);
+						}
+						else { // already capt.length >= 13.
+							ros.log.warn('already 13 img_Rs. ignore this img.');
+						}
 					});
 				})
 			]);
+ros.log.warn('after await Promise.all');
 			sensHook.removeAllListeners();
 			clearTimeout(wdt);
 			capt_L=imgs[0];
 			capt_R=imgs[1];
+ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
 //await genpc.call()
 			sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
 			res.message='scan compelete:'+imgs[0].length;
 			res.success=true;
-ros.log.info('capture completed');
+ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
 		});
@@ -156,6 +183,13 @@ ros.log.info('capture completed');
 		case 'view':
 			return new Promise((resolve)=>{
 				vue_N=parseInt(cmds[0]);
+ros.log.warn('in view');
+if (capt_L === undefined) {
+  ros.log.warn('L undefined!!');
+}
+if (capt_R === undefined) {
+  ros.log.warn('R undefined!!');
+}
 				viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 				resolve(true);
 			});
