@@ -1,19 +1,19 @@
 pshift_genpc:
   camera:
-    ExposureTimeAbs: 2000.0
+    ExposureTimeAbs: 8400.0
     Gain: 10.0
   projector:
-    Url: localhost
-    Port: 5070
-    ExposureTime: 8400
+    Url: 192.168.222.10
+    Port: 5073
+    ExposureTime: 30
     Intencity: 255
-    Interval: 33400
+    Interval: 100
 cam_l:
   camera:
     ID: SENTECH-17AB755
     AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
-    ExposureTimeAbs: 2000.0
+    ExposureTimeAbs: 20000.0
     Gain: 10.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
@@ -37,7 +37,7 @@ cam_r:
     ID: SENTECH-17AB756
     AcquisitionFrameRate: 30.0
     ExposureAuto: 'Off'
-    ExposureTimeAbs: 2000.0
+    ExposureTimeAbs: 20000.0
     Gain: 10.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
