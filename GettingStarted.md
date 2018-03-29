@@ -120,11 +120,10 @@ curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
 
-### 2-3. rosnodejsなどのインストール
+### 2-3. rosnodejsのインストール
 ~~~
 cd ~
 npm install rosnodejs
-npm install opencv
 ~~~
 
 *上記でインストールされるrosnodejsは、
@@ -177,7 +176,9 @@ cam_r:
   remap:
     『この部分(height:からP:まで)に実際の右側キャリブレーションパラメータ』
 genpc:
-    『この部分(Q:)に実際のキャリブレーションパラメータ』
+    『この部分(Q:)に実際のキャリブレーションパラメータ』★透視変換行列
+http://opencv.jp/opencv-2.1/cpp/camera_calibration_and_3d_reconstruction.html
+
 ~~~
 
 TODO:  
