@@ -38,7 +38,7 @@ var ycam={
 		if(obj.hasOwnProperty(key='Gain')) setDblConf(request,key,obj[key]);
 		if(obj.hasOwnProperty(key='ExposureTimeAbs')) setDblConf(request,key,obj[key]);
 		let res_l=await run_l.dynparam_set.call(request);
-//		let res_r=await run_r.dynparam_set.call(request);
+		let res_r=await run_r.dynparam_set.call(request);
 		return true;
 	},
 	pset:function(str){
@@ -55,10 +55,10 @@ var ycam={
 			openCamera(run_l,camera_l,'cam_l');
 		});
 		camera_r=nsr+'/camera/';
-//		run_r=Rosrun.run('camera_aravis camnode '+idr,nsr);
-//		run_r.on('start',function(){
-//			openCamera(run_r,camera_r,'cam_r');
-//		});
+		run_r=Rosrun.run('camera_aravis camnode '+idr,nsr);
+		run_r.on('start',function(){
+			openCamera(run_r,camera_r,'cam_r');
+		});
 		run_p=openYPJ(port,url);
 		return Notifier;
 	}
