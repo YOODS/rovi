@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const NS='/pshift_genpc';
-const NScamL='/cam_l';
-const NScamR='/cam_r';
+const NS='/rovi/pshift_genpc';
+const NScamL='/rovi/cam_l';
+const NScamR='/rovi/cam_r';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
 const sens=require('../script/ycam1h.js');
@@ -39,14 +39,14 @@ setImmediate(async function(){
 	const pub_stat=rosNode.advertise(NS+'/stat', std_msgs.Bool);
 	let vue_N=0;
 
-	const pub_L=rosNode.advertise(NScamL+'/image', sensor_msgs.Image);
+	const pub_L=rosNode.advertise(NScamL+'/image_rect', sensor_msgs.Image);
 	const vue_L=rosNode.advertise(NScamL+'/view', sensor_msgs.Image);
 	const remap_L=rosNode.serviceClient(NScamL+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_L.getService(),2000)){
 		ros.log.info('remap_L service not available');
 		return;
 	}
-	const pub_R=rosNode.advertise(NScamR+'/image', sensor_msgs.Image);
+	const pub_R=rosNode.advertise(NScamR+'/image_rect', sensor_msgs.Image);
 	const vue_R=rosNode.advertise(NScamR+'/view', sensor_msgs.Image);
 	const remap_R=rosNode.serviceClient(NScamR+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_R.getService(),2000)){
@@ -102,7 +102,7 @@ setImmediate(async function(){
 			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
-			sens.pset('p'+val+val+val);
+			sens.pset('i'+val+val+val);
 			sens.pset('p2');//<--------projector sequence start
 			let tat=new std_msgs.Float32();
 			tat.data=ros.Time.now();
