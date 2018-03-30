@@ -17,7 +17,7 @@ cam_l:
     Gain: 10.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
-    TriggerSource: 'Line1'
+    TriggerSource: 'Line0'
     mtu: 9000
   remap:
     height: 1024
@@ -41,7 +41,7 @@ cam_r:
     Gain: 10.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
-    TriggerSource: Line1
+    TriggerSource: 'Line0'
     mtu: 9000
   remap:
     height: 1024
