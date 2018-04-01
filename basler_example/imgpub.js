@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const net=require('net');
-const shm=require('shm-typed-array');
+const shm=require('../shm-typed-array/index.js');
 
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
