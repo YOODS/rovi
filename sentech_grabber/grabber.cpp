@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <sys/shm.h>
 #include <atomic>
-#include <iomanip>    //for setprecisio
+#include <iomanip>    //for setprecision
 #include <thread>
 #include <StApi_TL.h>
 
@@ -10,9 +10,9 @@
 #define DEBUG 1
 
 #if DEBUG
-# define DEBUG_TO_CERR(x) cerr << x;
+#define DEBUG_TO_CERR(x) cerr << x;
 #else
-# define DEBUG_TO_CERR(x)
+#define DEBUG_TO_CERR(x)
 #endif
 
 using namespace GenApi;
