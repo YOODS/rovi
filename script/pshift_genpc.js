@@ -5,7 +5,7 @@ const NScamL='/rovi/cam_l';
 const NScamR='/rovi/cam_r';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
-const sens=require('../script/ycam1h.js');
+const sens=require('../script/ycam1s.js');
 const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
@@ -18,12 +18,14 @@ ros.Time.diff=function(t0){
 	return ros.Time.toSeconds(t1);
 }
 
+let sensStat=false;
 function sensCheck(pub){
 	let f=new std_msgs.Bool();
 	let s=sens.stat();
 	f.data=true;
 	for(let key in s) f.data=f.data && s[key];
 	pub.publish(f);
+	sensStat=f.data;
 	setTimeout(function(){ sensCheck(pub);},1000);
 }
 function viewOut(n,pubL,capL,pubR,capR){
@@ -65,12 +67,13 @@ setImmediate(async function(){
 	let param_P=await rosNode.getParam(NS+'/projector');
 	let param_C=await rosNode.getParam(NS+'/camera');
 
-	const sensEv=sens.open(rosNode,NScamL,param_L.ID,NScamR,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
+	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
+ros.log.info('cam_l/image published');
 		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
 		else pub_L.publish(res.img);
 	});
@@ -78,11 +81,9 @@ setImmediate(async function(){
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
+ros.log.info('cam_r/image published');
 		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
 		else pub_R.publish(res.img);
-	});
-	sensEv.on('pout',function(str){//<--------cout from YPJ
-		console.log('projector :'+str);
 	});
 	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
 
@@ -91,6 +92,10 @@ setImmediate(async function(){
 	let capt_R;//<--------same as right
 	const svc_do=rosNode.advertiseService(NS,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
 ros.log.warn('pshift_genpc called!');
+		if(!sensStat){
+			ros.log.warn('YCAM not ready');
+			return false;
+		}
 		return new Promise(async (resolve)=>{
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
@@ -172,6 +177,14 @@ ros.log.warn('capture completed');
 		let cmds=cmd.split(' ');
 		if(cmds.length>1) cmd=cmds.shift();
 		switch(cmd){
+		case 'cset':
+			sens.cset(obj);
+			for(let key in obj){
+				ros.log.info('setParam:'+NScamL+'/camera/'+key+'='+obj[key]);
+				rosNode.setParam(NScamL+'/camera/'+key,obj[key]);
+				rosNode.setParam(NScamR+'/camera/'+key,obj[key]);
+			}
+			return Promise.resolve(true);
 		case 'pset':
 			sens.pset(cmds[0]);
 			return Promise.resolve(true);
