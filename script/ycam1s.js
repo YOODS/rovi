@@ -37,15 +37,26 @@ function imgCreate(param){
 let image_l;
 let image_r;
 
+function msleep(t){
+	return new Promise(function(resolve){
+		setTimeout(function(){
+			resolve(true);
+		},t);
+	});
+}
+
 var ycam={
-	cset:async function(obj){
+	cset:function(obj){
 		for(let key in obj){
 			run_c.cin(key+' '+obj[key]);
 		}
 		return true;
 	},
-	pset:function(str){
+	pset:async function(str,tm){
 		run_p.write(str+'\n');
+		if(arguments.length>1){
+			await msleep(tm);
+		}
 	},
 	stat:function(){
 		return {'camera':run_c.running,'projector':!run_p.destroyed};
