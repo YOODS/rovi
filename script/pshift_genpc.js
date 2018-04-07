@@ -70,6 +70,7 @@ setImmediate(async function(){
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
+ros.log.warn('capturing live img_L');
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
@@ -78,6 +79,7 @@ ros.log.info('cam_l/image published');
 		else pub_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
+ros.log.warn('capturing live img_R');
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
@@ -103,17 +105,19 @@ ros.log.warn('pshift_genpc called!');
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_L));
 ros.log.warn('in setTimeout');
 			},2000);
-//			sens.cset({'TriggerMode':'On'});
+			sens.cset({'TriggerMode':'On'});
 			param_C=await rosNode.getParam(NS+'/camera');
 			sens.cset(param_C);
 			param_L=await rosNode.getParam(NScamL+'/camera');
 			for(let key in param_L) if(!param_C.hasOwnProperty(key)) delete param_L[key];
 			param_P=await rosNode.getParam(NS+'/projector');
+/*
 			sens.pset('x'+param_P.ExposureTime);
 			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
+*/
 			sens.pset('p2');//<--------projector sequence start
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
@@ -135,6 +139,7 @@ ros.log.warn('capturing img_L:'+capt.length);
 				}),
 				new Promise((resolve)=>{
 					let capt=[];
+//					resolve(capt);
 					sensHook.on('cam_r',function(img){
 ros.log.warn('capturing img_R:'+capt.length);
 						if (capt.length <= 11) {
