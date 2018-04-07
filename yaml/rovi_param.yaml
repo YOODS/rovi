@@ -1,11 +1,11 @@
 pshift_genpc:
   camera:
-    ExposureTimeAbs: 8400.0
+    ExposureTimeAbs: 2000.0
     Gain: 10.0
   projector:
     Url: 192.168.222.10
     Port: 5073
-    ExposureTime: 30
+    ExposureTime: 10
     Intencity: 255
     Interval: 100
 cam_l:
