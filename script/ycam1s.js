@@ -52,10 +52,22 @@ var ycam={
 		}
 		return true;
 	},
-	pset:async function(str,tm){
-		run_p.write(str+'\n');
-		if(arguments.length>1){
-			await msleep(tm);
+	psetBusy:0,
+	psetQueue:[],
+	psetCuring:33,
+	pset:function(str){
+		if(this.psetBusy==0){
+			run_p.write(str+'\n');
+			const target=this;
+			this.psetBusy=setTimeout(function(){
+				target.psetBusy=0;
+				if(target.psetQueue.length>0){
+					target.pset.call(target,target.psetQueue.shift());
+				}
+			},this.psetCuring);
+		}
+		else{
+			this.psetQueue.push(str);
 		}
 	},
 	stat:function(){
