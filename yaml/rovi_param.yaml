@@ -1,6 +1,6 @@
 pshift_genpc:
   camera:
-    ExposureTimeAbs: 2000.0
+    ExposureTime: 2000.0
     Gain: 10.0
   projector:
     Url: 192.168.222.10
@@ -8,17 +8,19 @@ pshift_genpc:
     ExposureTime: 10
     Intencity: 255
     Interval: 100
-cam_l:
+live:
   camera:
-    ID: STC_BBE132GE(17AB755)
     AcquisitionFrameRate: 10.0
+    ExposureMode: 'Timed'
     ExposureAuto: 'Off'
-    ExposureTimeAbs: 20000.0
+    ExposureTime: 20000.0
     Gain: 10.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
     TriggerSource: 'Line0'
-    mtu: 9000
+cam_l:
+  camera:
+    ID: STC_BBE132GE(17AB755)
   remap:
     height: 1024
     width: 1280
@@ -35,14 +37,6 @@ cam_l:
 cam_r:
   camera:
     ID: STC_BBE132GE(17AB756)
-    AcquisitionFrameRate: 10.0
-    ExposureAuto: 'Off'
-    ExposureTimeAbs: 20000.0
-    Gain: 10.0
-    GainAuto: 'Off'
-    TriggerMode: 'Off'
-    TriggerSource: 'Line0'
-    mtu: 9000
   remap:
     height: 1024
     width: 1280

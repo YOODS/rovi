@@ -3,6 +3,7 @@
 const NS='/rovi/pshift_genpc';
 const NScamL='/rovi/cam_l';
 const NScamR='/rovi/cam_r';
+const NSlive='/rovi/live';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
 const sens=require('../script/ycam1s.js');
@@ -66,11 +67,14 @@ setImmediate(async function(){
 	let param_R=await rosNode.getParam(NScamR+'/camera');
 	let param_P=await rosNode.getParam(NS+'/projector');
 	let param_C=await rosNode.getParam(NS+'/camera');
+	let param_V=await rosNode.getParam(NSlive+'/camera');
 
+	for(let key in param_C) console.log(NS+'/camera/' + key + "=" + param_C[key]);
 	for(let key in param_L) console.log(NScamL+'/camera/' + key + "=" + param_L[key]);
 	for(let key in param_R) console.log(NScamR+'/camera/' + key + "=" + param_R[key]);
+	for(let key in param_V) console.log(NSlive+'/camera/' + key + "=" + param_V[key]);
 
-	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
+	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 ros.log.warn('capturing live img_L');

@@ -21,9 +21,9 @@ function imgCreate(param){
 	img.header.seq=0;
 	img.header.stamp=0;
 	img.header.frame_id='ycam1s';
-	img.width=640;
-	img.height=480;
-	img.step=640;
+	img.width=1280;
+	img.height=1024;
+	img.step=1280;
 	img.encoding='mono8';
 	for(let key in img){
 		if(param.hasOwnProperty(key)){
@@ -47,7 +47,9 @@ function msleep(t){
 
 var ycam={
 	cset:function(obj){
+		console.log("yam1s cset called");
 		for(let key in obj){
+			console.log("ycam1s cset key="+key+",val="+obj[key]);
 			run_c.cin(key+' '+obj[key]);
 		}
 		return true;
@@ -73,10 +75,14 @@ var ycam={
 	stat:function(){
 		return {'camera':run_c.running,'projector':!run_p.destroyed};
 	},
-	open:function(idl,idr,url,port){
+	open:function(idl,idr,url,port,param_V){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
 //		run_c=Runner.run('../basler_example/grabber');
 		run_c=Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+		run_c.on('start',function(data){
+			console.log("get start");
+			ycam.cset(param_V);
+		});
 		run_c.on('cout',function(data){
 			let attr;
 			try{
