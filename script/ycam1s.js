@@ -9,7 +9,7 @@ const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs=ros.require('rovi').srv;
 
-const shm=require('shm-typed-array');
+const shm=require('../shm-typed-array');
 let shmem;
 
 let run_c;  //should be rosrun.js camera runner
@@ -75,7 +75,8 @@ var ycam={
 	},
 	open:function(idl,idr,url,port){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
-		run_c=Runner.run('../basler_example/grabber');
+//		run_c=Runner.run('../basler_example/grabber');
+		run_c=Runner.run(process.env.ROVI_PATH+"/sentech_grabber/grabber");
 		run_c.on('cout',function(data){
 			let attr;
 			try{
