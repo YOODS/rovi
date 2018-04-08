@@ -10,7 +10,7 @@ pshift_genpc:
     Interval: 100
 cam_l:
   camera:
-    ID: SENTECH-17AB755
+    ID: STC_BBE132GE(17AB755)
     AcquisitionFrameRate: 10.0
     ExposureAuto: 'Off'
     ExposureTimeAbs: 20000.0
@@ -34,7 +34,7 @@ cam_l:
         0.0, 0.0, 1.0, 0.0]
 cam_r:
   camera:
-    ID: SENTECH-17AB756
+    ID: STC_BBE132GE(17AB756)
     AcquisitionFrameRate: 10.0
     ExposureAuto: 'Off'
     ExposureTimeAbs: 20000.0

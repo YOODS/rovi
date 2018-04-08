@@ -76,7 +76,7 @@ var ycam={
 	open:function(idl,idr,url,port){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
 //		run_c=Runner.run('../basler_example/grabber');
-		run_c=Runner.run(process.env.ROVI_PATH+"/sentech_grabber/grabber");
+		run_c=Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
 		run_c.on('cout',function(data){
 			let attr;
 			try{

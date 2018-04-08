@@ -123,6 +123,21 @@ void acquisitionWorker(const gcstring cam_l_name, const gcstring cam_r_name, CIS
 
 int main(int argc, char **argv)
 {
+  gcstring camLname;
+  gcstring camRname;
+
+  if (argc != 3)
+  {
+    cerr << "Usage:   " << argv[0] << " <Left Camera DisplayName> <Right Camera DisplayName>" << endl << endl;
+    cerr << "Example: " << argv[0] << " 'STC_BBE132GE(17AB755)' 'STC_BBE132GE(17AB756)'" << endl << endl;
+    return EXIT_FAILURE;
+  }
+  else
+  {
+    camLname = argv[1];
+    camRname = argv[2];
+    DEBUG_TO_CERR("now camLname=" << camLname << " camRname=" << camRname << endl << endl)
+  }
 
   try
   {
@@ -251,41 +266,6 @@ int main(int argc, char **argv)
     }
     imgBuf[0] = 1; // try writing onto shared memory
     cout << "{\"shm\":" << sockd << "}" << endl << endl;
-
-    DEBUG_TO_CERR(endl << "Input 'camLname' and 'camRname'." << endl)
-    DEBUG_TO_CERR("example: " << endl)
-    DEBUG_TO_CERR("camLname STC_BBE132GE(17AB755)" << endl)
-    DEBUG_TO_CERR("camRname STC_BBE132GE(17AB756)" << endl)
-    DEBUG_TO_CERR(endl)
-
-    gcstring camLname;
-    gcstring camRname;
-
-    for(;;){
-      argv=cparser(stdin);
-      if(argv==NULL) continue;
-      if (argv[1])
-      {
-        if (!(int)strcmp(argv[0], "camLname"))
-        {
-          camLname = argv[1];
-          DEBUG_TO_CERR("now camLname=" << camLname << endl)
-          if (camRname.length() > 0)
-          {
-            break;
-          }
-        }
-        else if (!(int)strcmp(argv[0], "camRname"))
-        {
-          camRname = argv[1];
-          DEBUG_TO_CERR("now camRname=" << camRname << endl)
-          if (camLname.length() > 0)
-          {
-            break;
-          }
-        }
-      }
-    }
 
     thread worker(acquisitionWorker, camLname, camRname, &pIStDeviceList, &pIStDataStreamList);
 
