@@ -67,6 +67,9 @@ setImmediate(async function(){
 	let param_P=await rosNode.getParam(NS+'/projector');
 	let param_C=await rosNode.getParam(NS+'/camera');
 
+	for(let key in param_L) console.log(NScamL+'/camera/' + key + "=" + param_L[key]);
+	for(let key in param_R) console.log(NScamR+'/camera/' + key + "=" + param_R[key]);
+
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
@@ -74,7 +77,7 @@ ros.log.warn('capturing live img_L');
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
-ros.log.info('cam_l/image published');
+ros.log.warn('cam_l/image published');
 		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
 		else pub_L.publish(res.img);
 	});
@@ -83,7 +86,7 @@ ros.log.warn('capturing live img_R');
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
-ros.log.info('cam_r/image published');
+ros.log.warn('cam_r/image published');
 		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
 		else pub_R.publish(res.img);
 	});
@@ -177,7 +180,12 @@ ros.log.warn('capture completed');
 		let obj={};
 		if(lbk>0){
 			cmd=req.hello.substring(0,lbk).trim();
-			obj=JSON.parse(req.hello.substring(lbk));
+			try {
+				obj=JSON.parse(req.hello.substring(lbk));
+			}
+			catch(err){
+				//ignore
+			}
 		}
 		let cmds=cmd.split(' ');
 		if(cmds.length>1) cmd=cmds.shift();
