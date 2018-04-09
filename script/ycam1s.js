@@ -84,35 +84,43 @@ var ycam={
 			ycam.cset(param_V);
 		});
 		run_c.on('cout',function(data){
-			let attr;
-			try{
-				attr=JSON.parse(data);
-			}
-			catch(err){
-				console.log('stdin:'+err);
-				return;
-			}
-			if(attr.hasOwnProperty('capt')){
-				let offset=attr.capt;
-				if(offset==0){
-					image_l.header.seq++;
-					image_l.header.stamp=ros.Time.now();
-					image_l.data=shmem.slice(0,imgLength);
-					Notifier.emit('cam_l',image_l);
+			let lines = data.split(/\n/);
+			for (let i = 0; i < lines.length; i++) {
+				if (!lines[i]) {
+					continue;
 				}
-				else{
-					image_r.header.seq++;
-					image_r.header.stamp=ros.Time.now();
-					image_r.data=shmem.slice(offset,offset+imgLength);
-					Notifier.emit('cam_r',image_r);
+				let attr;
+				try{
+					attr=JSON.parse(lines[i]);
+//					ros.log.warn('ycam1s done parse [' + lines[i] + ']');
 				}
-			}
-			else if(attr.hasOwnProperty('shm')){
-				shmem=shm.get(attr.shm,'Uint8Array');
-				delete attr.shm;
-				image_l=imgCreate(attr);
-				image_r=imgCreate(attr);
+				catch(err){
+					ros.log.error('ycam1s failed parse [' + lines[i] + ']');
+					ros.log.error('ycam1s parse err[' + err +']');
+					return;
+				}
+				if(attr.hasOwnProperty('capt')){
+					let offset=attr.capt;
+					if(offset==0){
+						image_l.header.seq++;
+						image_l.header.stamp=ros.Time.now();
+						image_l.data=shmem.slice(0,imgLength);
+						Notifier.emit('cam_l',image_l);
+					}
+					else{
+						image_r.header.seq++;
+						image_r.header.stamp=ros.Time.now();
+						image_r.data=shmem.slice(offset,offset+imgLength);
+						Notifier.emit('cam_r',image_r);
+					}
+				}
+				else if(attr.hasOwnProperty('shm')){
+					shmem=shm.get(attr.shm,'Uint8Array');
+					delete attr.shm;
+					image_l=imgCreate(attr);
+					image_r=imgCreate(attr);
 console.log('shm size:'+shmem.byteLength);
+				}
 			}
 		});
 		run_p=openYPJ(port,url);
