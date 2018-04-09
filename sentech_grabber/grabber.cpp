@@ -3,14 +3,15 @@
 #include <atomic>
 #include <iomanip>    //for setprecision
 #include <thread>
+#include <chrono>
 #include <StApi_TL.h>
 
 #include	"cparser.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 #if DEBUG
-#define DEBUG_TO_CERR(x) cerr << x;
+#define DEBUG_TO_CERR(x) cerr << x << flush;
 #else
 #define DEBUG_TO_CERR(x)
 #endif
@@ -30,6 +31,12 @@ static atomic<bool> exit_flag(false);
 
 void acquisitionWorker(const gcstring cam_l_name, const gcstring cam_r_name, CIStDevicePtrArray *ppIStDeviceList, CIStDataStreamPtrArray *ppIStDataStreamList)
 {
+#if DEBUG
+  auto beforealltm = chrono::system_clock::now();
+  auto beforeLtm = beforealltm;
+  auto beforeRtm = beforealltm;
+#endif
+
   try
   {
     DEBUG_TO_CERR("StartAcquisition" << endl)
@@ -80,15 +87,31 @@ void acquisitionWorker(const gcstring cam_l_name, const gcstring cam_r_name, CIS
           // TODO  AllocateStreamBuffersManuallyサンプルでのAllocate(pCreatedBuffer)に共有メモリアドレスを返せば、memcpyの時間をはぶけそう
           if (cur_cam_name == cam_l_name)
           {
-            DEBUG_TO_CERR("before cam_l memcpy" << endl)
+            // DEBUG_TO_CERR("before cam_l memcpy" << endl)
             memcpy(imgBuf, pIStImage->GetImageBuffer(), payloadSize);
             cout << "{\"capt\":" << 0 << "}" << endl;
+#if DEBUG
+            auto curtm = chrono::system_clock::now();
+            auto elapsedall_msec = chrono::duration_cast<chrono::milliseconds>(curtm - beforealltm);
+            auto elapsedL_msec = chrono::duration_cast<chrono::milliseconds>(curtm - beforeLtm);
+            DEBUG_TO_CERR("flush " << "{\"capt\":" << 0 << "} done. elapsed_msec all=" << elapsedall_msec.count() << " L=" << elapsedL_msec.count() << endl)
+            beforealltm = curtm;
+            beforeLtm = curtm;
+#endif
           }
           else if (cur_cam_name == cam_r_name)
           {
-            DEBUG_TO_CERR("before cam_r memcpy" << endl)
+            // DEBUG_TO_CERR("before cam_r memcpy" << endl)
             memcpy(imgBuf + payloadSize, pIStImage->GetImageBuffer(), payloadSize);
             cout << "{\"capt\":" << payloadSize << "}" << endl;
+#if DEBUG
+            auto curtm = chrono::system_clock::now();
+            auto elapsedall_msec = chrono::duration_cast<chrono::milliseconds>(curtm - beforealltm);
+            auto elapsedR_msec = chrono::duration_cast<chrono::milliseconds>(curtm - beforeRtm);
+            DEBUG_TO_CERR("flush " << "{\"capt\":" << payloadSize << "} done. elapsed_msec all=" << elapsedall_msec.count() << " R=" << elapsedR_msec.count() << endl)
+            beforealltm = curtm;
+            beforeRtm = curtm;
+#endif
           }
           else
           {
@@ -123,6 +146,8 @@ void acquisitionWorker(const gcstring cam_l_name, const gcstring cam_r_name, CIS
 
 int main(int argc, char **argv)
 {
+  DEBUG_TO_CERR("grabber start" << endl << endl)
+
   gcstring camLname;
   gcstring camRname;
 
@@ -311,11 +336,11 @@ int main(int argc, char **argv)
             cerr << "ERROR: Unable to get the param " << argv[0] << endl;
           }
 
-          // cerr << endl;
+          // DEBUG_TO_CERR(endl);
         }
       }
 
-      cerr << endl;
+      DEBUG_TO_CERR(endl);
     }
 
     if (worker.joinable())
@@ -332,6 +357,8 @@ int main(int argc, char **argv)
   }
 
   DEBUG_TO_CERR("Disconnect Camera" << endl)
+
+  DEBUG_TO_CERR("grabber end" << endl << endl)
 
   return EXIT_SUCCESS;
 }
