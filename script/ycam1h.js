@@ -18,31 +18,59 @@ let rosNode;
 let camera_l='/camera/';
 let camera_r='/camera/';
 
-function setDblConf(req,key,val){
-	var param=new dyn_msgs.DoubleParameter();
-	param.name=key;
-	param.value=val;
-	req.config.doubles.push(param);
+diffTime=function(t1,t0){
+	let dt=ros.Time.now();
+	dt.secs=t1.secs-t0.secs;
+	dt.nsecs=t1.nsecs-t0.nsecs;
+	return ros.Time.toSeconds(dt);
 }
+
 var ycam={
 	cset:async function(obj){
 		let request=new dyn_srvs.Reconfigure.Request();
-		let key;
-		if(obj.hasOwnProperty(key='TriggerMode')){
-			var param=new dyn_msgs.StrParameter();
-			param.name=key;
-			param.value=obj[key];
-			request.config.strs.push(param);
+		for(let key in obj){
+			let val=obj[key];
+			if(typeof(val)=='string'){
+				let param=new dyn_msgs.StrParameter();
+				param.name=key;
+				param.value=val;
+				request.config.strs.push(param);
+console.log('ycam.cset as string:'+key+'='+val);
+			}
+			else{
+				let param=new dyn_msgs.DoubleParameter();
+				param.name=key;
+				param.value=val;
+				request.config.doubles.push(param);
+console.log('ycam.cset as double:'+key+'='+val);
+			}
 		}
-		if(obj.hasOwnProperty(key='AcquisitionFrameRate')) setDblConf(request,key,obj[key]);
-		if(obj.hasOwnProperty(key='Gain')) setDblConf(request,key,obj[key]);
-		if(obj.hasOwnProperty(key='ExposureTimeAbs')) setDblConf(request,key,obj[key]);
 		let res_l=await run_l.dynparam_set.call(request);
 		let res_r=await run_r.dynparam_set.call(request);
 		return true;
 	},
+	psetBusy:0,
+	psetQueue:[],
+	psetCuring:33,
 	pset:function(str){
-		run_p.write(str+'\n');
+		if(this.psetBusy==0){
+			let target=this;
+			this.psetBusy=setTimeout(function(){
+				target.psetBusy=0;
+				if(target.psetQueue.length>0){
+					target.pset.call(target,target.psetQueue.shift());
+				}
+			},this.psetCuring);
+console.log('pset:'+str);
+			run_p.write(str);
+			run_p.write('\n');
+			run_p.write('\n');
+			run_p.write('\n');
+			run_p.write('\n');
+		}
+		else{
+			this.psetQueue.push(str);
+		}
 	},
 	stat:function(){
 		return {'cam_l':run_l.running, 'cam_r':run_r.running, 'projector':!run_p.destroyed};
@@ -59,14 +87,19 @@ var ycam={
 		run_r.on('start',function(){
 			openCamera(run_r,camera_r,'cam_r');
 		});
-		run_p=openYPJ(port,url);
+		setTimeout(function(){
+			run_p=openYPJ(port,url);
+		},5000);
 		return Notifier;
 	}
 }
 
 async function openCamera(rosrun,ns,evname){
 	let sub=rosNode.subscribe(ns+'image_raw',sensor_msgs.Image,(src)=>{
-		Notifier.emit(evname,src);
+		if(diffTime(src.header.stamp,rosrun.timestamp)>0.01){
+			Notifier.emit(evname,src);
+			rosrun.timestamp=src.header.stamp;
+		}
 	});
 	var cset=rosNode.serviceClient(ns+'set_parameters',dyn_srvs.Reconfigure,{persist:true});
 	if(! await rosNode.waitForService(cset.getService(),2000)){
@@ -74,12 +107,13 @@ async function openCamera(rosrun,ns,evname){
 		return;
 	}
 	rosrun.dynparam_set=cset;
+	rosrun.timestamp=ros.Time.now();
 }
 
 function openYPJ(port,url,sock){
 	if(arguments.length<3) sock=new Net.Socket();
 	sock.on('connect',function(){
-		ros.log.info('YPJ connected');
+		ros.log.info('***YPJ connected***');
 	});
 	sock.on('error',function(){
 		ros.log.error('YPJ error');
@@ -92,6 +126,9 @@ function openYPJ(port,url,sock){
 	});
 	sock.on('data',function(data){
 		Notifier.emit('pout',data);
+	});
+	sock.on('drain',function(data){
+		console.log('YPJ drain');
 	});
 	sock.connect(port,url);
 	return sock;

@@ -19,7 +19,7 @@ popen.run=function(cmd){
 		ev.emit('cerr',data);
 	});
 	proc.on('close',function(code){
-		console.log('rosrun closed:'+code);
+		console.log('runner closed:'+code);
 		if(ev.running){
 			ev.running=false;
 			ev.emit('stop');
