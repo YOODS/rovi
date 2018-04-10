@@ -29,7 +29,7 @@ popen.run=function(cmd){
 		else clearTimeout(stm);
 		setTimeout(function(){
 			popen.run.apply(popen,args);
-//			console.warn("popen.run.apply");
+//			ros.log.warn("popen.run.apply");
 		},3000);
 	});
 	return ev;
