@@ -19,14 +19,26 @@ ros.Time.diff=function(t0){
 	return ros.Time.toSeconds(t1);
 }
 
+const sensHook=new EventEmitter();
 let sensStat=false;
 function sensCheck(pub){
 	let f=new std_msgs.Bool();
-	let s=sens.stat();
+	let b0=sensStat;
+	let s;
+	try{
+		s=sens.stat();
+	}
+	catch(err){
+		sensStat=false;
+		console.log('sens not ready');
+		setTimeout(function(){ sensCheck(pub);},1000);
+		return;
+	}
 	f.data=true;
 	for(let key in s) f.data=f.data && s[key];
 	pub.publish(f);
 	sensStat=f.data;
+	if(!b0 && sensStat) sensHook.emit('start');
 	setTimeout(function(){ sensCheck(pub);},1000);
 }
 function viewOut(n,pubL,capL,pubR,capR){
@@ -76,6 +88,12 @@ setImmediate(async function(){
 	for(let key in param_R) console.log(NScamR+'/camera/' + key + "=" + param_R[key]);
 	for(let key in param_V) console.log(NSlive+'/camera/' + key + "=" + param_V[key]);
 
+	sensHook.on('start',async function(){
+ros.log.info('YCAM started');
+//		param_V=await rosNode.getParam(NSlive+'/camera');
+//		sens.cset(param_V);
+//		sens.pset('f'+Math.floor(param_V.AcquisitionFrameRate));
+	});
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
@@ -110,23 +128,26 @@ ros.log.warn('pshift_genpc called!');
 			return false;
 		}
 		return new Promise(async (resolve)=>{
+			param_V=await rosNode.getParam(NSlive+'/camera');
+			let fps=Math.floor(param_V.AcquisitionFrameRate);
+			param_P=await rosNode.getParam(NS+'/projector');
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				sensHook.removeAllListeners();
-				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
+				sens.cset(param_V);
+//				sens.pset('f'+fps);
 ros.log.warn('in setTimeout');
-			},2000);
-			sens.cset({'TriggerMode':'On'});
-			param_C=await rosNode.getParam(NS+'/camera');
-			sens.cset(param_C);
-			param_V=await rosNode.getParam(NSlive+'/camera');
-			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
+			},param_P.Interval*20);
+//			sens.pset('f0');   //stop trigger
 			param_P=await rosNode.getParam(NS+'/projector');
 			sens.pset('x'+param_P.ExposureTime);
-			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
+			param_C=await rosNode.getParam(NS+'/camera');
+			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
+			sens.cset(param_C);
+			sens.pset('p'+param_P.Interval);
 			sens.pset('p2');//<--------projector sequence start
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
@@ -199,7 +220,7 @@ ros.log.warn('capture completed');
 		case 'cset':
 			sens.cset(obj);
 			for(let key in obj){
-				ros.log.info('setParam:'+NScamL+'/camera/'+key+'='+obj[key]);
+				ros.log.info('setParam:'+NSlive+'/camera/'+key+'='+obj[key]);
 				rosNode.setParam(NSlive+'/camera/'+key,obj[key]);
 			}
 			return Promise.resolve(true);

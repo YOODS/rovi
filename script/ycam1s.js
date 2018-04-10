@@ -59,14 +59,19 @@ var ycam={
 	psetCuring:33,
 	pset:function(str){
 		if(this.psetBusy==0){
-			run_p.write(str+'\n');
-			const target=this;
+			let target=this;
 			this.psetBusy=setTimeout(function(){
 				target.psetBusy=0;
 				if(target.psetQueue.length>0){
 					target.pset.call(target,target.psetQueue.shift());
 				}
 			},this.psetCuring);
+console.log('pset:'+str);
+			run_p.write(str);
+			run_p.write('\n');
+			run_p.write('\n');
+			run_p.write('\n');
+			run_p.write('\n');
 		}
 		else{
 			this.psetQueue.push(str);
