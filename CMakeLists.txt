@@ -66,7 +66,7 @@ target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
 add_executable(genpc_node src/genpc_node.cpp)
-target_link_libraries(genpc_node ${catkin_LIBRARIES})
+target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d)
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(tools_node src/tools_node.cpp)
