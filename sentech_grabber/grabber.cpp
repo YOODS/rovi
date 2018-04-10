@@ -241,7 +241,7 @@ int main(int argc, char **argv)
         DEBUG_TO_CERR("TimestampTickFrequency=" << intTTF << endl)
 
         // TODO 本来はカメラ台数が確定してから割当帯域や転送時間を経て求める必要があるが、カメラ2台ならここでこの1行でも結果は同じになる
-        double delay_time = intPacketSize / (100.0 * 1024 * 1024);
+        double delay_time = intPacketSize / (100.0 * 1000 * 1000);
         DEBUG_TO_CERR("delay_time=" << delay_time << endl)
 
         //// set GevSCPD
