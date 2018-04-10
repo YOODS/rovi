@@ -201,7 +201,6 @@ ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R
 
 			ros.log.warn("genpc CALL");
 			let gpreq = new rovi_srvs.GenPC.Request();
-			// TODO rectify画像を渡すこと
 			gpreq.imgL = capt_L;
 			gpreq.imgR = capt_R;
 			let gpres=await genpc.call(gpreq);
