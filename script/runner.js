@@ -13,9 +13,11 @@ popen.run=function(cmd){
 		ev.emit('start');
 	},3000);
 	proc.stdout.on('data',function(data){
+//		ros.log.warn('runner stdout:S['+data+']E');
 		ev.emit('cout',data);
 	});
 	proc.stderr.on('data',function(data){
+//		ros.log.warn('runner stderr:S['+data+']E');
 		ev.emit('cerr',data);
 	});
 	proc.on('close',function(code){
@@ -27,6 +29,7 @@ popen.run=function(cmd){
 		else clearTimeout(stm);
 		setTimeout(function(){
 			popen.run.apply(popen,args);
+//			console.warn("popen.run.apply");
 		},3000);
 	});
 	return ev;
