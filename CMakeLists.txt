@@ -47,6 +47,10 @@ include_directories(
   ${OpenCV_INCLUDE_DIRS}
 )
 
+link_directories(
+  lib
+)
+
 #add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/rovi.cpp
 #	src/libs/CircleCalibBoard.cpp
