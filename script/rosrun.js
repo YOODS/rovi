@@ -1,12 +1,11 @@
 const EventEmitter=require('events').EventEmitter;
-let ev=new EventEmitter();
-ev.running=false;
 
 let popen=require('child_process');
-popen.run=function(node,ns){
+popen.run=function(node,ns,eo){
+	let ev=arguments.length<3? new EventEmitter():eo;
+	ev.running=false;
 	let env=process.env;
-	let args=arguments;
-	if(args.length>1) env=Object.assign(env,{ROS_NAMESPACE:ns});
+	env=Object.assign(env,{ROS_NAMESPACE:ns});
 	let proc=popen.exec('rosrun '+node,{env:process.env});
 //	let proc=popen.spawn('rosrun',node.slice(' '),{env:process.env});
 	let stm=setTimeout(function(){
@@ -29,7 +28,7 @@ popen.run=function(node,ns){
 		}
 		else clearTimeout(stm);
 		setTimeout(function(){
-			popen.run.apply(popen,args);
+			popen.run(node,ns,ev);
 		},3000);
 	});
 	return ev;

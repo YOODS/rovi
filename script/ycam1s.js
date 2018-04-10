@@ -9,7 +9,7 @@ const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs=ros.require('rovi').srv;
 
-const shm=require('../shm-typed-array');
+const shm=require('shm-typed-array');
 let shmem;
 
 let run_c;  //should be rosrun.js camera runner
@@ -83,49 +83,44 @@ console.log('pset:'+str);
 	open:function(idl,idr,url,port,param_V){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
 //		run_c=Runner.run('../basler_example/grabber');
-		run_c=Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+		console.log("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+		run_c=Runner.run("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
 		run_c.on('start',function(data){
 			console.log("get start");
 			ycam.cset(param_V);
 		});
 		run_c.on('cout',function(data){
-			let lines = data.split(/\n/);
-			for (let i = 0; i < lines.length; i++) {
-				if (!lines[i]) {
-					continue;
+			let attr;
+			try{
+				attr=JSON.parse(data);
+			}
+			catch(err){
+				console.log('stdin:'+err);
+				return;
+			}
+			if(attr.hasOwnProperty('capt')){
+				let offset=attr.capt;
+				if(offset==0){
+					image_l.header.seq++;
+					image_l.header.stamp=ros.Time.now();
+					image_l.data=shmem.slice(0,imgLength);
+console.log('capt:cam_l');
+//					Notifier.emit('cam_l',image_l);
 				}
-				let attr;
-				try{
-					attr=JSON.parse(lines[i]);
-//					ros.log.warn('ycam1s done parse [' + lines[i] + ']');
+				else{
+					image_r.header.seq++;
+					image_r.header.stamp=ros.Time.now();
+					image_r.data=shmem.slice(offset,offset+imgLength);
+console.log('capt:cam_r');
+//					Notifier.emit('cam_r',image_r);
 				}
-				catch(err){
-					ros.log.error('ycam1s failed parse [' + lines[i] + ']');
-					ros.log.error('ycam1s parse err[' + err +']');
-					return;
-				}
-				if(attr.hasOwnProperty('capt')){
-					let offset=attr.capt;
-					if(offset==0){
-						image_l.header.seq++;
-						image_l.header.stamp=ros.Time.now();
-						image_l.data=shmem.slice(0,imgLength);
-						Notifier.emit('cam_l',image_l);
-					}
-					else{
-						image_r.header.seq++;
-						image_r.header.stamp=ros.Time.now();
-						image_r.data=shmem.slice(offset,offset+imgLength);
-						Notifier.emit('cam_r',image_r);
-					}
-				}
-				else if(attr.hasOwnProperty('shm')){
-					shmem=shm.get(attr.shm,'Uint8Array');
-					delete attr.shm;
-					image_l=imgCreate(attr);
-					image_r=imgCreate(attr);
+			}
+			else if(attr.hasOwnProperty('shm')){
+				shmem=shm.get(attr.shm,'Uint8Array');
+				delete attr.shm;
+				image_l=imgCreate(attr);
+				image_r=imgCreate(attr);
 console.log('shm size:'+shmem.byteLength);
-				}
 			}
 		});
 		run_p=openYPJ(port,url);
