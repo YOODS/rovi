@@ -83,8 +83,9 @@ console.log('pset:'+str);
 	open:function(idl,idr,url,port,param_V){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
 //		run_c=Runner.run('../basler_example/grabber');
-		console.log("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
-		run_c=Runner.run("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+		run_c=Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+//		console.log("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+//		run_c=Runner.run("../sentech_grabber/grabber '" + idl + "' '" + idr + "'");
 		run_c.on('start',function(data){
 			console.log("get start");
 			ycam.cset(param_V);
@@ -105,14 +106,14 @@ console.log('pset:'+str);
 					image_l.header.stamp=ros.Time.now();
 					image_l.data=shmem.slice(0,imgLength);
 console.log('capt:cam_l');
-//					Notifier.emit('cam_l',image_l);
+					Notifier.emit('cam_l',image_l);
 				}
 				else{
 					image_r.header.seq++;
 					image_r.header.stamp=ros.Time.now();
 					image_r.data=shmem.slice(offset,offset+imgLength);
 console.log('capt:cam_r');
-//					Notifier.emit('cam_r',image_r);
+					Notifier.emit('cam_r',image_r);
 				}
 			}
 			else if(attr.hasOwnProperty('shm')){
