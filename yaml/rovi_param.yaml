@@ -7,7 +7,7 @@ pshift_genpc:
     Port: 5073
     ExposureTime: 10
     Intencity: 255
-    Interval: 100
+    Interval: 150
 live:
   camera:
     AcquisitionFrameRate: 10.0
