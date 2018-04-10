@@ -95,7 +95,6 @@ ros.log.info('YCAM started');
 //		sens.pset('f'+Math.floor(param_V.AcquisitionFrameRate));
 	});
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
-	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 ros.log.warn('capturing live img_L');
 		raw_L.publish(img);
