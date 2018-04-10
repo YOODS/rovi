@@ -1,3 +1,4 @@
+const ros=require('rosnodejs');
 const EventEmitter=require('events').EventEmitter;
 let ev=new EventEmitter();
 ev.running=false;
@@ -17,7 +18,7 @@ popen.run=function(cmd){
 		ev.emit('cout',data);
 	});
 	proc.stderr.on('data',function(data){
-//		ros.log.warn('runner stderr:S['+data+']E');
+		ros.log.warn('runner stderr:S['+data+']E');
 		ev.emit('cerr',data);
 	});
 	proc.on('close',function(code){
