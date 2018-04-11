@@ -4,7 +4,6 @@ const NS='/rovi/pshift_genpc';
 const NScamL='/rovi/cam_l';
 const NScamR='/rovi/cam_r';
 const NSlive='/rovi/live';
-const NSrovi='/rovi';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
 const sens=require('../script/ycam1s.js');
@@ -20,36 +19,24 @@ ros.Time.diff=function(t0){
 	return ros.Time.toSeconds(t1);
 }
 
-const sensHook=new EventEmitter();
 let sensStat=false;
 function sensCheck(pub){
 	let f=new std_msgs.Bool();
-	let b0=sensStat;
-	let s;
-	try{
-		s=sens.stat();
-	}
-	catch(err){
-		sensStat=false;
-		console.log('sens not ready');
-		setTimeout(function(){ sensCheck(pub);},1000);
-		return;
-	}
+	let s=sens.stat();
 	f.data=true;
 	for(let key in s) f.data=f.data && s[key];
 	pub.publish(f);
 	sensStat=f.data;
-	if(!b0 && sensStat) sensHook.emit('start');
 	setTimeout(function(){ sensCheck(pub);},1000);
 }
 function viewOut(n,pubL,capL,pubR,capR){
 	try{
-//		ros.log.warn('before L');
+		ros.log.warn('before L');
 		if(n<capL.length) pubL.publish(capL[n]);
-//		ros.log.warn('after L');
-//		ros.log.warn('before R');
+		ros.log.warn('after L');
+		ros.log.warn('before R');
 		if(n<capR.length) pubR.publish(capR[n]);
-//		ros.log.warn('after R');
+		ros.log.warn('after R');
 	}
 	catch(err){
 		ros.log.warn('No image captured:'+err);
@@ -67,7 +54,7 @@ setImmediate(async function(){
 	const vue_L=rosNode.advertise(NScamL+'/view', sensor_msgs.Image);
 	const remap_L=rosNode.serviceClient(NScamL+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_L.getService(),2000)){
-		ros.log.error('remap_L service not available');
+		ros.log.info('remap_L service not available');
 		return;
 	}
 	const raw_R=rosNode.advertise(NScamR+'/image_raw', sensor_msgs.Image);
@@ -75,13 +62,7 @@ setImmediate(async function(){
 	const vue_R=rosNode.advertise(NScamR+'/view', sensor_msgs.Image);
 	const remap_R=rosNode.serviceClient(NScamR+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_R.getService(),2000)){
-		ros.log.error('remap_R service not available');
-		return;
-	}
-	const pub_pc=rosNode.advertise(NSrovi+'/pc', sensor_msgs.PointCloud);
-	const genpc=rosNode.serviceClient(NSrovi+'/genpc',rovi_srvs.GenPC,{persist:true});
-	if(! await rosNode.waitForService(genpc.getService(),2000)){
-		ros.log.error('genpc service not available');
+		ros.log.info('remap_R service not available');
 		return;
 	}
 	let param_L=await rosNode.getParam(NScamL+'/camera');
@@ -95,15 +76,10 @@ setImmediate(async function(){
 	for(let key in param_R) console.log(NScamR+'/camera/' + key + "=" + param_R[key]);
 	for(let key in param_V) console.log(NSlive+'/camera/' + key + "=" + param_V[key]);
 
-	sensHook.on('start',async function(){
-ros.log.info('YCAM started');
-//		param_V=await rosNode.getParam(NSlive+'/camera');
-//		sens.cset(param_V);
-//		sens.pset('f'+Math.floor(param_V.AcquisitionFrameRate));
-	});
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
+	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
-//ros.log.warn('capturing live img_L');
+ros.log.warn('capturing live img_L');
 		raw_L.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
@@ -113,7 +89,7 @@ ros.log.warn('cam_l/image published');
 		else rect_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
-//ros.log.warn('capturing live img_R');
+ros.log.warn('capturing live img_R');
 		raw_R.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
@@ -134,26 +110,23 @@ ros.log.warn('pshift_genpc called!');
 			return false;
 		}
 		return new Promise(async (resolve)=>{
-			param_V=await rosNode.getParam(NSlive+'/camera');
-			let fps=Math.floor(param_V.AcquisitionFrameRate);
-			param_P=await rosNode.getParam(NS+'/projector');
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				sensHook.removeAllListeners();
-				sens.cset(param_V);
-//				sens.pset('f'+fps);
+				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 ros.log.warn('in setTimeout');
-			},param_P.Interval*20);
-//			sens.pset('f0');   //stop trigger
+			},2000);
+			sens.cset({'TriggerMode':'On'});
+			param_C=await rosNode.getParam(NS+'/camera');
+			sens.cset(param_C);
+			param_V=await rosNode.getParam(NSlive+'/camera');
+			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
 			param_P=await rosNode.getParam(NS+'/projector');
 			sens.pset('x'+param_P.ExposureTime);
+			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
-			param_C=await rosNode.getParam(NS+'/camera');
-			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
-			sens.cset(param_C);
-			sens.pset('p'+param_P.Interval);
 			sens.pset('p2');//<--------projector sequence start
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
@@ -198,16 +171,7 @@ ros.log.warn('after await Promise.all');
 			capt_L=imgs[0];
 			capt_R=imgs[1];
 ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
-
-			ros.log.warn("genpc CALL");
-			let gpreq = new rovi_srvs.GenPC.Request();
-			gpreq.imgL = capt_L;
-			gpreq.imgR = capt_R;
-			let gpres=await genpc.call(gpreq);
-			pub_pc.publish(gpres.pc);
-ros.log.warn('pc published');
-			ros.log.warn("genpc DONE");
-
+//await genpc.call()
 			sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 			res.message='scan compelete:'+imgs[0].length;
 			res.success=true;
@@ -235,7 +199,7 @@ ros.log.warn('capture completed');
 		case 'cset':
 			sens.cset(obj);
 			for(let key in obj){
-				ros.log.info('setParam:'+NSlive+'/camera/'+key+'='+obj[key]);
+				ros.log.info('setParam:'+NScamL+'/camera/'+key+'='+obj[key]);
 				rosNode.setParam(NSlive+'/camera/'+key,obj[key]);
 			}
 			return Promise.resolve(true);
