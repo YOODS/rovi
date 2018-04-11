@@ -14,9 +14,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include "ps_main.h"
 
-#define WIDTH                   1280
-#define HEIGHT                  1024
-
 ros::NodeHandle *nh;
 //ros::Publisher *pub1,*pub2;
 
@@ -26,6 +23,11 @@ bool reload(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res
 }
 bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_INFO("genpc called: %d %d",req.imgL.size(),req.imgR.size());
+
+	int width = req.imgL[0].width;
+	int height = req.imgL[0].height;
+
+	ROS_INFO("genpc img w, h: %d %d",width,height);
 
 /*
 //Making dummy points
@@ -67,7 +69,7 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	};
 
 	// カメラ, 位相シフトを初期化
-	ps_init(WIDTH, HEIGHT);
+	ps_init(width, height);
 
 	// パラメータを設定
 	ps_setparams(param);
