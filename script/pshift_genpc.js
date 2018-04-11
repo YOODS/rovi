@@ -122,11 +122,13 @@ ros.log.warn('in setTimeout');
 			param_V=await rosNode.getParam(NSlive+'/camera');
 			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
 			param_P=await rosNode.getParam(NS+'/projector');
+/*
 			sens.pset('x'+param_P.ExposureTime);
 			sens.pset('p'+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
+*/
 			sens.pset('p2');//<--------projector sequence start
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
