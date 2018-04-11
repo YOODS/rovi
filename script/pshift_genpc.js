@@ -4,6 +4,7 @@ const NS='/rovi/pshift_genpc';
 const NScamL='/rovi/cam_l';
 const NScamR='/rovi/cam_r';
 const NSlive='/rovi/live';
+const NSrovi='/rovi';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
 const sens=require('../script/ycam1s.js');
@@ -54,7 +55,7 @@ setImmediate(async function(){
 	const vue_L=rosNode.advertise(NScamL+'/view', sensor_msgs.Image);
 	const remap_L=rosNode.serviceClient(NScamL+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_L.getService(),2000)){
-		ros.log.info('remap_L service not available');
+		ros.log.error('remap_L service not available');
 		return;
 	}
 	const raw_R=rosNode.advertise(NScamR+'/image_raw', sensor_msgs.Image);
@@ -62,7 +63,13 @@ setImmediate(async function(){
 	const vue_R=rosNode.advertise(NScamR+'/view', sensor_msgs.Image);
 	const remap_R=rosNode.serviceClient(NScamR+'/remap',rovi_srvs.ImageFilter,{persist:true});
 	if(! await rosNode.waitForService(remap_R.getService(),2000)){
-		ros.log.info('remap_R service not available');
+		ros.log.error('remap_R service not available');
+		return;
+	}
+	const pub_pc=rosNode.advertise(NSrovi+'/pc', sensor_msgs.PointCloud);
+	const genpc=rosNode.serviceClient(NSrovi+'/genpc',rovi_srvs.GenPC,{persist:true});
+	if(! await rosNode.waitForService(genpc.getService(),2000)){
+		ros.log.error('genpc service not available');
 		return;
 	}
 	let param_L=await rosNode.getParam(NScamL+'/camera');
@@ -173,7 +180,16 @@ ros.log.warn('after await Promise.all');
 			capt_L=imgs[0];
 			capt_R=imgs[1];
 ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
-//await genpc.call()
+
+			ros.log.warn("genpc CALL");
+			let gpreq = new rovi_srvs.GenPC.Request();
+			gpreq.imgL = capt_L;
+			gpreq.imgR = capt_R;
+			let gpres=await genpc.call(gpreq);
+			pub_pc.publish(gpres.pc);
+			ros.log.warn('pc published');
+			ros.log.warn("genpc DONE");
+
 			sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 			res.message='scan compelete:'+imgs[0].length;
 			res.success=true;
