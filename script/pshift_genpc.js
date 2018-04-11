@@ -31,12 +31,12 @@ function sensCheck(pub){
 }
 function viewOut(n,pubL,capL,pubR,capR){
 	try{
-		ros.log.warn('before L');
+//		ros.log.warn('before L');
 		if(n<capL.length) pubL.publish(capL[n]);
-		ros.log.warn('after L');
-		ros.log.warn('before R');
+//		ros.log.warn('after L');
+//		ros.log.warn('before R');
 		if(n<capR.length) pubR.publish(capR[n]);
-		ros.log.warn('after R');
+//		ros.log.warn('after R');
 	}
 	catch(err){
 		ros.log.warn('No image captured:'+err);
@@ -79,7 +79,7 @@ setImmediate(async function(){
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
-ros.log.warn('capturing live img_L');
+//ros.log.warn('capturing live img_L');
 		raw_L.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
@@ -89,7 +89,7 @@ ros.log.warn('cam_l/image published');
 		else rect_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
-ros.log.warn('capturing live img_R');
+//ros.log.warn('capturing live img_R');
 		raw_R.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
@@ -199,7 +199,7 @@ ros.log.warn('capture completed');
 		case 'cset':
 			sens.cset(obj);
 			for(let key in obj){
-				ros.log.info('setParam:'+NScamL+'/camera/'+key+'='+obj[key]);
+				ros.log.info('setParam:'+NSlive+'/camera/'+key+'='+obj[key]);
 				rosNode.setParam(NSlive+'/camera/'+key,obj[key]);
 			}
 			return Promise.resolve(true);
