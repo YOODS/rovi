@@ -115,7 +115,7 @@ ros.log.warn('pshift_genpc called!');
 				sensHook.removeAllListeners();
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 ros.log.warn('in setTimeout');
-			},2000);
+			},param_P.Interval*20);
 			sens.cset({'TriggerMode':'On'});
 			param_C=await rosNode.getParam(NS+'/camera');
 			sens.cset(param_C);
