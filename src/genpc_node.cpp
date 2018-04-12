@@ -97,6 +97,7 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_ERROR("genPC returned N=%d", N);
 
 	// 点群出力
+	// TODO 色
 	sensor_msgs::PointCloud pts;
 	pts.header.stamp = ros::Time::now();
 	pts.header.frame_id="/map";  //RViz default Frame
@@ -105,11 +106,18 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	pts.channels[0].name="intensities";
 	pts.channels[0].values.resize(N);
 	for(int n=0;n<N;n++){
-		pts.points[n].x=_pcd->coord[0];
-		pts.points[n].y=_pcd->coord[1];
-		pts.points[n].z=_pcd->coord[2];
+		pts.points[n].x=_pcd[n].coord[0];
+		pts.points[n].y=_pcd[n].coord[1];
+		pts.points[n].z=_pcd[n].coord[2];
+		// TODO
+		if (n < 20) {
+			ROS_ERROR("n=%d x,y,z=%f,%f,%f", n, pts.points[n].x, pts.points[n].y, pts.points[n].z); 
+		}
 		pts.channels[0].values[n]=100;
 	}
+
+	// TODO tmp
+	outPLY("/tmp/test.ply");
 
 //	pub1->publish(pts);
 	res.pc=pts;
