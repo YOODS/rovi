@@ -105,12 +105,14 @@ var ycam={
 						image_l.header.seq++;
 						image_l.header.stamp=ros.Time.now();
 						image_l.data=shmem.slice(0,imgLength);
+//						ros.log.warn("emit ycam1s cam_l seq=" + image_l.header.seq);
 						Notifier.emit('cam_l',image_l);
 					}
 					else{
 						image_r.header.seq++;
 						image_r.header.stamp=ros.Time.now();
 						image_r.data=shmem.slice(offset,offset+imgLength);
+//						ros.log.warn("emit ycam1s cam_r seq=" + image_r.header.seq);
 						Notifier.emit('cam_r',image_r);
 					}
 				}

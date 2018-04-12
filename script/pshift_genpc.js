@@ -13,11 +13,26 @@ const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter=require('events').EventEmitter;
 
+const imgdbg = false;
+
 ros.Time.diff=function(t0){
 	let t1=ros.Time.now();
 	t1.secs-=t0.secs;
 	t1.nsecs-=t0.nsecs;
 	return ros.Time.toSeconds(t1);
+}
+
+function copyImg(src) {
+	let img = new sensor_msgs.Image();
+	img.header.seq = src.header.seq;
+	img.header.stamp = src.header.stamp;
+	img.header.frame_id = src.header.frame_id;
+	img.width = src.width;
+	img.height = src.height;
+	img.step = src.step;
+	img.encoding = src.encoding;
+	img.data = src.data.slice(0, img.width * img.height);
+	return img;
 }
 
 let sensStat=false;
@@ -32,12 +47,26 @@ function sensCheck(pub){
 }
 function viewOut(n,pubL,capL,pubR,capR){
 	try{
-//		ros.log.warn('before L');
-		if(n<capL.length) pubL.publish(capL[n]);
-//		ros.log.warn('after L');
-//		ros.log.warn('before R');
-		if(n<capR.length) pubR.publish(capR[n]);
-//		ros.log.warn('after R');
+		if (!imgdbg) {
+			if(n<capL.length) pubL.publish(capL[n]);
+			if(n<capR.length) pubR.publish(capR[n]);
+		}
+		else {
+			if(n<capL.length) {
+				pubL.publish(capL[n]);
+				ros.log.warn("n(" + n + "<capL.length(" + capL.length + "). published seq=" + capL[n].header.seq);
+				for (let li = 0; li < capL.length; li++) {
+					ros.log.warn("get capL[" + li + "].seq=" + capL[li].header.seq);
+				}
+			}
+			if(n<capR.length) {
+				pubR.publish(capR[n]);
+				ros.log.warn("n(" + n + "<capR.length(" + capR.length + "). published seq=" + capR[n].header.seq);
+				for (let ri = 0; ri < capR.length; ri++) {
+					ros.log.warn("get capR[" + ri + "].seq=" + capR[ri].header.seq);
+				}
+			}
+		}
 	}
 	catch(err){
 		ros.log.warn('No image captured:'+err);
@@ -87,22 +116,32 @@ setImmediate(async function(){
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 //ros.log.warn('capturing live img_L');
+		if (imgdbg) {
+			ros.log.warn("from ycam1s cam_l seq=" + img.header.seq);
+		}
 		raw_L.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
 ros.log.warn('cam_l/image published');
+		// for raw img genpc, replace res.img with copyImg(req.img)
 		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
+//		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',copyImg(req.img));
 		else rect_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
 //ros.log.warn('capturing live img_R');
+		if (imgdbg) {
+			ros.log.warn("from ycam1s cam_r seq=" + img.header.seq);
+		}
 		raw_R.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
 ros.log.warn('cam_r/image published');
+		// for raw img genpc, replace res.img with copyImg(req.img)
 		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
+//		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',copyImg(req.img));
 		else rect_R.publish(res.img);
 	});
 	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
@@ -141,7 +180,10 @@ ros.log.warn('in setTimeout');
 				new Promise((resolve)=>{
 					let capt=[];
 					sensHook.on('cam_l',function(img){
-ros.log.warn('capturing img_L:'+capt.length);
+ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
+						if (imgdbg) {
+							ros.log.warn("capt ycam1s cam_l seq=" + img.header.seq + " ... " + capt.length);
+						}
 						if (capt.length <= 11) {
 							capt.push(img);
 						}
@@ -159,7 +201,10 @@ ros.log.warn('capturing img_L:'+capt.length);
 					let capt=[];
 //					resolve(capt);
 					sensHook.on('cam_r',function(img){
-ros.log.warn('capturing img_R:'+capt.length);
+ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
+						if (imgdbg) {
+							ros.log.warn("capt ycam1s cam_r seq=" + img.header.seq + " ... " + capt.length);
+						}
 						if (capt.length <= 11) {
 							capt.push(img);
 						}
@@ -180,6 +225,13 @@ ros.log.warn('after await Promise.all');
 			capt_L=imgs[0];
 			capt_R=imgs[1];
 ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
+
+			for (let li = 0; li < capt_L.length; li++) {
+				ros.log.warn("Set capt_L[" + li + "].seq=" + capt_L[li].header.seq);
+			}
+			for (let ri = 0; ri < capt_R.length; ri++) {
+				ros.log.warn("Set capt_R[" + ri + "].seq=" + capt_R[ri].header.seq);
+			}
 
 			ros.log.warn("genpc CALL");
 			let gpreq = new rovi_srvs.GenPC.Request();
@@ -232,7 +284,7 @@ ros.log.warn('capture completed');
 		case 'view':
 			return new Promise((resolve)=>{
 				vue_N=parseInt(cmds[0]);
-ros.log.warn('in view');
+ros.log.warn('in view N='+vue_N);
 if (capt_L === undefined) {
   ros.log.warn('L undefined!!');
 }
