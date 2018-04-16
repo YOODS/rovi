@@ -77,10 +77,14 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	// 位相シフトデータ画像(左13枚, 右13枚の読込み)
 	try{
 		for (int j=0; j<13; j++) {
-			ps_setpict(0, j, cv_bridge::toCvCopy(req.imgL[j],sensor_msgs::image_encodings::MONO8)->image);
+			cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
+			ps_setpict(0, j, img);
+			cv::imwrite(cv::format("/tmp/imgL%d.jpg", j), img); // or png
 		}
 		for (int j=0; j<13; j++) {
-			ps_setpict(1, j, cv_bridge::toCvCopy(req.imgR[j],sensor_msgs::image_encodings::MONO8)->image);
+			cv::Mat img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
+			ps_setpict(1, j, img);
+			cv::imwrite(cv::format("/tmp/imgR%d.jpg", j), img); // or png
 		}
 	}
 	catch (cv_bridge::Exception& e){
@@ -116,7 +120,6 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		pts.channels[0].values[n]=100;
 	}
 
-	// TODO tmp
 	outPLY("/tmp/test.ply");
 
 //	pub1->publish(pts);
