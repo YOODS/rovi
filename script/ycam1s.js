@@ -1,7 +1,7 @@
 const Net=require('net');
 const EventEmitter=require('events').EventEmitter;
 const Runner=require('./runner.js');
-const Notifier=new EventEmitter;
+const Notifier=new EventEmitter();
 
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
@@ -9,7 +9,7 @@ const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs=ros.require('rovi').srv;
 
-const shm=require('../shm-typed-array');
+const shm=require('shm-typed-array');
 let shmem;
 
 let run_c;  //should be rosrun.js camera runner
@@ -44,7 +44,6 @@ function msleep(t){
 		},t);
 	});
 }
-
 var ycam={
 	cset:function(obj){
 		console.log("yam1s cset called");
@@ -72,13 +71,31 @@ var ycam={
 			this.psetQueue.push(str);
 		}
 	},
+	normal:false,
 	stat:function(){
 		return {'camera':run_c.running,'projector':!run_p.destroyed};
+	},
+	scan:function(){
+		let s;
+		try{
+			s=this.stat();
+		}
+		catch(err){
+			Notifier.emit('stat',this.normal=false);
+			setTimeout(function(){ ycam.stat();},1000);
+			return;
+		}
+		let f=true;
+		for(let key in s) f=f && s[key];
+		if(f==undefined) f=false;
+		Notifier.emit('stat',this.normal=f);
+		setTimeout(function(){ ycam.scan();},1000);
 	},
 	open:function(idl,idr,url,port,param_V){
 //		run_c=Runner.run('grabber-sentech '+idl+' '+idr);
 //		run_c=Runner.run('../basler_example/grabber');
 		run_c=Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
+		this.scan();
 		run_c.on('start',function(data){
 			console.log("get start");
 			ycam.cset(param_V);
