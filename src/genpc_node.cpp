@@ -101,23 +101,43 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_ERROR("genPC returned N=%d", N);
 
 	// 点群出力
-	// TODO 色
 	sensor_msgs::PointCloud pts;
 	pts.header.stamp = ros::Time::now();
 	pts.header.frame_id="/map";  //RViz default Frame
 	pts.points.resize(N);
-	pts.channels.resize(1);
-	pts.channels[0].name="intensities";
+//	pts.channels.resize(1);
+//	pts.channels[0].name="rgb";
+//	pts.channels[0].values.resize(N);
+	pts.channels.resize(3);
+	pts.channels[0].name="r";
 	pts.channels[0].values.resize(N);
+	pts.channels[1].name="g";
+	pts.channels[1].values.resize(N);
+	pts.channels[2].name="b";
+	pts.channels[2].values.resize(N);
 	for(int n=0;n<N;n++){
 		pts.points[n].x=_pcd[n].coord[0];
 		pts.points[n].y=_pcd[n].coord[1];
 		pts.points[n].z=_pcd[n].coord[2];
+//		int rgb = (_pcd[n].col[0] << 16) + (_pcd[n].col[1] << 8) + _pcd[n].col[2];
+//		//pts.channels[0].values[n] = *reinterpret_cast<float *>(&rgb);
+//		pts.channels[0].values[n] = rgb;
+		pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
+		pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
+		pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
 		// TODO
-		if (n < 20) {
-			ROS_ERROR("n=%d x,y,z=%f,%f,%f", n, pts.points[n].x, pts.points[n].y, pts.points[n].z); 
+		if (n < 20 || (N - 20) < n) {
+//			ROS_ERROR("n=%d x,y,z=%f,%f,%f", n, pts.points[n].x, pts.points[n].y, pts.points[n].z); 
+			ROS_ERROR("n=%d x,y,z=%f,%f,%f r,g,b=%f,%f,%f",
+					n,
+					pts.points[n].x,
+					pts.points[n].y,
+					pts.points[n].z,
+					pts.channels[0].values[n],
+					pts.channels[1].values[n],
+					pts.channels[2].values[n]
+			);
 		}
-		pts.channels[0].values[n]=100;
 	}
 
 	outPLY("/tmp/test.ply");
