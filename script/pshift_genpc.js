@@ -115,7 +115,7 @@ setImmediate(async function(){
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
-//ros.log.warn('capturing live img_L');
+//ros.log.warn('capturing img_L');
 		if (imgdbg) {
 			ros.log.warn("from ycam1s cam_l seq=" + img.header.seq);
 		}
@@ -130,7 +130,7 @@ ros.log.warn('cam_l/image published');
 		else rect_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
-//ros.log.warn('capturing live img_R');
+//ros.log.warn('capturing img_R');
 		if (imgdbg) {
 			ros.log.warn("from ycam1s cam_r seq=" + img.header.seq);
 		}
@@ -176,6 +176,7 @@ ros.log.warn('in setTimeout');
 			sens.pset('i'+val+val+val);
 */
 			sens.pset('p2');//<--------projector sequence start
+await setTimeout(async function() {
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
 					let capt=[];
@@ -248,6 +249,7 @@ ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R
 ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
+			}, 120); // TODO 120固定よりもFPSから計算すべき?
 		});
 	});
 	const svc_parse=rosNode.advertiseService(NS+'/parse',rovi_srvs.dialog,(req,res)=>{
