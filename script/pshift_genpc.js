@@ -22,19 +22,6 @@ ros.Time.diff=function(t0){
 	return ros.Time.toSeconds(t1);
 }
 
-function copyImg(src) {
-	let img = new sensor_msgs.Image();
-	img.header.seq = src.header.seq;
-	img.header.stamp = src.header.stamp;
-	img.header.frame_id = src.header.frame_id;
-	img.width = src.width;
-	img.height = src.height;
-	img.step = src.step;
-	img.encoding = src.encoding;
-	img.data = src.data.slice(0, img.width * img.height);
-	return img;
-}
-
 let sensStat=false;
 function sensCheck(pub){
 	let f=new std_msgs.Bool();
@@ -124,12 +111,12 @@ setImmediate(async function(){
 		req.img=img;
 		let res=await remap_L.call(req);
 ros.log.warn('cam_l/image published. seq=' + img.header.seq);
-		// for raw img genpc, replace res.img with copyImg(req.img)
+		// for raw img genpc, replace res.img with req.img
 		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
 /*
 		if(sensHook.listenerCount('cam_l')>0) {
 //			ros.log.warn("cam_l listener count(" + sensHook.listenerCount('cam_l') + ")> 0. emit seq=" + req.img.header.seq);
-			sensHook.emit('cam_l',copyImg(req.img));
+			sensHook.emit('cam_l',req.img);
 		}
 */
 		else rect_L.publish(res.img);
@@ -144,12 +131,12 @@ ros.log.warn('cam_l/image published. seq=' + img.header.seq);
 		req.img=img;
 		let res=await remap_R.call(req);
 ros.log.warn('cam_r/image published. seq=' + img.header.seq);
-		// for raw img genpc, replace res.img with copyImg(req.img)
+		// for raw img genpc, replace res.img with req.img
 		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
 /*
 		if(sensHook.listenerCount('cam_r')>0) {
 //			ros.log.warn("cam_r listener count(" + sensHook.listenerCount('cam_r') + ")> 0. emit seq=" + req.img.header.seq);
-			sensHook.emit('cam_r',copyImg(req.img));
+			sensHook.emit('cam_r',req.img);
 		}
 */
 		else rect_R.publish(res.img);
@@ -195,7 +182,7 @@ ros.log.warn('before pset p2');
 			sens.pset('p2');//<--------projector sequence start
 ros.log.warn('after  pset p2');
 ros.log.warn("setTimeout1 function end");
-			}, 100); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
+			}, 125); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
 
 ros.log.warn('now await setTimeout2');
 await setTimeout(async function() {
@@ -279,7 +266,7 @@ ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
 ros.log.warn("setTimeout2 function end");
-			}, 200); // TODO 200固定よりもFPSから計算すべき? 「この値-p2のsetTimeout値」が 1000/FPS 以上になるように?
+			}, 250); // TODO 250固定よりもFPSから計算すべき? 「この値-p2のsetTimeout値」が 1000/FPS 以上になるように?
 
 		});
 	});
