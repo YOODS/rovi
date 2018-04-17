@@ -123,10 +123,15 @@ setImmediate(async function(){
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
-ros.log.warn('cam_l/image published');
+ros.log.warn('cam_l/image published. seq=' + img.header.seq);
 		// for raw img genpc, replace res.img with copyImg(req.img)
 		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
-//		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',copyImg(req.img));
+/*
+		if(sensHook.listenerCount('cam_l')>0) {
+//			ros.log.warn("cam_l listener count(" + sensHook.listenerCount('cam_l') + ")> 0. emit seq=" + req.img.header.seq);
+			sensHook.emit('cam_l',copyImg(req.img));
+		}
+*/
 		else rect_L.publish(res.img);
 	});
 	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
@@ -138,10 +143,15 @@ ros.log.warn('cam_l/image published');
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
-ros.log.warn('cam_r/image published');
+ros.log.warn('cam_r/image published. seq=' + img.header.seq);
 		// for raw img genpc, replace res.img with copyImg(req.img)
 		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
-//		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',copyImg(req.img));
+/*
+		if(sensHook.listenerCount('cam_r')>0) {
+//			ros.log.warn("cam_r listener count(" + sensHook.listenerCount('cam_r') + ")> 0. emit seq=" + req.img.header.seq);
+			sensHook.emit('cam_r',copyImg(req.img));
+		}
+*/
 		else rect_R.publish(res.img);
 	});
 	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
@@ -162,12 +172,18 @@ ros.log.warn('pshift_genpc called!');
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 ros.log.warn('in setTimeout');
 			},param_P.Interval*20);
+ros.log.warn('before cset TriggerMode:On');
 			sens.cset({'TriggerMode':'On'});
+ros.log.warn('after  cset TriggerMode:On');
 			param_C=await rosNode.getParam(NS+'/camera');
 			sens.cset(param_C);
 			param_V=await rosNode.getParam(NSlive+'/camera');
 			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
 			param_P=await rosNode.getParam(NS+'/projector');
+
+ros.log.warn('now await setTimeout1');
+await setTimeout(async function() {
+ros.log.warn("setTimeout1 function start");
 /*
 			sens.pset('x'+param_P.ExposureTime);
 			sens.pset('p'+param_P.Interval);
@@ -175,11 +191,19 @@ ros.log.warn('in setTimeout');
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
 */
+ros.log.warn('before pset p2');
 			sens.pset('p2');//<--------projector sequence start
+ros.log.warn('after  pset p2');
+ros.log.warn("setTimeout1 function end");
+			}, 100); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
+
+ros.log.warn('now await setTimeout2');
 await setTimeout(async function() {
+ros.log.warn("setTimeout2 function start");
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
 					let capt=[];
+					ros.log.warn("before sensHook.on('cam_l')");
 					sensHook.on('cam_l',function(img){
 ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
@@ -197,10 +221,12 @@ ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Ls. ignore this img.');
 						}
 					});
+					ros.log.warn("after  sensHook.on('cam_l'");
 				}),
 				new Promise((resolve)=>{
 					let capt=[];
 //					resolve(capt);
+					ros.log.warn("before sensHook.on('cam_r')");
 					sensHook.on('cam_r',function(img){
 ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
@@ -218,10 +244,13 @@ ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Rs. ignore this img.');
 						}
 					});
+					ros.log.warn("after  sensHook.on('cam_r'");
 				})
 			]);
 ros.log.warn('after await Promise.all');
+			ros.log.warn("before sensHook.removeAllListeners()");
 			sensHook.removeAllListeners();
+			ros.log.warn("after  sensHook.removeAllListeners()");
 			clearTimeout(wdt);
 			capt_L=imgs[0];
 			capt_R=imgs[1];
@@ -249,7 +278,9 @@ ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R
 ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
-			}, 120); // TODO 120固定よりもFPSから計算すべき?
+ros.log.warn("setTimeout2 function end");
+			}, 200); // TODO 200固定よりもFPSから計算すべき? 「この値-p2のsetTimeout値」が 1000/FPS 以上になるように?
+
 		});
 	});
 	const svc_parse=rosNode.advertiseService(NS+'/parse',rovi_srvs.dialog,(req,res)=>{
@@ -269,11 +300,13 @@ ros.log.warn('capture completed');
 		if(cmds.length>1) cmd=cmds.shift();
 		switch(cmd){
 		case 'cset':
+			ros.log.warn("cset start");
 			sens.cset(obj);
 			for(let key in obj){
 				ros.log.info('setParam:'+NSlive+'/camera/'+key+'='+obj[key]);
 				rosNode.setParam(NSlive+'/camera/'+key,obj[key]);
 			}
+			ros.log.warn("cset end");
 			return Promise.resolve(true);
 		case 'pset':
 			sens.pset(cmds[0]);
