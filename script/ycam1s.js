@@ -34,6 +34,19 @@ function imgCreate(param){
 	return img;
 }
 
+function copyImg(src) {
+	let img = new sensor_msgs.Image();
+	img.header.seq = src.header.seq;
+	img.header.stamp = src.header.stamp;
+	img.header.frame_id = src.header.frame_id;
+	img.width = src.width;
+	img.height = src.height;
+	img.step = src.step;
+	img.encoding = src.encoding;
+	img.data = src.data.slice(0, img.width * img.height);
+	return img;
+}
+
 let image_l;
 let image_r;
 
@@ -108,15 +121,13 @@ var ycam={
 						image_l.header.seq++;
 						image_l.header.stamp=ros.Time.now();
 						image_l.data=shmem.slice(0,imgLength);
-//						ros.log.warn("emit ycam1s cam_l seq=" + image_l.header.seq);
-						Notifier.emit('cam_l',image_l);
+						Notifier.emit('cam_l', copyImg(image_l));
 					}
 					else{
 						image_r.header.seq++;
 						image_r.header.stamp=ros.Time.now();
 						image_r.data=shmem.slice(offset,offset+imgLength);
-//						ros.log.warn("emit ycam1s cam_r seq=" + image_r.header.seq);
-						Notifier.emit('cam_r',image_r);
+						Notifier.emit('cam_r', copyImg(image_r));
 					}
 				}
 				else if(attr.hasOwnProperty('shm')){
