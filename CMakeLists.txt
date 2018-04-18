@@ -73,9 +73,9 @@ add_executable(genpc_node src/genpc_node.cpp)
 target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d)
 add_dependencies(genpc_node rovi_gencpp)
 
-add_executable(tools_node src/tools_node.cpp)
-target_link_libraries(tools_node ${catkin_LIBRARIES})
-add_dependencies(tools_node rovi_gencpp)
+add_executable(grid_node src/grid_node.cpp)
+target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d)
+add_dependencies(grid_node rovi_gencpp)
 
 #############
 ## Install ##
