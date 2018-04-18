@@ -153,8 +153,8 @@ int main(int argc, char **argv)
 
   if (argc != 3)
   {
-    cerr << "Usage:   " << argv[0] << " <Left Camera DisplayName> <Right Camera DisplayName>" << endl << endl;
-    cerr << "Example: " << argv[0] << " 'STC_BBE132GE(17AB755)' 'STC_BBE132GE(17AB756)'" << endl << endl;
+    cerr << "Usage:   STGENTL_GIGE_HEARTBEAT=<HeartbeatTimeout(ms)> " << argv[0] << " <Left Camera DisplayName> <Right Camera DisplayName>" << endl << endl;
+    cerr << "Example: STGENTL_GIGE_HEARTBEAT=5000 " << argv[0] << " 'STC_BBE132GE(17AB755)' 'STC_BBE132GE(17AB756)'" << endl << endl;
     return EXIT_FAILURE;
   }
   else
@@ -258,6 +258,12 @@ int main(int argc, char **argv)
         int64_t intPayloadSize = pIIntegerPayloadSize->GetValue();
         DEBUG_TO_CERR("PayloadSize=" << intPayloadSize << endl)
         payloadSize = intPayloadSize;
+
+        //// get GevHeartbeatTimeout
+        CNodePtr pINodeHbTo(pINodeMapRemote->GetNode("GevHeartbeatTimeout"));
+        CIntegerPtr pIIntegerHbTo(pINodeHbTo);
+        int64_t intHbTo = pIIntegerHbTo->GetValue();
+        DEBUG_TO_CERR("GevHeartbeatTimeout=" << intHbTo << endl)
 
         DEBUG_TO_CERR(endl)
       }
