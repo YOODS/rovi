@@ -114,16 +114,16 @@ Close active cameraで接続を閉じ、 Open a camera からもう1台のカメ
   ~~~
 
 - カーネルパラメータnet.core.(r/w)mem_(max/default)を33554432に設定
-~~~
-設定例：  
-sudo vi /etc/sysctl.conf
-で
-net.core.rmem_max = 33554432
-net.core.wmem_max = 33554432
-net.core.rmem_default = 33554432
-net.core.wmem_default = 33554432
-を追加する。
-~~~
+  ~~~
+  設定例：  
+  sudo vi /etc/sysctl.conf
+  で
+  net.core.rmem_max = 33554432
+  net.core.wmem_max = 33554432
+  net.core.rmem_default = 33554432
+  net.core.wmem_default = 33554432
+  を追加する。
+  ~~~
 
 ## 2. 各種ミドルウェアのインストール
 
