@@ -81,10 +81,9 @@ source /opt/sentech/.stprofile
 以下の画面例のように &lt;3Dカメラ対向のGigEインターフェース名&gt; の下に2台のカメラが表示されることを確認する。  
 ![StViewer1](https://raw.githubusercontent.com/YOODS/rovi/pics/StViewer1.png)
 
-<br />
-**画面右下の「IP Address」が192.168.222.1になっている方が左側カメラ、192.168.222.2になっている方が右側カメラ。  **
+*画面右下の「IP Address」が192.168.222.1になっている方が左側カメラ、192.168.222.2になっている方が右側カメラ。  *
 <p id="memodn">
-**のちほど [4. RoVIの動作設定](#4-rovi-) で使うので、左側カメラの表示名と右側カメラの表示名（画面右下の「Display Name」とも同じ）をメモしておくこと。**
+*のちほど [4. RoVIの動作設定](#4-rovi-) で使うので、左側カメラの表示名と右側カメラの表示名（画面右下の「Display Name」とも同じ）をメモしておくこと。*
 </p>
 
 *この例では、以下をメモしておく。*
@@ -94,7 +93,6 @@ source /opt/sentech/.stprofile
 この画面でOKボタンをクリックすると以下のような画面が表示される。  
 ![StViewer2](https://raw.githubusercontent.com/YOODS/rovi/pics/StViewer2.png)
 
-<br />
 この画面上部の Start Acquisition, Stop Acquisition でライブ映像の ON/OFF を実行できるので、ライブ映像が表示されることを確認する。  
 Close active cameraで接続を閉じ、 Open a camera からもう1台のカメラでも同様にライブ映像の表示を確認する。
 
