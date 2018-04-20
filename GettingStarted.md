@@ -79,7 +79,7 @@ source /opt/sentech/.stprofile
 ~~~
 
 以下の画面例のように &lt;3Dカメラ対向のGigEインターフェース名&gt; の下に2台のカメラが表示されることを確認する。  
-<div style="text-align:center">![StViewer1](StViewer1.png)</div>
+<div style="text-align:center">![StViewer1](https://raw.githubusercontent.com/YOODS/rovi/pics/StViewer1.png)</div>
 
 <br />
 **画面右下の「IP Address」が192.168.222.1になっている方が左側カメラ、192.168.222.2になっている方が右側カメラ。  **
@@ -92,7 +92,7 @@ source /opt/sentech/.stprofile
 - *右側カメラの表示名: STC_BBE132GE(17AB756)*
 
 この画面でOKボタンをクリックすると以下のような画面が表示される。  
-<div style="text-align:center">![StViewer2](StViewer2.png)</div>
+<div style="text-align:center">![StViewer2](https://raw.githubusercontent.com/YOODS/rovi/pics/StViewer2.png)</div>
 
 <br />
 この画面上部の Start Acquisition, Stop Acquisition でライブ映像の ON/OFF を実行できるので、ライブ映像が表示されることを確認する。  
