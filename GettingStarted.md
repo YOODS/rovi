@@ -159,10 +159,20 @@ cp -a ~/rosnodejs/src/ dist
 ~~~
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
+
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
+
 TODO shm-typed-arrayのビルドは?
-cd ../../..
+
+cd ..
+wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
+tar xvzf 3.3.4.tar.gz
+mkdir include
+mv eigen-eigen-5a0156e40feb/Eigen/ include
+rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
+
+cd ../..
 catkin_make
 ~~~
 
