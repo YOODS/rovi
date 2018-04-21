@@ -2,7 +2,7 @@
 #include <geometry_msgs/Point.h>
 #include <sensor_msgs/Image.h>
 #include <std_srvs/Trigger.h>
-#include "rovi_srvs/GetGrid.h"
+#include "rovi/GetGrid.h"
 #include <vector>
 #include <string>
 #include <opencv2/opencv.hpp>
@@ -14,7 +14,7 @@
 
 CircleCalibBoard cboard;
 
-bool get_grid(rovi_srvs::GetGrid::Request &req,rovi_srvs::GetGrid::Response &res){
+bool get_grid(rovi::GetGrid::Request &req,rovi::GetGrid::Response &res){
 //	ROS_INFO("get_grids notif %d",req.notif.size());
 	cv_bridge::CvImagePtr cv_ptr2,cv_ptr1;
 	try{
