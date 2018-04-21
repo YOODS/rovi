@@ -22,16 +22,6 @@ ros.Time.diff=function(t0){
 	return ros.Time.toSeconds(t1);
 }
 
-let sensStat=false;
-function sensCheck(pub){
-	let f=new std_msgs.Bool();
-	let s=sens.stat();
-	f.data=true;
-	for(let key in s) f.data=f.data && s[key];
-	pub.publish(f);
-	sensStat=f.data;
-	setTimeout(function(){ sensCheck(pub);},1000);
-}
 function viewOut(n,pubL,capL,pubR,capR){
 	try{
 		if (!imgdbg) {
@@ -100,6 +90,11 @@ setImmediate(async function(){
 	for(let key in param_V) console.log(NSlive+'/camera/' + key + "=" + param_V[key]);
 
 	const sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);//<--------open ycam
+	sensEv.on('stat',function(s){
+		let f=new std_msgs.Bool();
+		f.data=s;
+		pub_stat.publish(f);
+	});
 	const sensHook=new EventEmitter();
 	sensEv.on('cam_l',async function(img){//<--------a left eye image comes up
 //ros.log.warn('capturing img_L');
@@ -141,16 +136,16 @@ ros.log.warn('cam_r/image published. seq=' + img.header.seq);
 */
 		else rect_R.publish(res.img);
 	});
-	sensCheck(pub_stat);//<--------start checking devices, and output to the topic "stat"
 
 //---------Definition of services
 	let capt_L;//<--------captured images of the left camera
 	let capt_R;//<--------same as right
 	const svc_do=rosNode.advertiseService(NS,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
 ros.log.warn('pshift_genpc called!');
-		if(!sensStat){
-			ros.log.warn('YCAM not ready');
-			return false;
+		if(!sens.normal){
+			ros.log.warn(res.message='YCAM not ready');
+			res.success=false;
+			return true;
 		}
 		return new Promise(async (resolve)=>{
 			let wdt=setTimeout(function(){//<--------watch dog

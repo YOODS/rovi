@@ -49,31 +49,29 @@ console.log('ycam.cset as double:'+key+'='+val);
 		let res_r=await run_r.dynparam_set.call(request);
 		return true;
 	},
-	psetBusy:0,
-	psetQueue:[],
-	psetCuring:33,
 	pset:function(str){
-		if(this.psetBusy==0){
-			let target=this;
-			this.psetBusy=setTimeout(function(){
-				target.psetBusy=0;
-				if(target.psetQueue.length>0){
-					target.pset.call(target,target.psetQueue.shift());
-				}
-			},this.psetCuring);
-console.log('pset:'+str);
-			run_p.write(str);
-			run_p.write('\n');
-			run_p.write('\n');
-			run_p.write('\n');
-			run_p.write('\n');
-		}
-		else{
-			this.psetQueue.push(str);
-		}
+		run_p.write(str+'\n');
+		run_p.setNoDelay(true);
 	},
+	normal:false,
 	stat:function(){
 		return {'cam_l':run_l.running, 'cam_r':run_r.running, 'projector':!run_p.destroyed};
+	},
+	scan:function(){
+		let s;
+		try{
+			s=this.stat();
+		}
+		catch(err){
+			Notifier.emit('stat',this.normal=false);
+			setTimeout(function(){ ycam.stat();},1000);
+			return;
+		}
+		let f=true;
+		for(let key in s) f=f && s[key];
+		if(f==undefined) f=false;
+		Notifier.emit('stat',this.normal=f);
+		setTimeout(function(){ ycam.scan();},1000);
 	},
 	open:function(nh,nsl,idl,nsr,idr,url,port){
 		rosNode=nh;
@@ -87,6 +85,7 @@ console.log('pset:'+str);
 		run_r.on('start',function(){
 			openCamera(run_r,camera_r,'cam_r');
 		});
+		this.scan();
 		setTimeout(function(){
 			run_p=openYPJ(port,url);
 		},5000);
