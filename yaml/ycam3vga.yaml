@@ -14,7 +14,7 @@ live:
     Gain: 100
 camera:
   Height: 480
-  Width: 640
+  Width: 1280
 cam_l:
   remap:
     height: 480
