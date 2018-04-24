@@ -163,7 +163,12 @@ git clone https://github.com/YOODS/rovi
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
 
-TODO shm-typed-arrayのビルドは?
+cd ../shm-typed-array
+npm install nan
+npm install node-cleanup
+sudo npm install -g node-gyp
+node-gyp configure
+node-gyp build
 
 cd ..
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz

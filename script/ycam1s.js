@@ -9,7 +9,7 @@ const std_msgs=ros.require('std_msgs').msg;
 const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs=ros.require('rovi').srv;
 
-const shm=require('shm-typed-array');
+const shm=require('../shm-typed-array');
 let shmem;
 
 let run_c;  //should be rosrun.js camera runner
