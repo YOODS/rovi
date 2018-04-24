@@ -81,7 +81,7 @@ var ycam={
 		}
 		catch(err){
 			Notifier.emit('stat',this.normal=false);
-			setTimeout(function(){ ycam.stat();},1000);
+			setTimeout(function(){ ycam.scan();},1000);
 			return;
 		}
 		let f=true;
