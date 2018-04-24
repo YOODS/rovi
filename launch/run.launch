@@ -8,7 +8,7 @@
   <node ns="/rovi/cam_l" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/cam_r" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
-  <node ns="/rovi" name="pshift_genpc" pkg="rovi" type="pshift_genpc.js" />
+  <node ns="/rovi" name="pshift_genpc" pkg="rovi" type="pshift_genpc.js" args="ycam1s" />
 
 </launch>
 
