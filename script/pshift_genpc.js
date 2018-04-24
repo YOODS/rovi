@@ -101,7 +101,7 @@ setImmediate(async function(){
 		sensEv=sens.open(param_L.ID,param_R.ID,param_P.Url,param_P.Port,param_V);
 		break;
 	case 'ycam3':
-		sensEv=sens.open(rosNode,NSlive);
+		sensEv=sens.open(rosNode,NSrovi);
 		break;
 	}
 	sensEv.on('stat',function(s){
@@ -173,12 +173,12 @@ ros.log.warn('now await setTimeout1');
 await setTimeout(async function() {
 ros.log.warn("setTimeout1 function start");
 			sens.pset('x'+param_P.ExposureTime);
-			sens.pset('p'+param_P.Interval);
+			sens.pset((sensName.startsWith('ycam3')? 'o':'p')+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
 ros.log.warn('before pset p2');
-			sens.pset('p2');//<--------projector sequence start
+			sens.pset(sensName.startsWith('ycam3')? 'o2':'p2');//<--------projector sequence start
 ros.log.warn('after  pset p2');
 ros.log.warn("setTimeout1 function end");
 			}, 125); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
