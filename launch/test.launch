@@ -18,8 +18,8 @@
   <node name="dynparam_cam" pkg="dynamic_reconfigure" type="dynparam" args="set /camera &quot;{'AcquisitionFrameRate':'4.6', 'ExposureTimeAbs':'23666'}&quot;" />
 
   <node name="dynparam_cam" pkg="dynamic_reconfigure" type="dynparam" args="load /camera $(find rovi)/camera_dump.yaml" />
-  <node name="dynparam_cam1" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/cam_l/camera $(find rovi)/cam_l_dynparam_dump.yaml" />
-  <node name="dynparam_cam2" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/cam_r/camera $(find rovi)/cam_r_dynparam_dump.yaml" />
+  <node name="dynparam_cam1" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/left/camera $(find rovi)/left_dynparam_dump.yaml" />
+  <node name="dynparam_cam2" pkg="dynamic_reconfigure" type="dynparam" args="load /rovi/right/camera $(find rovi)/right_dynparam_dump.yaml" />
 -->
 
 
@@ -29,8 +29,8 @@
 
   <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/rovi_param.yaml" />
 
-  <node ns="/rovi/cam_l" name="camera" pkg="camera_aravis" type="camnode" args="$(arg clid)" />
-  <node ns="/rovi/cam_r" name="camera" pkg="camera_aravis" type="camnode" args="$(arg crid)" />
+  <node ns="/rovi/left" name="camera" pkg="camera_aravis" type="camnode" args="$(arg clid)" />
+  <node ns="/rovi/right" name="camera" pkg="camera_aravis" type="camnode" args="$(arg crid)" />
 
 
 
@@ -38,14 +38,14 @@
   <!--   ros.initNode() argument in script/*.js specifies the actual name. -->
   <node ns="/rovi" name="tools_node" pkg="rovi" type="tools_node" />
   <node ns="/rovi" name="setgain" pkg="rovi" type="setgain.js" />
-  <node ns="/rovi/cam_l" name="swtrigger_l" pkg="rovi" type="swtrigger.js" args="--lr l" />
-  <node ns="/rovi/cam_r" name="swtrigger_r" pkg="rovi" type="swtrigger.js" args="--lr r" />
+  <node ns="/rovi/left" name="swtrigger_l" pkg="rovi" type="swtrigger.js" args="--lr l" />
+  <node ns="/rovi/right" name="swtrigger_r" pkg="rovi" type="swtrigger.js" args="--lr r" />
   <node ns="/rovi" name="livestream" pkg="rovi" type="livestream.js" />
   <node ns="/rovi" name="stillcapture" pkg="rovi" type="stillcapture.js" />
   <node ns="/rovi" name="parameter" pkg="rovi" type="parameter.js" />
   <node ns="/rovi" name="projector" pkg="rovi" type="projector.js" />
-  <node ns="/rovi/cam_l" name="remap_node" pkg="rovi" type="remap_node" />
-  <node ns="/rovi/cam_r" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
   <node ns="/rovi" name="main_node" pkg="rovi" type="main_node.js" args="--mode test" />
 

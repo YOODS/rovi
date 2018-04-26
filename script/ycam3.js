@@ -133,8 +133,8 @@ function openCamera(rosrun,ns){
 			image_r.data.subarray(t).set(src.data.subarray(s,s+w));
 			s+=w;
 		}
-		Notifier.emit('cam_l',image_l);
-		Notifier.emit('cam_r',image_r);
+		Notifier.emit('left',image_l);
+		Notifier.emit('right',image_r);
 	});
 	return new Promise(async function(resolve){
 		let regw=rosNode.serviceClient(ns+'/camera/regw',gev_srvs.GevRegs,{persist:true});

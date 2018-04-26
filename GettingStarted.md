@@ -188,13 +188,13 @@ catkin_make
 (以下の※2箇所のDisplay Nameは [1-3-4. 動作確認](#memodn) でメモしておいたもの。)
 
 ~~~
-cam_l:
+left:
   camera:
     ID: 『この部分に左側カメラの実際のDisplay Name(※)』
   remap:
     『この部分(height:からP:まで)に実際の左側キャリブレーションパラメータ』
 
-cam_r:
+right:
   camera:
     ID: 『この部分に右側カメラの実際のDisplay Name(※)』
   remap:
@@ -238,13 +238,13 @@ rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
 RoVIは実行中、常にライブ画像を取得するとともにrectify処理を行っている。
 
 これらの画像は以下のTopicにpublishされている。
-- 左側カメラライブ画像: /rovi/cam_l/image_raw
-- 右側カメラライブ画像: /rovi/cam_r/image_raw
-- 左側カメラrectify画像: /rovi/cam_l/image_rect
-- 右側カメラrectify画像: /rovi/cam_r/image_rect
+- 左側カメラライブ画像: /rovi/left/image_raw
+- 右側カメラライブ画像: /rovi/right/image_raw
+- 左側カメラrectify画像: /rovi/left/image_rect
+- 右側カメラrectify画像: /rovi/right/image_rect
 ~~~
 左側カメラライブ画像の表示例:
-rosrun image_view image_view image:=/rovi/cam_l/image_raw
+rosrun image_view image_view image:=/rovi/left/image_raw
 ~~~
 
 ライブ画像の取得周期は10FPSになっている。
@@ -277,12 +277,12 @@ rviz
 
 位相シフト計算と点群生成の入力として使われた左側カメラ13枚、右側カメラ13枚のrectify画像は以下のTopicにpublishされる。  
 （ただし実際に13枚のうちどれをpublishするかは次に述べる操作によって決まる。)
-- 左側カメラrectify画像: /rovi/cam_l/view
-- 右側カメラrectify画像: /rovi/cam_r/view
+- 左側カメラrectify画像: /rovi/left/view
+- 右側カメラrectify画像: /rovi/right/view
   ~~~
   rectify画像の表示例:
-  rosrun image_view image_view image:=/rovi/cam_l/view
-  rosrun image_view image_view image:=/rovi/cam_r/view
+  rosrun image_view image_view image:=/rovi/left/view
+  rosrun image_view image_view image:=/rovi/right/view
 
   以下の操作によって実際にN枚目(N=0, 1, ... 12)の左右カメラrectify画像がpublishされる。
   rosservice call /rovi/pshift_genpc/parse 'view 『N』'
@@ -331,17 +331,17 @@ rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
 
 ユーザが値を参照可能なRoVIのROS Topicの一覧は以下の通り。
 
-- /rovi/cam_l/image_raw  
+- /rovi/left/image_raw  
   (=[常時ライブ機能](#b-2-)での左側カメラライブ画像)
-- /rovi/cam_l/image_rect  
+- /rovi/left/image_rect  
   (=[常時ライブ機能](#b-2-)での左側カメラrectify画像)
-- /rovi/cam_l/view  
+- /rovi/left/view  
   (=[位相シフト計算と点群生成機能](#b-3-)の入力として使われた左側カメラrectify画像)
-- /rovi/cam_r/image_raw  
+- /rovi/right/image_raw  
   (=[常時ライブ機能](#b-2-)での右側カメラライブ画像)
-- /rovi/cam_r/image_rect  
+- /rovi/right/image_rect  
   (=[常時ライブ機能](#b-2-)での右側カメラrectify画像)
-- /rovi/cam_r/view  
+- /rovi/right/view  
   (=[位相シフト計算と点群生成機能](#b-3-)の入力として使われた右側カメラrectify画像)
 - /rovi/pc  
   (=[位相シフト計算と点群生成機能](#b-3-)の出力点群)

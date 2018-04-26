@@ -18,15 +18,15 @@ setImmediate(async function(){
 	const rosNode=await ros.initNode('/imsave');
 	let lf=0;
 	let rf=0;
-	let subl=rosNode.subscribe('/rovi/cam_l/'+topic,sensor_msgs.Image,async function(src){
-		rosNode.unsubscribe('/rovi/cam_l/'+topic);
+	let subl=rosNode.subscribe('/rovi/left/'+topic,sensor_msgs.Image,async function(src){
+		rosNode.unsubscribe('/rovi/left/'+topic);
 		lf++;
 		await topgm(src,'left'+process.argv[2]);
 		lf++;
 		if(rf>=2) process.exit(0);		
 	});
-	let subr=rosNode.subscribe('/rovi/cam_r/'+topic,sensor_msgs.Image,async function(src){
-		rosNode.unsubscribe('/rovi/cam_r/'+topic);
+	let subr=rosNode.subscribe('/rovi/right/'+topic,sensor_msgs.Image,async function(src){
+		rosNode.unsubscribe('/rovi/right/'+topic);
 		rf++;
 		await topgm(src,'right'+process.argv[2]);
 		rf++;

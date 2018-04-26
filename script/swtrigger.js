@@ -410,32 +410,32 @@ ros.log.info('lr=[' + lr + ']');
 
 if (lr == 'l')
 {
-  myNodeName = '/rovi/cam_l/swtrigger';
-  path_SrvSr_DoLiveSet = '/rovi/cam_l/do_live_set';
-  path_SrvSr_DoStillCapture = '/rovi/cam_l/do_still_capture';
-  path_TpcSub_ImageRaw = '/rovi/cam_l/camera/image_raw';
-  path_TpcPub_Live_ImageRaw = '/rovi/cam_l/live/image_raw';
-  path_TpcPub_Live_ImageRect = '/rovi/cam_l/live/image_rect';
-  path_TpcPub_Still_ImageRaw = '/rovi/cam_l/still/image_raw';
-  path_TpcPub_Still_ImageRect = '/rovi/cam_l/still/image_rect';
-  path_SrvCl_SetParam = '/rovi/cam_l/camera/set_parameters';
-  path_SrvCl_Queue = '/rovi/cam_l/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_l/remap';
+  myNodeName = '/rovi/left/swtrigger';
+  path_SrvSr_DoLiveSet = '/rovi/left/do_live_set';
+  path_SrvSr_DoStillCapture = '/rovi/left/do_still_capture';
+  path_TpcSub_ImageRaw = '/rovi/left/camera/image_raw';
+  path_TpcPub_Live_ImageRaw = '/rovi/left/live/image_raw';
+  path_TpcPub_Live_ImageRect = '/rovi/left/live/image_rect';
+  path_TpcPub_Still_ImageRaw = '/rovi/left/still/image_raw';
+  path_TpcPub_Still_ImageRect = '/rovi/left/still/image_rect';
+  path_SrvCl_SetParam = '/rovi/left/camera/set_parameters';
+  path_SrvCl_Queue = '/rovi/left/camera/queue';
+  path_SrvCl_RemapDo = '/rovi/left/remap';
   init();
 }
 else if (lr == 'r')
 {
-  myNodeName = '/rovi/cam_r/swtrigger';
-  path_SrvSr_DoLiveSet = '/rovi/cam_r/do_live_set';
-  path_SrvSr_DoStillCapture = '/rovi/cam_r/do_still_capture';
-  path_TpcSub_ImageRaw = '/rovi/cam_r/camera/image_raw';
-  path_TpcPub_Live_ImageRaw = '/rovi/cam_r/live/image_raw';
-  path_TpcPub_Live_ImageRect = '/rovi/cam_r/live/image_rect';
-  path_TpcPub_Still_ImageRaw = '/rovi/cam_r/still/image_raw';
-  path_TpcPub_Still_ImageRect = '/rovi/cam_r/still/image_rect';
-  path_SrvCl_SetParam = '/rovi/cam_r/camera/set_parameters';
-  path_SrvCl_Queue = '/rovi/cam_r/camera/queue';
-  path_SrvCl_RemapDo = '/rovi/cam_r/remap';
+  myNodeName = '/rovi/right/swtrigger';
+  path_SrvSr_DoLiveSet = '/rovi/right/do_live_set';
+  path_SrvSr_DoStillCapture = '/rovi/right/do_still_capture';
+  path_TpcSub_ImageRaw = '/rovi/right/camera/image_raw';
+  path_TpcPub_Live_ImageRaw = '/rovi/right/live/image_raw';
+  path_TpcPub_Live_ImageRect = '/rovi/right/live/image_rect';
+  path_TpcPub_Still_ImageRaw = '/rovi/right/still/image_raw';
+  path_TpcPub_Still_ImageRect = '/rovi/right/still/image_rect';
+  path_SrvCl_SetParam = '/rovi/right/camera/set_parameters';
+  path_SrvCl_Queue = '/rovi/right/camera/queue';
+  path_SrvCl_RemapDo = '/rovi/right/remap';
   init();
 }
 else

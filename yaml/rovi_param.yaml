@@ -18,7 +18,7 @@ live:
     GainAuto: 'Off'
     TriggerMode: 'Off'
     TriggerSource: 'Line0'
-cam_l:
+left:
   camera:
     ID: STC_BBE132GE(17AB755)
   remap:
@@ -33,7 +33,7 @@ cam_l:
     P: [ 3.5499078160097838e+03, 0., 6.1322589359027688e+02, 0., 0.,
         3.5499078160097838e+03, 4.8192570767638051e+02, 0., 0., 0., 1.,
         0. ]
-cam_r:
+right:
   camera:
     ID: STC_BBE132GE(17AB756)
   remap:

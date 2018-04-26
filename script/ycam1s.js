@@ -121,13 +121,13 @@ var ycam={
 						image_l.header.seq++;
 						image_l.header.stamp=ros.Time.now();
 						image_l.data=shmem.slice(0,imgLength);
-						Notifier.emit('cam_l', copyImg(image_l));
+						Notifier.emit('left', copyImg(image_l));
 					}
 					else{
 						image_r.header.seq++;
 						image_r.header.stamp=ros.Time.now();
 						image_r.data=shmem.slice(offset,offset+imgLength);
-						Notifier.emit('cam_r', copyImg(image_r));
+						Notifier.emit('right', copyImg(image_r));
 					}
 				}
 				else if(attr.hasOwnProperty('shm')){

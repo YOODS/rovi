@@ -62,8 +62,8 @@ async function lrLowStillCapture(req, res)
   const res_r = new std_srvs.Trigger.Response();
 
   const result = await Promise.all([
-    callLowDoStillCapture('/rovi/cam_l/do_still_capture', req, res_l),
-    callLowDoStillCapture('/rovi/cam_r/do_still_capture', req, res_r)
+    callLowDoStillCapture('/rovi/left/do_still_capture', req, res_l),
+    callLowDoStillCapture('/rovi/right/do_still_capture', req, res_r)
   ]);
   ros.log.info("result=" + result);
 

@@ -39,8 +39,8 @@ function creatImg(param){
 
 setImmediate(async function(){
 	const rosNode=await ros.initNode('/test10');
-	const pub_L=rosNode.advertise('/cam_l/image', sensor_msgs.Image);
-	const pub_R=rosNode.advertise('/cam_r/image', sensor_msgs.Image);
+	const pub_L=rosNode.advertise('/left/image', sensor_msgs.Image);
+	const pub_R=rosNode.advertise('/right/image', sensor_msgs.Image);
 	let img_L=creatImg({'width':640,'height':480,'step':640,'encoding':'mono8'});
 	let img_R=creatImg({'width':640,'height':480,'step':640,'encoding':'mono8'});
 

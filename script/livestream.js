@@ -62,8 +62,8 @@ async function lrLowLiveSet(toON, req, res)
   const res_r = new std_srvs.SetBool.Response();
 
   const result = await Promise.all([
-    callLowDoLiveSet('/rovi/cam_l/do_live_set', toON, req, res_l),
-    callLowDoLiveSet('/rovi/cam_r/do_live_set', toON, req, res_r)
+    callLowDoLiveSet('/rovi/left/do_live_set', toON, req, res_l),
+    callLowDoLiveSet('/rovi/right/do_live_set', toON, req, res_r)
   ]);
   ros.log.info("result=" + result);
 

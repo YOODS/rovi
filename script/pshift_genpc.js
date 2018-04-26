@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 const NSthis='/rovi/pshift_genpc';
-const NScamL='/rovi/cam_l';
-const NScamR='/rovi/cam_r';
+const NScamL='/rovi/left';
+const NScamR='/rovi/right';
 const NSlive='/rovi/live';
 const NSrovi='/rovi';
 const ros=require('rosnodejs');
@@ -114,30 +114,30 @@ setImmediate(async function(){
 		sens.cset(param_V);
 	});
 	const sensHook=new EventEmitter();
-	sensEv.on('cam_l',async function(img){//--------a left eye image comes up
+	sensEv.on('left',async function(img){//--------a left eye image comes up
 		if (imgdbg) {
-			ros.log.warn("from ycam1s cam_l seq=" + img.header.seq);
+			ros.log.warn("from ycam1s left seq=" + img.header.seq);
 		}
 		raw_L.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_L.call(req);
 		// for raw img genpc, replace res.img with req.img
-		if(sensHook.listenerCount('cam_l')>0) sensHook.emit('cam_l',res.img);
+		if(sensHook.listenerCount('left')>0) sensHook.emit('left',res.img);
 		else rect_L.publish(res.img);
 		info_l.header=req.img.header;
 		info_L.publish(info_l);
 	});
-	sensEv.on('cam_r',async function(img){//<--------a right eye image comes up
+	sensEv.on('right',async function(img){//<--------a right eye image comes up
 		if (imgdbg) {
-			ros.log.warn("from ycam1s cam_r seq=" + img.header.seq);
+			ros.log.warn("from ycam1s right seq=" + img.header.seq);
 		}
 		raw_R.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
 		req.img=img;
 		let res=await remap_R.call(req);
 		// for raw img genpc, replace res.img with req.img
-		if(sensHook.listenerCount('cam_r')>0) sensHook.emit('cam_r',res.img);
+		if(sensHook.listenerCount('right')>0) sensHook.emit('right',res.img);
 		else rect_R.publish(res.img);
 		info_r.header=req.img.header;
 		info_R.publish(info_r);
@@ -189,11 +189,11 @@ ros.log.warn("setTimeout2 function start");
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
 					let capt=[];
-					ros.log.warn("before sensHook.on('cam_l')");
-					sensHook.on('cam_l',function(img){
+					ros.log.warn("before sensHook.on('left')");
+					sensHook.on('left',function(img){
 ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
-							ros.log.warn("capt ycam1s cam_l seq=" + img.header.seq + " ... " + capt.length);
+							ros.log.warn("capt ycam1s left seq=" + img.header.seq + " ... " + capt.length);
 						}
 						if (capt.length <= 11) {
 							capt.push(img);
@@ -207,16 +207,16 @@ ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Ls. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('cam_l'");
+					ros.log.warn("after  sensHook.on('left'");
 				}),
 				new Promise((resolve)=>{
 					let capt=[];
 //					resolve(capt);
-					ros.log.warn("before sensHook.on('cam_r')");
-					sensHook.on('cam_r',function(img){
+					ros.log.warn("before sensHook.on('right')");
+					sensHook.on('right',function(img){
 ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
-							ros.log.warn("capt ycam1s cam_r seq=" + img.header.seq + " ... " + capt.length);
+							ros.log.warn("capt ycam1s right seq=" + img.header.seq + " ... " + capt.length);
 						}
 						if (capt.length <= 11) {
 							capt.push(img);
@@ -230,7 +230,7 @@ ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Rs. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('cam_r'");
+					ros.log.warn("after  sensHook.on('right'");
 				})
 			]);
 ros.log.warn('after await Promise.all');

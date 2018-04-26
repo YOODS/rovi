@@ -55,7 +55,7 @@ console.log('ycam.cset as double:'+key+'='+val);
 	},
 	normal:false,
 	stat:function(){
-		return {'cam_l':run_l.running, 'cam_r':run_r.running, 'projector':!run_p.destroyed};
+		return {'left':run_l.running, 'right':run_r.running, 'projector':!run_p.destroyed};
 	},
 	scan:function(){
 		let s;
@@ -78,12 +78,12 @@ console.log('ycam.cset as double:'+key+'='+val);
 		camera_l=nsl+'/camera/';
 		run_l=Rosrun.run('camera_aravis camnode '+idl,nsl);
 		run_l.on('start',function(){
-			openCamera(run_l,camera_l,'cam_l');
+			openCamera(run_l,camera_l,'left');
 		});
 		camera_r=nsr+'/camera/';
 		run_r=Rosrun.run('camera_aravis camnode '+idr,nsr);
 		run_r.on('start',function(){
-			openCamera(run_r,camera_r,'cam_r');
+			openCamera(run_r,camera_r,'right');
 		});
 		this.scan();
 		setTimeout(function(){

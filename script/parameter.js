@@ -97,14 +97,14 @@ async function callLowDoParamSet(req, res)
       ros.log.debug("ppath=" + ppath);
       ros.log.debug("leaf=" + leaf);
   
-      if (ppath == '/rovi/cam_l/camera/image_raw/compressed/' ||
-          ppath == '/rovi/cam_l/camera/image_raw/compressedDepth/' ||
-          ppath == '/rovi/cam_l/camera/image_raw/theora/' ||
-          ppath == '/rovi/cam_l/camera/' ||
-          ppath == '/rovi/cam_r/camera/image_raw/compressed/' ||
-          ppath == '/rovi/cam_r/camera/image_raw/compressedDepth/' ||
-          ppath  == '/rovi/cam_r/camera/image_raw/theora/' ||
-          ppath  == '/rovi/cam_r/camera/')
+      if (ppath == '/rovi/left/camera/image_raw/compressed/' ||
+          ppath == '/rovi/left/camera/image_raw/compressedDepth/' ||
+          ppath == '/rovi/left/camera/image_raw/theora/' ||
+          ppath == '/rovi/left/camera/' ||
+          ppath == '/rovi/right/camera/image_raw/compressed/' ||
+          ppath == '/rovi/right/camera/image_raw/compressedDepth/' ||
+          ppath  == '/rovi/right/camera/image_raw/theora/' ||
+          ppath  == '/rovi/right/camera/')
       {
         needDynSet = true;
       }
