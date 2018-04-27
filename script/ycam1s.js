@@ -16,6 +16,10 @@ let run_c;  //should be rosrun.js camera runner
 let run_p;  //should be openYPJ:Socket
 
 let imgLength;
+
+let lrSeq = 0;
+let lrStamp = 0;
+
 function imgCreate(param){
 	let img=new sensor_msgs.Image();
 	img.header.seq=0;
@@ -119,13 +123,51 @@ var ycam={
 					let offset=attr.capt;
 					if(offset==0){
 						image_l.header.seq++;
-						image_l.header.stamp=ros.Time.now();
+//						image_l.header.stamp=ros.Time.now();
+						// precedent
+						if (image_l.header.seq > lrSeq) {
+							image_l.header.stamp = ros.Time.now();
+//							ros.log.warn("lseq(" + image_l.header.seq + ") > lrSeq(" + lrSeq + "). now lstamp=" + JSON.stringify(image_l.header.stamp));
+							lrSeq = image_l.header.seq;
+							lrStamp = image_l.header.stamp;
+//							ros.log.warn("now lrSeq=" + lrSeq + ", lrStamp=" + JSON.stringify(lrStamp));
+						}
+						// catch up
+						else if (image_l.header.seq == lrSeq) {
+							image_l.header.stamp = lrStamp;
+//							ros.log.warn("lseq(" + image_l.header.seq + ") == lrSeq(" + lrSeq + "). now lstamp=" + JSON.stringify(image_l.header.stamp));
+						}
+						// far behind
+						else {
+							image_l.header.seq = lrSeq;
+							image_l.header.stamp = lrStamp;
+//							ros.log.warn("lseq(" + image_l.header.seq + ") < lrSeq(" + lrSeq + "). now lseq=" + image_l.header.seq + ", lstamp=" + JSON.stringify(image_l.header.stamp));
+						}
 						image_l.data=shmem.slice(0,imgLength);
 						Notifier.emit('left', copyImg(image_l));
 					}
 					else{
 						image_r.header.seq++;
-						image_r.header.stamp=ros.Time.now();
+//						image_r.header.stamp=ros.Time.now();
+						// precedent
+						if (image_r.header.seq > lrSeq) {
+							image_r.header.stamp = ros.Time.now();
+//							ros.log.warn("rseq(" + image_r.header.seq + ") > lrSeq(" + lrSeq + "). now rstamp=" + JSON.stringify(image_r.header.stamp));
+							lrSeq = image_r.header.seq;
+							lrStamp = image_r.header.stamp;
+//							ros.log.warn("now lrSeq=" + lrSeq + ", lrStamp=" + JSON.stringify(lrStamp));
+						}
+						// catch up
+						else if (image_r.header.seq == lrSeq) {
+							image_r.header.stamp = lrStamp;
+//							ros.log.warn("rseq(" + image_r.header.seq + ") == lrSeq(" + lrSeq + "). now rstamp=" + JSON.stringify(image_r.header.stamp));
+						}
+						// far behind
+						else {
+							image_r.header.seq = lrSeq;
+							image_r.header.stamp = lrStamp;
+//							ros.log.warn("rseq(" + image_r.header.seq + ") < lrSeq(" + lrSeq + "). now rseq=" + image_r.header.seq + ", rstamp=" + JSON.stringify(image_r.header.stamp));
+						}
 						image_r.data=shmem.slice(offset,offset+imgLength);
 						Notifier.emit('right', copyImg(image_r));
 					}
