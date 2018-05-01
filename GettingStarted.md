@@ -353,7 +353,7 @@ rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
 Ubuntu16.04.4を用意して、その上でJETPACK3.2をインストールする。
 注) 2018/04/05のインストールでは、sudo apt-get purge libhighgui-devを実行しないと、途中CUDAのインストール中エラーとなっていた。
 
-# 2. OpenCVのインストール
+## 2. OpenCVのインストール
 JETPACK搭載のOpenCVでは位相シフト,カメラキャリブが動かない。OpenCVをソースからビルドする必要がある。
 OpenCVビルド方法は以下を参照のこと。
 https://github.com/jetsonhacks/buildOpenCVTX2
