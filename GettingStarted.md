@@ -363,3 +363,5 @@ https://github.com/jetsonhacks/buildOpenCVTX2
 	$ ./buildOpenCV.sh
 	$ cd ~/opencv/build
 	$ sudo make install
+
+この手順ではJetpackでインストールされるOpenCV3.3をそのまま置き換える。OpenCVのバージョン(3.3)は変わらない。
