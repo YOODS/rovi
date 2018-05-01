@@ -358,9 +358,9 @@ JETPACK搭載のOpenCVでは位相シフト,カメラキャリブが動かない
 OpenCVビルド方法は以下を参照のこと。
 https://github.com/jetsonhacks/buildOpenCVTX2
 
-	$ git clone https://github.com/jetsonhacks/buildOpenCVTX2.git
+	$ git clone https://github.com/jetsonhacks/buildOpenCVTX2.git	#buildOpenCVTX2ディレクトリができる
 	$ cd buildOpenCVTX2
-	$ ./buildOpenCV.sh
+	$ ./buildOpenCV.sh	#~/opencv以下にopencv3.3.0ビルド(./buildOpenCV.shを編集すれば3.3.1も可能では?)
 	$ cd ~/opencv/build
 	$ sudo make install
 
