@@ -367,5 +367,41 @@ https://github.com/jetsonhacks/buildOpenCVTX2
 この手順ではJetpackでインストールされるOpenCV3.3をそのまま置き換える。OpenCVのバージョン(3.3)は変わらない。
 
 ## 3. その他インストール
-`sudo apt-get install curl`
+~~~
+sudo apt-get install curl
+~~~
 
+## 4. ROS, Node.jsののインストール
+### 4-1. Node.jsのインストール
+~~~
+curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
+sudo apt-get install nodejs
+~~~
+
+### 4-2. rosnodejsのインストール
+~~~
+cd ~
+npm install rosnodejs
+~~~
+
+*上記でインストールされるrosnodejsは、
+RoVIで必要とする機能(ROS Serviceの同期呼び出し機能)が含まれていない。  
+rosnodejsの最新Gitソースにはその機能が含まれているので、
+以下のようにして、最新Gitソースで上書きする。*
+
+~~~
+cd ~
+git clone https://github.com/RethinkRobotics-opensource/rosnodejs
+cd ~/node_modules/rosnodejs
+rm -rf dist
+cp -a ~/rosnodejs/src/ dist
+~~~
+
+### 4-3. RoVI本体のROSパッケージのインストール
+~~~
+mkdir -p ~/catkin_ws/src
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/rovi
+cd rovi/sentech_grabber
+make  (←その結果このディレクトリに grabber というファイルができる)
+~~~
