@@ -366,12 +366,29 @@ https://github.com/jetsonhacks/buildOpenCVTX2
 
 この手順ではJetpackでインストールされるOpenCV3.3をそのまま置き換える。OpenCVのバージョン(3.3)は変わらない。
 
-## 3. その他インストール
+## 3. Sentechカメラドライバ(YCAM3D-IIの場合のみ)
 ~~~
-sudo apt-get install curl
+tar -xf packageStSDK-aarch64.tar,gz
+cd packageStSDK-aarch64/
+chmod +x packageStSDK-aarch64-install.run 
+./packageStSDK-aarch64-install.run 
+cp /opt/sentech/.stprofile /etc/profile.d/stprofile.sh
+/opt/sentech/bin/setnetwork.sh eth0
 ~~~
 
-## 4. ROS, Node.jsののインストール
+## 4. その他インストール
+~~~
+sudo apt-get install curl
+sudo apt-get install yarn
+
+npm install nan
+npm install node-cleanup
+sudo npm install -g node-gyp
+node-gyp configure
+node-gyp build
+~~~
+
+## 5. ROS, Node.jsののインストール
 ### 4-1. Node.jsのインストール
 ~~~
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
@@ -380,7 +397,6 @@ sudo apt-get install nodejs
 
 ### 4-2. rosnodejsのインストール
 ~~~
-cd ~
 npm install rosnodejs
 ~~~
 
@@ -404,4 +420,55 @@ cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
+~~~
+
+~~~
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
+sudo apt-get update
+
+sudo apt-get install ros-kinetic-desktop-full
+sudo apt-get install ros-kinetic-slam-gmapping
+sudo rosdep init
+rosdep update
+echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+~~~
+
+~~~
+sudo apt-get install python-rosinstall python-rosinstall-generator python-wstool build-essential
+~~~
+
+~~~
+vi .bashrc
+後ろに以下を追加
+export PATH=/usr/local/cuda-9.0/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/snap/bin
+export LD_LIBRARY_PATH=/usr/local/cuda-9.0/lib64:
+source /opt/ros/kinetic/setup.bash
+for rcsetup in *_ws/devel/setup.bash
+do
+	source $rcsetup
+done
+export ROS_HOSTNAME=localhost
+export ROS_MASTER_URI=http://localhost:11311
+~~~
+
+~~~
+cd catkin_ws/src/rovi/
+mkdir include
+find /usr/ -name Eigen
+ls /usr/include/eigen3/Eigen
+ln -s /usr/include/eigen3/Eigen include/
+~~~
+
+~~~
+cd PhaseShift/
+make clean
+make
+sudo cp -a libyds3d* /usr/local/lib
+sudo depmod -a
+~~~
+
+~~~
+cd ~/catkin_ws/
+catkin_make
 ~~~
