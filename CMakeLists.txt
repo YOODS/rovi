@@ -74,7 +74,7 @@ target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d)
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)
-target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d)
+target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 add_dependencies(grid_node rovi_gencpp)
 
 #############
