@@ -13,8 +13,6 @@
 #include "CircleCalibBoard.h"
 #include <tf/transform_datatypes.h>
 
-//ros::Publisher pub;
-
 CircleCalibBoard cboard;
 ros::NodeHandle *nh;
 
@@ -62,15 +60,22 @@ bool get_grid(rovi::GetGrid::Request &req,rovi::GetGrid::Response &res){
 		cv::Mat rmat,tmat;
 		cv::OutputArray oRmat(rmat),oTmat(tmat);
 		cv::solvePnP(model,scene,kmat,dmat,oRmat,oTmat);
-		std::cout<<"R "<<rmat<<"\n";
-		tf::Quaternion qt=tf::createQuaternionFromRPY(rmat.data[0],rmat.data[1],rmat.data[2]);
-		geometry_msgs::Quaternion qm;
-		quaternionTFToMsg(qt,qm);
-		std::cout<<"Q ["<<qm.x<<","<<qm.y<<","<<qm.z<<","<<qm.w<<"]\n";
-		res.pose.position.x=tmat.data[0];
-		res.pose.position.y=tmat.data[1];
-		res.pose.position.z=tmat.data[2];
-		res.pose.orientation=qm;
+		float rx=rmat.at<float>(0,0);
+		float ry=rmat.at<float>(1,0);
+		float rz=rmat.at<float>(2,0);
+		float rw=sqrt(rx*rx+ry*ry+rz*rz);
+//		std::cout<<"R "<<rmat<<"\n";
+//		std::cout<<"R ["<<rx<<","<<ry<<","<<rz<<"]\n";
+//		tf::Quaternion rt=tf::createQuaternionFromRPY(ry,rx,rz);
+//		geometry_msgs::Quaternion rm;
+//		quaternionTFToMsg(rt,rm);
+		res.pose.position.x=tmat.at<float>(0,0);
+		res.pose.position.y=tmat.at<float>(1,0);
+		res.pose.position.z=tmat.at<float>(2,0);
+		res.pose.orientation.x=rx/rw;
+		res.pose.orientation.y=ry/rw;
+		res.pose.orientation.z=rz/rw;
+		res.pose.orientation.w=rw;
 	}
 	cv_ptr1->image=mat;
 	cv_ptr1->encoding="bgr8";
