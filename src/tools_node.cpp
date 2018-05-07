@@ -9,6 +9,17 @@
 ros::NodeHandle *nh;
 ros::Publisher pub;
 
+bool change_dir(rovi::dialog::Request &req,rovi::dialog::Response &res){
+	if(chdir(req.hello.c_str())==0){
+		res.answer="OK";
+		return true;
+	}
+	else{
+		res.answer="Failed";
+		return false;
+	}
+}
+
 bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	cv_bridge::CvImage cv_img;
 	cv_img.encoding="mono8";
@@ -31,8 +42,8 @@ int main(int argc, char **argv){
 	ros::NodeHandle n;
 	nh=&n;
 	pub=n.advertise<sensor_msgs::Image>("tools/image",1);
+	ros::ServiceServer svc0=n.advertiseService("tools/cd",change_dir);
 	ros::ServiceServer svc1=n.advertiseService("tools/imread",load_img);
-	fprintf(stdout,"\nRoVI-Test-Tools comprises services as:\n\t*tools/imread <image file>\n tries reading file and publish to the topic *tools/image. Image format must be mono 8bit\n");
 	ros::spin();
 	return 0;
 }

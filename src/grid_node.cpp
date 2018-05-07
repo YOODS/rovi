@@ -11,7 +11,6 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/image_encodings.h>
 #include "CircleCalibBoard.h"
-#include <tf/transform_datatypes.h>
 
 CircleCalibBoard cboard;
 ros::NodeHandle *nh;
@@ -26,30 +25,38 @@ bool get_grid(rovi::GetGrid::Request &req,rovi::GetGrid::Response &res){
 		ROS_ERROR("get_grids:cv_bridge:exception: %s", e.what());
 		return false;
 	}
-	cboard.init();
+//	cboard.init();
 	std::vector<cv::Point2f> imagePoints;
 	cv::Mat mat;
 	if(cboard.scan(cv_ptr1->image,imagePoints,&mat)){
 		ROS_ERROR("CircleCalibBoard::scan:failed:");
+		return false;
 	}
 	else{
+		cv_ptr1->image=mat;
+		cv_ptr1->encoding="bgr8";
+		cv_ptr1->toImageMsg(res.img);
 		int nx=cboard.para["n_circles_x"];
 		int ny=cboard.para["n_circles_y"];
 		std::vector<cv::Point3f> model;
 		std::vector<cv::Point2f> scene;
 		geometry_msgs::Point p;
 		p.z=0;
+//		for(int i=0;i<imagePoints.size();i++){
+//			imagePoints[i].x=req.img.width/2+30*nx/2-i%nx*30;
+//			imagePoints[i].y=req.img.height/2+30*ny/2-i/nx*30;
+//		}
 		for(int i=0;i<imagePoints.size();i++){
-			if(imagePoints[i].x==FLT_MAX || imagePoints[i].y==FLT_MAX) continue;
+			if(imagePoints[i].x==FLT_MAX || imagePoints[i].y==FLT_MAX) p.z=-1;//recognition failed
+			else p.z=0;
 			p.x=imagePoints[i].x;
 			p.y=imagePoints[i].y;
 			res.grid.push_back(p);
+			if(p.z<0) continue;
 			cv::Point3f pm(cboard.get_3d_position(i));
 			cv::Point2f ps(p.x,p.y);
 			model.push_back(pm);
 			scene.push_back(ps);
-//std::cout<<"model::"<<pm;
-//std::cout<<" scene::"<<ps<<"\n";
 		}
 		double flen=req.img.width/2; //Approx. focal length
 		nh->getParam("gridboard/focalLength",flen);
@@ -64,23 +71,15 @@ bool get_grid(rovi::GetGrid::Request &req,rovi::GetGrid::Response &res){
 		float ry=rmat.at<float>(1,0);
 		float rz=rmat.at<float>(2,0);
 		float rw=sqrt(rx*rx+ry*ry+rz*rz);
-//		std::cout<<"R "<<rmat<<"\n";
-//		std::cout<<"R ["<<rx<<","<<ry<<","<<rz<<"]\n";
-//		tf::Quaternion rt=tf::createQuaternionFromRPY(ry,rx,rz);
-//		geometry_msgs::Quaternion rm;
-//		quaternionTFToMsg(rt,rm);
 		res.pose.position.x=tmat.at<float>(0,0);
 		res.pose.position.y=tmat.at<float>(1,0);
 		res.pose.position.z=tmat.at<float>(2,0);
-		res.pose.orientation.x=rx/rw;
-		res.pose.orientation.y=ry/rw;
-		res.pose.orientation.z=rz/rw;
-		res.pose.orientation.w=rw;
+		res.pose.orientation.x= rw>0? sin(rw/2)*rx/rw:rx;
+		res.pose.orientation.y= rw>0? sin(rw/2)*ry/rw:ry;
+		res.pose.orientation.z= rw>0? sin(rw/2)*rz/rw:rz;
+		res.pose.orientation.w=cos(rw/2);
+		return true;
 	}
-	cv_ptr1->image=mat;
-	cv_ptr1->encoding="bgr8";
-	cv_ptr1->toImageMsg(res.img);
-	return true;
 }
 
 bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
@@ -89,6 +88,7 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 		pname+=itr->first;
 		if(nh->hasParam(pname)) nh->getParam(pname,itr->second);
 	}
+	cboard.init();
 	return true;
 }
 
