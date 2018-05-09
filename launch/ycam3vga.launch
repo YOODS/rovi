@@ -1,0 +1,15 @@
+<launch>
+
+  <env name="ROVI_PATH" value="$(find rovi)" />
+  <env name="STGENTL_GIGE_HEARTBEAT" value="5000" />
+
+  <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/ycam3vga.yaml" />
+
+  <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
+  <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
+  <node ns="/rovi" name="pshift_genpc" pkg="rovi" type="pshift_genpc.js" args="ycam3" />
+
+</launch>
+
+
