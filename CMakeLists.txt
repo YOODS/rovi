@@ -48,7 +48,7 @@ include_directories(
 )
 
 link_directories(
-  lib
+  lib/x86_64
 )
 
 #add_library(${PROJECT_NAME}
