@@ -55,7 +55,7 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	}
 	if(res.message.size()>0) return true;
 	cv::Mat Cam(K),Rot(R);
-	cv::initUndistortRectifyMap(Cam.reshape(1,3),D,Rot.reshape(1,3),nCam,imgsz,CV_32FC1,rmapx,rmapy);
+	cv::initUndistortRectifyMap(Cam.reshape(1,3),D,nRot,nCam,imgsz,CV_32FC1,rmapx,rmapy);
 	res.success=true;
 	res.message="Remap table ready";
 	ROS_INFO("remap:reload ok");
