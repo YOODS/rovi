@@ -116,7 +116,7 @@ setImmediate(async function(){
 	const sensHook=new EventEmitter();
 	sensEv.on('left',async function(img){//--------a left eye image comes up
 		if (imgdbg) {
-			ros.log.warn("from ycam1s left seq=" + img.header.seq);
+			ros.log.warn("from ycam left seq=" + img.header.seq);
 		}
 		raw_L.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
@@ -126,11 +126,12 @@ setImmediate(async function(){
 		if(sensHook.listenerCount('left')>0) sensHook.emit('left',res.img);
 		else rect_L.publish(res.img);
 		info_l.header=req.img.header;
+		info_l.distortion_model="plumb_bob";
 		info_L.publish(info_l);
 	});
 	sensEv.on('right',async function(img){//<--------a right eye image comes up
 		if (imgdbg) {
-			ros.log.warn("from ycam1s right seq=" + img.header.seq);
+			ros.log.warn("from ycam right seq=" + img.header.seq);
 		}
 		raw_R.publish(img);
 		let req=new rovi_srvs.ImageFilter.Request();
@@ -140,6 +141,7 @@ setImmediate(async function(){
 		if(sensHook.listenerCount('right')>0) sensHook.emit('right',res.img);
 		else rect_R.publish(res.img);
 		info_r.header=req.img.header;
+		info_r.distortion_model="plumb_bob";
 		info_R.publish(info_r);
 	});
 
@@ -193,7 +195,7 @@ ros.log.warn("setTimeout2 function start");
 					sensHook.on('left',function(img){
 ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
-							ros.log.warn("capt ycam1s left seq=" + img.header.seq + " ... " + capt.length);
+							ros.log.warn("capt ycam left seq=" + img.header.seq + " ... " + capt.length);
 						}
 						if (capt.length <= 11) {
 							capt.push(img);
@@ -216,7 +218,7 @@ ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 					sensHook.on('right',function(img){
 ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 						if (imgdbg) {
-							ros.log.warn("capt ycam1s right seq=" + img.header.seq + " ... " + capt.length);
+							ros.log.warn("capt ycam right seq=" + img.header.seq + " ... " + capt.length);
 						}
 						if (capt.length <= 11) {
 							capt.push(img);
