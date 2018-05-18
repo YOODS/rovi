@@ -10,7 +10,6 @@ const visp_msgs=ros.require('visp_hand2eye_calibration').msg;
 const visp_srvs=ros.require('visp_hand2eye_calibration').srv;
 const EventEmitter=require('events').EventEmitter;
 
-
 setImmediate(async function(){
 	const rosNode=await ros.initNode('robot_calib');
 	const evs=new EventEmitter();
@@ -38,14 +37,11 @@ setImmediate(async function(){
 		trm.rotation=req.pose.orientation;
 		return new Promise(function(resolve){
 			evs.once('pose',async function(pose){
-				ros.log.info('object_pose:'+JSON.stringify(pose));
+//				ros.log.info('object_pose:'+JSON.stringify(pose));
 				let tro=new geometry_msgs.Transform();
-				let m2mm=await rosNode.getParam('/gridboard/unitmm');
-				let m2px=await rosNode.getParam('/gridboard/unitleng');
-				let px2mm=m2mm/m2px;
-				tro.translation.x=pose.position.x*px2mm;
-				tro.translation.y=pose.position.y*px2mm;
-				tro.translation.z=pose.position.z*px2mm;
+				tro.translation.x=pose.position.x;
+				tro.translation.y=pose.position.y;
+				tro.translation.z=pose.position.z;
 				tro.rotation=pose.orientation;
 				c2o.transforms.push(tro);
 				w2e.transforms.push(trm);
@@ -58,8 +54,8 @@ setImmediate(async function(){
 		let req=new rovi_srvs.GetGrid.Request();
 		req.img=src;
 		let res=await cl_grid.call(req);
+		ros.log.info('object_pose:'+JSON.stringify(res.pose));
 		pub_grid.publish(res.img);
-
 		evs.emit('pose',res.pose);
 	});
 	const svc2=rosNode.advertiseService('/robot_calib/reload',std_srvs.Trigger,async (req,res)=>{
@@ -68,9 +64,17 @@ setImmediate(async function(){
 		rq=new visp_srvs.compute_effector_camera_quick.Request();
 		rq.camera_object=c2o;
 		rq.world_effector=w2e;
-		let rs=await cl_calib.call(rq);
-		res.message=JSON.stringify(rs.effector_camera);
-//console.log('RES '+JSON.stringify(rs.effector_camera));
+		let rs;
+		try{
+			rs=await cl_calib.call(rq);
+			res.message=JSON.stringify(rs.effector_camera);
+			res.success=true;
+			rosNode.setParam('/robot_calib/tf',rs.effector_camera);
+		}
+		catch(err){
+			res.message=err;
+			res.success=false;
+		}
 		c2o=new visp_msgs.TransformArray();
 		w2e=new visp_msgs.TransformArray();
 		return true;

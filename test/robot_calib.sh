@@ -4,13 +4,13 @@
 #
 DataDir=/home/ca/robotcalib
 
-rosparam set /gridboard/focalLength 1800
 rosparam set /gridboard/unitleng 60.0
 rosparam set /gridboard/unitmm 5.0
+rosparam set /gridboard/K [2.42106055e+03,0.0,640,0.0,2.42106055e+03,512,0.0,0.0,1.0]
 
 if ! rosnode list | grep /grid_node
 then
-	rosrun rovi grid_node &
+	rosrun rovi grid_node /gridboard/K &
 fi
 
 if ! rosnode list | grep /tools_node
@@ -46,4 +46,3 @@ do
 done
 
 rosservice call /robot_calib/reload
-

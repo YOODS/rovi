@@ -7,6 +7,7 @@ const NSlive='/rovi/live';
 const NSrovi='/rovi';
 const ros=require('rosnodejs');
 const sensor_msgs=ros.require('sensor_msgs').msg;
+const geometry_msgs=ros.require('geometry_msgs').msg;
 const sensName=process.argv.length<3? 'ycam1s':process.argv[2];
 const sens=require('./'+sensName+'.js')
 const std_msgs=ros.require('std_msgs').msg;
@@ -85,44 +86,6 @@ setImmediate(async function(){
 	});
 //---------Definition of services
 	const svc_do=rosNode.advertiseService(NSthis,std_srvs.Trigger,(req,res)=>{
-		if(!sens.normal){
-			ros.log.warn('YCAM not ready');
-			res.message='Sensor not ready';
-			res.success=false;
-			return true;
-		}
-		return new Promise(async (resolve)=>{
-			let param_P=await rosNode.getParam(NSthis+'/projector');
-			let param_V=await rosNode.getParam(NSlive+'/camera');
-			let param_C=await rosNode.getParam(NSthis+'/camera');
-			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
-			let wdt=setTimeout(function(){//<--------watch dog
-				resolve(false);
-				capt_L.abort();
-				capt_R.abort();
-				sens.cset(param_V);
-				sens.cset({'TriggerMode':'Off'});
-			},param_P.Interval*20);
-			sens.cset({'TriggerMode':'On'});
-			sens.cset(param_C);
-			sens.pset('x'+param_P.ExposureTime);
-			sens.pset((sensName.startsWith('ycam3')? 'o':'p')+param_P.Interval);
-			let val=param_P.Intencity<256? param_P.Intencity:255;
-			val=val.toString(16);
-			sens.pset('i'+val+val+val);
-			sens.pset(sensName.startsWith('ycam3')? 'o2':'p2');//<--------projector sequence start
-			let imgs=await Promise.all([capt_L.capture(13),capt_R.capture(13)]);
-			clearTimeout(wdt);
-			capt_L.imgs=imgs[0];
-			capt_R.imgs=imgs[1];
-			sens.cset(param_V);
-			sens.cset({'TriggerMode':'Off'});
-			res.message='scan compelete:'+imgs[0].length;
-			res.success=true;
-			capt_L.view(vue_N);
-			capt_R.view(vue_N);
-			resolve(true);
-		});
 	});
 	const svc_parse=rosNode.advertiseService(NSthis+'/parse',rovi_srvs.dialog,(req,res)=>{
 		let cmd=req.hello;
@@ -140,27 +103,6 @@ setImmediate(async function(){
 		let cmds=cmd.split(' ');
 		if(cmds.length>1) cmd=cmds.shift();
 		switch(cmd){
-		case 'cset':
-			sens.cset(obj);
-			for(let key in obj){
-				rosNode.setParam(NSlive+'/camera/'+key,obj[key]);
-			}
-			return Promise.resolve(true);
-		case 'pset':
-			sens.pset(cmds[0]);
-			return Promise.resolve(true);
-		case 'stat'://<--------sensor(maybe YCAM) status query
-			return new Promise((resolve)=>{
-				res.answer=JSON.stringify(sens.stat());
-				resolve(true);
-			});
-		case 'view':
-			return new Promise((resolve)=>{
-				vue_N=parseInt(cmds[0]);
-				capt_L.view(vue_N);
-				capt_R.view(vue_N);
-				resolve(true);
-			});
 		}
 	});
 });
