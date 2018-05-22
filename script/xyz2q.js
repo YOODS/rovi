@@ -36,7 +36,6 @@ setImmediate(async function(){
 	const svc=rosNode.advertiseService('/xyz2q',rovi_srvs.dialog,async function(rq,rs){
 		let line=rq.hello;
 		let strs=line.split(' ');
-//		let cmd=strs.shift();
 		let vals=[];
 		strs.forEach(function(s){
 			vals.push(parseFloat(s));
@@ -50,7 +49,7 @@ setImmediate(async function(){
 		req.pose.orientation.y=qt[4];
 		req.pose.orientation.z=qt[5];
 		req.pose.orientation.w=qt[6];
-		ros.log.info('XYZ-Q:'+JSON.stringify(req.pose));
+//console.log('XYZ-Q:'+JSON.stringify(req.pose));
 		let res=await cl_pose.call(req);
 		return true;
 	});

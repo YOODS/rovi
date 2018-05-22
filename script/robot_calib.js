@@ -31,13 +31,13 @@ setImmediate(async function(){
 	let c2o=new visp_msgs.TransformArray();
 	let w2e=new visp_msgs.TransformArray();
 	const svc1=rosNode.advertiseService('/robot_calib/pose',rovi_srvs.SetPose,(req,res)=>{
-//		ros.log.info('robot_pose:'+JSON.stringify(req.pose));
+ros.log.info('robot_pose:'+JSON.stringify(req.pose));
 		let trm=new geometry_msgs.Transform();
 		trm.translation=req.pose.position;
 		trm.rotation=req.pose.orientation;
 		return new Promise(function(resolve){
 			evs.once('pose',async function(pose){
-//				ros.log.info('object_pose:'+JSON.stringify(pose));
+ros.log.info('object_pose:'+JSON.stringify(pose));
 				let tro=new geometry_msgs.Transform();
 				tro.translation.x=pose.position.x;
 				tro.translation.y=pose.position.y;
@@ -54,7 +54,6 @@ setImmediate(async function(){
 		let req=new rovi_srvs.GetGrid.Request();
 		req.img=src;
 		let res=await cl_grid.call(req);
-		ros.log.info('object_pose:'+JSON.stringify(res.pose));
 		pub_grid.publish(res.img);
 		evs.emit('pose',res.pose);
 	});
