@@ -6,8 +6,11 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   geometry_msgs
   sensor_msgs
+  stereo_msgs
   cv_bridge
   message_generation
+  image_geometry
+  stereo_image_proc
 )
 find_package(OpenCV REQUIRED)
 
@@ -28,12 +31,13 @@ generate_messages(
   std_msgs
   geometry_msgs
   sensor_msgs
+  stereo_msgs
 )
 
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs cv_bridge
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs stereo_msgs cv_bridge image_geometry stereo_image_proc
   DEPENDS OpenCV
 )
 
@@ -80,6 +84,10 @@ add_dependencies(grid_node rovi_gencpp)
 add_executable(tools_node src/tools_node.cpp)
 target_link_libraries(tools_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(tools_node rovi_gencpp)
+
+add_executable(disparity_node src/disparity_node.cpp)
+target_link_libraries(disparity_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(disparity_node rovi_gencpp)
 
 #############
 ## Install ##
