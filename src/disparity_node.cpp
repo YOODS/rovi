@@ -1,37 +1,22 @@
-#define OPENCV_TRAITS_ENABLE_DEPRECATED 
-
 #include <ros/ros.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <opencv2/opencv.hpp>
 
-#include <image_proc/processor.h>
 #include <image_geometry/stereo_camera_model.h>
 #include <boost/version.hpp>
 #if ((BOOST_VERSION / 100) % 1000) >= 53
 #include <boost/thread/lock_guard.hpp>
 #endif
 
-#include <stereo_image_proc/processor.h>
-
 #include <cv_bridge/cv_bridge.h>
-
-//
-#include <iostream>
-#include <cstdio>
-#include <fstream>
-#include <opencv2/opencv.hpp>
-#include <string.h>
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
-using namespace stereo_image_proc;
-
-bool first = true;
 
 ros::NodeHandle *nh;
-ros::Publisher pub;
+ros::Publisher pub_dsp;
 
 int seq_lrect = -1;
 int seq_rrect = -1;
@@ -43,55 +28,7 @@ cv::Mat_<uint8_t> r_image;
 CameraInfo linfo;
 CameraInfo rinfo;
 
-StereoProcessor block_matcher_;
-
 cv::Ptr<cv::StereoSGBM> ssgbm;
-
-void tmpSgbm()
-{
-	cv::Mat img[2];
-	img[0]=cv::imread("/home/take/left1.pgm", CV_LOAD_IMAGE_GRAYSCALE);
-	img[1]=cv::imread("/home/take/right1.pgm", CV_LOAD_IMAGE_GRAYSCALE);
-
-	int window_size = 1;
-	int minDisparity = 0;
-	int numDisparities = 16;
-	int blockSize = 3;
-	int P1 = 8 * 3 * window_size * window_size;
-	int P2 = 32 * 3 * window_size * window_size;
-	int disp12MaxDiff = 1;
-	int preFilterCap = 1;
-	int uniquenessRatio = 1;
-	int speckleWindowSize = 3;
-	int speckleRange = 1;
-        
-	cv::Ptr<cv::StereoSGBM> tmpssgbm = cv::StereoSGBM::create(
-		minDisparity,
-		numDisparities,
-		blockSize,
-		P1,
-		P2, disp12MaxDiff,
-		preFilterCap,
-		uniquenessRatio,
-		speckleWindowSize , speckleRange, cv::StereoSGBM::MODE_HH4 );
-	cv::Mat disparity;
-	tmpssgbm->compute(img[0],img[1], disparity);
-
-	double min,max;
-	cv::minMaxIdx(disparity, &min, &max);
-	cv::Mat adj;
-	float scale = 255 / (max-min);
-	disparity.convertTo(adj,CV_8UC1, scale, -min*scale); 
-	cv::imshow("MyDisparity",adj);
-	cv::waitKey(0);
-}
-
-void paramCheck()
-{
-
-
-
-}
 
 int window_size = 1; // SADWindowSize
 int minDisparity = 0;
@@ -186,6 +123,8 @@ void makeSgbm()
 */
 
 	// TODO preFilsterSize
+//  config.prefilter_size |= 0x1; // must be odd
+
 /*
 	if (blockSize < 5) {
 		ROS_ERROR("blockSize(%d) is set to 5", blockSize);
@@ -225,184 +164,70 @@ void makeSgbm()
 		speckleWindowSize,
 		speckleRange,
 		cv::StereoSGBM::MODE_HH4);
-
-//  config.prefilter_size |= 0x1; // must be odd
-  
-	block_matcher_.setPreFilterCap(preFilterCap);
-	block_matcher_.setCorrelationWindowSize(blockSize);
-	block_matcher_.setMinDisparity(minDisparity);
-	block_matcher_.setDisparityRange(numDisparities);
-	block_matcher_.setUniquenessRatio(uniquenessRatio);
-	block_matcher_.setSpeckleSize(speckleWindowSize);
-	block_matcher_.setSpeckleRange(speckleRange);
-
-	block_matcher_.setStereoType(StereoProcessor::SGBM);
-	block_matcher_.setSgbmMode(fullDP);
-	block_matcher_.setP1(P1);
-	block_matcher_.setP2(P2);
-	block_matcher_.setDisp12MaxDiff(disp12MaxDiff);
 }
 
 void outputDisparity()
 {
 	ROS_ERROR("outputDisparity called.");
 
-	{
-		image_geometry::StereoCameraModel model_;
-		model_.fromCameraInfo(linfo, rinfo);
+	image_geometry::StereoCameraModel model_;
+	model_.fromCameraInfo(linfo, rinfo);
 
-		DisparityImagePtr disp_msg = boost::make_shared<DisparityImage>();
+	DisparityImagePtr disp_msg = boost::make_shared<DisparityImage>();
 
-		disp_msg->header         = linfo.header;
-		disp_msg->image.header   = linfo.header;
+	disp_msg->header         = linfo.header;
+	disp_msg->image.header   = linfo.header;
 
-		int border = block_matcher_.getCorrelationWindowSize() / 2;
+	int border = ssgbm->getBlockSize() / 2;
 
-		ROS_ERROR("b_m__ corrws=%d", block_matcher_.getCorrelationWindowSize());
-		ROS_ERROR("b_m__ border=%d", border);
-		ROS_ERROR("b_m__ disparityrange=%d", block_matcher_.getDisparityRange());
+	ROS_ERROR("ssgbm bls=%d", ssgbm->getBlockSize());
+	ROS_ERROR("ssgbm border=%d", border);
+	ROS_ERROR("ssgbm disparityrange=%d", ssgbm->getNumDisparities());
 
-		int left   = block_matcher_.getDisparityRange() + block_matcher_.getMinDisparity() + border - 1;
-		int wtf   = (block_matcher_.getMinDisparity() >= 0) ? border + block_matcher_.getMinDisparity() : std::max(border, -block_matcher_.getMinDisparity());
-		int right  = disp_msg->image.width - 1 - wtf;
-		int top    = border;
-		int bottom = disp_msg->image.height - 1 - border;
+	int left   = ssgbm->getNumDisparities() + ssgbm->getMinDisparity() + border - 1;
+	int wtf   = (ssgbm->getMinDisparity() >= 0) ? border + ssgbm->getMinDisparity() : std::max(border, -ssgbm->getMinDisparity());
+	int right  = disp_msg->image.width - 1 - wtf;
+	int top    = border;
+	int bottom = disp_msg->image.height - 1 - border;
 
-		ROS_ERROR("b_m__ left=%d, right=%d, top=%d, bottom=%d", left, right, top, bottom);
+	ROS_ERROR("ssgbm left=%d, right=%d, top=%d, bottom=%d", left, right, top, bottom);
 
-		disp_msg->valid_window.x_offset = left;
-		disp_msg->valid_window.y_offset = top;
-		disp_msg->valid_window.width    = right - left;
-		disp_msg->valid_window.height   = bottom - top;
+	disp_msg->valid_window.x_offset = left;
+	disp_msg->valid_window.y_offset = top;
+	disp_msg->valid_window.width    = right - left;
+	disp_msg->valid_window.height   = bottom - top;
 
-		block_matcher_.processDisparity(l_image, r_image, model_, *disp_msg);
+	cv::Mat_<int16_t> disparity16_;
+	ssgbm->compute(l_image, r_image, disparity16_);
+	ROS_ERROR("ssgbm compute done");
 
-		for (int i = 0; i < 4; i++) {
-			ROS_ERROR("b_m__ disp_msg.data[%d]=%d", i, disp_msg->image.data[i]);
-		}
-		const float *dfp = (float*)&disp_msg->image.data[0];
-		ROS_ERROR("b_m__ disp_msg.datafloat=%f", *dfp);
+	static const int DPP = 16; // disparities per pixel
+	static const double inv_dpp = 1.0 / DPP;
 
+	sensor_msgs::Image& dimage = disp_msg->image;
+	dimage.height = disparity16_.rows;
+	dimage.width = disparity16_.cols;
+	dimage.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+	dimage.step = dimage.width * sizeof(float);
+	dimage.data.resize(dimage.step * dimage.height);
 
-		double cx_l = model_.left().cx();
-		double cx_r = model_.right().cx();
-		ROS_ERROR("b_m__ real     datafloat=%f", *dfp + (cx_l - cx_r));
+	cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
+	disparity16_.convertTo(dmat, dmat.type(), inv_dpp);
+
+	disp_msg->f = model_.right().fx();
+	disp_msg->T = model_.baseline();
+
+	disp_msg->min_disparity = minDisparity;
+	disp_msg->max_disparity = minDisparity + numDisparities - 1;
+	disp_msg->delta_d = inv_dpp;
+
+	for (int i = 0; i < 4; i++) {
+		ROS_ERROR("ssgbm disp_msg.data[%d]=%d", i, disp_msg->image.data[i]);
 	}
+	const float *dfp = (float*)&disp_msg->image.data[0];
+	ROS_ERROR("ssgbm disp_msg.datafloat=%f", *dfp);
 
-	{
-		image_geometry::StereoCameraModel model_;
-		model_.fromCameraInfo(linfo, rinfo);
-
-		DisparityImagePtr disp_msg = boost::make_shared<DisparityImage>();
-
-		disp_msg->header         = linfo.header;
-		disp_msg->image.header   = linfo.header;
-
-		int border = ssgbm->getBlockSize() / 2;
-
-		ROS_ERROR("ssgbm bls=%d", ssgbm->getBlockSize());
-		ROS_ERROR("ssgbm border=%d", border);
-		ROS_ERROR("ssgbm disparityrange=%d", ssgbm->getNumDisparities());
-
-		int left   = ssgbm->getNumDisparities() + ssgbm->getMinDisparity() + border - 1;
-		int wtf   = (ssgbm->getMinDisparity() >= 0) ? border + ssgbm->getMinDisparity() : std::max(border, -ssgbm->getMinDisparity());
-		int right  = disp_msg->image.width - 1 - wtf;
-		int top    = border;
-		int bottom = disp_msg->image.height - 1 - border;
-
-		ROS_ERROR("ssgbm left=%d, right=%d, top=%d, bottom=%d", left, right, top, bottom);
-
-		disp_msg->valid_window.x_offset = left;
-		disp_msg->valid_window.y_offset = top;
-		disp_msg->valid_window.width    = right - left;
-		disp_msg->valid_window.height   = bottom - top;
-
-		{
-			cv::Mat disparity;
-			ssgbm->compute(l_image, r_image, disparity);
-			ROS_ERROR("ssgbm compute done");
-
-			double min,max;
-			cv::minMaxIdx(disparity, &min, &max);
-			ROS_ERROR("min=%f, max=%f", min, max);
-			cv::Mat adj;
-			float scale = 255 / (max-min);
-			ROS_ERROR("scale=%f", scale);
-			disparity.convertTo(adj, CV_8UC1, scale, -min*scale);
-			
-			ROS_ERROR("d89=%f, a89=%f", disparity.at<float>(8, 9), adj.at<float>(8, 9));
-
-			uint8_t *adjp = (uint8_t *)&adj;
-			for (int i = 0; i < 8; i++, adjp++) {
-				ROS_ERROR("ssgbm adj[%d]=%d", i, *adjp);
-			}
-			const float *dfp = (float *)&adj;
-			ROS_ERROR("ssgbm adj float=%f", *dfp);
-
-			if (first) {
-				cv::imshow("Disparity",adj);
-				first = false;
-				cv::waitKey(0);
-			}
-		}
-
-		cv::Mat_<int16_t> disparity16_;
-		ssgbm->compute(l_image, r_image, disparity16_);
-		ROS_ERROR("ssgbm compute done!!");
-
-		static const int DPP = 16; // disparities per pixel
-		static const double inv_dpp = 1.0 / DPP;
-
-		sensor_msgs::Image& dimage = disp_msg->image;
-		dimage.height = disparity16_.rows;
-		dimage.width = disparity16_.cols;
-		dimage.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
-		dimage.step = dimage.width * sizeof(float);
-		dimage.data.resize(dimage.step * dimage.height);
-
-		cv::Mat_<float> dmat(dimage.height, dimage.width, (float*)&dimage.data[0], dimage.step);
-		disparity16_.convertTo(dmat, dmat.type(), inv_dpp);
-
-		disp_msg->f = model_.right().fx();
-		disp_msg->T = model_.baseline();
-
-		disp_msg->min_disparity = minDisparity;
-		disp_msg->max_disparity = minDisparity + numDisparities - 1;
-		disp_msg->delta_d = inv_dpp;
-
-		for (int i = 0; i < 4; i++) {
-			ROS_ERROR("ssgbm disp_msg.data[%d]=%d", i, disp_msg->image.data[i]);
-		}
-		const float *dfp = (float*)&disp_msg->image.data[0];
-		ROS_ERROR("ssgbm disp_msg.datafloat=%f", *dfp);
-
-		pub.publish(disp_msg);
-	}
-
-/*
-	{
-
-		cv::Mat img[2];
-		img[0]=cv::imread("/home/take/left1.pgm", CV_LOAD_IMAGE_GRAYSCALE);
-		img[1]=cv::imread("/home/take/right1.pgm", CV_LOAD_IMAGE_GRAYSCALE);
-
-		cv::Mat disparity;
-		ssgbm->compute(img[0],img[1], disparity);
-
-		double min,max;
-		cv::minMaxIdx(disparity, &min, &max);
-		cv::Mat adj;
-		float scale = 255 / (max-min);
-		disparity.convertTo(adj,CV_8UC1, scale, -min*scale); 
-
-		if (first) {
-			cv::imshow("aaDisparity",adj);
-			first = false;
-			cv::waitKey(0);
-		}
-	}
-*/
-
+	pub_dsp.publish(disp_msg);
 }
 
 void disparityCallback(const DisparityImageConstPtr& msg)
@@ -457,7 +282,9 @@ void disparityCallback(const DisparityImageConstPtr& msg)
 		ROS_ERROR("*d=%f ... before index=%d", *d, index);
 	}
       index = std::min(255, std::max(0, index));
-//	ROS_ERROR("after  index=%d", index);
+//	if (index > 0 && index < 255) {
+//		ROS_ERROR("after  index=%d", index);
+//	}
     }
   }
 
@@ -474,11 +301,6 @@ void lrectCallback(const ImageConstPtr &msg)
 	ROS_ERROR("now l89=%d", l_image(8, 9));
 
 	if ((seq_lrect == seq_rrect) && (seq_lrect == seq_linfo) && (seq_lrect == seq_rinfo)) {
-/*
-		ROS_ERROR("before lrect l89");
-		ROS_ERROR("lrect l89=%d", l_image(8, 9));
-		ROS_ERROR("after  lrect l89");
-*/
 		outputDisparity();
 	}
 }
@@ -494,11 +316,6 @@ void rrectCallback(const ImageConstPtr &msg)
 	ROS_ERROR("now r89=%d", r_image(8, 9));
 
 	if ((seq_rrect == seq_lrect) && (seq_rrect == seq_linfo) && (seq_rrect == seq_rinfo)) {
-/*
-		ROS_ERROR("before rrect l89");
-		ROS_ERROR("rrect l89=%d", l_image(8, 9));
-		ROS_ERROR("after  rrect l89");
-*/
 		outputDisparity();
 	}
 }
@@ -511,11 +328,6 @@ void linfoCallback(const CameraInfoConstPtr &msg)
 	linfo = *msg;
 
 	if ((seq_linfo == seq_lrect) && (seq_linfo == seq_rrect) && (seq_linfo == seq_rinfo)) {
-/*
-		ROS_ERROR("before linfo l89");
-		ROS_ERROR("linfo l89=%d", l_image(8, 9));
-		ROS_ERROR("after  linfo l89");
-*/
 		outputDisparity();
 	}
 }
@@ -528,22 +340,17 @@ void rinfoCallback(const CameraInfoConstPtr &msg)
 	rinfo = *msg;
 
 	if ((seq_rinfo == seq_lrect) && (seq_rinfo == seq_rrect) && (seq_rinfo == seq_linfo)) {
-/*
-		ROS_ERROR("before rinfo l89");
-		ROS_ERROR("rinfo l89=%d", l_image(8, 9));
-		ROS_ERROR("after  rinfo l89");
-*/
 		outputDisparity();
 	}
 }
 
-int main(int argc, char **argv){
-//	tmpSgbm();
+int main(int argc, char **argv)
+{
 	makeSgbm();
-	ros::init(argc,argv,"disparity_node");
+	ros::init(argc, argv, "disparity_node");
 	ros::NodeHandle n;
-	nh=&n;
-	pub=n.advertise<stereo_msgs::DisparityImage>("disparity",1);
+	nh = &n;
+	pub_dsp = n.advertise<stereo_msgs::DisparityImage>("disparity", 1);
 	ros::Subscriber sub_dsp = n.subscribe("disparity", 1, disparityCallback);
 	ros::Subscriber sub_lr = n.subscribe("left/image_rect", 1, lrectCallback);
 	ros::Subscriber sub_rr = n.subscribe("right/image_rect", 1, rrectCallback);
