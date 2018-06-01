@@ -55,6 +55,8 @@ link_directories(
   lib/x86_64
 )
 
+add_definitions("-std=c++11")
+
 #add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/rovi.cpp
 #	src/libs/CircleCalibBoard.cpp

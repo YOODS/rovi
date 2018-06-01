@@ -3,14 +3,15 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
 #include <opencv2/opencv.hpp>
-
 #include <image_geometry/stereo_camera_model.h>
 #include <boost/version.hpp>
 #if ((BOOST_VERSION / 100) % 1000) >= 53
 #include <boost/thread/lock_guard.hpp>
 #endif
-
 #include <cv_bridge/cv_bridge.h>
+#include <chrono>
+
+#define TM_DEBUG false 
 
 using namespace sensor_msgs;
 using namespace stereo_msgs;
@@ -30,128 +31,19 @@ CameraInfo rinfo;
 
 cv::Ptr<cv::StereoSGBM> ssgbm;
 
-int window_size = 1; // SADWindowSize
 int minDisparity = 0;
-int numDisparities = 16;
-int blockSize = 3; // CorrelationWindowSize
-int P1 = 8 * 3 * window_size * window_size; // TODO
-int P2 = 32 * 3 * window_size * window_size;// TODO
-int disp12MaxDiff = 1;
-int preFilterCap = 1;
-int uniquenessRatio = 1;
-int speckleWindowSize = 3;
-int speckleRange = 1;
-int fullDP = 0;
+int numDisparities = 64;
+int blockSize = 3; // SADWindowSize
+int P1 = 8 * 3 * blockSize * blockSize;
+int P2 = 32 * 3 * blockSize * blockSize;
+int disp12MaxDiff = 0;
+int preFilterCap = 31;
+int uniquenessRatio = 15;
+int speckleWindowSize = 100;
+int speckleRange = 2;
 
-/*
-	int window_size = 3; // SADWindowSize
-	int minDisparity = 5;
-	int numDisparities = 32;
-	int blockSize = 7; // CorrelationWindowSize
-	int P1 = 8 * 3 * window_size * window_size; // TODO
-	int P2 = 32 * 3 * window_size * window_size;// TODO
-	int disp12MaxDiff = 3;
-	int preFilterCap = 2;
-	int uniquenessRatio = 10;
-	int speckleWindowSize = 7;
-	int speckleRange = 5;
-	int fullDP = 1;
-*/
-        
 void makeSgbm()
 {
-/*
-	minDisparity,
-	numDisparities,
-	blockSize,
-	P1,
-	P2,
-	disp12MaxDiff,
-	preFilterCap,
-	uniquenessRatio,
-	speckleWindowSize,
-	speckleRange,
-*/
-
-/*
-	// TODO
-//	int window_size = 3; // SADWindowSize
-
-	if (minDisparity < -128) {
-		ROS_ERROR("minDisparity(%d) is set to -128", minDisparity);
-		minDisparity = -128;
-	}
-	else if (minDisparity > 128) {
-		ROS_ERROR("minDisparity(%d) is set to 128", minDisparity);
-		minDisparity = 128;
-	}
-
-	if (numDisparities < 32) {
-		ROS_ERROR("numDisparities(%d) is set to 32", numDisparities);
-		numDisparities = 32;
-	}
-	else if (numDisparities > 256) {
-		ROS_ERROR("numDisparities(%d) is set to 256", numDisparities);
-		numDisparities = 256;
-	}
-	int ndred = numDisparities % 16;
-	numDisparities -= ndred;
-	ROS_ERROR("ndred=%d, now numDisparities=%d", ndred, numDisparities);
-
-	// TODO
-//	int blockSize = 7; // CorrelationWindowSize
-//	int P1 = 8 * 3 * window_size * window_size; // TODO
-//	int P2 = 32 * 3 * window_size * window_size;// TODO
-
-	if (disp12MaxDiff < 0) {
-		ROS_ERROR("disp12MaxDiff(%d) is set to 0", disp12MaxDiff);
-		disp12MaxDiff = 0;
-	}
-	else if (disp12MaxDiff > 128) {
-		ROS_ERROR("disp12MaxDiff(%d) is set to 128", disp12MaxDiff);
-		disp12MaxDiff = 128;
-	}
-
-	if (preFilterCap < 1) {
-		ROS_ERROR("preFilterCap(%d) is set to 1", preFilterCap);
-		preFilterCap = 1;
-	}
-	else if (preFilterCap > 63) {
-		ROS_ERROR("preFilterCap(%d) is set to 63", preFilterCap);
-		preFilterCap = 63;
-	}
-*/
-
-	// TODO preFilsterSize
-//  config.prefilter_size |= 0x1; // must be odd
-
-/*
-	if (blockSize < 5) {
-		ROS_ERROR("blockSize(%d) is set to 5", blockSize);
-		blockSize = 5;
-	}
-	if (blockSize > 255) {
-		ROS_ERROR("blockSize(%d) is set to 255", blockSize);
-		blockSize = 255;
-	}
-*/
-
-/*
-	// TODO float?
-	if (uniquenessRatio < 0) {
-		ROS_ERROR("uniquenessRatio(%d) is set to 0", uniquenessRatio);
-		uniquenessRatio = 0;
-	}
-	else if (uniquenessRatio > 100) {
-		ROS_ERROR("uniquenessRatio(%d) is set to 100", uniquenessRatio);
-		uniquenessRatio = 100;
-	}
-
-	int speckleWindowSize = 7;
-	int speckleRange = 5;
-	int fullDP = 1;
-*/
-
 	ssgbm = cv::StereoSGBM::create(
 		minDisparity,
 		numDisparities,
@@ -166,9 +58,127 @@ void makeSgbm()
 		cv::StereoSGBM::MODE_HH4);
 }
 
+void paramUpdate()
+{
+	int prev_minDisparity = minDisparity;
+	int prev_numDisparities = numDisparities;
+	int prev_blockSize = blockSize;
+	int prev_disp12MaxDiff = disp12MaxDiff;
+	int prev_preFilterCap = preFilterCap;
+	int prev_uniquenessRatio = uniquenessRatio;
+	int prev_speckleWindowSize = speckleWindowSize;
+	int prev_speckleRange = speckleRange;
+
+#if TM_DEBUG
+	auto tm1 = std::chrono::system_clock::now();
+#endif
+
+	nh->getParam("sgbm/minDisparity", minDisparity);
+	nh->getParam("sgbm/numDisparities", numDisparities);
+	nh->getParam("sgbm/blockSize", blockSize);
+	nh->getParam("sgbm/disp12MaxDiff", disp12MaxDiff);
+	nh->getParam("sgbm/preFilterCap", preFilterCap);
+	nh->getParam("sgbm/uniquenessRatio", uniquenessRatio);
+	nh->getParam("sgbm/speckleWindowSize", speckleWindowSize);
+	nh->getParam("sgbm/speckleRange", speckleRange);
+
+	if (numDisparities < 16) {
+		ROS_ERROR("numDisparities(%d) is set to 16", numDisparities);
+		numDisparities = 16;
+		nh->setParam("sgbm/numDisparities", numDisparities);
+	}
+	int ndred = numDisparities % 16;
+	if (ndred != 0) {
+		numDisparities -= ndred;
+		ROS_ERROR("ndred=%d, now numDisparities=%d", ndred, numDisparities);
+		nh->setParam("sgbm/numDisparities", numDisparities);
+	}
+
+	if (blockSize < 1) {
+		ROS_ERROR("blockSize(%d) is set to 1", blockSize);
+		blockSize = 1;
+		nh->setParam("sgbm/blockSize", blockSize);
+	}
+	if ((blockSize % 2) == 0) {
+		blockSize--;
+		ROS_ERROR("blockSize--, now blockSize=%d", blockSize);
+		nh->setParam("sgbm/blockSize", blockSize);
+	}
+
+	if (uniquenessRatio < 0) {
+		ROS_ERROR("uniquenessRatio(%d) is set to 0", uniquenessRatio);
+		uniquenessRatio = 0;
+		nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
+	}
+	else if (uniquenessRatio > 100) {
+		ROS_ERROR("uniquenessRatio(%d) is set to 100", uniquenessRatio);
+		uniquenessRatio = 100;
+		nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
+	}
+
+	if (speckleWindowSize < 0) {
+		ROS_ERROR("speckleWindowSize(%d) is set to 0", speckleWindowSize);
+		speckleWindowSize = 0;
+		nh->setParam("sgbm/speckleWindowSize", speckleWindowSize);
+	}
+
+	if (speckleRange < 0) {
+		ROS_ERROR("speckleRange(%d) is set to 0", speckleRange);
+		speckleRange = 0;
+		nh->setParam("sgbm/speckleRange", speckleRange);
+	}
+
+
+	if (prev_minDisparity != minDisparity) {
+		ROS_ERROR("paramUpdate now minDisparity=%d", minDisparity);
+	}
+	if (prev_numDisparities != numDisparities) {
+		ROS_ERROR("paramUpdate now numDisparities=%d", numDisparities);
+	}
+	if (prev_blockSize != blockSize) {
+		ROS_ERROR("paramUpdate now blockSize=%d", blockSize);
+	}
+	if (prev_disp12MaxDiff != disp12MaxDiff) {
+		ROS_ERROR("paramUpdate now disp12MaxDiff=%d", disp12MaxDiff);
+	}
+	if (prev_preFilterCap != preFilterCap) {
+		ROS_ERROR("paramUpdate now preFilterCap=%d", preFilterCap);
+	}
+	if (prev_uniquenessRatio != uniquenessRatio) {
+		ROS_ERROR("paramUpdate now uniquenessRatio=%d", uniquenessRatio);
+	}
+	if (prev_speckleWindowSize != speckleWindowSize) {
+		ROS_ERROR("paramUpdate now speckleWindowSize=%d", speckleWindowSize);
+	}
+	if (prev_speckleRange != speckleRange) {
+		ROS_ERROR("paramUpdate now speckleRange=%d", speckleRange);
+	}
+
+#if TM_DEBUG
+	auto tm2 = std::chrono::system_clock::now();
+	auto getParam_elapsed_msec = std::chrono::duration_cast<std::chrono::milliseconds>(tm2 - tm1);
+	ROS_ERROR("paramUpdate getParam time msec=%d", getParam_elapsed_msec.count());
+#endif
+
+	ssgbm->setMinDisparity(minDisparity);
+	ssgbm->setNumDisparities(numDisparities);
+	ssgbm->setBlockSize(blockSize);
+	ssgbm->setDisp12MaxDiff(disp12MaxDiff);
+	ssgbm->setPreFilterCap(preFilterCap);
+	ssgbm->setUniquenessRatio(uniquenessRatio);
+	ssgbm->setSpeckleWindowSize(speckleWindowSize);
+	ssgbm->setSpeckleRange(speckleRange);
+
+#if TM_DEBUG
+	auto tm3 = std::chrono::system_clock::now();
+	auto set_elapsed_msec = std::chrono::duration_cast<std::chrono::milliseconds>(tm3 - tm2);
+	ROS_ERROR("paramUpdate set time msec=%d", set_elapsed_msec.count());
+#endif
+}
+
 void outputDisparity()
 {
-	ROS_ERROR("outputDisparity called.");
+	paramUpdate();
 
 	image_geometry::StereoCameraModel model_;
 	model_.fromCameraInfo(linfo, rinfo);
@@ -180,17 +190,11 @@ void outputDisparity()
 
 	int border = ssgbm->getBlockSize() / 2;
 
-	ROS_ERROR("ssgbm bls=%d", ssgbm->getBlockSize());
-	ROS_ERROR("ssgbm border=%d", border);
-	ROS_ERROR("ssgbm disparityrange=%d", ssgbm->getNumDisparities());
-
 	int left   = ssgbm->getNumDisparities() + ssgbm->getMinDisparity() + border - 1;
 	int wtf   = (ssgbm->getMinDisparity() >= 0) ? border + ssgbm->getMinDisparity() : std::max(border, -ssgbm->getMinDisparity());
 	int right  = disp_msg->image.width - 1 - wtf;
 	int top    = border;
 	int bottom = disp_msg->image.height - 1 - border;
-
-	ROS_ERROR("ssgbm left=%d, right=%d, top=%d, bottom=%d", left, right, top, bottom);
 
 	disp_msg->valid_window.x_offset = left;
 	disp_msg->valid_window.y_offset = top;
@@ -199,7 +203,6 @@ void outputDisparity()
 
 	cv::Mat_<int16_t> disparity16_;
 	ssgbm->compute(l_image, r_image, disparity16_);
-	ROS_ERROR("ssgbm compute done");
 
 	static const int DPP = 16; // disparities per pixel
 	static const double inv_dpp = 1.0 / DPP;
@@ -221,73 +224,7 @@ void outputDisparity()
 	disp_msg->max_disparity = minDisparity + numDisparities - 1;
 	disp_msg->delta_d = inv_dpp;
 
-	for (int i = 0; i < 4; i++) {
-		ROS_ERROR("ssgbm disp_msg.data[%d]=%d", i, disp_msg->image.data[i]);
-	}
-	const float *dfp = (float*)&disp_msg->image.data[0];
-	ROS_ERROR("ssgbm disp_msg.datafloat=%f", *dfp);
-
 	pub_dsp.publish(disp_msg);
-}
-
-void disparityCallback(const DisparityImageConstPtr& msg)
-{
-	ROS_ERROR("disparityCallback");
-	ROS_ERROR("f=%f", msg->f);
-	ROS_ERROR("T=%f", msg->T);
-	ROS_ERROR("min_disparity=%f", msg->min_disparity);
-	ROS_ERROR("max_disparity=%f", msg->max_disparity);
-	ROS_ERROR("width=%u", msg->image.height);
-	ROS_ERROR("height=%u", msg->image.width);
-	ROS_ERROR("step=%u", msg->image.step);
-	ROS_ERROR("image.data.size()=%d", msg->image.data.size());
-	for (int i = 0; i < 12; i++) {
-		ROS_ERROR("image.data[%d]=%d", i, msg->image.data[i]);
-	}
-	ROS_ERROR("sizeof(float)=%d", sizeof(float));
-        const float *datafloatp = (float*)&msg->image.data[0];
-	ROS_ERROR("datafloat=%f", *datafloatp);
-	char okdata[] = {0, 0, 128, 191};
-        const float *okfloatp = (float*)okdata;
-	ROS_ERROR("okfloat=%f", *okfloatp);
-
-  cv::Mat_<cv::Vec3b> disparity_color_;
-
-  float min_disparity = msg->min_disparity;
-  float max_disparity = msg->max_disparity;
-  float multiplier = 255.0f / (max_disparity - min_disparity);
-
-	ROS_ERROR("multiplier=%f", multiplier);
-
-  const cv::Mat_<float> dmat(msg->image.height, msg->image.width,
-                             (float*)&msg->image.data[0], msg->image.step);
-  disparity_color_.create(msg->image.height, msg->image.width);
-    
-	ROS_ERROR("disparity_color_.rows=%d", disparity_color_.rows);
-
-  for (int row = 0; row < disparity_color_.rows; ++row) {
-
-	if (row < 1) {
-		ROS_ERROR("row=%d", row);
-	}
-
-	int di = 0;
-
-    const float* d = dmat[row];
-    cv::Vec3b *disparity_color = disparity_color_[row],
-              *disparity_color_end = disparity_color + disparity_color_.cols;
-    for (; disparity_color < disparity_color_end; ++disparity_color, ++d, ++di) {
-      int index = (*d - min_disparity) * multiplier + 0.5;
-	if (row < 1 && di < 4) {
-		ROS_ERROR("*d=%f ... before index=%d", *d, index);
-	}
-      index = std::min(255, std::max(0, index));
-//	if (index > 0 && index < 255) {
-//		ROS_ERROR("after  index=%d", index);
-//	}
-    }
-  }
-
 }
 
 void lrectCallback(const ImageConstPtr &msg)
@@ -295,10 +232,7 @@ void lrectCallback(const ImageConstPtr &msg)
 	seq_lrect = msg->header.seq;
 //	ROS_ERROR("lrectCallback. now seq_lrect=%d", seq_lrect);
 
-	// TODO
-//	l_image = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::MONO8)->image;
 	l_image = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8)->image;
-	ROS_ERROR("now l89=%d", l_image(8, 9));
 
 	if ((seq_lrect == seq_rrect) && (seq_lrect == seq_linfo) && (seq_lrect == seq_rinfo)) {
 		outputDisparity();
@@ -310,10 +244,7 @@ void rrectCallback(const ImageConstPtr &msg)
 	seq_rrect = msg->header.seq;
 //	ROS_ERROR("rrectCallback. now seq_rrect=%d", seq_rrect);
 
-	// TODO
-//	r_image = cv_bridge::toCvShare(msg, sensor_msgs::image_encodings::MONO8)->image;
 	r_image = cv_bridge::toCvCopy(msg, sensor_msgs::image_encodings::MONO8)->image;
-	ROS_ERROR("now r89=%d", r_image(8, 9));
 
 	if ((seq_rrect == seq_lrect) && (seq_rrect == seq_linfo) && (seq_rrect == seq_rinfo)) {
 		outputDisparity();
@@ -346,12 +277,11 @@ void rinfoCallback(const CameraInfoConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-	makeSgbm();
 	ros::init(argc, argv, "disparity_node");
 	ros::NodeHandle n;
 	nh = &n;
+	makeSgbm();
 	pub_dsp = n.advertise<stereo_msgs::DisparityImage>("disparity", 1);
-	ros::Subscriber sub_dsp = n.subscribe("disparity", 1, disparityCallback);
 	ros::Subscriber sub_lr = n.subscribe("left/image_rect", 1, lrectCallback);
 	ros::Subscriber sub_rr = n.subscribe("right/image_rect", 1, rrectCallback);
 	ros::Subscriber sub_li = n.subscribe("left/camera_info", 1, linfoCallback);
