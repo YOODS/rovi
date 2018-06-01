@@ -58,14 +58,17 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 
 	//位相シフト計算パラメータ
 	PS_PARAMS param={
-		.search_div     =8,
-		.bw_diff        =30,
-		.brightness     =255,
-		.max_ph_diff=M_PI_2,
-		.max_parallax=400,
-		.min_parallax=-200,
-		.max_tex_diff=100,
-		.ls_points      =4,
+		.search_div = PH_SEARCH_DIV,
+		.bw_diff = BW_DIFF,
+		.brightness = BRIGHTNESS,
+		.max_ph_diff = MAX_PH_DIFF,
+		.max_parallax = MAX_PARALLAX,
+		.min_parallax = MIN_PARALLAX,
+		.max_tex_diff = MAX_TEX_DIFF,
+		.speckle_range = SPECKLE_RANGE,
+	        .speckle_phase = SPECKLE_PHASE,
+	        .speckle_pixel = SPECKLE_PIXEL,
+		.ls_points = LS_POINTS,
 	};
 
 	// カメラ, 位相シフトを初期化

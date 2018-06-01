@@ -33,7 +33,8 @@ extern StereoCamera stcam;
  * p: 位相シフトパラメータ
  * dirname: キャリブデータ格納ディレクトリ
  */
-extern void ps_init(int w,int h,PS_PARAMS& p,const char *dirname);
+enum { CAM_COORD, BD_COORD};
+extern void ps_init(int w,int h,PS_PARAMS& p,int coord,const char *dirname);
 extern void ps_init(int w,int h);
 
 /*
@@ -72,7 +73,7 @@ extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp 
  * 生成した点群をPLY保存
  * fname: ファイル名(パス名を含む)
  */
-extern void outPLY(char *fname);
+extern void outPLY(const char *fname);
 
 
 #endif /* ps_main_h */
