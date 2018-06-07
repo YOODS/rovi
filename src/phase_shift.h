@@ -21,6 +21,8 @@
 #define LCAM	0
 #define RCAM	1
 
+#define NGPT	255
+
 enum {
 	CAM1,CAM2
 };
@@ -30,25 +32,29 @@ enum {
 };
 
 #define PH_SEARCH_DIV   5			//視差階層探索
-#define BW_DIFF			15			//暗くて精度の出ない点しきい値
-#define BRIGHTNESS	  	254			//ハレーション気味で精度の出ない点しきい値
-#define MAX_PH_DIFF		M_PI_2		//視差計算時の左右カメラの最大位相差(これを越す位相差はNG)(rad)
-#define MAX_PARALLAX	400			//最大視差(rad)
-#define MIN_PARALLAX	-200		//最小視差
-#define MAX_TEX_DIFF	100			//視差から得られた左右同一点の最大輝度差[0-255]
-#define LS_POINTS		3			//視差を求める際の最小二乗近似点数
-#define SPECKLE_RANGE	5			//位相画像からスペックルノイズを除去する際の平均化範囲
-#define SPECKLE_PHASE	M_PI_4		//位相画像中のスペックルノイズしきい値(phase)
-#define SPECKLE_PIXEL	20			//視差画像中のスペックルノイズしきい値(pixel)
+#define BW_DIFF			15			//暗くて精度の出ない点しきい値[輝度]
+#define BRIGHTNESS		254			//ハレーション気味で精度の出ない点しきい値[輝度]
+#define DARKNESS		30			//ハレーション気味で精度の出ない点しきい値[輝度]
+#define STEP_DIFF		2.4			//位相連結時のずれ修正値(phase)[rad]
+#define MAX_PH_DIFF		M_PI_2		//視差計算時の左右カメラの最大位相差(これを越す位相差はNG)[rad[
+#define MAX_PARALLAX	500			//最大視差[pixel]
+#define MIN_PARALLAX	-500		//最小視差[pixel]
+#define RIGHT_DUP_N		1			//視差計算時の同一右ポイントが何回指定できるか
+#define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
+#define SPECKLE_RANGE	5			//位相画像からスペックルノイズを除去する際の平均化範囲[points]
+#define SPECKLE_PHASE	M_PI_4		//位相画像中のスペックルノイズしきい値[phase]
+#define SPECKLE_PIXEL	20			//視差画像中のスペックルノイズしきい値[pixel]
 
 struct PS_PARAMS {
 	int search_div;
 	int bw_diff;
 	int brightness;
+	int darkness;
+	double step_diff;
 	double max_ph_diff;
 	double max_parallax;
 	double min_parallax;
-	int max_tex_diff;
+	int rdup_cnt;
 	int speckle_range;
 	double speckle_phase;
 	double speckle_pixel;
@@ -74,7 +80,7 @@ private:
 	Eigen::MatrixXp code[CAMN];
 	Eigen::MatrixXd phase[CAMN];
 	Eigen::Matrix4d Q;
-    int *_LLimits, *_RLimits;
+	int *_LLimits, *_RLimits;
 	void subtract_bg(Eigen::MatrixXp &tg,Eigen::MatrixXp &bg);
 	void subtract_bg(Eigen::MatrixXd &tg,Eigen::MatrixXd &bg);
 protected:
@@ -99,7 +105,7 @@ public:
 #ifdef DEBUG
 	void check(void*);
 	Eigen::MatrixXp getmtrix(int n);
-    void save_line(int cam,int r,char *fname);
+	void save_line(int cam,int r,char *fname);
 #endif
 };
 
