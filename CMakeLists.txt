@@ -24,6 +24,7 @@ add_service_files(
   GetCalibs.srv
   GetParam.srv
   SetParam.srv
+  SetPose.srv
 )
 
 generate_messages(
@@ -52,7 +53,7 @@ include_directories(
 )
 
 link_directories(
-  lib/x86_64
+  lib/aarch64
 )
 
 add_definitions("-std=c++11")
