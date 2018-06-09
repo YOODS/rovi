@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-"Device Discovery utility for GigE cameras"
+"Device Discovery & Set IP address utility for GigE cameras"
 
 import socket, struct, os, sys, binascii
 from collections import deque
@@ -31,7 +31,7 @@ argq=deque(sys.argv[1:])
 argc=len(sys.argv)-1
 while(argq):
 	arg=argq.popleft()
-	if arg[0:2]=='-h':
+	if arg[0:2]=='-p':
 		HOSTIP=argq.popleft() if len(arg)==2 else arg[2:]
 		print "HostIP   :",HOSTIP
 	elif arg[0:2]=='-c':
@@ -43,6 +43,9 @@ while(argq):
 	elif arg[0:2]=='-g':
 		CAMGW=argq.popleft() if len(arg)==2 else arg[2:]
 		print "GATEWAY  :",CAMGW
+	elif arg[0:2]=='-h':
+		print "GevForceIP.py -p[HOSTIP] -c[CAMERA IP] -m[IP MASK] -g[GATEWAY]"
+		sys.exit(0)
 	else:
 		print "Invarild Argument:",arg
 
