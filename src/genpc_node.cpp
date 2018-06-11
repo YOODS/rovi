@@ -61,10 +61,12 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		.search_div = PH_SEARCH_DIV,
 		.bw_diff = BW_DIFF,
 		.brightness = BRIGHTNESS,
+		.darkness = DARKNESS,
+		.step_diff = STEP_DIFF,
 		.max_ph_diff = MAX_PH_DIFF,
 		.max_parallax = MAX_PARALLAX,
 		.min_parallax = MIN_PARALLAX,
-		.max_tex_diff = MAX_TEX_DIFF,
+		.rdup_cnt = RIGHT_DUP_N,
 		.speckle_range = SPECKLE_RANGE,
 	        .speckle_phase = SPECKLE_PHASE,
 	        .speckle_pixel = SPECKLE_PIXEL,
@@ -82,12 +84,12 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		for (int j=0; j<13; j++) {
 			cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
 			ps_setpict(0, j, img);
-			cv::imwrite(cv::format("/tmp/imgL%d.jpg", j), img); // or png
+			cv::imwrite(cv::format("/tmp/capt%02d_0.pgm", j), img); // or png
 		}
 		for (int j=0; j<13; j++) {
 			cv::Mat img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
 			ps_setpict(1, j, img);
-			cv::imwrite(cv::format("/tmp/imgR%d.jpg", j), img); // or png
+			cv::imwrite(cv::format("/tmp/capt%02d_1.pgm", j), img); // or png
 		}
 	}
 	catch (cv_bridge::Exception& e){
