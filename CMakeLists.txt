@@ -53,7 +53,7 @@ include_directories(
 )
 
 link_directories(
-  lib/aarch64
+  lib/x86_64
 )
 
 add_definitions("-std=c++11")
