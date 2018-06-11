@@ -1,11 +1,13 @@
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 #include <geometry_msgs/Point32.h>
+#include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <sensor_msgs/ChannelFloat32.h>
+#include <image_geometry/stereo_camera_model.h>
 #include "rovi/DigitalFilter.h"
 #include "rovi/GenPC.h"
 #include <vector>
@@ -14,8 +16,92 @@
 #include <cv_bridge/cv_bridge.h>
 #include "ps_main.h"
 
+using namespace stereo_msgs;
+using namespace sensor_msgs;
+
 ros::NodeHandle *nh;
 //ros::Publisher *pub1,*pub2;
+
+
+void disparityCallback(const DisparityImageConstPtr& msg)
+{
+	ROS_ERROR("disparityCallback");
+	ROS_ERROR("f=%f", msg->f);
+	ROS_ERROR("T=%f", msg->T);
+	ROS_ERROR("min_disparity=%f", msg->min_disparity);
+	ROS_ERROR("max_disparity=%f", msg->max_disparity);
+	ROS_ERROR("width=%u", msg->image.width);
+	ROS_ERROR("height=%u", msg->image.height);
+	ROS_ERROR("step=%u", msg->image.step);
+	ROS_ERROR("image.data.size()=%d", msg->image.data.size());
+        const float *dispfloatp = (float*)&msg->image.data[0];
+	ROS_ERROR("dispfloat=%f", *dispfloatp);
+
+	const cv::Mat_<float> dmat(msg->image.height, msg->image.width, (float*)&msg->image.data[0], msg->image.step);
+
+	float min = 0;
+	float max = 0;
+
+	for (int ri = 0; ri < dmat.rows; ri++) {
+		for (int ci = 0; ci < dmat.cols; ci++) {
+			if (ri < 2 && ci < 2) {
+				ROS_ERROR("disp dmat(%d, %d)=%f", ri, ci, dmat(ri, ci));
+			}
+			if (ri == 0 && ci == 0) {
+				min = dmat(ri, ci);
+				max = dmat(ri, ci);
+			}
+			else {
+				if (dmat(ri, ci) < min) {
+					min = dmat(ri, ci);
+				}
+				if (dmat(ri, ci) > max) {
+					max = dmat(ri, ci);
+				}
+			}
+		}
+	}
+
+	ROS_ERROR("disparity min=%f, max=%f", min, max);
+}
+
+void depthCallback(const ImageConstPtr& msg)
+{
+	ROS_ERROR("depthCallback");
+	ROS_ERROR("data.size()=%d", msg->data.size());
+        const float *depthfloatp = (float*)&msg->data[0];
+	ROS_ERROR("depthfloat=%f", *depthfloatp);
+
+	const cv::Mat_<float> dmat(msg->height, msg->width, (float*)&msg->data[0], msg->step);
+
+	float min = 0;
+	float max = 0;
+
+	for (int ri = 0; ri < dmat.rows; ri++) {
+		for (int ci = 0; ci < dmat.cols; ci++) {
+			if (ri < 2 && ci < 2) {
+//				ROS_ERROR("depth dmat(%d, %d)=%f", ri, ci, dmat(ri, ci));
+			}
+			if (dmat(ri, ci) < image_geometry::StereoCameraModel::MISSING_Z) {
+				if (ri == 0 && ci == 0) {
+					min = dmat(ri, ci);
+					max = dmat(ri, ci);
+				}
+				else {
+					if (dmat(ri, ci) < min) {
+						min = dmat(ri, ci);
+					}
+					if (dmat(ri, ci) > max) {
+						max = dmat(ri, ci);
+					}
+				}
+			}
+		}
+	}
+
+	ROS_ERROR("depth min=%f, max=%f", min, max);
+}
+
 
 bool reload(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res){
 	ROS_INFO("genpc::setup called: %d",req.data.size());
@@ -157,6 +243,8 @@ int main(int argc, char **argv){
 	ros::init(argc,argv,"genpc_node");
 	ros::NodeHandle n;
 	nh=&n;
+//	ros::Subscriber sub_disp = n.subscribe("disparity", 1, disparityCallback);
+//	ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
 	ros::ServiceServer svc0=n.advertiseService("genpc/reload",reload);
 	ros::ServiceServer svc1=n.advertiseService("genpc",genpc);
 	ros::ServiceServer svc2=n.advertiseService("genpc/try",trypc);
