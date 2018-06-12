@@ -1,6 +1,6 @@
 pshift_genpc:
   camera:
-    ExposureTime: 2000
+    ExposureTime: 8400
     Gain: 50
   projector:
     ExposureTime: 30
