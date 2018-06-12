@@ -14,7 +14,7 @@ const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter=require('events').EventEmitter;
 
-const imgdbg = true;
+const imgdbg = false;
 
 ros.Time.diff=function(t0){
 	let t1=ros.Time.now();
@@ -164,7 +164,7 @@ ros.log.warn('before setTimeout');
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 ros.log.warn('in setTimeout');
 //			},param_P.Interval*20);
-			},param_P.Interval*20 + 125 + 280); // tmp
+			},(param_P.Interval+10)*20 + 125 + 280); // tmp
 ros.log.warn('before cset TriggerMode:On');
 			sens.cset({'TriggerMode':'On'});
 ros.log.warn('after  cset TriggerMode:On');
