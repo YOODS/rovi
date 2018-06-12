@@ -3,9 +3,9 @@ pshift_genpc:
     ExposureTime: 8400
     Gain: 50
   projector:
-    ExposureTime: 30
+    ExposureTime: 10
     Intencity: 100
-    Interval: 100
+    Interval: 30
 live:
   camera:
     AcquisitionFrameRate: 10

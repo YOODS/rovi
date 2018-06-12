@@ -14,7 +14,7 @@ const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter=require('events').EventEmitter;
 
-const imgdbg = false;
+const imgdbg = true;
 
 ros.Time.diff=function(t0){
 	let t1=ros.Time.now();
@@ -157,12 +157,14 @@ ros.log.warn('pshift_genpc called!');
 		}
 		return new Promise(async (resolve)=>{
 			param_P=await rosNode.getParam(NSthis+'/projector');
+ros.log.warn('before setTimeout');
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				sensHook.removeAllListeners();
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 ros.log.warn('in setTimeout');
-			},param_P.Interval*20);
+//			},param_P.Interval*20);
+			},param_P.Interval*20 + 125 + 280); // tmp
 ros.log.warn('before cset TriggerMode:On');
 			sens.cset({'TriggerMode':'On'});
 ros.log.warn('after  cset TriggerMode:On');
@@ -182,12 +184,7 @@ ros.log.warn("setTimeout1 function start");
 ros.log.warn('before pset p2');
 			sens.pset(sensName.startsWith('ycam3')? 'o2':'p2');//<--------projector sequence start
 ros.log.warn('after  pset p2');
-ros.log.warn("setTimeout1 function end");
-			}, 125); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
 
-ros.log.warn('now await setTimeout2');
-await setTimeout(async function() {
-ros.log.warn("setTimeout2 function start");
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
 					let capt=[];
@@ -209,7 +206,7 @@ ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Ls. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('left'");
+					ros.log.warn("after  sensHook.on('left')");
 				}),
 				new Promise((resolve)=>{
 					let capt=[];
@@ -232,7 +229,7 @@ ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 							ros.log.warn('already 13 img_Rs. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('right'");
+					ros.log.warn("after  sensHook.on('right')");
 				})
 			]);
 ros.log.warn('after await Promise.all');
@@ -266,8 +263,9 @@ ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R
 ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
-ros.log.warn("setTimeout2 function end");
-			}, 250); // TODO 250固定よりもFPSから計算すべき? 「この値-p2のsetTimeout値」が 1000/FPS 以上になるように?
+
+ros.log.warn("setTimeout1 function end");
+			}, 125); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
 
 		});
 	});
