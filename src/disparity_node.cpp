@@ -241,6 +241,7 @@ void outputDisparityDepthPcl2()
 	model_.projectDisparityImageTo3d(disp_mat, point_mat, true);
 
 	float nan = std::numeric_limits<float>::quiet_NaN();
+	float inf = std::numeric_limits<float>::infinity();
 
 
 	//// output Depth
@@ -264,7 +265,7 @@ void outputDisparityDepthPcl2()
 //			ROS_ERROR("depth[%d]=%f", i, point_mat(i)[2]);
 		}
 		else {
-			memcpy(&data[i * sizeof(float)], &nan, sizeof(float));
+			memcpy(&data[i * sizeof(float)], &inf, sizeof(float));
 		}
 	}
 
@@ -272,7 +273,7 @@ void outputDisparityDepthPcl2()
 	float txf = model_.baseline() * model_.right().fx();
 	double cx_l = model_.left().cx();
 	double cx_r = model_.right().cx();
-	ROS_ERROR("txf=%f, cx_l=%f, cx_r=%f", txf, cx_l, cx_r);
+//	ROS_ERROR("txf=%f, cx_l=%f, cx_r=%f", txf, cx_l, cx_r);
 
 	cv::Mat_<float> depth_mat(depth_image->height, depth_image->width, (float*)&depth_image->data[0], depth_image->step);
 
@@ -281,7 +282,7 @@ void outputDisparityDepthPcl2()
 			float& disp = disp_mat(v, u); 
 			if (disp > 0 && !std::isinf(disp)) {
 				depth_mat(v, u) = txf / (disp - (cx_l - cx_r));
-				ROS_ERROR("disp=%f, depth=%f", disp, depth_mat(v, u));
+//				ROS_ERROR("disp=%f, depth=%f", disp, depth_mat(v, u));
 			}
 			else {
 				depth_mat(v, u) = image_geometry::StereoCameraModel::MISSING_Z;
