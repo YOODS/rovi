@@ -16,6 +16,9 @@ const EventEmitter=require('events').EventEmitter;
 
 const imgdbg = false;
 
+// TODO from param_V live: camera: AcquisitionFrameRate: ?
+const waitmsec_for_livestop = 125;
+
 ros.Time.diff=function(t0){
 	let t1=ros.Time.now();
 	t1.secs-=t0.secs;
@@ -149,7 +152,9 @@ setImmediate(async function(){
 	let capt_L;//<--------captured images of the left camera
 	let capt_R;//<--------same as right
 	const svc_do=rosNode.advertiseService(NSthis,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
-ros.log.warn('pshift_genpc called!');
+if (imgdbg) {
+ros.log.warn('service pshift_genpc called');
+}
 		if(!sens.normal){
 			ros.log.warn(res.message='YCAM not ready');
 			res.success=false;
@@ -157,40 +162,52 @@ ros.log.warn('pshift_genpc called!');
 		}
 		return new Promise(async (resolve)=>{
 			param_P=await rosNode.getParam(NSthis+'/projector');
-ros.log.warn('before setTimeout');
+
+
+//			const timeoutmsec = param_P.Interval*20;
+			// TODO tmp +10 and +280
+			const timeoutmsec = (param_P.Interval+10)*20 + waitmsec_for_livestop + 280;
+
+if (imgdbg) {
+ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
+}
 			let wdt=setTimeout(function(){//<--------watch dog
 				resolve(false);
 				sensHook.removeAllListeners();
 				sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
-ros.log.warn('in setTimeout');
-//			},param_P.Interval*20);
-			},(param_P.Interval+10)*20 + 125 + 280); // tmp
-ros.log.warn('before cset TriggerMode:On');
+				ros.log.error('livestop and pshift_genpc timed out');
+			}, timeoutmsec);
 			sens.cset({'TriggerMode':'On'});
-ros.log.warn('after  cset TriggerMode:On');
 			param_C=await rosNode.getParam(NSthis+'/camera');
 			sens.cset(param_C);
 			param_V=await rosNode.getParam(NSlive+'/camera');
 			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
 
-ros.log.warn('now await setTimeout1');
+if (imgdbg) {
+ros.log.warn('now await livestop and pshift_genpc');
+}
 await setTimeout(async function() {
-ros.log.warn("setTimeout1 function start");
+if (imgdbg) {
+ros.log.warn("after livestop, pshift_genpc function start");
+}
 			sens.pset('x'+param_P.ExposureTime);
 			sens.pset((sensName.startsWith('ycam3')? 'o':'p')+param_P.Interval);
 			let val=param_P.Intencity<256? param_P.Intencity:255;
 			val=val.toString(16);
 			sens.pset('i'+val+val+val);
-ros.log.warn('before pset p2');
 			sens.pset(sensName.startsWith('ycam3')? 'o2':'p2');//<--------projector sequence start
-ros.log.warn('after  pset p2');
+if (imgdbg) {
+ros.log.warn('after pset p2');
+}
 
 			let imgs=await Promise.all([
 				new Promise((resolve)=>{
 					let capt=[];
-					ros.log.warn("before sensHook.on('left')");
+//					ros.log.warn("before sensHook.on('left')");
 					sensHook.on('left',function(img){
+if (imgdbg) {
 ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
+}
 						if (imgdbg) {
 							ros.log.warn("capt ycam left seq=" + img.header.seq + " ... " + capt.length);
 						}
@@ -199,21 +216,25 @@ ros.log.warn('capturing img_L:'+capt.length+" seq="+img.header.seq);
 						}
 						else if (capt.length == 12) {
 							capt.push(img);
+if (imgdbg) {
 							ros.log.warn('now 13 img_Ls. resolve.');
+}
 							resolve(capt);
 						}
 						else { // already capt.length >= 13.
 							ros.log.warn('already 13 img_Ls. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('left')");
+//					ros.log.warn("after  sensHook.on('left')");
 				}),
 				new Promise((resolve)=>{
 					let capt=[];
 //					resolve(capt);
-					ros.log.warn("before sensHook.on('right')");
+//					ros.log.warn("before sensHook.on('right')");
 					sensHook.on('right',function(img){
+if (imgdbg) {
 ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
+}
 						if (imgdbg) {
 							ros.log.warn("capt ycam right seq=" + img.header.seq + " ... " + capt.length);
 						}
@@ -222,25 +243,32 @@ ros.log.warn('capturing img_R:'+capt.length+" seq="+img.header.seq);
 						}
 						else if (capt.length == 12) {
 							capt.push(img);
+if (imgdbg) {
 							ros.log.warn('now 13 img_Rs. resolve.');
+}
 							resolve(capt);
 						}
 						else { // already capt.length >= 13.
 							ros.log.warn('already 13 img_Rs. ignore this img.');
 						}
 					});
-					ros.log.warn("after  sensHook.on('right')");
+//					ros.log.warn("after  sensHook.on('right')");
 				})
 			]);
-ros.log.warn('after await Promise.all');
-			ros.log.warn("before sensHook.removeAllListeners()");
+if (imgdbg) {
+ros.log.warn('after await Promise.all (img_Ls and img_Rs resolve)');
+}
+//			ros.log.warn("before sensHook.removeAllListeners()");
 			sensHook.removeAllListeners();
-			ros.log.warn("after  sensHook.removeAllListeners()");
+//			ros.log.warn("after  sensHook.removeAllListeners()");
 			clearTimeout(wdt);
 			capt_L=imgs[0];
 			capt_R=imgs[1];
+if (imgdbg) {
 ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
+}
 
+if (imgdbg) {
 			for (let li = 0; li < capt_L.length; li++) {
 				ros.log.warn("Set capt_L[" + li + "].seq=" + capt_L[li].header.seq);
 			}
@@ -249,23 +277,28 @@ ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R
 			}
 
 			ros.log.warn("genpc CALL");
+}
 			let gpreq = new rovi_srvs.GenPC.Request();
 			gpreq.imgL = capt_L;
 			gpreq.imgR = capt_R;
 			let gpres=await genpc.call(gpreq);
 			pub_pc.publish(gpres.pc);
+if (imgdbg) {
 			ros.log.warn('pc published');
 			ros.log.warn("genpc DONE");
+}
 
 			sens.cset(Object.assign({'TriggerMode':'Off'},param_V));
 			res.message='scan compelete:'+imgs[0].length;
 			res.success=true;
-ros.log.warn('capture completed');
 			viewOut(vue_N,vue_L,capt_L,vue_R,capt_R);
 			resolve(true);
 
-ros.log.warn("setTimeout1 function end");
-			}, 125); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
+if (imgdbg) {
+ros.log.warn("pshift_genpc function end");
+ros.log.warn('service pshift_genpc resolve true return');
+}
+			}, waitmsec_for_livestop); // これはcsetが実際に反映されるのを待つ時間も兼ねる(ライブの残りカスを捨てるのも)
 
 		});
 	});
