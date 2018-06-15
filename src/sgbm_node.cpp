@@ -379,7 +379,7 @@ void rinfoCallback(const sensor_msgs::CameraInfoConstPtr &msg)
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, "disparity_node");
+	ros::init(argc, argv, "sgbm_node");
 	ros::NodeHandle n;
 	nh = &n;
 	makeSgbm();
