@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <std_srvs/Trigger.h>
 #include <stereo_msgs/DisparityImage.h>
 #include <sensor_msgs/CameraInfo.h>
 #include <sensor_msgs/Image.h>
@@ -90,19 +91,19 @@ void paramUpdate()
 	nh->getParam("sgbm/speckleRange", speckleRange);
 
 	if (numDisparities < 16) {
-		ROS_ERROR("numDisparities(%d) is set to 16", numDisparities);
+		ROS_WARN("numDisparities(%d) is set to 16", numDisparities);
 		numDisparities = 16;
 		nh->setParam("sgbm/numDisparities", numDisparities);
 	}
 	int ndred = numDisparities % 16;
 	if (ndred != 0) {
 		numDisparities -= ndred;
-		ROS_ERROR("ndred=%d, now numDisparities=%d", ndred, numDisparities);
+		ROS_WARN("ndred=%d, now numDisparities=%d", ndred, numDisparities);
 		nh->setParam("sgbm/numDisparities", numDisparities);
 	}
 
 	if (blockSize < 1) {
-		ROS_ERROR("blockSize(%d) is set to 1", blockSize);
+		ROS_WARN("blockSize(%d) is set to 1", blockSize);
 		blockSize = 1;
 		nh->setParam("sgbm/blockSize", blockSize);
 	}
@@ -113,52 +114,52 @@ void paramUpdate()
 	}
 
 	if (uniquenessRatio < 0) {
-		ROS_ERROR("uniquenessRatio(%d) is set to 0", uniquenessRatio);
+		ROS_WARN("uniquenessRatio(%d) is set to 0", uniquenessRatio);
 		uniquenessRatio = 0;
 		nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
 	}
 	else if (uniquenessRatio > 100) {
-		ROS_ERROR("uniquenessRatio(%d) is set to 100", uniquenessRatio);
+		ROS_WARN("uniquenessRatio(%d) is set to 100", uniquenessRatio);
 		uniquenessRatio = 100;
 		nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
 	}
 
 	if (speckleWindowSize < 0) {
-		ROS_ERROR("speckleWindowSize(%d) is set to 0", speckleWindowSize);
+		ROS_WARN("speckleWindowSize(%d) is set to 0", speckleWindowSize);
 		speckleWindowSize = 0;
 		nh->setParam("sgbm/speckleWindowSize", speckleWindowSize);
 	}
 
 	if (speckleRange < 0) {
-		ROS_ERROR("speckleRange(%d) is set to 0", speckleRange);
+		ROS_WARN("speckleRange(%d) is set to 0", speckleRange);
 		speckleRange = 0;
 		nh->setParam("sgbm/speckleRange", speckleRange);
 	}
 
 
 	if (prev_minDisparity != minDisparity) {
-		ROS_ERROR("paramUpdate now minDisparity=%d", minDisparity);
+		ROS_INFO("paramUpdate now minDisparity=%d", minDisparity);
 	}
 	if (prev_numDisparities != numDisparities) {
-		ROS_ERROR("paramUpdate now numDisparities=%d", numDisparities);
+		ROS_INFO("paramUpdate now numDisparities=%d", numDisparities);
 	}
 	if (prev_blockSize != blockSize) {
-		ROS_ERROR("paramUpdate now blockSize=%d", blockSize);
+		ROS_INFO("paramUpdate now blockSize=%d", blockSize);
 	}
 	if (prev_disp12MaxDiff != disp12MaxDiff) {
-		ROS_ERROR("paramUpdate now disp12MaxDiff=%d", disp12MaxDiff);
+		ROS_INFO("paramUpdate now disp12MaxDiff=%d", disp12MaxDiff);
 	}
 	if (prev_preFilterCap != preFilterCap) {
-		ROS_ERROR("paramUpdate now preFilterCap=%d", preFilterCap);
+		ROS_INFO("paramUpdate now preFilterCap=%d", preFilterCap);
 	}
 	if (prev_uniquenessRatio != uniquenessRatio) {
-		ROS_ERROR("paramUpdate now uniquenessRatio=%d", uniquenessRatio);
+		ROS_INFO("paramUpdate now uniquenessRatio=%d", uniquenessRatio);
 	}
 	if (prev_speckleWindowSize != speckleWindowSize) {
-		ROS_ERROR("paramUpdate now speckleWindowSize=%d", speckleWindowSize);
+		ROS_INFO("paramUpdate now speckleWindowSize=%d", speckleWindowSize);
 	}
 	if (prev_speckleRange != speckleRange) {
-		ROS_ERROR("paramUpdate now speckleRange=%d", speckleRange);
+		ROS_INFO("paramUpdate now speckleRange=%d", speckleRange);
 	}
 
 #if TM_DEBUG
@@ -185,7 +186,7 @@ void paramUpdate()
 
 void outputDisparityDepthPcl2()
 {
-	paramUpdate();
+//	paramUpdate();
 
 	image_geometry::StereoCameraModel model_;
 	model_.fromCameraInfo(linfo, rinfo);
@@ -377,6 +378,27 @@ void rinfoCallback(const sensor_msgs::CameraInfoConstPtr &msg)
 	}
 }
 
+bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res)
+{
+	res.success=false;
+	res.message="";
+	paramUpdate();
+/*
+	ROS_ERROR("reload minDisparity=%d", minDisparity);
+	ROS_ERROR("reload numDisparities=%d", numDisparities);
+	ROS_ERROR("reload blockSize=%d", blockSize);
+	ROS_ERROR("reload disp12MaxDiff=%d", disp12MaxDiff);
+	ROS_ERROR("reload preFilterCap=%d", preFilterCap);
+	ROS_ERROR("reload uniquenessRatio=%d", uniquenessRatio);
+	ROS_ERROR("reload speckleWindowSize=%d", speckleWindowSize);
+	ROS_ERROR("reload speckleRange=%d", speckleRange);
+*/
+	res.success=true;
+	res.message="sgbm param ready";
+	ROS_INFO("sgbm:reload ok");
+	return true;
+}
+
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "sgbm_node");
@@ -390,6 +412,11 @@ int main(int argc, char **argv)
 	ros::Subscriber sub_rr = n.subscribe("right/image_rect", 1, rrectCallback);
 	ros::Subscriber sub_li = n.subscribe("left/camera_info", 1, linfoCallback);
 	ros::Subscriber sub_ri = n.subscribe("right/camera_info", 1, rinfoCallback);
-	ros::spin();
+	ros::ServiceServer svc0=n.advertiseService("sgbm/reload",reload);
+	std_srvs::Trigger::Request req;
+	std_srvs::Trigger::Response res;
+	reload(req,res);
+	if(res.success) ros::spin();
+	else ROS_ERROR("sgbm:unmatched parameters");
 	return 0;
 }
