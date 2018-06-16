@@ -6,6 +6,20 @@ pshift_genpc:
     ExposureTime: 10
     Intencity: 100
     Interval: 30
+  calc:
+    search_div: 2
+    bw_diff: 20
+    brightness: 256
+    darkness: 20
+    step_diff: 2.0
+    max_ph_diff: 0.7
+    max_parallax: 400
+    min_parallax: -300
+    right_dup_cnt: 1
+    speckle_range: 5
+    speckle_phase: 0.5
+    speckle_pixel: 3
+    ls_points: 3
 live:
   camera:
     AcquisitionFrameRate: 10

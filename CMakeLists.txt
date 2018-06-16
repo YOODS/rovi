@@ -88,9 +88,9 @@ add_executable(tools_node src/tools_node.cpp)
 target_link_libraries(tools_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(tools_node rovi_gencpp)
 
-add_executable(disparity_node src/disparity_node.cpp)
-target_link_libraries(disparity_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(disparity_node rovi_gencpp)
+add_executable(sgbm_node src/sgbm_node.cpp)
+target_link_libraries(sgbm_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(sgbm_node rovi_gencpp)
 
 #############
 ## Install ##

@@ -22,7 +22,24 @@ using namespace sensor_msgs;
 ros::NodeHandle *nh;
 //ros::Publisher *pub1,*pub2;
 
+//位相シフト計算パラメータ
+PS_PARAMS param={
+	.search_div = PH_SEARCH_DIV,
+	.bw_diff = BW_DIFF,
+	.brightness = BRIGHTNESS,
+	.darkness = DARKNESS,
+	.step_diff = STEP_DIFF,
+	.max_ph_diff = MAX_PH_DIFF,
+	.max_parallax = MAX_PARALLAX,
+	.min_parallax = MIN_PARALLAX,
+	.rdup_cnt = RIGHT_DUP_N,
+	.speckle_range = SPECKLE_RANGE,
+	.speckle_phase = SPECKLE_PHASE,
+	.speckle_pixel = SPECKLE_PIXEL,
+	.ls_points = LS_POINTS,
+};
 
+/*
 void disparityCallback(const DisparityImageConstPtr& msg)
 {
 	ROS_ERROR("disparityCallback");
@@ -101,12 +118,45 @@ void depthCallback(const ImageConstPtr& msg)
 
 	ROS_ERROR("depth min=%f, max=%f", min, max);
 }
+*/
 
-
-bool reload(rovi::DigitalFilter::Request &req,rovi::DigitalFilter::Response &res){
-	ROS_INFO("genpc::setup called: %d",req.data.size());
+bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
+	res.success=false;
+	res.message="";
+	nh->getParam("pshift_genpc/calc/search_div", param.search_div);
+	nh->getParam("pshift_genpc/calc/bw_diff", param.bw_diff);
+	nh->getParam("pshift_genpc/calc/brightness", param.brightness);
+	nh->getParam("pshift_genpc/calc/darkness", param.darkness);
+	nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
+	nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
+	nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
+	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
+	nh->getParam("pshift_genpc/calc/rdup_cnt", param.rdup_cnt);
+	nh->getParam("pshift_genpc/calc/speckle_range", param.speckle_range);
+	nh->getParam("pshift_genpc/calc/speckle_phase", param.speckle_phase);
+	nh->getParam("pshift_genpc/calc/speckle_pixel", param.speckle_pixel);
+	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
+/*
+	ROS_ERROR("reload param.search_div=%d", param.search_div);
+	ROS_ERROR("reload param.bw_diff=%d", param.bw_diff);
+	ROS_ERROR("reload param.brightness=%d", param.brightness);
+	ROS_ERROR("reload param.darkness=%d", param.darkness);
+	ROS_ERROR("reload param.step_diff=%f", param.step_diff);
+	ROS_ERROR("reload param.max_ph_diff=%f", param.max_ph_diff);
+	ROS_ERROR("reload param.max_parallax=%f", param.max_parallax);
+	ROS_ERROR("reload param.min_parallax=%f", param.min_parallax);
+	ROS_ERROR("reload param.rdup_cnt=%d", param.rdup_cnt);
+	ROS_ERROR("reload param.speckle_range=%d", param.speckle_range);
+	ROS_ERROR("reload param.speckle_phase=%f", param.speckle_phase);
+	ROS_ERROR("reload param.speckle_pixel=%f", param.speckle_pixel);
+	ROS_ERROR("reload param.ls_points=%d", param.ls_points);
+*/
+	res.success=true;
+	res.message="genpc calc param ready";
+	ROS_INFO("genpc:reload ok");
 	return true;
 }
+
 bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_INFO("genpc called: %d %d",req.imgL.size(),req.imgR.size());
 
@@ -142,25 +192,14 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		return false;
 	}
 
-	//位相シフト計算パラメータ
-	PS_PARAMS param={
-		.search_div = PH_SEARCH_DIV,
-		.bw_diff = BW_DIFF,
-		.brightness = BRIGHTNESS,
-		.darkness = DARKNESS,
-		.step_diff = STEP_DIFF,
-		.max_ph_diff = MAX_PH_DIFF,
-		.max_parallax = MAX_PARALLAX,
-		.min_parallax = MIN_PARALLAX,
-		.rdup_cnt = RIGHT_DUP_N,
-		.speckle_range = SPECKLE_RANGE,
-	        .speckle_phase = SPECKLE_PHASE,
-	        .speckle_pixel = SPECKLE_PIXEL,
-		.ls_points = LS_POINTS,
-	};
-
 	// カメラ, 位相シフトを初期化
 	ps_init(width, height);
+
+/*
+	ROS_ERROR("param.max_parallax=%f", param.max_parallax);
+	ROS_ERROR("param.rdup_cnt=%d", param.rdup_cnt);
+	ROS_ERROR("param.ls_points=%d", param.ls_points);
+*/
 
 	// パラメータを設定
 	ps_setparams(param);
@@ -188,8 +227,7 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	Eigen::Matrix4d Q;
 	memcpy(Q.data(),vecQ.data(),sizeof(double)*4*4);
 	int N=genPC(diff,ps.texture,ps.mask[0],ps.pt,Q);
-	// TODO
-	ROS_ERROR("genPC returned N=%d", N);
+	ROS_INFO("genPC returned N=%d", N);
 
 	// 点群出力
 	sensor_msgs::PointCloud pts;
@@ -210,9 +248,8 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
 		pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
 		pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
-		// TODO
 		if (n < 20 || (N - 20) < n) {
-			ROS_ERROR("n=%d x,y,z=%f,%f,%f r,g,b=%f,%f,%f",
+			ROS_INFO("n=%d x,y,z=%f,%f,%f r,g,b=%f,%f,%f",
 					n,
 					pts.points[n].x,
 					pts.points[n].y,
@@ -252,6 +289,10 @@ int main(int argc, char **argv){
 //	pub1=&p1;
 //	ros::Publisher p2=n.advertise<sensor_msgs::PointCloud2>("genpc/pcl2",1);
 //	pub2=&p2;
-	ros::spin();
+	std_srvs::Trigger::Request req;
+	std_srvs::Trigger::Response res;
+	reload(req,res);
+	if(res.success) ros::spin();
+	else ROS_ERROR("genpc:unmatched parameters");
 	return 0;
 }
