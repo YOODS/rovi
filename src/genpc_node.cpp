@@ -195,6 +195,7 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	// カメラ, 位相シフトを初期化
 	ps_init(width, height);
 
+	ROS_INFO("ps_init done");
 /*
 	ROS_ERROR("param.max_parallax=%f", param.max_parallax);
 	ROS_ERROR("param.rdup_cnt=%d", param.rdup_cnt);
@@ -203,6 +204,8 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 
 	// パラメータを設定
 	ps_setparams(param);
+
+	ROS_INFO("ps_setparams done");
 
 	// 位相シフトデータ画像(左13枚, 右13枚の読込み)
 	try{
@@ -223,9 +226,12 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	}
 
 	// 計算実行
+	ROS_INFO("before ps_exec");
 	Eigen::MatrixXd &diff=ps_exec();
 	Eigen::Matrix4d Q;
+	ROS_INFO("before memcpy");
 	memcpy(Q.data(),vecQ.data(),sizeof(double)*4*4);
+	ROS_INFO("before genPC");
 	int N=genPC(diff,ps.texture,ps.mask[0],ps.pt,Q);
 	ROS_INFO("genPC returned N=%d", N);
 
@@ -261,15 +267,21 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 		}
 	}
 
+	ROS_INFO("before outPLY");
 	outPLY("/tmp/test.ply");
+	ROS_INFO("after  outPLY");
 
 //	pub1->publish(pts);
 	res.pc=pts;
-//	sensor_msgs::PointCloud2 pts2;
-//	sensor_msgs::convertPointCloudToPointCloud2(pts,pts2);
+
+	sensor_msgs::PointCloud2 pts2;
+	sensor_msgs::convertPointCloudToPointCloud2(pts,pts2);
 //	ROS_INFO("genpc::do %d %d %d\n",pts2.width,pts2.height,pts2.point_step);
-//	pts2.row_step = pts2.width * pts2.point_step;
+	pts2.row_step = pts2.width * pts2.point_step;
 //	pub2->publish(pts2);
+	res.pc2=pts2;
+
+	ROS_INFO("now return");
 	return true;
 }
 bool trypc(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){

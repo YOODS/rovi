@@ -80,6 +80,7 @@ setImmediate(async function(){
 		return;
 	}
 	const pub_pc=rosNode.advertise(NSrovi+'/pc', sensor_msgs.PointCloud);
+	const pub_pc2=rosNode.advertise(NSrovi+'/pc2', sensor_msgs.PointCloud2);
 	const genpc=rosNode.serviceClient(NSrovi+'/genpc',rovi_srvs.GenPC,{persist:true});
 	if(! await rosNode.waitForService(genpc.getService(),2000)){
 		ros.log.error('genpc service not available');
@@ -284,6 +285,7 @@ if (imgdbg) {
 			gpreq.imgR = capt_R;
 			let gpres=await genpc.call(gpreq);
 			pub_pc.publish(gpres.pc);
+			pub_pc2.publish(gpres.pc2);
 if (imgdbg) {
 			ros.log.warn('pc published');
 			ros.log.warn("genpc DONE");
