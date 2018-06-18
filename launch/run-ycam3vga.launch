@@ -6,7 +6,7 @@
   <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="sgbm_node" pkg="rovi" type="sgbm_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
-  <node ns="/rovi" name="pshift_genpc" pkg="rovi" type="pshift_genpc.js" args="ycam3" />
+  <node ns="/rovi" name="ycam_ctrl" pkg="rovi" type="ycam_ctrl.js" args="ycam3" />
 
 </launch>
 

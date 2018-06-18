@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
-const NSthis='/rovi/pshift_genpc';
+const NSycamctrl='/rovi/ycam_ctrl';
+const NSpsgenpc='/rovi/pshift_genpc';
 const NScamL='/rovi/left';
 const NScamR='/rovi/right';
 const NSlive='/rovi/live';
@@ -55,9 +56,9 @@ function viewOut(n,pubL,capL,pubR,capR){
 }
 
 setImmediate(async function(){
-	const rosNode=await ros.initNode(NSthis);
-	const pub_tat=rosNode.advertise(NSthis+'/tat', std_msgs.Float32);
-	const pub_stat=rosNode.advertise(NSthis+'/stat', std_msgs.Bool);
+	const rosNode=await ros.initNode(NSycamctrl);
+//	const pub_tat=rosNode.advertise(NSthis+'/tat', std_msgs.Float32);
+	const pub_stat=rosNode.advertise(NSycamctrl+'/stat', std_msgs.Bool);
 	let vue_N=0;
 
 	const raw_L=rosNode.advertise(NScamL+'/image_raw', sensor_msgs.Image);
@@ -92,8 +93,8 @@ setImmediate(async function(){
 	catch(err){
 		ros.log.warn('No camera params for L/R');
 	}
-	let param_P=await rosNode.getParam(NSthis+'/projector');
-	let param_C=await rosNode.getParam(NSthis+'/camera');//-------camera param for phase shift mode
+	let param_P=await rosNode.getParam(NSpsgenpc+'/projector');
+	let param_C=await rosNode.getParam(NSpsgenpc+'/camera');//-------camera param for phase shift mode
 	let param_V=await rosNode.getParam(NSlive+'/camera');//-------camera param for streaming mode
 	let info_l=Object.assign(new sensor_msgs.CameraInfo(),await rosNode.getParam(NScamL+'/remap'));
 	let info_r=Object.assign(new sensor_msgs.CameraInfo(),await rosNode.getParam(NScamR+'/remap'));
@@ -151,7 +152,7 @@ setImmediate(async function(){
 //---------Definition of services
 	let capt_L;//<--------captured images of the left camera
 	let capt_R;//<--------same as right
-	const svc_do=rosNode.advertiseService(NSthis,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
+	const svc_do=rosNode.advertiseService(NSpsgenpc,std_srvs.Trigger,(req,res)=>{//<--------generate PCL
 if (imgdbg) {
 ros.log.warn('service pshift_genpc called');
 }
@@ -161,7 +162,7 @@ ros.log.warn('service pshift_genpc called');
 			return true;
 		}
 		return new Promise(async (resolve)=>{
-			param_P=await rosNode.getParam(NSthis+'/projector');
+			param_P=await rosNode.getParam(NSpsgenpc+'/projector');
 
 
 //			const timeoutmsec = param_P.Interval*20;
@@ -178,7 +179,7 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 				ros.log.error('livestop and pshift_genpc timed out');
 			}, timeoutmsec);
 			sens.cset({'TriggerMode':'On'});
-			param_C=await rosNode.getParam(NSthis+'/camera');
+			param_C=await rosNode.getParam(NSpsgenpc+'/camera');
 			sens.cset(param_C);
 			param_V=await rosNode.getParam(NSlive+'/camera');
 			for(let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
@@ -302,7 +303,7 @@ ros.log.warn('service pshift_genpc resolve true return');
 
 		});
 	});
-	const svc_parse=rosNode.advertiseService(NSthis+'/parse',rovi_srvs.dialog,(req,res)=>{
+	const svc_parse=rosNode.advertiseService(NSycamctrl+'/parse',rovi_srvs.dialog,(req,res)=>{
 		let cmd=req.hello;
 		let lbk=cmd.indexOf('{');
 		let obj={};
