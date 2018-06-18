@@ -17,6 +17,7 @@ extern char *getline(char *line,int len,FILE *fp);
 extern void save_pgm(char *fn,Eigen::Matrix<uchar,Eigen::Dynamic,Eigen::Dynamic> &data);
 extern void save_pgm(char *fn,Eigen::Matrix<double,Eigen::Dynamic,Eigen::Dynamic> &data,double offset =0,double gain =1.0);
 extern void read_pgm(char *fn,Eigen::Matrix<uchar,Eigen::Dynamic,Eigen::Dynamic> &data);
+extern void save_ppm(char *fn,Eigen::Matrix<unsigned long,Eigen::Dynamic,Eigen::Dynamic> &data);
 
 
 #define TIME_POINT              std::chrono::system_clock::time_point

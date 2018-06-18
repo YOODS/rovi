@@ -295,5 +295,5 @@ public:
 	 * @param [out] error 計算誤差を格納する変数への参照
 	 */
     cv::Point3d get3dposition(cv::Point2d p0, cv::Point2d p1, double &error);
-    int genPC(Eigen::MatrixXd &diff, Eigen::MatrixXp &tex, Eigen::MatrixXp &mask, Eigen::MatrixXpt &output);
+    int genPC(Eigen::MatrixXd &diff, Eigen::MatrixXp &tex, Eigen::MatrixXp &mask, Eigen::MatrixXpt &output,double th_err =3.0e-12);
 };
