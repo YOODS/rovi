@@ -41,7 +41,6 @@
   <depend>stereo_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>image_geometry</depend>
-  <depend>stereo_image_proc</depend>
   <depend>libopencv-dev</depend>
 
   <!-- The export tag contains other, unspecified, tags -->

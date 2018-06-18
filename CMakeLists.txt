@@ -10,7 +10,6 @@ find_package(catkin REQUIRED COMPONENTS
   cv_bridge
   message_generation
   image_geometry
-  stereo_image_proc
 )
 find_package(OpenCV REQUIRED)
 
@@ -38,7 +37,7 @@ generate_messages(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES
-  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs stereo_msgs cv_bridge image_geometry stereo_image_proc
+  CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs stereo_msgs cv_bridge image_geometry
   DEPENDS OpenCV
 )
 
