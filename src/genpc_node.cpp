@@ -33,10 +33,8 @@ PS_PARAMS param={
 	.max_parallax = MAX_PARALLAX,
 	.min_parallax = MIN_PARALLAX,
 	.rdup_cnt = RIGHT_DUP_N,
-	.speckle_range = SPECKLE_RANGE,
-	.speckle_phase = SPECKLE_PHASE,
-	.speckle_pixel = SPECKLE_PIXEL,
 	.ls_points = LS_POINTS,
+	.evec_error = EVEC_ERROR,
 };
 
 /*
@@ -132,9 +130,6 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
 	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
 	nh->getParam("pshift_genpc/calc/rdup_cnt", param.rdup_cnt);
-	nh->getParam("pshift_genpc/calc/speckle_range", param.speckle_range);
-	nh->getParam("pshift_genpc/calc/speckle_phase", param.speckle_phase);
-	nh->getParam("pshift_genpc/calc/speckle_pixel", param.speckle_pixel);
 	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
 /*
 	ROS_ERROR("reload param.search_div=%d", param.search_div);
@@ -146,9 +141,6 @@ bool reload(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	ROS_ERROR("reload param.max_parallax=%f", param.max_parallax);
 	ROS_ERROR("reload param.min_parallax=%f", param.min_parallax);
 	ROS_ERROR("reload param.rdup_cnt=%d", param.rdup_cnt);
-	ROS_ERROR("reload param.speckle_range=%d", param.speckle_range);
-	ROS_ERROR("reload param.speckle_phase=%f", param.speckle_phase);
-	ROS_ERROR("reload param.speckle_pixel=%f", param.speckle_pixel);
 	ROS_ERROR("reload param.ls_points=%d", param.ls_points);
 */
 	res.success=true;
