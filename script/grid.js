@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 'use strict';
+
 const ros = require('rosnodejs');
 const std_msgs = ros.require('std_msgs').msg;
 const geometry_msgs = ros.require('geometry_msgs').msg;
@@ -11,10 +12,12 @@ const std_srvs = ros.require('std_srvs').srv;
 var camTriggerClient=null;
 var camTriggerRequest=null;
 var camTriggerWDT=null;
+
 function camTrigger(){
 	camTriggerClient.call(camTriggerRequest).then(function(resp){});
 	camTriggerWDT=setTimeout(camTrigger,100);
 }
+
 function camOK(){
 	clearTimeout(camTriggerWDT);
 }

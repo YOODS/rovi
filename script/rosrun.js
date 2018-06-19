@@ -1,6 +1,7 @@
 const EventEmitter=require('events').EventEmitter;
 
 let popen=require('child_process');
+
 popen.run=function(node,ns,eo){
 	let ev=arguments.length<3? new EventEmitter():eo;
 	ev.running=false;

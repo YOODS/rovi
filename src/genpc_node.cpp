@@ -276,10 +276,12 @@ bool genpc(rovi::GenPC::Request &req,rovi::GenPC::Response &res){
 	ROS_INFO("now return");
 	return true;
 }
+
 bool trypc(std_srvs::Trigger::Request &req,std_srvs::Trigger::Response &res){
 	rovi::GenPC srv;
 	return genpc(srv.request,srv.response);
 }
+
 int main(int argc, char **argv){
 	ros::init(argc,argv,"genpc_node");
 	ros::NodeHandle n;

@@ -25,6 +25,7 @@ const reg_table={
 	'TriggerMode': 0x00101010,
 	'SerialPort': 0x00300004
 }
+
 const val_table={
 	'Off': 0,
 	'On': 1

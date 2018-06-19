@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 'use strict';
+
 const ws=require('./wsshare.js').listen(5000);
 const ros = require('rosnodejs');
 const dyn_srvs = ros.require('dynamic_reconfigure').srv;

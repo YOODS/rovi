@@ -25,6 +25,7 @@ bool change_dir(rovi::dialog::Request &req,rovi::dialog::Response &res){
 		return false;
 	}
 }
+
 bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	cv_bridge::CvImage cv_img;
 	cv_img.encoding="mono8";
@@ -41,6 +42,7 @@ bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
 		return false;
 	}
 }
+
 bool load_ply(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	cv::Mat pc=cv::ppf_match_3d::loadPLYSimple(req.hello.c_str(),0);
 	sensor_msgs::PointCloud pts;
