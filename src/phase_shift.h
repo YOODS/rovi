@@ -34,7 +34,6 @@ enum {
 	NG_BRIGHTNESS,
 	NG_MARGIN,
 	NG_PHASE,
-	NG_CHKCODE7,
 	NG_SPECKLE,
 	NG_MAX_PH_DIFF,
 	NG_PARALLAX,
@@ -53,7 +52,7 @@ enum {
 #define RIGHT_DUP_N		2			//視差計算時の同一右ポイントが何回指定できるか
 #define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
 #define EVEC_ERROR		2.0e-13		//視線ベクトルを用いて点群生成する際の視線誤差閾値
-#define REJCT_NOISE_DIFF	1.0			//位相画像微分処理によるノイズ除去閾値
+#define REJECT_DIFF		5.0			//位相画像微分処理によるノイズ除去閾値
 
 struct PS_PARAMS {
 	int search_div;
@@ -61,6 +60,7 @@ struct PS_PARAMS {
 	int brightness;
 	int darkness;
 	double step_diff;
+	double reject_diff;
 	double max_ph_diff;
 	double max_parallax;
 	double min_parallax;
@@ -94,7 +94,6 @@ private:
 protected:
 	void check_brightness(int cam);
 	void mk_code7(int cam);
-	void chk_code7(void);
 	void mk_phase(int cam);
 	void unwrap(int cam);
 	void mk_diff(void);
