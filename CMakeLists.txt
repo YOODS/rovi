@@ -15,7 +15,7 @@ find_package(OpenCV REQUIRED)
 
 add_service_files(
   FILES
-  dialog.srv
+  Dialog.srv
   DigitalFilter.srv
   ImageFilter.srv
   GenPC.srv

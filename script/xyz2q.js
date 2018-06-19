@@ -33,7 +33,7 @@ setImmediate(async function(){
 		ros.log.error(process.arg[2]+' not available');
 		return;
 	}
-	const svc=rosNode.advertiseService('/xyz2q',rovi_srvs.dialog,async function(rq,rs){
+	const svc=rosNode.advertiseService('/xyz2q',rovi_srvs.Dialog,async function(rq,rs){
 		let line=rq.hello;
 		let strs=line.split(' ');
 		let vals=[];

@@ -305,7 +305,7 @@ ros.log.warn('service pshift_genpc resolve true return');
 
 		});
 	});
-	const svc_parse=rosNode.advertiseService(NSycamctrl+'/parse',rovi_srvs.dialog,(req,res)=>{
+	const svc_parse=rosNode.advertiseService(NSycamctrl+'/parse',rovi_srvs.Dialog,(req,res)=>{
 		let cmd=req.hello;
 		let lbk=cmd.indexOf('{');
 		let obj={};

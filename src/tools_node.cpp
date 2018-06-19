@@ -1,6 +1,6 @@
 #include <ros/ros.h>
 #include <sensor_msgs/Image.h>
-#include "rovi/dialog.h"
+#include "rovi/Dialog.h"
 #include <string>
 #include <iostream>
 #include <opencv2/opencv.hpp>
@@ -15,7 +15,7 @@ ros::NodeHandle *nh;
 ros::Publisher pub1;
 ros::Publisher pub2;
 
-bool change_dir(rovi::dialog::Request &req,rovi::dialog::Response &res){
+bool change_dir(rovi::Dialog::Request &req,rovi::Dialog::Response &res){
 	if(chdir(req.hello.c_str())==0){
 		res.answer="OK";
 		return true;
@@ -26,7 +26,7 @@ bool change_dir(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	}
 }
 
-bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
+bool load_img(rovi::Dialog::Request &req,rovi::Dialog::Response &res){
 	cv_bridge::CvImage cv_img;
 	cv_img.encoding="mono8";
 	cv_img.image=cv::imread(req.hello,CV_LOAD_IMAGE_GRAYSCALE);
@@ -43,7 +43,7 @@ bool load_img(rovi::dialog::Request &req,rovi::dialog::Response &res){
 	}
 }
 
-bool load_ply(rovi::dialog::Request &req,rovi::dialog::Response &res){
+bool load_ply(rovi::Dialog::Request &req,rovi::Dialog::Response &res){
 	cv::Mat pc=cv::ppf_match_3d::loadPLYSimple(req.hello.c_str(),0);
 	sensor_msgs::PointCloud pts;
 	pts.header.stamp=ros::Time::now();

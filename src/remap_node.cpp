@@ -4,7 +4,6 @@
 #include <std_srvs/Trigger.h>
 #include <sensor_msgs/image_encodings.h>
 #include <std_msgs/Float64.h>
-#include "rovi/dialog.h"
 #include "rovi/ImageFilter.h"
 #include <vector>
 #include <string>
