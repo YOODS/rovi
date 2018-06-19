@@ -53,6 +53,7 @@ enum {
 #define RIGHT_DUP_N		2			//視差計算時の同一右ポイントが何回指定できるか
 #define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
 #define EVEC_ERROR		2.0e-13		//視線ベクトルを用いて点群生成する際の視線誤差閾値
+#define REJCT_NOISE_DIFF	1.0			//位相画像微分処理によるノイズ除去閾値
 
 struct PS_PARAMS {
 	int search_div;
