@@ -66,7 +66,7 @@ extern Eigen::MatrixXd& ps_exec(void);
  *
  * [グローバルの_pcd, _pcnに点群データが入る]
  */
-extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp &mask,Eigen::MatrixXpt &pt);
+extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp &mask,Eigen::MatrixXpt &pt,double th_err);
 extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp &mask,Eigen::MatrixXpt &pt,Eigen::Matrix4d &Q);
 
 /*

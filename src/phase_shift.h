@@ -21,8 +21,6 @@
 #define LCAM	0
 #define RCAM	1
 
-#define NGPT	255
-
 enum {
 	CAM1,CAM2
 };
@@ -31,19 +29,30 @@ enum {
 	Black,White,C0,C1,C2,C3,C4,C5,C6,P0,P1,P2,P3
 };
 
-#define PH_SEARCH_DIV   5			//視差階層探索
-#define BW_DIFF			15			//暗くて精度の出ない点しきい値[輝度]
-#define BRIGHTNESS		254			//ハレーション気味で精度の出ない点しきい値[輝度]
-#define DARKNESS		30			//ハレーション気味で精度の出ない点しきい値[輝度]
-#define STEP_DIFF		2.4			//位相連結時のずれ修正値(phase)[rad]
+enum {
+	NGPT=200,
+	NG_BRIGHTNESS,
+	NG_MARGIN,
+	NG_PHASE,
+	NG_CHKCODE7,
+	NG_SPECKLE,
+	NG_MAX_PH_DIFF,
+	NG_PARALLAX,
+	NG_NAN,
+	NG_GENPC,
+};
+
+#define PH_SEARCH_DIV   4			//視差階層探索
+#define BW_DIFF			12			//暗くて精度の出ない点しきい値[輝度]
+#define BRIGHTNESS		256			//ハレーション気味で精度の出ない点しきい値[輝度]
+#define DARKNESS		15			//ハレーション気味で精度の出ない点しきい値[輝度]
+#define STEP_DIFF		1.2			//位相連結時のずれ修正値(phase)[rad]
 #define MAX_PH_DIFF		M_PI_2		//視差計算時の左右カメラの最大位相差(これを越す位相差はNG)[rad[
-#define MAX_PARALLAX	500			//最大視差[pixel]
-#define MIN_PARALLAX	-500		//最小視差[pixel]
-#define RIGHT_DUP_N		1			//視差計算時の同一右ポイントが何回指定できるか
+#define MAX_PARALLAX	400			//最大視差[pixel]
+#define MIN_PARALLAX	-300		//最小視差[pixel]
+#define RIGHT_DUP_N		2			//視差計算時の同一右ポイントが何回指定できるか
 #define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
-#define SPECKLE_RANGE	5			//位相画像からスペックルノイズを除去する際の平均化範囲[points]
-#define SPECKLE_PHASE	M_PI_4		//位相画像中のスペックルノイズしきい値[phase]
-#define SPECKLE_PIXEL	20			//視差画像中のスペックルノイズしきい値[pixel]
+#define EVEC_ERROR		2.0e-13		//視線ベクトルを用いて点群生成する際の視線誤差閾値
 
 struct PS_PARAMS {
 	int search_div;
@@ -55,10 +64,8 @@ struct PS_PARAMS {
 	double max_parallax;
 	double min_parallax;
 	int rdup_cnt;
-	int speckle_range;
-	double speckle_phase;
-	double speckle_pixel;
 	int ls_points;
+	double evec_error;
 };
 
 class StereoCamera;
