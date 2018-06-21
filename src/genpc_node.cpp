@@ -176,7 +176,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   // Making dummy points
   sensor_msgs::PointCloud pts;
   pts.header.stamp = ros::Time::now();
-  pts.header.frame_id = "/map"; // RViz default Frame
+  pts.header.frame_id = "/camera";
   pts.points.resize(10000);
   pts.channels.resize(1);
   pts.channels[0].name = "intensities";
@@ -249,7 +249,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   // output point clouds
   sensor_msgs::PointCloud pts;
   pts.header.stamp = ros::Time::now();
-  pts.header.frame_id = "/map"; // RViz default Frame
+  pts.header.frame_id = "/camera";
   pts.points.resize(N);
   pts.channels.resize(3);
   pts.channels[0].name = "r";

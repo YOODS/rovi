@@ -25,7 +25,7 @@ function imgCreate(param) {
   let img = new sensor_msgs.Image();
   img.header.seq = 0;
   img.header.stamp = 0;
-  img.header.frame_id = 'ycam1s';
+  img.header.frame_id = 'camera';
   img.width = 1280;
   img.height = 1024;
   img.step = 1280;

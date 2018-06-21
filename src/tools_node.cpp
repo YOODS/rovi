@@ -51,7 +51,7 @@ bool load_ply(rovi::Dialog::Request &req, rovi::Dialog::Response &res)
   cv::Mat pc = cv::ppf_match_3d::loadPLYSimple(req.hello.c_str(), 0);
   sensor_msgs::PointCloud pts;
   pts.header.stamp = ros::Time::now();
-  pts.header.frame_id = "/map"; // RViz default Frame
+  pts.header.frame_id = "/camera";
   pts.points.resize(pc.rows);
   pts.channels.resize(1);
   pts.channels[0].name = "intensities";
