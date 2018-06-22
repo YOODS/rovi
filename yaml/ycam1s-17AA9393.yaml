@@ -8,6 +8,18 @@ pshift_genpc:
     ExposureTime: 16
     Intencity: 255
     Interval: 250
+  calc:
+    search_div: 2
+    bw_diff: 7
+    brightness: 256
+    darkness: 5
+    step_diff: 1.2
+    reject_diff: 5.0
+    max_ph_diff: 3.0
+    max_parallax: 400
+    min_parallax: -300
+    rdup_cnt: 1
+    ls_points: 3
 live:
   camera:
     AcquisitionFrameRate: 10.0
@@ -70,3 +82,12 @@ genpc:
        -7.2207847243393658e-002, 5.1065532997899274e-002,
        2.9135366346306419e+000, -5.2753822792334483e+002, 0., 0.,
        8.3487463745308705e+000, 1.0619843833929795e+004 ]
+sgbm:
+  minDisparity: 0
+  numDisparities: 64
+  blockSize: 3
+  disp12MaxDiff: 0
+  preFilterCap: 31
+  uniquenessRatio: 15
+  speckleWindowSize: 100
+  speckleRange: 2
