@@ -15,7 +15,7 @@ const std_srvs=ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter=require('events').EventEmitter;
 
-const imgdbg = false;
+const imgdbg = true;
 
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
 const waitmsec_for_livestop = 300;
