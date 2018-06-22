@@ -27,58 +27,94 @@ ros.Time.diff = function(t0) {
   return ros.Time.toSeconds(t1);
 }
 
-function viewOut(n, pubL, capL, pubR, capR) {
-  try {
-    if (!imgdbg) {
-      if (n < capL.length) pubL.publish(capL[n]);
-      if (n < capR.length) pubR.publish(capR[n]);
+class ImageSwitcher {
+  constructor(node, ns) {
+    const who = this;
+    this.node = node;
+    this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
+    this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
+    this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
+    this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
+    this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
+    setImmediate(async function() {
+      if (!await node.waitForService(who.remap.getService(), 2000)) {
+        ros.log.error('remap service not available');
+        return;
+      }
+      try {
+        who.param = await node.getParam(ns + '/camera');
+        who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
+      }
+      catch(err) {
+        ros.log.warn('getParam ' + err);
+      }
+    });
+    this.hook = new EventEmitter();
+    this.capt = [];
+    if (ns === NScamL) {
+      this.lr = 'L';
     }
     else {
-      if (n < capL.length) {
-        pubL.publish(capL[n]);
-        ros.log.warn("n(" + n + "<capL.length(" + capL.length + "). published seq=" + capL[n].header.seq);
-        for (let li = 0; li < capL.length; li++) {
-          ros.log.warn("get capL[" + li + "].seq=" + capL[li].header.seq);
-        }
-      }
-      if (n < capR.length) {
-        pubR.publish(capR[n]);
-        ros.log.warn("n(" + n + "<capR.length(" + capR.length + "). published seq=" + capR[n].header.seq);
-        for (let ri = 0; ri < capR.length; ri++) {
-          ros.log.warn("get capR[" + ri + "].seq=" + capR[ri].header.seq);
-        }
-      }
+      this.lr = 'R';
     }
   }
-  catch(err) {
-    ros.log.warn('No image captured:'+err);
+  async emit(img) {
+    this.raw.publish(img);
+    let req = new rovi_srvs.ImageFilter.Request();
+    req.img = img;
+    let res = await this.remap.call(req);
+    if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
+    else this.rect.publish(res.img);
+    this.caminfo.header = req.img.header;
+    this.caminfo.distortion_model = "plumb_bob";
+    this.info.publish(this.caminfo);
+  }
+  store(count) {
+    const who = this;
+    this.capt = [];
+    return new Promise(function(resolve) {
+      who.hook.on('store', function(img) {
+        if (imgdbg) {
+          ros.log.warn('capturing img_' + who.lr + ':'+ who.capt.length + " seq=" + img.header.seq);
+        }
+        if (who.capt.length < count) {
+          who.capt.push(img);
+          if (imgdbg) {
+            ros.log.warn('capt ycam ' + who.lr + ' seq=' + img.header.seq + ' ... ' + who.capt.length);
+          }
+          if (who.capt.length == count) {
+            if (imgdbg) {
+              ros.log.warn('now ' + count + ' img_' + who.lr + 's. resolve.');
+            }
+            who.hook.removeAllListeners();
+            resolve(who.capt);
+          }
+        }
+        else if (who.capt.length >= count) {
+          ros.log.warn('already ' + count + ' img_' + who.lr + 's. ignore this img.');
+        }
+      });
+    });
+  }
+  cancel() {
+//    ros.log.warn("before this.hook.removeAllListeners()");
+    this.hook.removeAllListeners();
+//    ros.log.warn("after  this.hook.removeAllListeners()");
+  }
+  get ID() {return this.param.ID;}
+  view(n) {
+    if (n < this.capt.length) {
+      this.vue.publish(this.capt[n]);
+    }
   }
 }
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
-//  const pub_tat = rosNode.advertise(NSthis + '/tat', std_msgs.Float32);
+  const image_L = new ImageSwitcher(rosNode, NScamL);
+  const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
   let vue_N = 0;
-
-  const raw_L = rosNode.advertise(NScamL + '/image_raw', sensor_msgs.Image);
-  const rect_L = rosNode.advertise(NScamL + '/image_rect', sensor_msgs.Image);
-  const vue_L = rosNode.advertise(NScamL + '/view', sensor_msgs.Image);
-  const info_L = rosNode.advertise(NScamL + '/camera_info', sensor_msgs.CameraInfo);
-  const remap_L = rosNode.serviceClient(NScamL + '/remap', rovi_srvs.ImageFilter, { persist: true });
-  if (!await rosNode.waitForService(remap_L.getService(), 2000)) {
-    ros.log.error('remap_L service not available');
-    return;
-  }
-  const raw_R = rosNode.advertise(NScamR + '/image_raw', sensor_msgs.Image);
-  const rect_R = rosNode.advertise(NScamR + '/image_rect', sensor_msgs.Image);
-  const vue_R = rosNode.advertise(NScamR + '/view', sensor_msgs.Image);
-  const info_R = rosNode.advertise(NScamR + '/camera_info', sensor_msgs.CameraInfo);
-  const remap_R = rosNode.serviceClient(NScamR + '/remap', rovi_srvs.ImageFilter, { persist: true });
-  if (!await rosNode.waitForService(remap_R.getService(), 2000)) {
-    ros.log.error('remap_R service not available');
-    return;
-  }
   const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
   const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
@@ -86,24 +122,14 @@ setImmediate(async function() {
     ros.log.error('genpc service not available');
     return;
   }
-  let param_L, param_R;
-  try {
-    param_L = await rosNode.getParam(NScamL + '/camera');
-    param_R = await rosNode.getParam(NScamR + '/camera');
-  }
-  catch(err) {
-    ros.log.warn('No camera params for L/R');
-  }
   let param_P = await rosNode.getParam(NSpsgenpc + '/projector');
   let param_C = await rosNode.getParam(NSpsgenpc + '/camera'); // -------camera param for phase shift mode
   let param_V = await rosNode.getParam(NSlive + '/camera'); // -------camera param for streaming mode
-  let info_l = Object.assign(new sensor_msgs.CameraInfo(), await rosNode.getParam(NScamL + '/remap'));
-  let info_r = Object.assign(new sensor_msgs.CameraInfo(), await rosNode.getParam(NScamR + '/remap'));
 
   let sensEv;
   switch (sensName) {
   case 'ycam1s':
-    sensEv = sens.open(param_L.ID, param_R.ID, param_P.Url, param_P.Port, param_V);
+    sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port, param_V);
     break;
   case 'ycam3':
     sensEv = sens.open(rosNode, NSrovi);
@@ -118,36 +144,17 @@ setImmediate(async function() {
     param_V = await rosNode.getParam(NSlive + '/camera');
     sens.cset(param_V);
   });
-  const sensHook = new EventEmitter();
-  sensEv.on('left', async function(img) { // <--------a left eye image comes up
+  sensEv.on('left', async function(img) {
     if (imgdbg) {
       ros.log.warn("from ycam left seq=" + img.header.seq);
     }
-    raw_L.publish(img);
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    let res = await remap_L.call(req);
-    // for raw img genpc, replace res.img with req.img
-    if (sensHook.listenerCount('left') > 0) sensHook.emit('left', res.img);
-    else rect_L.publish(res.img);
-    info_l.header = req.img.header;
-    info_l.distortion_model = "plumb_bob";
-    info_L.publish(info_l);
+    image_L.emit(img);
   });
-  sensEv.on('right', async function(img) { // <--------a right eye image comes up
+  sensEv.on('right', async function(img) {
     if (imgdbg) {
       ros.log.warn("from ycam right seq=" + img.header.seq);
     }
-    raw_R.publish(img);
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    let res = await remap_R.call(req);
-    // for raw img genpc, replace res.img with req.img
-    if (sensHook.listenerCount('right') > 0) sensHook.emit('right', res.img);
-    else rect_R.publish(res.img);
-    info_r.header = req.img.header;
-    info_r.distortion_model = "plumb_bob";
-    info_R.publish(info_r);
+    image_R.emit(img);
   });
 
 // ---------Definition of services
@@ -164,18 +171,16 @@ ros.log.warn('service pshift_genpc called');
     }
     return new Promise(async (resolve) => {
       param_P = await rosNode.getParam(NSpsgenpc + '/projector');
-
-
 //      const timeoutmsec = param_P.Interval * 20;
       // TODO tmp +10 and +280
       const timeoutmsec = (param_P.Interval + 10) * 20 + waitmsec_for_livestop + 280;
-
 if (imgdbg) {
 ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 }
       let wdt = setTimeout(function() { // <--------watch dog
         resolve(false);
-        sensHook.removeAllListeners();
+        image_L.cancel();
+        image_R.cancel();
         sens.cset(Object.assign({ 'TriggerMode': 'Off' }, param_V));
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
@@ -183,7 +188,7 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
       param_C = await rosNode.getParam(NSpsgenpc + '/camera');
       sens.cset(param_C);
       param_V = await rosNode.getParam(NSlive + '/camera');
-      for (let key in param_V) if(!param_C.hasOwnProperty(key)) delete param_V[key];
+      for (let key in param_V) if (!param_C.hasOwnProperty(key)) delete param_V[key];
 
 if (imgdbg) {
 ros.log.warn('now await livestop and pshift_genpc');
@@ -202,67 +207,12 @@ if (imgdbg) {
 ros.log.warn('after pset p2');
 }
 
-      let imgs = await Promise.all([
-        new Promise((resolve) => {
-          let capt = [];
-//          ros.log.warn("before sensHook.on('left')");
-          sensHook.on('left', function(img) {
+      let imgs = await Promise.all([image_L.store(13), image_R.store(13)]);
 if (imgdbg) {
-ros.log.warn('capturing img_L:' + capt.length + " seq=" + img.header.seq);
+ros.log.warn('after await Promise.all (image_L.store(13) and image_R.store(13) resolve)');
 }
-            if (imgdbg) {
-              ros.log.warn("capt ycam left seq=" + img.header.seq + " ... " + capt.length);
-            }
-            if (capt.length <= 11) {
-              capt.push(img);
-            }
-            else if (capt.length == 12) {
-              capt.push(img);
-if (imgdbg) {
-              ros.log.warn('now 13 img_Ls. resolve.');
-}
-              resolve(capt);
-            }
-            else { // already capt.length >= 13.
-              ros.log.warn('already 13 img_Ls. ignore this img.');
-            }
-          });
-//          ros.log.warn("after  sensHook.on('left')");
-        }),
-        new Promise((resolve) => {
-          let capt = [];
-//          resolve(capt);
-//          ros.log.warn("before sensHook.on('right')");
-          sensHook.on('right', function(img) {
-if (imgdbg) {
-ros.log.warn('capturing img_R:' + capt.length + " seq=" + img.header.seq);
-}
-            if (imgdbg) {
-              ros.log.warn("capt ycam right seq=" + img.header.seq + " ... " + capt.length);
-            }
-            if (capt.length <= 11) {
-              capt.push(img);
-            }
-            else if (capt.length == 12) {
-              capt.push(img);
-if (imgdbg) {
-              ros.log.warn('now 13 img_Rs. resolve.');
-}
-              resolve(capt);
-            }
-            else { // already capt.length >= 13.
-              ros.log.warn('already 13 img_Rs. ignore this img.');
-            }
-          });
-//          ros.log.warn("after  sensHook.on('right')");
-        })
-      ]);
-if (imgdbg) {
-ros.log.warn('after await Promise.all (img_Ls and img_Rs resolve)');
-}
-//      ros.log.warn("before sensHook.removeAllListeners()");
-      sensHook.removeAllListeners();
-//      ros.log.warn("after  sensHook.removeAllListeners()");
+      image_L.cancel();
+      image_R.cancel();
       clearTimeout(wdt);
       capt_L = imgs[0];
       capt_R = imgs[1];
@@ -294,7 +244,8 @@ if (imgdbg) {
       sens.cset(Object.assign({ 'TriggerMode': 'Off' }, param_V));
       res.message = 'scan compelete:' + imgs[0].length;
       res.success = true;
-      viewOut(vue_N, vue_L, capt_L, vue_R, capt_R);
+      image_L.view(vue_N);
+      image_R.view(vue_N);
       resolve(true);
 
 if (imgdbg) {
@@ -305,6 +256,7 @@ ros.log.warn('service pshift_genpc resolve true return');
 
     });
   });
+
   const svc_parse = rosNode.advertiseService(NSycamctrl + '/parse', rovi_srvs.Dialog, (req, res) => {
     let cmd = req.hello;
     let lbk = cmd.indexOf('{');
@@ -315,7 +267,7 @@ ros.log.warn('service pshift_genpc resolve true return');
         obj = JSON.parse(req.hello.substring(lbk));
       }
       catch(err) {
-        //ignore
+        // ignore
       }
     }
     let cmds = cmd.split(' ');
@@ -337,15 +289,14 @@ ros.log.warn('service pshift_genpc resolve true return');
       });
     case 'view':
       return new Promise((resolve) => {
-        vue_N = parseInt(cmds[0]);
-ros.log.warn('in view N=' + vue_N);
-if (capt_L === undefined) {
-  ros.log.warn('L undefined!!');
-}
-if (capt_R === undefined) {
-  ros.log.warn('R undefined!!');
-}
-        viewOut(vue_N, vue_L, capt_L, vue_R, capt_R);
+        try {
+          vue_N = parseInt(cmds[0]);
+        }
+        catch(err) {
+          vue_N = 0;
+        }
+        image_L.view(vue_N);
+        image_R.view(vue_N);
         resolve(true);
       });
     }
