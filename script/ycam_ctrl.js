@@ -42,7 +42,9 @@ class ImageSwitcher {
         return;
       }
       try {
-        who.param = await node.getParam(ns + '/camera');
+        if (sensName === 'ycam1s') {
+          who.param = await node.getParam(ns + '/camera');
+        }
         who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
       }
       catch(err) {
