@@ -62,13 +62,11 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### 1-4. RoVI本体のROSパッケージのインストール[^1]
+### 1-4. RoVI本体のROSパッケージのインストール(2018/6/23現在、ROSパッケージのインストールができなくなっている。)
 ~~~
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
-cd rovi/sentech_grabber
-make  (←その結果このディレクトリに grabber というファイルができる)
 ~~~
 
 ~~~
@@ -82,8 +80,8 @@ sudo rosdep init
 rosdep update
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 ~~~
-[^1]: 2018/6/23現在、ROSパッケージのインストールができなくなっている。
-## 2. RoVI本体のROSパッケージのインストール
+
+## 2. RoVI本体のROSパッケージのインストール(ROS本体のインストールができていないため、未実施(2018/6/24))
 ~~~
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
@@ -107,7 +105,6 @@ rm -rf eigen-eigen-5a0156e40feb/
 
 cd ../..[^2]
 catkin_make
-[^2]: ROS本体のインストールができていないため、未実施(2018/6/24)
 ~~~
 
 
