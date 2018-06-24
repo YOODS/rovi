@@ -120,43 +120,57 @@ setImmediate(async function() {
   const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
   const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
-  let genpcBusy=false;
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
     return;
   }
 
-  let param_P={},param_C={},param_V={};
-  function diff(o,n){
+  let param_C=await rosNode.getParam(NSpsgenpc + '/camera');
+  let param_V=await rosNode.getParam(NSlive + '/camera');
+  let param_P=await rosNode.getParam(NSpsgenpc + '/projector');
+  let paramTimer=null;
+  function paramDiff(o,n){
     let c=Object.assign({},n);
     for(let key in c){
       if(o.hasOwnProperty(key)){
         if(o[key]==c[key]) delete c[key];
-		}
+  		}
     }
     return c;
   }
-  async function reloadParam(){
-    param_P = await rosNode.getParam(NSpsgenpc + '/projector');
-    param_C = await rosNode.getParam(NSpsgenpc + '/camera'); // -------camera param for phase shift mode
-    if(!genpcBusy){
-      let nv=await rosNode.getParam(NSlive + '/camera'); // -------camera param for streaming mode
+  async function paramReload(){
+    param_C=await rosNode.getParam(NSpsgenpc + '/camera');
+    let nv=await rosNode.getParam(NSlive + '/camera');
+    let np=await rosNode.getParam(NSpsgenpc + '/projector');
+    if(paramTimer!=null){
       try{
-        sens.cset(diff(param_V,nv));
+        sens.cset(paramDiff(param_V,nv));
         param_V=nv;
+        sens.pset(paramDiff(param_P,np));
+        param_P=np;
       }
       catch(err){
-        ros.log.warn('sens not ready');
+        ros.log.warn('Exception in paramReload:'+err);
+        paramTimer=null;
+        return;
       }
     }
-    setTimeout(reloadParam,1000);
+    if(paramTimer!=null) paramTimer=setTimeout(paramReload,1000);
   }
-  await reloadParam();
+  function paramScan(){
+    if(paramTimer==null) paramTimer=setTimeout(paramReload,1000);
+  }
+  function paramStop(){
+    if(paramTimer!=null){
+      clearTimeout(paramTimer);
+    }
+    paramTimer=null;
+  }
 
   let sensEv;
   switch (sensName) {
   case 'ycam1s':
-    sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port, param_V);
+    sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port);
     break;
   case 'ycam3':
     sensEv = sens.open(rosNode, NSrovi);
@@ -168,8 +182,9 @@ setImmediate(async function() {
     pub_stat.publish(f);
   });
   sensEv.on('wake', async function(s) {
-    param_V = await rosNode.getParam(NSlive + '/camera');
-    sens.cset(param_V);
+    param_V={};
+    param_P={};
+    paramScan();
   });
   sensEv.on('left', async function(img) {
     if (imgdbg) {
@@ -191,10 +206,11 @@ setImmediate(async function() {
 if (imgdbg) {
 ros.log.warn('service pshift_genpc called');
 }
-    genpcBusy=true;
+    paramStop();
     if (!sens.normal) {
       ros.log.warn(res.message = 'YCAM not ready');
       res.success = false;
+      paramScan();
       return true;
     }
     return new Promise(async (resolve) => {
@@ -208,18 +224,13 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         resolve(false);
         image_L.cancel();
         image_R.cancel();
-        genpcBusy=false;
         sens.cset({ 'TriggerMode': 'Off' });
+        paramScan();
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
       param_V=Object.assign(param_V,param_C);
       sens.cset({ 'TriggerMode': 'On' });
       sens.cset(param_C);
-      sens.pset('x' + param_P.ExposureTime);
-      sens.pset((sensName.startsWith('ycam3') ? 'o' : 'p') + param_P.Interval);
-      let val = param_P.Intencity < 256 ? param_P.Intencity : 255;
-      val = val.toString(16);
-      sens.pset('i' + val + val + val);
 if (imgdbg) {
 ros.log.warn('now await livestop and pshift_genpc');
 }
@@ -227,7 +238,7 @@ await setTimeout(async function() {
 if (imgdbg) {
 ros.log.warn("after livestop, pshift_genpc function start");
 }
-      sens.pset(sensName.startsWith('ycam3') ? 'o2' : 'p2'); // <--------projector sequence start
+      sens.pset({'Go':2}); // <--------projector sequence start
 if (imgdbg) {
 ros.log.warn('after pset p2');
 }
@@ -265,8 +276,8 @@ if (imgdbg) {
       ros.log.warn('pc published');
       ros.log.warn("genpc DONE");
 }
-      genpcBusy=false;
       sens.cset({ 'TriggerMode': 'Off' });
+      paramScan();
       res.message = 'scan compelete:' + imgs[0].length;
       res.success = true;
       image_L.view(vue_N);
@@ -300,12 +311,9 @@ ros.log.warn('service pshift_genpc resolve true return');
     switch (cmd) {
     case 'cset':
       sens.cset(obj);
-      for (let key in obj) {
-        rosNode.setParam(NSlive + '/camera/' + key, obj[key]);
-      }
       return Promise.resolve(true);
     case 'pset':
-      sens.pset(cmds[0]);
+      sens.pset(obj);
       return Promise.resolve(true);
     case 'stat': // <--------sensor (maybe YCAM) status query
       return new Promise((resolve) => {
