@@ -13,16 +13,13 @@ const rovi_srvs = ros.require('rovi').srv;
 let gRosNode = null;
 
 
-async function callLowDoParamGet(req, res)
-{
+async function callLowDoParamGet(req, res) {
   const paramName = req.name;
 
   ros.log.info("callLowDoParamGet() start. paramName=" + paramName);
 
-  await gRosNode.hasParam(paramName).then(async function(exists)
-  {
-    if (!exists)
-    {
+  await gRosNode.hasParam(paramName).then(async function(exists) {
+    if (!exists) {
       const err_msg = "Not exists parameter '" + paramName + "'";
       ros.log.error(err_msg);
       res.success = false;
@@ -31,8 +28,7 @@ async function callLowDoParamGet(req, res)
       return true;
     }
 
-    await gRosNode.getParam(paramName).then(async function(paramValue)
-    {
+    await gRosNode.getParam(paramName).then(async function(paramValue) {
       const yamlValue = yaml.safeDump(paramValue);
       ros.log.info('getParam(' + paramName + ') returned. paramValue=' + yamlValue);
       res.success = true;
@@ -40,8 +36,7 @@ async function callLowDoParamGet(req, res)
       res.value = yamlValue;
       return true; 
     }
-    ).catch(function(error)
-    {
+    ).catch(function(error) {
       const err_msg = 'getParam(' + paramName + ') ERROR: (' + error + ')';
       ros.log.error(err_msg);
       res.success = false;
@@ -59,17 +54,14 @@ async function callLowDoParamGet(req, res)
 }
 
 
-async function callLowDoParamSet(req, res)
-{
+async function callLowDoParamSet(req, res) {
   const paramName = req.name;
   const paramVal = yaml.safeLoad(req.value);
 
   ros.log.info("callLowDoParamSet() start. paramName=" + paramName + ", paramVal=" + paramVal);
 
-  await gRosNode.hasParam(paramName).then(async function(exists)
-  {
-    if (!exists)
-    {
+  await gRosNode.hasParam(paramName).then(async function(exists) {
+    if (!exists) {
       const err_msg = "Not exists parameter '" + paramName + "'";
       ros.log.error(err_msg);
       res.success = false;
@@ -86,12 +78,10 @@ async function callLowDoParamSet(req, res)
     canonParamName = canonParamName.slice(0, -1);
     ros.log.debug("canonParamName=" + canonParamName);
     const mres = canonParamName.match(/.*\//);
-    if (mres == null)
-    {
+    if (mres == null) {
       needDynSet = false;
     }
-    else
-    {
+    else {
       ppath = mres[0];
       leaf = canonParamName.replace(ppath, '');
       ros.log.debug("ppath=" + ppath);
@@ -104,32 +94,26 @@ async function callLowDoParamSet(req, res)
           ppath == '/rovi/right/camera/image_raw/compressed/' ||
           ppath == '/rovi/right/camera/image_raw/compressedDepth/' ||
           ppath  == '/rovi/right/camera/image_raw/theora/' ||
-          ppath  == '/rovi/right/camera/')
-      {
+          ppath  == '/rovi/right/camera/') {
         needDynSet = true;
       }
-      else
-      {
+      else {
         needDynSet = false;
       }
     }
 
-    if (needDynSet)
-    {
-      const srvCl_dynsetparam = gRosNode.serviceClient(ppath + "set_parameters", dyn_srvs.Reconfigure, {persist:true});
+    if (needDynSet) {
+      const srvCl_dynsetparam = gRosNode.serviceClient(ppath + "set_parameters", dyn_srvs.Reconfigure, { persist: true });
 
-      await gRosNode.waitForService(srvCl_dynsetparam.getService(), 2000).then(async function(available)
-      {
-        if (!available)
-        {
+      await gRosNode.waitForService(srvCl_dynsetparam.getService(), 2000).then(async function(available) {
+        if (!available) {
           const err_msg = 'service NOT available: ' + srvCl_dynsetparam.getService();
           ros.log.error(err_msg);
           res.success = false;
           res.message = err_msg; 
           return true;
         }
-        else
-        {
+        else {
           ros.log.info('waitForService ' + srvCl_dynsetparam.getService() + ' OK');
 
           const request = new dyn_srvs.Reconfigure.Request();
@@ -138,15 +122,13 @@ async function callLowDoParamSet(req, res)
           param.value = paramVal;
           request.config.strs.push(param);
 
-          await srvCl_dynsetparam.call(request).then(async function(clres)
-          {
+          await srvCl_dynsetparam.call(request).then(async function(clres) {
             ros.log.info('call ' + srvCl_dynsetparam.getService() + ' returned');
             res.success = true;
             res.message = "OK: '/rovi/do_param_set'";
             return true;
           }
-          ).catch(function(error)
-          {
+          ).catch(function(error) {
             const err_msg = "service call ERROR: '" + srvCl_dynsetparam.getService() + "' (" + error + ")";
             ros.log.error(err_msg);
             res.success = false;
@@ -158,8 +140,7 @@ async function callLowDoParamSet(req, res)
       }
       );
     }
-    else
-    {
+    else {
       gRosNode.setParam(paramName, paramVal);
       ros.log.info('setParam(' + paramName + ', ' + paramVal + ') returned');
       res.success = true;
@@ -175,8 +156,7 @@ async function callLowDoParamSet(req, res)
 }
 
 
-async function lowParamGet(req, res)
-{
+async function lowParamGet(req, res) {
   ros.log.info("service called: '/rovi/do_param_get'");
 
   res.success = false;
@@ -190,8 +170,7 @@ async function lowParamGet(req, res)
 }
 
 
-async function lowParamSet(req, res)
-{
+async function lowParamSet(req, res) {
   ros.log.info("service called: '/rovi/do_param_set'");
 
   res.success = false;
@@ -205,8 +184,7 @@ async function lowParamSet(req, res)
 }
 
 
-ros.initNode('/rovi/parameter').then((rosNode)=>
-{
+ros.initNode('/rovi/parameter').then((rosNode) => {
   gRosNode = rosNode;
 
   // Low Services

@@ -61,15 +61,15 @@ openメソッドの戻り値から、以下のYCAMイベントがキャッチで
     - 2       //連続(13)ショット
 ## 使用例
 ~~~
-const ros=require('rosnodejs');
+const ros = require('rosnodejs');
 
-const sens=require('./ycam1h.js');    //パッケージに非ず。ファイルです。
+const sens = require('./ycam1h.js');    //パッケージに非ず。ファイルです。
 
-const rosNode=await ros.initNode('/test9');
+const rosNode = await ros.initNode('/test9');
 
-const sensEv=sens.open(rosNode,'Basler-1','Basler-2','192.168.2.66:5000');
+const sensEv = sens.open(rosNode, 'Basler-1', 'Basler-2', '192.168.2.66:5000');
 
-sensEv.on('cam_L',function(img){
+sensEv.on('cam_L', function(img) {
 
 });
 

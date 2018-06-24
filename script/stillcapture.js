@@ -9,34 +9,28 @@ const std_srvs = ros.require('std_srvs').srv;
 let gRosNode = null;
 
 
-async function callLowDoStillCapture(srvClPath, req, res)
-{
+async function callLowDoStillCapture(srvClPath, req, res) {
   ros.log.info("callLowDoStillCapture() start. srvClPath=" + srvClPath);
 
   const srvCl = gRosNode.serviceClient(srvClPath, std_srvs.Trigger);
 
-  await gRosNode.waitForService(srvClPath, 2000).then(async function(available)
-  {
-    if (!available)
-    {
+  await gRosNode.waitForService(srvClPath, 2000).then(async function(available) {
+    if (!available) {
       const err_msg = 'service NOT available: ' + srvCl.getService();
       ros.log.error(err_msg);
       res.success = false;
       res.message = err_msg; 
       return true;
     }
-    else
-    {
+    else {
       ros.log.info('waitForService ' + srvCl.getService() + ' OK');
-      await srvCl.call(req).then(function(clres)
-      {
+      await srvCl.call(req).then(function(clres) {
         ros.log.info('call ' + srvCl.getService() + ' returned');
         res.success = clres.success;
         res.message = clres.message;
         return true;
       }
-      ).catch(function(error)
-      {
+      ).catch(function(error) {
         const err_msg = "service call ERROR: '" + srvCl.getService() + " " + toON + "' (" + error + ")";
         ros.log.error(err_msg);
         res.success = false;
@@ -54,8 +48,7 @@ async function callLowDoStillCapture(srvClPath, req, res)
 }
 
 
-async function lrLowStillCapture(req, res)
-{
+async function lrLowStillCapture(req, res) {
   ros.log.info("lrLowStillCapture() start.");
 
   const res_l = new std_srvs.Trigger.Response();
@@ -70,8 +63,7 @@ async function lrLowStillCapture(req, res)
   ros.log.info("res_l.message=" + res_l.message);
   ros.log.info("res_r.message=" + res_r.message);
 
-  if (res_l.success && res_r.success)
-  {
+  if (res_l.success && res_r.success) {
     ros.log.info("all OK!");
     res.success = true;
     res.message = "OK: '/rovi/do_still_capture'";
@@ -88,8 +80,7 @@ async function lrLowStillCapture(req, res)
 }
 
 
-async function lowStillCapture(req, res)
-{
+async function lowStillCapture(req, res) {
   ros.log.info("service called: '/rovi/do_still_capture'");
 
   res.success = false;
@@ -103,8 +94,7 @@ async function lowStillCapture(req, res)
 }
 
 
-ros.initNode('/rovi/stillcapture').then((rosNode)=>
-{
+ros.initNode('/rovi/stillcapture').then((rosNode) => {
   gRosNode = rosNode;
 
   // Low Service
