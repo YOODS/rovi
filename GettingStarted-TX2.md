@@ -2,24 +2,25 @@
 このドキュメントでは、RoVIを構築して実行するための手順を記述します。
 
 # 使用ハードウェア
-- Jetson TX2(ビジョンコントローラ YJC-4も可)
-- YCAM3D-III (3Dカメラ), ACアダプタ(DC24V), GigE Vision用LANケーブル
+- Jetson TX2 または YJC-4 (ビジョンコントローラ) (TODO インターネット接続用LANケーブル)
+- YCAM3D-III (3Dカメラ), GigE Vision用LANケーブル
 
 # ビジョンコントローラの準備
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
 この前提条件を満たしたビジョンコントローラを用意してください。
+
 ##1. JETPACK3.2をインストール
--JETPACKをインストールしたPCにUSBで接続して、以下リカバリーモードにて以下のコマンドを実施
+- jetpack/64_TX2/Linux_for_Tegrakernel/dtb/tegra186-quill-p3310-1000-c03-00-base.dtbを汎用キャリアボード対応版に変更しておくこと。これをやらないとUSBデバイスに電源が供給されない。 (TODO YOODSから供給)
+- 親機(JETPACKをインストールしたPC)とビジョンコントーラをmicro USBで接続して、リカバリーモードにて以下のコマンドを実施 (TODO コマンド実行に20分程度かかる)
 ~~~
 sudo ./flash.sh  jetson-tx2 mmcblk0p1
 ~~~
-- jetpack/64_TX2/Linux_for_Tegrakernel/dtb/tegra186-quill-p3310-1000-c03-00-base.dtbを汎用キャリアボード対応版に変更しておくこと。これをやらないとUSBデバイスに電源が供給されない。
-- 終了後素直にキーボード,マウス,HDMI,Ethenetを接続して、IPアドレス,時刻を設定する。
-- user:nvidia, pw=nvidiaでログインできるが、sudo passwd nvidiaで簡単なパスワードに変更しておくことを勧める。
+- 上記のflash.shコマンドの終了後、キーボード,マウス,HDMIケーブル,インターネット接続用LANケーブルを接続して、IPアドレス,時刻を設定する。
+- デフォルトではuser: nvidia, password: nvidiaでログインできる。必要に応じて、sudo passwd nvidiaでパスワードを変更可能。
 ~~~
 sudo apt-get update
 ~~~
-以下はすべて、このビジョンコントローラでの作業となります。
+以下はすべて、このビジョンコントローラでの作業となります。 (TODO 上記ログインからはすべてビジョンコントローラ。)
 
 ------
 
@@ -88,7 +89,7 @@ sudo apt-get -y install python-catkin-tools
 ~~~
 sudo apt-get install ros-kinetic-opencv3
 ~~~
-※OpenCVはJetson nativeなものをビルドして入れるべき!
+※ TODO OpenCVはJetson nativeなものをビルドして入れるべき!
 
 ### 1-6  cmakeインストール
 ~~~
@@ -101,10 +102,11 @@ mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 cd rovi
-git checkout develop
+git checkout nedo
 
 cd ~/catkin_ws/src
 git clone https://github.com/ros-perception/vision_opencv
+TODO 不要?
 
 cd ~/catkin_ws/src/rovi/shm-typed-array
 npm install nan
@@ -113,7 +115,7 @@ sudo npm install -g node-gyp
 node-gyp configure
 node-gyp build
 
-cd ~/catkin_ws/src/rovi/
+cd ~/catkin_ws/src/rovi
 wget --no-check-certificate https://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
 tar -xf 3.3.4.tar.gz
 mkdir include
@@ -127,8 +129,6 @@ link_directories(
 )
 
 
-cd ../..
+cd ~/catkin_ws
 catkin_make
 ~~~
-
-

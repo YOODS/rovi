@@ -163,21 +163,21 @@ git clone https://github.com/YOODS/rovi
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
 
-cd ../shm-typed-array
+cd ~/catkin_ws/src/rovi/shm-typed-array
 npm install nan
 npm install node-cleanup
 sudo npm install -g node-gyp
 node-gyp configure
 node-gyp build
 
-cd ..
+cd ~/catkin_ws/src/rovi
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
 tar xvzf 3.3.4.tar.gz
 mkdir include
 mv eigen-eigen-5a0156e40feb/Eigen/ include
 rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
 
-cd ../..
+cd ~/catkin_ws
 catkin_make
 ~~~
 
@@ -370,8 +370,8 @@ https://github.com/jetsonhacks/buildOpenCVTX2
 ~~~
 tar -xf packageStSDK-aarch64.tar,gz
 cd packageStSDK-aarch64/
-chmod +x packageStSDK-aarch64-install.run 
-./packageStSDK-aarch64-install.run 
+chmod +x packageStSDK-aarch64-install.run
+./packageStSDK-aarch64-install.run
 cp /opt/sentech/.stprofile /etc/profile.d/stprofile.sh
 /opt/sentech/bin/setnetwork.sh eth0
 ~~~
@@ -453,7 +453,7 @@ export ROS_MASTER_URI=http://localhost:11311
 ~~~
 
 ~~~
-cd catkin_ws/src/rovi/
+cd ~/catkin_ws/src/rovi/
 mkdir include
 find /usr/ -name Eigen
 ls /usr/include/eigen3/Eigen
@@ -461,7 +461,7 @@ ln -s /usr/include/eigen3/Eigen include/
 ~~~
 
 ~~~
-cd PhaseShift/
+cd ~/PhaseShift/
 make clean
 make
 sudo cp -a libyds3d* /usr/local/lib
