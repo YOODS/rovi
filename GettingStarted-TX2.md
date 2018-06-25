@@ -154,7 +154,7 @@ mkdir ~/src
 cd ~/src
 git clone https://github.com/jetsonhacks/installROSTX2.git
 cd installROSTX2/
-./installROS.sh
+./installROS.sh -p ros-kinetic-desktop-full
 ./setupCatkinWorkspace.sh
 rosdep update
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
