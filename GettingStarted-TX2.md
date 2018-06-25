@@ -26,9 +26,93 @@ sudo apt-get update
 
 # RoVIの構築手順
 
-## 1. 各種ミドルウェアのインストール
+## 1. 3Dカメラ関連の設定
 
-### 1-1. 必須パッケージのインストール
+### 1-1. 汎用GigEライブラリ(libaravis)のインストール
+
+#### 1-1-1. ビルド用の前準備
+~~~
+sudo apt-get install automake intltool
+~~~
+
+#### 1-1-2. ソースをダウンロード
+~~~
+cd ~
+mkdir aravis
+cd aravis
+wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.4/aravis-0.4.1.tar.xz
+~~~
+
+#### 1-1-3. ソース解凍先でmakeしてインストール
+~~~
+tar xvf aravis-0.4.1.tar.xz
+cd aravis-0.4.1
+./configure
+make
+sudo make install
+~~~
+
+#### 1-1-4. 動作用の設定
+~~~
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> ~/.bashrc
+. ~/.bashrc
+~~~
+
+#### 1-1-5. 動作確認
+~~~
+arv-tool-0.4
+~~~
+
+↓ と表示されることを確認する。  
+`No device found`
+
+### 1-2. ROSのGigEカメラ汎用ドライバ(camera_aravis)のインストール
+~~~
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/camera_aravis
+cd ..
+catkin_make
+~~~
+
+*上記git cloneのURIに注意。  
+(RoVIでは、YOODSで一部改変したcamera_aravisドライバを使用する。)*
+
+### 1-3. 物理接続
+ビジョンコントローラと3DカメラをGigE LANケーブルで接続して、3Dカメラの電源を入れる。
+
+### 1-4. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスを設定
+3Dカメラ(YCAM3D-I)の工場出荷時のIPアドレスは以下なので、  
+ビジョンコントローラ(PC)の3Dカメラ対向のGigEインターフェースに、これらと通信できるIPアドレスを設定する。
+- 左側カメラ: 192.168.222.1/24
+- 右側カメラ: 192.168.222.2/24
+- プロジェクター: 192.168.222.10/24
+
+~~~
+Ubuntu Desktop版での設定例：  
+
+Ubuntuの[システム設定]->[ネットワーク]で、
+3Dカメラ対向のGigEインターフェースに 192.168.222.99/24 を以下のように設定する。
+
+[IPv4設定]タブで
+  方式：手動
+  アドレス：192.168.222.99	24	空
+~~~
+
+IPアドレス設定後、ビジョンコントローラから上述の3つの3DカメラIPアドレスへpingが通ることを確認する。
+
+### 1-5. 接続の最終確認
+~~~
+arv-tool-0.4
+~~~
+
+↓ のようにカメラ2台(左右)のIDが表示されることを確認する。   
+`SENTECH-17AB755`  
+`SENTECH-17AB756`  
+（各3Dカメラで、IDの具体的な値はこれらと異なる。）
+
+## 2. 各種ミドルウェアのインストール
+
+### 2-1. 必須パッケージのインストール
 ~~~
 sudo apt-get -y install curl
 sudo apt-get -y install apt-transport-https
@@ -37,14 +121,14 @@ echo "deb https://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/source
 sudo apt-get update
 sudo apt-get install yarn
 ~~~
-### 1-2. Node.jsのインストール
+### 2-2. Node.jsのインストール
 ~~~
 cd ~
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get -y install nodejs
 ~~~
 
-### 1-3. rosnodejsのインストール
+### 2-3. rosnodejsのインストール
 ~~~
 cd ~
 npm install rosnodejs
@@ -63,7 +147,7 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### 1-4. ROSパッケージのインストール
+### 2-4. ROSパッケージのインストール
 
 ~~~
 mkdir ~/src
@@ -77,7 +161,7 @@ echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 ~~~
 一旦、ログアウトして再度、ログインする。または、別ターミナルを開く。
 
-### 1-5. python-catkin-toolsインストール
+### 2-5. python-catkin-toolsインストール
 ~~~
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list'
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -85,18 +169,18 @@ sudo apt-get update
 sudo apt-get -y install python-catkin-tools
 ~~~
 
-### 1-6  ros-kinetic-opencv3インストール
+### 2-6  ros-kinetic-opencv3インストール
 ~~~
 sudo apt-get install ros-kinetic-opencv3
 ~~~
 ※ TODO OpenCVはJetson nativeなものをビルドして入れるべき!
 
-### 1-6  cmakeインストール
+### 2-7  cmakeインストール
 ~~~
 sudo apt-get install cmake
 ~~~
 
-## 2. RoVI本体のROSパッケージのインストール
+## 3. RoVI本体のROSパッケージのインストール
 ~~~
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
