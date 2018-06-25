@@ -72,9 +72,29 @@ var ycam = {
     }
     return true;
   },
-  pset: function(str) {
-    run_p.write(str + '\n');
-    run_p.setNoDelay(true);
+  pset: function(obj) {
+    console.log("yam1s pset called");
+    for (let key in obj) {
+      console.log("ycam1s pset key=" + key + ", val=" + obj[key]);
+      switch(key){
+      case 'ExposureTime':
+        run_p.write('x' + obj[key]+'\n');
+        break;
+      case 'Interval':
+        run_p.write('p' + obj[key]+'\n');
+        break;
+      case 'Intencity':
+        let ix = obj[key] < 256 ? obj[key] : 255;
+        ix=ix.toString(16);
+        run_p.write('i'+ix+ix+ix+'\n');
+        break;
+      case 'Go':
+        let gx= obj[key]<2? obj[key]:2;
+        run_p.write('p'+gx+'\n');
+        break;
+      }
+      run_p.setNoDelay(true);
+    }
   },
   normal: false,
   stat: function() {
@@ -96,14 +116,14 @@ var ycam = {
     Notifier.emit('stat', this.normal = f);
     setTimeout(function() {ycam.scan();}, 1000);
   },
-  open: function(idl, idr, url, port, param_V) {
+  open: function(idl, idr, url, port) {
 //    run_c = Runner.run('grabber-sentech ' + idl + ' ' + idr);
 //    run_c = Runner.run('../basler_example/grabber');
     run_c = Runner.run(process.env.ROVI_PATH + "/sentech_grabber/grabber '" + idl + "' '" + idr + "'");
     this.scan();
     run_c.on('start', function(data) {
-      console.log("get start");
-      ycam.cset(param_V);
+      console.log("ycam1s::run_c start");
+      if(!run_p.destroyed) Notifier.emit('wake');
     });
     run_c.on('cout', function(data) {
       let lines = data.split(/\n/);
@@ -196,6 +216,8 @@ function openYPJ(port, url, sock) {
   if (arguments.length < 3) sock = new Net.Socket();
   sock.on('connect', function() {
     ros.log.info('YPJ connected');
+    console.log("ycam1s::run_p ready");
+    if(run_c.running) Notifier.emit('wake');
   });
   sock.on('error', function() {
     ros.log.error('YPJ error');

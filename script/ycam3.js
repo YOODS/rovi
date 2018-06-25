@@ -74,10 +74,30 @@ var ycam = {
 //      }, 1000);
     }
   },
-  pset: function(str) {
-    let s0 = this.pregbuf;
-    this.pregbuf = s0 + str + '\n';
-    if (s0.length == 0) this.pregwrt();
+  pset: function(obj) {
+    let str='';
+    for (let key in obj) {
+      switch(key){
+      case 'ExposureTime':
+        str+= 'x'+obj[key]+'\n';
+        break;
+      case 'Interval':
+        str+= 'o'+obj[key]+'\n';
+        break;
+      case 'Intencity':
+        let ix = obj[key] < 256 ? obj[key] : 255;
+        ix=ix.toString(16);
+        str+= 'i'+ix+ix+ix+'\n';
+        break;
+      case 'Go':
+        let gx= obj[key]<2? obj[key]:2;
+        str+= 'o'+gx+'\n';
+        break;
+      }
+    }
+    let l=this.pregbuf.length;
+    this.pregbuf+=str;
+    if(l==0) this.pregwrt();
   },
   normal: false,
   stat: function() {
