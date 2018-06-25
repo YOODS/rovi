@@ -9,7 +9,7 @@
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
 この前提条件を満たしたビジョンコントローラを用意してください。
 ##1. JETPACK3.2をインストール
--JETPACKをインストールしたPCにUSBで接続して、以下フラッシュ書き換えモードにて以下のコマンドを実施
+-JETPACKをインストールしたPCにUSBで接続して、以下リカバリーモードにて以下のコマンドを実施
 ~~~
 sudo ./flash.sh  jetson-tx2 mmcblk0p1
 ~~~
@@ -62,32 +62,49 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### 1-4. RoVI本体のROSパッケージのインストール(2018/6/23現在、ROSパッケージのインストールができなくなっている。)
-~~~
-mkdir -p ~/catkin_ws/src
-cd ~/catkin_ws/src
-git clone https://github.com/YOODS/rovi
-~~~
+### 1-4. ROSパッケージのインストール
 
 ~~~
-sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-sudo apt-key adv --keyserver hkp://ha.pool.sks-keyservers.net:80 --recv-key 421C365BD9FF1F717815A3895523BAEEB01FA116
-sudo apt-get update
-
-sudo apt-get install ros-kinetic-desktop-full
-sudo apt-get install ros-kinetic-slam-gmapping
-sudo rosdep init
+mkdir ~/src
+cd ~/src
+git clone https://github.com/jetsonhacks/installROSTX2.git
+cd installROSTX2/
+./installROS.sh
+./setupCatkinWorkspace.sh
 rosdep update
 echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 ~~~
+一旦、ログアウトして再度、ログインする。または、別ターミナルを開く。
 
-## 2. RoVI本体のROSパッケージのインストール(ROS本体のインストールができていないため、未実施(2018/6/24))
+### 1-5. python-catkin-toolsインストール
+~~~
+sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list'
+wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
+sudo apt-get update
+sudo apt-get -y install python-catkin-tools
+~~~
+
+### 1-6  ros-kinetic-opencv3インストール
+~~~
+sudo apt-get install ros-kinetic-opencv3
+~~~
+<span style="color: red; ">※OpenCVはJetson nativeなものをビルドして入れるべき!</span>
+
+### 1-6  cmakeインストール
+~~~
+sudo apt-get install cmake
+~~~
+
+## 2. RoVI本体のROSパッケージのインストール
 ~~~
 mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 cd rovi
 git checkout develop
+
+cd ~/catkin_ws/src
+git clone https://github.com/ros-perception/vision_opencv
 
 cd ~/catkin_ws/src/rovi/shm-typed-array
 npm install nan
@@ -101,9 +118,17 @@ wget --no-check-certificate https://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
 tar -xf 3.3.4.tar.gz
 mkdir include
 mv eigen-eigen-5a0156e40feb/Eigen/ include
-rm -rf eigen-eigen-5a0156e40feb/
+rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
 
-cd ../..[^2]
+<span style="color":red;">catkin_ws/src/rovi/CMakeLists.txtのlink_directoriesをaarch64用に変更する必要がある。
+```
+link_directories(
+  lib/aarch64
+# lib/x86_64
+)
+```
+
+cd ../..
 catkin_make
 ~~~
 
