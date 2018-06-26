@@ -61,15 +61,20 @@ class ImageSwitcher {
     }
   }
   async emit(img) {
+//    const who = this;
+//    ros.log.warn('got emit img ' + who.lr + ' seq=' + img.header.seq);
     this.raw.publish(img);
     let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
+//    ros.log.warn('before call remap ' + who.lr + ' seq=' + img.header.seq);
     let res = await this.remap.call(req);
+//    ros.log.warn('after  call remap ' + who.lr + ' seq=' + img.header.seq);
     if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
     else this.rect.publish(res.img);
     this.caminfo.header = req.img.header;
     this.caminfo.distortion_model = "plumb_bob";
     this.info.publish(this.caminfo);
+//    ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
   }
   store(count) {
     const who = this;
@@ -77,12 +82,12 @@ class ImageSwitcher {
     return new Promise(function(resolve) {
       who.hook.on('store', function(img) {
         if (imgdbg) {
-          ros.log.warn('capturing img_' + who.lr + ':'+ who.capt.length + " seq=" + img.header.seq);
+          ros.log.warn('capturing img_' + who.lr + '['+ who.capt.length + "] seq=" + img.header.seq);
         }
         if (who.capt.length < count) {
           who.capt.push(img);
           if (imgdbg) {
-            ros.log.warn('capt ycam ' + who.lr + ' seq=' + img.header.seq + ' ... ' + who.capt.length);
+            ros.log.warn('captured  img_' + who.lr + '['+ (who.capt.length - 1) + "] seq=" + img.header.seq + ' ... now capt.length=' + who.capt.length);
           }
           if (who.capt.length == count) {
             if (imgdbg) {
@@ -139,6 +144,7 @@ setImmediate(async function() {
     return c;
   }
   async function paramReload(){
+//    ros.log.warn('***********paramReload called');
     param_C=await rosNode.getParam(NSpsgenpc + '/camera');
     let nv=await rosNode.getParam(NSlive + '/camera');
     let np=await rosNode.getParam(NSpsgenpc + '/projector');
@@ -216,7 +222,7 @@ ros.log.warn('service pshift_genpc called');
     return new Promise(async (resolve) => {
 //      const timeoutmsec = param_P.Interval * 20;
       // TODO tmp +10 and +280
-      const timeoutmsec = (param_P.Interval + 10) * 20 + waitmsec_for_livestop + 280;
+      const timeoutmsec = (param_P.Interval + 10) * 20 + waitmsec_for_livestop + 280 + 1000;
 if (imgdbg) {
 ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 }
