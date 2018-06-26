@@ -135,11 +135,12 @@ var ycam = {
 }
 
 function openCamera(rosrun, ns) {
-  let image_l = new sensor_msgs.Image();
-  let image_r = new sensor_msgs.Image();
-  image_l.data = new Uint8Array();
-  image_r.data = new Uint8Array();
   let sub = rosNode.subscribe(ns + '/camera/image_raw', sensor_msgs.Image, (src) => {
+//    ros.log.warn('ycam3.js:: Got seq=' + src.header.seq);
+    let image_l = new sensor_msgs.Image();
+    let image_r = new sensor_msgs.Image();
+    image_l.data = new Uint8Array();
+    image_r.data = new Uint8Array();
     const h = image_l.height = image_r.height = src.height;
     const w = image_l.step = image_r.step = src.step / 2;
     image_l.header = image_r.header = src.header;
@@ -156,7 +157,8 @@ function openCamera(rosrun, ns) {
     }
     Notifier.emit('left', image_l);
     Notifier.emit('right', image_r);
-  });
+//    ros.log.warn('ycam3.js:: after emit seq=' + src.header.seq);
+  }, { queueSize: 20 });
   return new Promise(async function(resolve) {
     let regw = rosNode.serviceClient(ns + '/camera/regw', gev_srvs.GevRegs, { persist: true });
     if (await rosNode.waitForService(regw.getService(), 2000)) {

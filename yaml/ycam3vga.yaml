@@ -21,7 +21,7 @@ pshift_genpc:
 live:
   camera:
     AcquisitionFrameRate: 10
-    ExposureTime: 35000
+    ExposureTime: 20000
     GainAnalog: 0
     Gain: 100
 camera:
@@ -66,11 +66,12 @@ genpc:
       -2.1857147979736328e+02, 0., 0., 0., 2.0427672442068310e+03, 0.,
       0., 1.2239194966501705e+01, 5.4686632823280188e+03 ]
 sgbm:
+  windowSize: 1
   minDisparity: 0
   numDisparities: 64
   blockSize: 3
   disp12MaxDiff: 0
   preFilterCap: 31
-  uniquenessRatio: 15
-  speckleWindowSize: 100
+  uniquenessRatio: 5
+  speckleWindowSize: 20
   speckleRange: 2
