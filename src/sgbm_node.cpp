@@ -34,11 +34,12 @@ sensor_msgs::CameraInfo rinfo;
 
 cv::Ptr<cv::StereoSGBM> ssgbm;
 
+int windowSize = 1;
 int minDisparity = 0;
 int numDisparities = 64;
 int blockSize = 3; // SADWindowSize
-int P1 = 8 * 3 * blockSize * blockSize;
-int P2 = 32 * 3 * blockSize * blockSize;
+int P1 = 8 * 3 * windowSize * windowSize;
+int P2 = 32 * 3 * windowSize * windowSize;
 int disp12MaxDiff = 0;
 int preFilterCap = 31;
 int uniquenessRatio = 15;
@@ -63,11 +64,13 @@ void makeSgbm()
     uniquenessRatio,
     speckleWindowSize,
     speckleRange,
-    cv::StereoSGBM::MODE_HH4);
+//    cv::StereoSGBM::MODE_HH4);
+    cv::StereoSGBM::MODE_SGBM_3WAY);
 }
 
 void paramUpdate()
 {
+  int prev_windowSize = windowSize;
   int prev_minDisparity = minDisparity;
   int prev_numDisparities = numDisparities;
   int prev_blockSize = blockSize;
@@ -81,6 +84,7 @@ void paramUpdate()
   auto tm1 = std::chrono::system_clock::now();
 #endif
 
+  nh->getParam("sgbm/windowSize", windowSize);
   nh->getParam("sgbm/minDisparity", minDisparity);
   nh->getParam("sgbm/numDisparities", numDisparities);
   nh->getParam("sgbm/blockSize", blockSize);
@@ -102,6 +106,19 @@ void paramUpdate()
     numDisparities -= ndred;
     ROS_WARN("ndred=%d, now numDisparities=%d", ndred, numDisparities);
     nh->setParam("sgbm/numDisparities", numDisparities);
+  }
+
+  if (windowSize < 1)
+  {
+    ROS_WARN("windowSize(%d) is set to 1", windowSize);
+    windowSize = 1;
+    nh->setParam("sgbm/windowSize", windowSize);
+  }
+  if ((windowSize % 2) == 0)
+  {
+    windowSize--;
+    ROS_ERROR("windowSize--, now windowSize=%d", windowSize);
+    nh->setParam("sgbm/windowSize", windowSize);
   }
 
   if (blockSize < 1)
@@ -145,6 +162,10 @@ void paramUpdate()
   }
 
 
+  if (prev_windowSize != windowSize)
+  {
+    ROS_INFO("paramUpdate now windowSize=%d", windowSize);
+  }
   if (prev_minDisparity != minDisparity)
   {
     ROS_INFO("paramUpdate now minDisparity=%d", minDisparity);
@@ -192,6 +213,10 @@ void paramUpdate()
   ssgbm->setUniquenessRatio(uniquenessRatio);
   ssgbm->setSpeckleWindowSize(speckleWindowSize);
   ssgbm->setSpeckleRange(speckleRange);
+  P1 = 8 * 3 * windowSize * windowSize;
+  P2 = 32 * 3 * windowSize * windowSize;
+  ssgbm->setP1(P1);
+  ssgbm->setP2(P2);
 
 #if TM_DEBUG
   auto tm3 = std::chrono::system_clock::now();
@@ -227,6 +252,7 @@ void outputDisparityDepthPcl2()
   disp_msg->valid_window.width    = right - left;
   disp_msg->valid_window.height   = bottom - top;
 
+
   cv::Mat_<int16_t> disparity16_;
   ssgbm->compute(l_image, r_image, disparity16_);
 
@@ -242,6 +268,27 @@ void outputDisparityDepthPcl2()
 
   cv::Mat_<float> disp_mat(disp_image.height, disp_image.width, (float*)&disp_image.data[0], disp_image.step);
   disparity16_.convertTo(disp_mat, disp_mat.type(), inv_dpp);
+//  disparity16_.convertTo(disp_mat, disp_mat.type(), inv_dpp, (-(model_.left().cx() - model_.right().cx())) * inv_dpp);
+//  disparity16_.convertTo(disp_mat, disp_mat.type(), inv_dpp, -(model_.left().cx() - model_.right().cx()));
+
+
+/*
+  static const double inv_dpp = 1.0; // TODO
+
+  cv::Mat disparity;
+  ssgbm->compute(l_image, r_image, disparity);
+
+  sensor_msgs::Image& disp_image = disp_msg->image;
+  disp_image.height = disparity.rows;
+  disp_image.width = disparity.cols;
+  disp_image.encoding = sensor_msgs::image_encodings::TYPE_32FC1;
+  disp_image.step = disp_image.width * sizeof(float);
+  disp_image.data.resize(disp_image.step * disp_image.height);
+
+  cv::Mat_<float> disp_mat(disp_image.height, disp_image.width, (float*)&disp_image.data[0], disp_image.step);
+  disparity.convertTo(disp_mat, disp_mat.type());
+*/
+
 
   disp_msg->f = model_.right().fx();
   disp_msg->T = model_.baseline();
@@ -256,6 +303,28 @@ void outputDisparityDepthPcl2()
   //
   cv::Mat_<cv::Vec3f> point_mat;
   model_.projectDisparityImageTo3d(disp_mat, point_mat, true);
+
+/*
+  std::vector<double> vecQ;
+  nh->getParam("genpc/Q", vecQ);
+  if (vecQ.size() != 16)
+  {
+    ROS_ERROR("sgbm Param Q NG");
+    return;
+  }
+
+  cv::Mat_<double> Q_(4, 4);
+
+  for (int v = 0; v < 4; v++)
+  {
+    for (int u = 0; u < 4; u++)
+    {
+      Q_(v, u) = vecQ.at(v * 4 + u);
+    }
+  }
+
+  cv::reprojectImageTo3D(disp_mat, point_mat, Q_, true);
+*/
 
   float nan = std::numeric_limits<float>::quiet_NaN();
   float inf = std::numeric_limits<float>::infinity();
