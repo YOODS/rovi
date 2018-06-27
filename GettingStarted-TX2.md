@@ -2,8 +2,9 @@
 このドキュメントでは、RoVIを構築して実行するための手順を記述します。
 
 # 使用ハードウェア
-- Jetson TX2 または YJC-4 (ビジョンコントローラ) (TODO インターネット接続用LANケーブル)
-- YCAM3D-III (3Dカメラ), GigE Vision用LANケーブル
+- Jetson TX2 または YJC-4 (ビジョンコントローラ)
+- YCAM3D-III (3Dカメラ)
+- GigE LANケーブル (…YCAM3D-IIIに付属する専用品…) (ビジョンコントローラと3Dカメラを接続)
 
 # ビジョンコントローラの準備
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
@@ -215,4 +216,8 @@ link_directories(
 
 cd ~/catkin_ws
 catkin_make
+~~~
+
+~~~
+TODO cd ~: npm install xml2js
 ~~~
