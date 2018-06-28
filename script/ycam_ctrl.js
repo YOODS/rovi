@@ -18,7 +18,7 @@ const EventEmitter = require('events').EventEmitter;
 const imgdbg = false;
 
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
-const waitmsec_for_livestop = 125;
+const waitmsec_for_livestop = 200;
 
 ros.Time.diff = function(t0) {
   let t1 = ros.Time.now();
