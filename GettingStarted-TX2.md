@@ -217,7 +217,3 @@ link_directories(
 cd ~/catkin_ws
 catkin_make
 ~~~
-
-~~~
-TODO cd ~: npm install xml2js
-~~~
