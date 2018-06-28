@@ -1,7 +1,5 @@
 <launch>
 
-  <node ns="/rovi" name="setgev" pkg="rovi" type="setgev.sh" />
-
   <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/ycam3vga.yaml" />
 
   <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
