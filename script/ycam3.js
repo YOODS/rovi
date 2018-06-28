@@ -13,9 +13,6 @@ const gev_srvs = ros.require('camera_aravis').srv;
 const rovi_srvs = ros.require('rovi').srv;
 
 const execSync = require('child_process').execSync;
-const fs = require('fs');
-const xml2js = require('xml2js');
-const util = require('util');
 
 let run_c;  // should be rosrun.js camnode
 let rosNode;
@@ -124,42 +121,74 @@ var ycam = {
     Notifier.emit('stat', this.normal = f);
     setTimeout(function() {ycam.scan();}, 1000);
   },
-  open: function(nh, ns) {
+  open: function(nh, ns, resolution) {
     rosNode = nh;
     run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
 
-//      let dummyxml = 'YOODS <?xml version="1.0" encoding=\'UTF-8\'?> <root> <hoge1>aiueo</hoge1> <hoge2>123</hoge2> </root>';
-
       ros.log.warn('before execSync get_genicam_xml');
-      const xmlstring = execSync('arv-tool-0.4 genicam | tail -n +2 | tee /tmp/genicam.xml');
-      ros.log.warn('after  execSync get_genicam_xml ... xmlstring=[' + xmlstring + ']');
+      const xmlstr = execSync('arv-tool-0.4 genicam | tail -n +2 | tee /tmp/genicam.xml').toString();
+//      ros.log.warn('after  execSync get_genicam_xml ... xmlstr=[' + xmlstr + ']');
+      ros.log.warn('after  execSync get_genicam_xml');
 
-/*
-      let xmlbuf = fs.readFileSync('/tmp/genicam.xml');
-      let xmlstring = xmlbuf.toString();
-//      ros.log.warn('read /tmp/genicam.xml done. xmlstring=[' + xmlstring + ']'); 
-      ros.log.warn('read /tmp/genicam.xml done'); 
-*/
+      let lines = xmlstr.split(/\n/);
 
-      let xmlparser = new xml2js.Parser();
-//      let xmlparser = new xml2js.Parser({ trim: true });
-//      let xmlparser = new xml2js.Parser({ explicitArray: false });
-//      let xmlparser = new xml2js.Parser({ trim: true, explicitArray: false });
-      xmlparser.parseString(xmlstring, function (err, result) {
-//      xmlparser.parseString(dummyxml, function (err, result) {
-        console.log('zzzA');
-//        console.dir(result); // depth=2
-        console.log(util.inspect(result, false, null)); // whole depth
-        ros.log.warn('Done');
-      }); 
-      ros.log.warn('gigigi');
+      const yoods = '==YOODS==';
+
+      let vga_yamlstr ='';
+      let sxga_yamlstr ='';
+
+      let curkey = '';
+
+      for (let li = 0; li < lines.length; li++) {
+//        ros.log.warn('lines[' + li + ']=[' + lines[li] + ']');
+
+        if (lines[li].startsWith(yoods)) {
+          const key = lines[li].slice(yoods.length);
+//          ros.log.warn('key=[' + key + ']');
+          if (key === 'start') {
+            // ignore
+          }
+          else if (key === 'vga') {
+            curkey = 'vga';
+          }
+          else if (key === 'sxga') {
+            curkey= 'sxga';
+          }
+          else if (key === 'end') {
+            break;
+          }
+          else {
+            ros.log.error(yoods + ' UNKNOWN key...[' + key + ']');
+            return;
+          }
+        }
+        else {
+          if (curkey === 'vga') {
+            vga_yamlstr += lines[li] + '\n';
+          }
+          else if (curkey === 'sxga') {
+            sxga_yamlstr += lines[li] + '\n';
+          }
+        }
+      }
+
+//      ros.log.warn('vga_yamlstr=[' + vga_yamlstr + ']');
+//      ros.log.warn('sxga_yamlstr=[' + sxga_yamlstr + ']');
+
+      let yamlstr = '';
+      if (resolution === 'vga') {
+         yamlstr = vga_yamlstr;
+      }
+      else if (resolution === 'sxga') {
+         yamlstr = sxga_yamlstr;
+      }
 
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');
         process.exit(101);
       }
-      Notifier.emit('wake');
+      Notifier.emit('wake', yamlstr);
     });
     this.scan();
     return Notifier;

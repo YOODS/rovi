@@ -45,6 +45,7 @@ class ImageSwitcher {
         if (sensName === 'ycam1s') {
           who.param = await node.getParam(ns + '/camera');
         }
+        // TODO
         who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
       }
       catch(err) {
@@ -116,8 +117,28 @@ class ImageSwitcher {
   }
 }
 
+//TODO
+let g_resolution;
+
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
+
+  let camera_size = await rosNode.getParam(NSrovi + '/camera');
+//  ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
+
+  if (camera_size.Height == 480 && camera_size.Width == 1280) {
+    ros.log.warn('camera size = VGA');
+    g_resolution = 'vga';
+  }
+  else if (camera_size.Height == 1024 && camera_size.Width == 2560) {
+    ros.log.warn('camera size = SXGA');
+    g_resolution = 'sxga';
+  }
+  else {
+    ros.log.error('Invalid camera size');
+    return;
+  }
+
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
@@ -179,7 +200,7 @@ setImmediate(async function() {
     sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port);
     break;
   case 'ycam3':
-    sensEv = sens.open(rosNode, NSrovi);
+    sensEv = sens.open(rosNode, NSrovi, g_resolution);
     break;
   }
   sensEv.on('stat', function(s) {
@@ -187,7 +208,8 @@ setImmediate(async function() {
     f.data = s;
     pub_stat.publish(f);
   });
-  sensEv.on('wake', async function(s) {
+  sensEv.on('wake', async function(yamlstr) {
+    ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
     param_V={};
     param_P={};
     paramScan();
