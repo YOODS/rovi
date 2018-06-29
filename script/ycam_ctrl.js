@@ -290,7 +290,7 @@ ros.log.warn('service pshift_genpc called');
     return new Promise(async (resolve) => {
 //      const timeoutmsec = param_P.Interval * 20;
       // TODO tmp +10 and +280
-      const timeoutmsec = (param_P.Interval + 10) * 20 + waitmsec_for_livestop + 280 + 1000;
+      const timeoutmsec = (param_P.Interval + 10) * 20 + waitmsec_for_livestop + 280 + 2000;
 if (imgdbg) {
 ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 }
