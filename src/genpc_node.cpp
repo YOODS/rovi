@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "rovi/GenPC.h"
+#include "rovi/SetGenpcParam.h"
 #include "ps_main.h"
 
 // for disparityCallback() and depthCallback()
@@ -15,6 +16,8 @@
 
 ros::NodeHandle *nh;
 //ros::Publisher *pub1,*pub2;
+
+std::vector<double> vecQ;
 
 // Phase Shift method calc parameters
 PS_PARAMS param =
@@ -163,6 +166,32 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   return true;
 }
 
+bool setGenpcParam(rovi::SetGenpcParam::Request &req, rovi::SetGenpcParam::Response &res)
+{
+  ROS_INFO("setGenpcParam called");
+
+  res.success = false;
+  res.message = "";
+
+  vecQ = req.Q;
+  if (vecQ.size() != 16)
+  {
+    ROS_ERROR("Param Q NG");
+    res.message += "Q NG/";
+  }
+
+  if (res.message.size() > 0) // Error happened
+  {
+    return true;
+  }
+
+  res.success = true;
+  res.message = "GenPC param ready";
+  ROS_INFO("genpc:setGenpcParam ok");
+
+  return true;
+}
+
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
   ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
@@ -193,14 +222,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
     }
   }
 */
-
-  std::vector<double> vecQ(req.Q);
-  ROS_INFO("req.Q read");
-  if (vecQ.size() != 16)
-  {
-    ROS_ERROR("Param Q NG");
-    return false;
-  }
 
   ps_init(width, height);
   ROS_INFO("ps_init done");
@@ -313,6 +334,7 @@ int main(int argc, char **argv)
 //  ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
+  ros::ServiceServer svc2 = n.advertiseService("genpc/set_genpc_param", setGenpcParam);
 //  ros::ServiceServer svc2 = n.advertiseService("genpc/try", trypc);
 //  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("genpc/pcl", 1);
 //  pub1 = &p1;

@@ -18,11 +18,6 @@ const jsyaml = require("js-yaml");
 
 const imgdbg = true;
 
-//TODO
-let g_resolution;
-let g_yamlstr; // iranai?
-let q_Q;
-
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
 const waitmsec_for_livestop = 200;
 
@@ -46,6 +41,10 @@ class ImageSwitcher {
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
+        return;
+      }
+      if (!await node.waitForService(who.setremapparam.getService(), 2000)) {
+        ros.log.error('set_remap_param service not available');
         return;
       }
       try {
@@ -143,13 +142,14 @@ setImmediate(async function() {
   let camera_size = await rosNode.getParam(NSrovi + '/camera');
 //  ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
 
+  let cam_resolution;
   if (camera_size.Height == 480 && camera_size.Width == 1280) {
     ros.log.warn('camera size = VGA');
-    g_resolution = 'vga';
+    cam_resolution = 'vga';
   }
   else if (camera_size.Height == 1024 && camera_size.Width == 2560) {
     ros.log.warn('camera size = SXGA');
-    g_resolution = 'sxga';
+    cam_resolution = 'sxga';
   }
   else {
     ros.log.error('Invalid camera size');
@@ -163,8 +163,13 @@ setImmediate(async function() {
   const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
   const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
+  const setgenpcparam = rosNode.serviceClient(NSrovi + '/genpc/set_genpc_param', rovi_srvs.SetGenpcParam);
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
+    return;
+  }
+  if (!await rosNode.waitForService(setgenpcparam.getService(), 2000)) {
+    ros.log.error('set_genpc_param service not available');
     return;
   }
 
@@ -217,7 +222,7 @@ setImmediate(async function() {
     sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port);
     break;
   case 'ycam3':
-    sensEv = sens.open(rosNode, NSrovi, g_resolution);
+    sensEv = sens.open(rosNode, NSrovi, cam_resolution);
     break;
   }
   sensEv.on('stat', function(s) {
@@ -233,7 +238,11 @@ setImmediate(async function() {
     ros.log.warn('Q=' + yamlval.genpc.Q);
     image_L.setCamParam(yamlval.left.remap);
     image_R.setCamParam(yamlval.right.remap);
-    g_Q = yamlval.genpc.Q;
+    let req = new rovi_srvs.SetGenpcParam.Request();
+    req.Q = yamlval.genpc.Q;
+    ros.log.warn('before call genpc set param');
+    let res = await setgenpcparam.call(req);
+    ros.log.warn('after  call genpc set param');
     param_V={};
     param_P={};
     paramScan();
@@ -321,7 +330,6 @@ if (imgdbg) {
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = capt_L;
       gpreq.imgR = capt_R;
-      gpreq.Q = g_Q;
       let gpres = await genpc.call(gpreq);
       pub_pc.publish(gpres.pc);
       pub_pc2.publish(gpres.pc2);

@@ -25,6 +25,7 @@ add_service_files(
   SetParam.srv
   SetPose.srv
   SetRemapParam.srv
+  SetGenpcParam.srv
 )
 
 generate_messages(

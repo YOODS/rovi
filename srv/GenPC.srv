@@ -1,6 +1,5 @@
 sensor_msgs/Image[] imgL
 sensor_msgs/Image[] imgR
-float64[] Q
 ---
 sensor_msgs/PointCloud pc
 sensor_msgs/PointCloud2 pc2
