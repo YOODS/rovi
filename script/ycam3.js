@@ -127,10 +127,10 @@ var ycam = {
     run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
 
-      ros.log.warn('before execSync get_genicam_xml');
+//      ros.log.warn('before execSync get_genicam_xml');
       const xmlstr = execSync('arv-tool-0.4 genicam | tail -n +2 | tee /tmp/genicam.xml').toString();
 //      ros.log.warn('after  execSync get_genicam_xml ... xmlstr=[' + xmlstr + ']');
-      ros.log.warn('after  execSync get_genicam_xml');
+//      ros.log.warn('after  execSync get_genicam_xml');
 
       let lines = xmlstr.split(/\n/);
 

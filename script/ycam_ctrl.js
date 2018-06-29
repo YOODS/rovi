@@ -130,10 +130,14 @@ class ImageSwitcher {
     req.K = remapyaml.K;
     req.R = remapyaml.R;
     req.P = remapyaml.P;
-    ros.log.warn('setCamPareq height=' + req.height + ' P.length=' + req.P.length);
-    ros.log.warn('before call remap set param ' + this.lr);
+    if (imgdbg) {
+      ros.log.warn('setCamPareq height=' + req.height + ' P.length=' + req.P.length);
+      ros.log.warn('before call remap set param ' + this.lr);
+    }
     let res = await this.setremapparam.call(req);
-    ros.log.warn('after  call remap set param ' + this.lr);
+    if (imgdbg) {
+      ros.log.warn('after  call remap set param ' + this.lr);
+    }
   }
 }
 
@@ -232,22 +236,29 @@ setImmediate(async function() {
     pub_stat.publish(f);
   });
   sensEv.on('wake', async function(yamlstr) {
-    ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
+    if (imgdbg) {
+      ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
+    }
     const yamlval = jsyaml.safeLoad(yamlstr);
-    ros.log.warn('lh=' + yamlval.left.remap.height);
-    ros.log.warn('rw=' + yamlval.right.remap.width);
-    ros.log.warn('Q=' + yamlval.genpc.Q);
-    image_L.setCamParam(yamlval.left.remap);
-    image_R.setCamParam(yamlval.right.remap);
+//    ros.log.warn('lh=' + yamlval.left.remap.height);
+//    ros.log.warn('rw=' + yamlval.right.remap.width);
+//    ros.log.warn('Q=' + yamlval.genpc.Q);
+    await image_L.setCamParam(yamlval.left.remap);
+    await image_R.setCamParam(yamlval.right.remap);
     let req = new rovi_srvs.SetGenpcParam.Request();
     req.Q = yamlval.genpc.Q;
-    ros.log.warn('before call genpc set param');
+    if (imgdbg) {
+      ros.log.warn('before call genpc set param');
+    }
     let res = await setgenpcparam.call(req);
-    ros.log.warn('after  call genpc set param');
+    if (imgdbg) {
+      ros.log.warn('after  call genpc set param');
+    }
     param_V={};
     param_P={};
     paramScan();
     sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
+    ros.log.warn('NOW ALL READY');
   });
   sensEv.on('left', async function(img) {
     if (imgdbg) {
