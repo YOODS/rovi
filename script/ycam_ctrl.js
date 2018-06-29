@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+
 const NSycamctrl = '/rovi/ycam_ctrl';
 const NSpsgenpc = '/rovi/pshift_genpc';
 const NScamL = '/rovi/left';
@@ -16,7 +17,7 @@ const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter = require('events').EventEmitter;
 const jsyaml = require("js-yaml");
 
-const imgdbg = true;
+const imgdbg = false;
 
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
 const waitmsec_for_livestop = 200;
@@ -339,7 +340,7 @@ if (imgdbg) {
 }
       sens.cset({ 'TriggerMode': 'Off' });
       paramScan();
-      res.message = 'scan compelete:' + imgs[0].length;
+      res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
       res.success = true;
       image_L.view(vue_N);
       image_R.view(vue_N);
