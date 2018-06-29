@@ -363,10 +363,22 @@ ros.log.warn('service pshift_genpc resolve true return');
     if (cmds.length > 1) cmd = cmds.shift();
     switch (cmd) {
     case 'cset':
-      sens.cset(obj);
+      if (!sens.normal) {
+        res.answer = 'YCAM not ready';
+      }
+      else {
+        res.answer = 'OK';
+        sens.cset(obj);
+      }
       return Promise.resolve(true);
     case 'pset':
-      sens.pset(obj);
+      if (!sens.normal) {
+        res.answer = 'YCAM not ready';
+      }
+      else {
+        res.answer = 'OK';
+        sens.pset(obj);
+      }
       return Promise.resolve(true);
     case 'stat': // <--------sensor (maybe YCAM) status query
       return new Promise((resolve) => {
