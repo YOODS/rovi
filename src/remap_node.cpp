@@ -70,7 +70,7 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 
 bool setRemapParam(rovi::SetRemapParam::Request &req, rovi::SetRemapParam::Response &res)
 {
-  ROS_ERROR("setRemapParam called");
+  ROS_INFO("setRemapParam called");
 
   res.success = false;
   res.message = "";
@@ -121,7 +121,7 @@ bool setRemapParam(rovi::SetRemapParam::Request &req, rovi::SetRemapParam::Respo
 
   res.success = true;
   res.message = "Remap table ready";
-  ROS_INFO("remap:setRemapPara ok");
+  ROS_INFO("remap:setRemapParam ok");
 
   return true;
 }
