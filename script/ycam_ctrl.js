@@ -247,6 +247,7 @@ setImmediate(async function() {
     param_V={};
     param_P={};
     paramScan();
+    sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
   });
   sensEv.on('left', async function(img) {
     if (imgdbg) {
@@ -286,12 +287,12 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         resolve(false);
         image_L.cancel();
         image_R.cancel();
-        sens.cset({ 'TriggerMode': 'Off' });
+//        sens.cset({ 'TriggerMode': 'Off' });
         paramScan();
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
       param_V=Object.assign(param_V,param_C);
-      sens.cset({ 'TriggerMode': 'On' });
+//      sens.cset({ 'TriggerMode': 'On' });
       sens.cset(param_C);
 if (imgdbg) {
 ros.log.warn('now await livestop and pshift_genpc');
@@ -338,7 +339,8 @@ if (imgdbg) {
       ros.log.warn('pc published');
       ros.log.warn("genpc DONE");
 }
-      sens.cset({ 'TriggerMode': 'Off' });
+//      sens.cset({ 'TriggerMode': 'Off' });
+      sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
       paramScan();
       res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
       res.success = true;
