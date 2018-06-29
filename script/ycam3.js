@@ -122,6 +122,7 @@ var ycam = {
     setTimeout(function() {ycam.scan();}, 1000);
   },
   open: function(nh, ns, resolution) {
+    ros.log.warn('ycam3 opening...');
     rosNode = nh;
     run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
@@ -160,7 +161,7 @@ var ycam = {
           }
           else {
             ros.log.error(yoods + ' UNKNOWN key...[' + key + ']');
-            return;
+            process.exit(102);
           }
         }
         else {
@@ -182,6 +183,11 @@ var ycam = {
       }
       else if (resolution === 'sxga') {
          yamlstr = sxga_yamlstr;
+      }
+
+      if (yamlstr.length === 0) {
+        ros.log.error('Cannot get Camera Parameter');
+        process.exit(103);
       }
 
       if (!await openCamera(run_c, ns)) {

@@ -4,12 +4,14 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "rovi/ImageFilter.h"
+#include "rovi/SetRemapParam.h"
 
 ros::NodeHandle *nh;
 ros::Publisher pub;
 
 cv::Mat rmapx, rmapy;
 
+/*
 bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
   res.success = false;
@@ -64,6 +66,65 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   ROS_INFO("remap:reload ok");
   return true;
 }
+*/
+
+bool setRemapParam(rovi::SetRemapParam::Request &req, rovi::SetRemapParam::Response &res)
+{
+  ROS_ERROR("setRemapParam called");
+
+  res.success = false;
+  res.message = "";
+
+  std::vector<double> D(req.D);
+  if (D.size() != 5)
+  {
+    ROS_ERROR("Param D NG");
+    res.message += "D NG/";
+  }
+  std::vector<double> K(req.K);
+  if (K.size() != 9)
+  {
+    ROS_ERROR("Param K NG");
+    res.message += "K NG/";
+  }
+  std::vector<double> R(req.R);
+  if (R.size() != 9)
+  {
+    ROS_ERROR("Param R NG");
+    res.message += "R NG/";
+  }
+  std::vector<double> P(req.P);
+  if (P.size() != 12)
+  {
+    ROS_ERROR("Param P NG");
+    res.message += "P NG/";
+  }
+
+  cv::Mat Pro(P), nCam, nRot, nTrans;
+  cv::OutputArray oCam(nCam), oRot(nRot), oTrans(nTrans);
+  cv::decomposeProjectionMatrix(Pro.reshape(1, 3), oCam, oRot, oTrans);
+
+  int width = req.width, height = req.height;
+  cv::Size imgsz(width, height);
+  if (imgsz.area() == 0)
+  {
+    res.message += "Size NG/";
+  }
+
+  if (res.message.size() > 0) // Error happened
+  {
+    return true;
+  }
+
+  cv::Mat Cam(K), Rot(R);
+  cv::initUndistortRectifyMap(Cam.reshape(1, 3), D, Rot.reshape(1, 3), nCam, imgsz, CV_32FC1, rmapx, rmapy);
+
+  res.success = true;
+  res.message = "Remap table ready";
+  ROS_INFO("remap:setRemapPara ok");
+
+  return true;
+}
 
 bool remap(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res)
 {
@@ -93,9 +154,12 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "remap_node");
   ros::NodeHandle n;
   nh = &n;
-  ros::ServiceServer svc0 = n.advertiseService("remap/reload", reload);
+//  ros::ServiceServer svc0 = n.advertiseService("remap/reload", reload);
+  ros::ServiceServer svc0 = n.advertiseService("remap/set_remap_param", setRemapParam);
   ros::ServiceServer svc1 = n.advertiseService("remap", remap);
   pub = n.advertise<std_msgs::Float64>("remap/tat", 1);
+  ros::spin();
+/*
   std_srvs::Trigger::Request req;
   std_srvs::Trigger::Response res;
   reload(req, res);
@@ -107,5 +171,6 @@ int main(int argc, char **argv)
   {
     ROS_ERROR("remap:unmatched parameters");
   }
+*/
   return 0;
 }

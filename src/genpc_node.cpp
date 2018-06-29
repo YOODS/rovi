@@ -194,8 +194,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   }
 */
 
-  std::vector<double> vecQ;
-  nh->getParam("genpc/Q", vecQ);
+  std::vector<double> vecQ(req.Q);
+  ROS_INFO("req.Q read");
   if (vecQ.size() != 16)
   {
     ROS_ERROR("Param Q NG");
@@ -298,11 +298,11 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   return true;
 }
 
-bool trypc(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
-{
-  rovi::GenPC srv;
-  return genpc(srv.request, srv.response);
-}
+//bool trypc(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+//{
+//  rovi::GenPC srv;
+//  return genpc(srv.request, srv.response);
+//}
 
 int main(int argc, char **argv)
 {
@@ -313,7 +313,7 @@ int main(int argc, char **argv)
 //  ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
-  ros::ServiceServer svc2 = n.advertiseService("genpc/try", trypc);
+//  ros::ServiceServer svc2 = n.advertiseService("genpc/try", trypc);
 //  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("genpc/pcl", 1);
 //  pub1 = &p1;
 //  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("genpc/pcl2", 1);

@@ -14,8 +14,14 @@ const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter = require('events').EventEmitter;
+const jsyaml = require("js-yaml");
 
-const imgdbg = false;
+const imgdbg = true;
+
+//TODO
+let g_resolution;
+let g_yamlstr; // iranai?
+let q_Q;
 
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
 const waitmsec_for_livestop = 200;
@@ -36,6 +42,7 @@ class ImageSwitcher {
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
+    this.setremapparam = node.serviceClient(ns + '/remap/set_remap_param', rovi_srvs.SetRemapParam);
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
@@ -44,9 +51,8 @@ class ImageSwitcher {
       try {
         if (sensName === 'ycam1s') {
           who.param = await node.getParam(ns + '/camera');
+          who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
         }
-        // TODO
-        who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
       }
       catch(err) {
         ros.log.warn('getParam ' + err);
@@ -115,10 +121,21 @@ class ImageSwitcher {
       this.vue.publish(this.capt[n]);
     }
   }
+  async setCamParam(remapyaml) {
+    this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), remapyaml);
+    let req = new rovi_srvs.SetRemapParam.Request();
+    req.height = remapyaml.height;
+    req.width = remapyaml.width;
+    req.D = remapyaml.D;
+    req.K = remapyaml.K;
+    req.R = remapyaml.R;
+    req.P = remapyaml.P;
+    ros.log.warn('setCamPareq height=' + req.height + ' P.length=' + req.P.length);
+    ros.log.warn('before call remap set param ' + this.lr);
+    let res = await this.setremapparam.call(req);
+    ros.log.warn('after  call remap set param ' + this.lr);
+  }
 }
-
-//TODO
-let g_resolution;
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
@@ -210,6 +227,13 @@ setImmediate(async function() {
   });
   sensEv.on('wake', async function(yamlstr) {
     ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
+    const yamlval = jsyaml.safeLoad(yamlstr);
+    ros.log.warn('lh=' + yamlval.left.remap.height);
+    ros.log.warn('rw=' + yamlval.right.remap.width);
+    ros.log.warn('Q=' + yamlval.genpc.Q);
+    image_L.setCamParam(yamlval.left.remap);
+    image_R.setCamParam(yamlval.right.remap);
+    g_Q = yamlval.genpc.Q;
     param_V={};
     param_P={};
     paramScan();
@@ -297,6 +321,7 @@ if (imgdbg) {
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = capt_L;
       gpreq.imgR = capt_R;
+      gpreq.Q = g_Q;
       let gpres = await genpc.call(gpreq);
       pub_pc.publish(gpres.pc);
       pub_pc2.publish(gpres.pc2);
