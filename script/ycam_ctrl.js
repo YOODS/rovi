@@ -144,6 +144,7 @@ class ImageSwitcher {
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
 
+  try{
   let camera_size = await rosNode.getParam(NSrovi + '/camera');
 //  ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
 
@@ -159,6 +160,10 @@ setImmediate(async function() {
   else {
     ros.log.error('Invalid camera size');
     return;
+  }
+  }
+  catch(err){
+    ;
   }
 
   const image_L = new ImageSwitcher(rosNode, NScamL);

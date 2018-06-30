@@ -26,6 +26,7 @@ add_service_files(
   SetPose.srv
   SetRemapParam.srv
   SetGenpcParam.srv
+  Detect2D.srv
 )
 
 generate_messages(
