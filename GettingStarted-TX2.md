@@ -221,3 +221,74 @@ catkin_make
 ~~~
 TODO cd ~; npm install js-yaml
 ~~~
+
+# RoVIチュートリアル
+## 1. 起動
+### 1-1. カメラ解像度VGAの場合
+~~~
+roslaunch rovi run-ycam3vga.launch 
+~~~
+### 1-2. カメラ解像度SXGAの場合
+~~~
+roslaunch rovi run-ycam3sxga.launch
+~~~
+
+### 1-3. トリガーモードのon/off
+起動時はトリガーモードon状態で起動しているので、ライブ状態にするにはoffに変更する必要がある。
+~~~
+rosservice call /rovi/ycam_ctrl/parse 'cset {"TriggerMode":"Off"}'
+~~~
+
+## 2. カメラ画像へのアクセス
+### 2-1. 画像表示
+~~~
+rosrun image_view image_view image:=/rovi/camera/image_raw
+~~~
+
+### 2-2. 画像保存
+~~~
+script/imsave.js XX
+leftXX.pgm, rightXX.pgmの2つのファイルをカレントディレクトリに生成
+~~~
+~~~
+script/imsave1.js XX
+raw画像(左右結合)をカレントディレクトリに生成
+~~~
+
+## 3. カメラパラメータ(live)
+### 3-1. ライブｃカメラパラメータセット
+~~~
+rosparam get /rovi/live/camera/[Parameter Item]
+| Parameter Item|   min   |   max   | default |
+|:--------------|--------:|--------:|--------:|
+|AcquisitionFrameRate|1|30|10|
+|ExposureTime|1000| 32000| 20000|
+|Gain|0|255|100|
+|GainAnalog|0|255|0|
+~~~
+
+### 3-2. カメラパラメータセット
+~~~
+rosparam set /rovi/live/camera/ExposureTime 20000
+~~~
+
+## 4. プロジェクタ制御
+### 4-1. 位相シフトパターン発光(カメラトリガも送出)
+~~~
+rosservice call /rovi/ycam_ctrl/parse ‘pset {“Go”:2}’
+~~~
+
+## 5. カメラ情報
+~~~
+rostopic echo /rovi/left/camera_info
+~~~
+
+## 6. aravis関連
+### 6-1. ブートストラップレジスタの内容表示
+~~~
+arv-tool-0.4 —debug=all:3
+~~~
+### 6-2. GENICAM XMLの取得
+~~~
+arv-tool-0.4 genicam
+~~~
