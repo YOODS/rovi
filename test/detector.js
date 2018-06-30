@@ -26,7 +26,8 @@ setImmediate(async function() {
     else image_queue=null;
   }
 
-  const sub = rosNode.subscribe('/rovi/left/image_rect', sensor_msgs.Image, async (src)=>{
+//  const sub = rosNode.subscribe('/rovi/left/image_rect', sensor_msgs.Image, async (src)=>{
+  const sub = rosNode.subscribe('/camera/image_raw', sensor_msgs.Image, async (src)=>{
     let f=image_queue==null;
     image_queue=src;
     if(f) callDetector();
