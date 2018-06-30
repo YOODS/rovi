@@ -287,6 +287,7 @@ rosservice call /rovi/ycam_ctrl/parse ‘pset {“Go”:2}’
 ~~~
 rosservice call /rovi/pshift_genpc
 ~~~
+
 ### 5-2. 撮影パラメータ
 ~~~
 $rosparam get /rovi/pshift_genpc/
@@ -301,6 +302,7 @@ projector: {ExposureTime: 10, Intencity: 100, Interval: 100}~~~
 ~~~
 rosparam set /rovi/pshift_genpc/camera/Gain 100
 ~~~
+
 ## 6. カメラ情報
 ~~~
 rostopic echo /rovi/left/camera_info
@@ -311,6 +313,7 @@ rostopic echo /rovi/left/camera_info
 ~~~
 arv-tool-0.4 —debug=all:3
 ~~~
+
 ### 7-2. GENICAM XMLの取得
 ~~~
 arv-tool-0.4 genicam
