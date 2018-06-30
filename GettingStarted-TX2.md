@@ -259,13 +259,13 @@ raw画像(左右結合)をカレントディレクトリに生成
 ### 3-1. ライブｃカメラパラメータセット
 ~~~
 rosparam get /rovi/live/camera/[Parameter Item]
-| Parameter Item|   min   |   max   | default |
-|:--------------|--------:|--------:|--------:|
+~~~
+| Parameter Item |   min   |   max   | default |
+|:---------------|--------:|--------:|--------:|
 |AcquisitionFrameRate|1|30|10|
 |ExposureTime|1000| 32000| 20000|
 |Gain|0|255|100|
 |GainAnalog|0|255|0|
-~~~
 
 ### 3-2. カメラパラメータセット
 ~~~
