@@ -221,3 +221,100 @@ catkin_make
 ~~~
 TODO cd ~; npm install js-yaml
 ~~~
+
+# RoVIチュートリアル
+## 1. 起動
+### 1-1. カメラ解像度VGAの場合
+~~~
+roslaunch rovi run-ycam3vga.launch 
+~~~
+VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、yaml/ycam3vga.ymalに保存されている。
+### 1-2. カメラ解像度SXGAの場合
+~~~
+roslaunch rovi run-ycam3sxga.launch
+~~~
+SXGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、yaml/ycam3sxga.ymalに保存されている。
+
+### 1-3. トリガーモードのon/off
+起動時はトリガーモードon状態で起動しているので、ライブ状態にするにはoffに変更する必要がある。
+~~~
+rosservice call /rovi/ycam_ctrl/parse 'cset {"TriggerMode":"Off"}'
+~~~
+
+## 2. カメラ画像へのアクセス
+### 2-1. 画像表示
+~~~
+rosrun image_view image_view image:=/rovi/camera/image_raw
+~~~
+
+### 2-2. 画像保存
+~~~
+script/imsave.js XX
+leftXX.pgm, rightXX.pgmの2つのファイルをカレントディレクトリに生成
+~~~
+~~~
+script/imsave1.js XX
+raw画像(左右結合)をカレントディレクトリに生成
+~~~
+
+## 3. カメラパラメータ(live)
+### 3-1. ライブカメラパラメータセット
+~~~
+rosparam get /rovi/live/camera/[Parameter Item]
+[Parameter Item]を省略すると一覧を取得できる
+~~~
+
+### 3-2. カメラパラメータセット
+~~~
+例) rosparam set /rovi/live/camera/ExposureTime 20000
+~~~
+| Parameter Item |   min   |   max   | default |
+|:---------------|--------:|--------:|--------:|
+|AcquisitionFrameRate|1|30|10|
+|ExposureTime|1000| 32000| 20000|
+|Gain|0|255|100|
+|GainAnalog|0|255|0|
+
+## 4. プロジェクタ制御
+### 4-1. 位相シフトパターン発光(カメラトリガも送出)
+~~~
+rosservice call /rovi/ycam_ctrl/parse ‘pset {“Go”:2}’
+~~~
+※プロジェクタ制御コマンドについては別紙資料を参照
+
+## 5. 位相シフト
+### 5-1. 計測実行
+~~~
+rosservice call /rovi/pshift_genpc
+~~~
+
+### 5-2. 撮影パラメータ
+~~~
+$rosparam get /rovi/pshift_genpc/
+
+calc: {brightness: 256, bw_diff: 7, darkness: 5, ls_points: 3, max_parallax: 400,
+max_ph_diff: 3.0, min_parallax: -300, rdup_cnt: 5, reject_diff: 1.5, search_div: 2,
+step_diff: 1.2}
+camera: {ExposureTime: 8400, Gain: 50}
+projector: {ExposureTime: 10, Intencity: 100, Interval: 100}
+~~~
+これらのパラメータを個別に設定することも可能。例えばカメラゲインを100に変更する場合は以下のコマンドを実行する。
+~~~
+rosparam set /rovi/pshift_genpc/camera/Gain 100
+~~~
+
+## 6. カメラ情報
+~~~
+rostopic echo /rovi/left/camera_info
+~~~
+
+## 7. aravis関連
+### 7-1. ブートストラップレジスタの内容表示
+~~~
+arv-tool-0.4 —debug=all:3
+~~~
+
+### 7-2. GENICAM XMLの取得
+~~~
+arv-tool-0.4 genicam
+~~~

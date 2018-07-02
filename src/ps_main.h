@@ -72,8 +72,12 @@ extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp 
 /*
  * 生成した点群をPLY保存
  * fname: ファイル名(パス名を含む)
+ * flags
  */
-extern void outPLY(const char *fname,int wo_texture =0);
+#define WO_TEXTURE     0x00000001
+#define RANGE_GRID     0x00000002	//実装途中20180701
+
+extern void outPLY(const char *fname,int flags =0);
 
 
 #endif /* ps_main_h */
