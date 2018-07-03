@@ -14,6 +14,8 @@ const rovi_srvs = ros.require('rovi').srv;
 
 const execSync = require('child_process').execSync;
 
+const dbg = false;
+
 let run_c;  // should be rosrun.js camnode
 let rosNode;
 
@@ -40,17 +42,29 @@ var ycam = {
     for (let key in obj) {
       let val = obj[key];
       if (reg_table.hasOwnProperty(key)) {
+        if (dbg) {
+          ros.log.warn('key=' + key + ', val=' + val + '. reg_write...');
+        }
         greq.address = reg_table[key];
         greq.data = typeof(val) == 'string' ? val_table[val] : val;
         let res = await run_c.reg_write.call(greq);
+        if (dbg) {
+          ros.log.warn('key=' + key + ', val=' + val + '. reg_write... done.');
+        }
       }
       else if (typeof(val) == 'string') {
+        if (dbg) {
+          ros.log.warn('key=' + key + ', val=' + val + '. dynparam str');
+        }
         let param = new dyn_msgs.StrParameter();
         param.name = key;
         param.value = val;
         dreq.config.strs.push(param);
       }
       else {
+        if (dbg) {
+          ros.log.warn('key=' + key + ', val=' + val + '. dynparam double');
+        }
         let param = new dyn_msgs.DoubleParameter();
         param.name = key;
         param.value = val;
@@ -59,6 +73,9 @@ var ycam = {
     }
     if (dreq.config.strs.length > 0 || dreq.config.doubles.length > 0) {
       let res = await run_c.dynparam_set.call(dreq);
+        if (dbg) {
+          ros.log.warn('dynparam_set done.');
+        }
     }
     return true;
   },
@@ -68,38 +85,56 @@ var ycam = {
       let greq = new gev_srvs.GevRegs.Request();
       greq.address = reg_table['SerialPort'];
       let lsb = ycam.pregbuf.charCodeAt(0);
+      if (dbg) {
+        ros.log.warn('lsb=' + lsb);
+      }
       greq.data = (~lsb << 16) | lsb;
       let res = await run_c.reg_write.call(greq);
 //      setTimeout(function() {
       ycam.pregbuf = ycam.pregbuf.slice(1);
-      ycam.pregwrt();
+      await ycam.pregwrt();
 //      }, 1000);
     }
   },
-  pset: function(obj) {
-    let str='';
+  pset: async function(obj) {
+    let str = '';
     for (let key in obj) {
-      switch(key){
+      if (dbg) {
+        ros.log.warn('pset key=' + key + ', val=' + obj[key]);
+      }
+      switch (key) {
       case 'ExposureTime':
-        str+= 'x'+obj[key]+'\n';
+        str += 'x' + obj[key] + '\n';
         break;
       case 'Interval':
-        str+= 'o'+obj[key]+'\n';
+        str += 'o' + obj[key] + '\n';
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
-        ix=ix.toString(16);
-        str+= 'i'+ix+ix+ix+'\n';
+        ix = ix.toString(16);
+        str += 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
-        let gx= obj[key]<2? obj[key]:2;
-        str+= 'o'+gx+'\n';
+        let gx = obj[key] < 2 ? obj[key] : 2;
+        str += 'o' + gx + '\n';
         break;
       }
     }
-    let l=this.pregbuf.length;
-    this.pregbuf+=str;
-    if(l==0) this.pregwrt();
+    let l = this.pregbuf.length;
+    this.pregbuf += str;
+    if (dbg) {
+      ros.log.warn('l=' + l);
+    }
+    if (l == 0) {
+      await this.pregwrt();
+//      ros.log.warn('l == 0. await pregwrt done');
+    }
+//    else {
+//      ros.log.warn('l != 0. NOT pregwrt');
+//    }
+    if (dbg) {
+      ros.log.warn('pset DONE');
+    }
   },
   normal: false,
   stat: function() {
