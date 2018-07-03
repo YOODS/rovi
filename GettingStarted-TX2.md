@@ -207,13 +207,6 @@ mkdir include
 mv eigen-eigen-5a0156e40feb/Eigen/ include
 rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
 
-※catkin_ws/src/rovi/CMakeLists.txtのlink_directoriesをaarch64用に変更する必要がある。
-link_directories(
-  lib/aarch64
-# lib/x86_64
-)
-
-
 cd ~/catkin_ws
 catkin_make
 ~~~
@@ -226,7 +219,7 @@ TODO cd ~; npm install js-yaml
 ## 1. 起動
 ### 1-1. カメラ解像度VGAの場合
 ~~~
-roslaunch rovi run-ycam3vga.launch 
+roslaunch rovi run-ycam3vga.launch
 ~~~
 VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、yaml/ycam3vga.ymalに保存されている。
 ### 1-2. カメラ解像度SXGAの場合
