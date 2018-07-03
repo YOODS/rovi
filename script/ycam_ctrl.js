@@ -143,26 +143,26 @@ class ImageSwitcher {
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
-
-  try{
-  let camera_size = await rosNode.getParam(NSrovi + '/camera');
-//  ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
-
   let cam_resolution;
-  if (camera_size.Height == 480 && camera_size.Width == 1280) {
-    ros.log.warn('camera size = VGA');
-    cam_resolution = 'vga';
+
+  try {
+    let camera_size = await rosNode.getParam(NSrovi + '/camera');
+//    ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
+
+    if (camera_size.Height == 480 && camera_size.Width == 1280) {
+      ros.log.warn('camera size = VGA');
+      cam_resolution = 'vga';
+    }
+    else if (camera_size.Height == 1024 && camera_size.Width == 2560) {
+      ros.log.warn('camera size = SXGA');
+      cam_resolution = 'sxga';
+    }
+    else {
+      ros.log.error('Invalid camera size');
+      return;
+    }
   }
-  else if (camera_size.Height == 1024 && camera_size.Width == 2560) {
-    ros.log.warn('camera size = SXGA');
-    cam_resolution = 'sxga';
-  }
-  else {
-    ros.log.error('Invalid camera size');
-    return;
-  }
-  }
-  catch(err){
+  catch(err) {
     ;
   }
 
