@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(rovi)
 
+EXECUTE_PROCESS(COMMAND arch COMMAND tr -d '\n' OUTPUT_VARIABLE ARCH)
+message(STATUS "Architecture: ${ARCH}")
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
@@ -55,7 +58,7 @@ include_directories(
 )
 
 link_directories(
-  lib/x86_64
+  lib/${ARCH}
 )
 
 add_definitions("-std=c++11")
