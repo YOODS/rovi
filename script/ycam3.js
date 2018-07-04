@@ -157,7 +157,7 @@ var ycam = {
     setTimeout(function() {ycam.scan();}, 1000);
   },
   open: function(nh, ns, resolution) {
-    ros.log.warn('ycam3 opening...');
+    ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
     run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
@@ -231,6 +231,12 @@ var ycam = {
       }
       Notifier.emit('wake', yamlstr);
     });
+
+    run_c.on('stop', async function() {
+      ros.log.warn('YCAM3 Stopped');
+      rosNode.unsubscribe(ns + '/camera/image_raw');
+    });
+
     this.scan();
     return Notifier;
   }
