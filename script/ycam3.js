@@ -101,29 +101,10 @@ var ycam = {
         ros.log.warn('lsb=' + lsb);
       }
       greq.data = (~lsb << 16) | lsb;
-//      try {
-//        ros.log.warn('before await pregwrt');
-        await run_c.reg_write.call(greq);
-//        ros.log.warn('after  await pregwrt');
-/*
-        for (let i = 0; i < 500; i++) {
-          ros.log.warn('i=' + i);
-        }
-*/
-//      }
-/*
-      catch(err) {
-//        ros.log.warn('pset write ' + err);
-        let warnmsg = 'YCAM3 pregwrt write ' + err;
-        ros.log.warn(warnmsg);
-//        ret = errmsg;
-        success = false; 
-      }
-*/
-//      setTimeout(function() {
+      await run_c.reg_write.call(greq);
+
       ycam.pregbuf = ycam.pregbuf.slice(1);
       await ycam.pregwrt();
-//      }, 1000);
     }
   },
   pset: async function(obj) {
@@ -138,44 +119,34 @@ var ycam = {
       }
       switch (key) {
       case 'ExposureTime':
-        str += 'x' + obj[key] + '\n';
+        str += '\n' + 'x' + obj[key] + '\n';
         break;
       case 'Interval':
-        str += 'o' + obj[key] + '\n';
+        str += '\n' + 'o' + obj[key] + '\n';
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
         ix = ix.toString(16);
-        str += 'i' + ix + ix + ix + '\n';
+        str += '\n' + 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
         let gx = obj[key] < 2 ? obj[key] : 2;
-        str += 'o' + gx + '\n';
+        str += '\n' + 'o' + gx + '\n';
         break;
       }
     }
-    let l = this.pregbuf.length;
     this.pregbuf += str;
     if (dbg) {
-      ros.log.warn('l=' + l);
+      ros.log.warn('l=' + this.pregbuf.length);
     }
-/*
-    if (l == 0) {
-      await this.pregwrt();
-      ros.log.warn('l == 0. await pregwrt done');
-    }
-    else {
-      ros.log.warn('l != 0. NOT pregwrt');
-    }
-*/
     try {
       await this.pregwrt();
-//      ros.log.warn('await pregwrt done');
     }
     catch(err) {
       let warnmsg = 'YCAM3 pset write ' + err;
       ros.log.warn(warnmsg);
       ret = warnmsg;
+      this.pregbuf = '';
     }
 
     if (dbg) {
