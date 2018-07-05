@@ -114,7 +114,6 @@ def cbDo(req):
   return Detect2DResponse(scene,model)
 
 def cbParse(req):
-  global Roi
   exec("global Roi,Radius,Font\n"+req.hello)
   return DialogResponse("OK")
 

@@ -1,0 +1,17 @@
+<launch>
+  <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/ycam1s.yaml" />
+  <rosparam param="/left/camera/AcquisitionFrameRate">5</rosparam>
+  <rosparam param="/left/camera/ExposureTimeAbs">30000</rosparam>
+  <rosparam param="/right/camera/AcquisitionFrameRate">5</rosparam>
+  <rosparam param="/right/camera/ExposureTimeAbs">30000</rosparam>
+  <rosparam param="/detector/Roi">[1,1,99,99]</rosparam>
+  <rosparam param="/detector/Radius">60</rosparam>
+
+  <node ns="/left" pkg="camera_aravis" type="camnode" name="camera" args="SENTECH-17C8087" />
+  <node ns="/right" pkg="camera_aravis" type="camnode" name="camera" args="SENTECH-17C8086" />
+  <node ns="/left" pkg="rovi" type="circle_detector.py" name="circle_detector" />
+  <node ns="/right" pkg="rovi" type="circle_detector.py" name="circle_detector" />
+  <node ns="/v1" pkg="image_view" type="image_view" name="image_view" args="image:=/left/circle_detector/image" />
+  <node ns="/v2" pkg="image_view" type="image_view" name="image_view" args="image:=/right/circle_detector/image" />
+<!--  <node pkg="rovi" type="detector.js" name="detector_node" /> -->
+</launch>
