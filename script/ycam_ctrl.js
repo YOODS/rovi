@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-
 const NSycamctrl = '/rovi/ycam_ctrl';
 const NSpsgenpc = '/rovi/pshift_genpc';
 const NScamL = '/rovi/left';
@@ -21,6 +20,8 @@ const dbg = false;
 
 // TODO from param_V live: camera: AcquisitionFrameRate: ?
 const waitmsec_for_livestop = 200;
+
+let prev_sensstat = false;
 
 ros.Time.diff = function(t0) {
   let t1 = ros.Time.now();
@@ -218,9 +219,9 @@ setImmediate(async function() {
     }
   }
   async function paramReload() {
-    if (dbg) {
-      ros.log.warn('>>***********paramReload called');
-    }
+//    if (dbg) {
+//      ros.log.warn('>>***********paramReload called');
+//    }
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
     let nv = await rosNode.getParam(NSlive + '/camera');
     let np = await rosNode.getParam(NSpsgenpc + '/projector');
@@ -238,9 +239,9 @@ setImmediate(async function() {
       }
     }
     if (paramTimer != null) paramTimer = setTimeout(paramReload, 1000);
-    if (dbg) {
-      ros.log.warn('<<***********paramReload end');
-    }
+//    if (dbg) {
+//      ros.log.warn('<<***********paramReload end');
+//    }
   }
   function paramScan() {
     if (dbg) {
@@ -268,6 +269,13 @@ setImmediate(async function() {
     let f = new std_msgs.Bool();
     f.data = s;
     pub_stat.publish(f);
+    if (dbg) {
+      ros.log.warn('ycam stat=' + s);
+    }
+    if (prev_sensstat != s) {
+      ros.log.warn('YCAM stat becomes ' + s);
+    }
+    prev_sensstat = s;
   });
   sensEv.on('wake', async function(yamlstr) {
     if (dbg) {
@@ -425,8 +433,7 @@ ros.log.warn('service pshift_genpc resolve true return');
         res.answer = 'YCAM not ready';
       }
       else {
-        res.answer = 'OK';
-        await sens.cset(obj);
+        res.answer = await sens.cset(obj);
       }
       return Promise.resolve(true);
     case 'pset':
@@ -434,8 +441,7 @@ ros.log.warn('service pshift_genpc resolve true return');
         res.answer = 'YCAM not ready';
       }
       else {
-        res.answer = 'OK';
-        await sens.pset(obj);
+        res.answer = await sens.pset(obj);
       }
       return Promise.resolve(true);
     case 'stat': // <--------sensor (maybe YCAM) status query

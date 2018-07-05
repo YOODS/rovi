@@ -37,6 +37,7 @@ const val_table = {
 
 var ycam = {
   cset: async function(obj) {
+    let ret = 'OK';
     let greq = new gev_srvs.GevRegs.Request();
     let dreq = new dyn_srvs.Reconfigure.Request();
     for (let key in obj) {
@@ -47,7 +48,14 @@ var ycam = {
         }
         greq.address = reg_table[key];
         greq.data = typeof(val) == 'string' ? val_table[val] : val;
-        let res = await run_c.reg_write.call(greq);
+        try {
+          await run_c.reg_write.call(greq);
+        }
+        catch(err) {
+          let warnmsg = 'YCAM3 cset write ' + err;
+          ros.log.warn(warnmsg);
+          ret = warnmsg;
+        }
         if (dbg) {
           ros.log.warn('key=' + key + ', val=' + val + '. reg_write... done.');
         }
@@ -72,15 +80,19 @@ var ycam = {
       }
     }
     if (dreq.config.strs.length > 0 || dreq.config.doubles.length > 0) {
-      let res = await run_c.dynparam_set.call(dreq);
-        if (dbg) {
-          ros.log.warn('dynparam_set done.');
-        }
+      await run_c.dynparam_set.call(dreq);
+      if (dbg) {
+        ros.log.warn('dynparam_set done.');
+      }
     }
-    return true;
+    return ret;
   },
   pregbuf: '',
   pregwrt: async function() {
+    if (dbg) {
+      ros.log.warn('pregwrt called. pregbuf.length=' + ycam.pregbuf.length);
+    }
+    let success = true;
     if (ycam.pregbuf.length > 0) {
       let greq = new gev_srvs.GevRegs.Request();
       greq.address = reg_table['SerialPort'];
@@ -89,7 +101,25 @@ var ycam = {
         ros.log.warn('lsb=' + lsb);
       }
       greq.data = (~lsb << 16) | lsb;
-      let res = await run_c.reg_write.call(greq);
+//      try {
+//        ros.log.warn('before await pregwrt');
+        await run_c.reg_write.call(greq);
+//        ros.log.warn('after  await pregwrt');
+/*
+        for (let i = 0; i < 500; i++) {
+          ros.log.warn('i=' + i);
+        }
+*/
+//      }
+/*
+      catch(err) {
+//        ros.log.warn('pset write ' + err);
+        let warnmsg = 'YCAM3 pregwrt write ' + err;
+        ros.log.warn(warnmsg);
+//        ret = errmsg;
+        success = false; 
+      }
+*/
 //      setTimeout(function() {
       ycam.pregbuf = ycam.pregbuf.slice(1);
       await ycam.pregwrt();
@@ -97,6 +127,10 @@ var ycam = {
     }
   },
   pset: async function(obj) {
+    if (dbg) {
+      ros.log.warn('pset called');
+    }
+    let ret = 'OK';
     let str = '';
     for (let key in obj) {
       if (dbg) {
@@ -125,16 +159,30 @@ var ycam = {
     if (dbg) {
       ros.log.warn('l=' + l);
     }
+/*
     if (l == 0) {
       await this.pregwrt();
-//      ros.log.warn('l == 0. await pregwrt done');
+      ros.log.warn('l == 0. await pregwrt done');
     }
-//    else {
-//      ros.log.warn('l != 0. NOT pregwrt');
-//    }
+    else {
+      ros.log.warn('l != 0. NOT pregwrt');
+    }
+*/
+    try {
+      await this.pregwrt();
+//      ros.log.warn('await pregwrt done');
+    }
+    catch(err) {
+      let warnmsg = 'YCAM3 pset write ' + err;
+      ros.log.warn(warnmsg);
+      ret = warnmsg;
+    }
+
     if (dbg) {
       ros.log.warn('pset DONE');
     }
+
+    return ret;
   },
   normal: false,
   stat: function() {
