@@ -2,6 +2,7 @@
 
 const NSycamctrl = '/rovi/ycam_ctrl';
 const NSpsgenpc = '/rovi/pshift_genpc';
+const NSgenpc = '/rovi/genpc';
 const NScamL = '/rovi/left';
 const NScamR = '/rovi/right';
 const NSlive = '/rovi/live';
@@ -34,25 +35,25 @@ class ImageSwitcher {
   constructor(node, ns) {
     const who = this;
     this.node = node;
+    this.ns = ns;
     this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
     this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
-    this.setremapparam = node.serviceClient(ns + '/remap/set_remap_param', rovi_srvs.SetRemapParam);
+    this.remapreload = node.serviceClient(ns + '/remap/reload', std_srvs.Trigger);
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
         return;
       }
-      if (!await node.waitForService(who.setremapparam.getService(), 2000)) {
-        ros.log.error('set_remap_param service not available');
+      if (!await node.waitForService(who.remapreload.getService(), 2000)) {
+        ros.log.error('remap reload service not available');
         return;
       }
       try {
         if (sensName === 'ycam1s') {
           who.param = await node.getParam(ns + '/camera');
-          who.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await node.getParam(ns + '/remap'));
         }
       }
       catch(err) {
@@ -74,15 +75,20 @@ class ImageSwitcher {
     this.raw.publish(img);
     let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
-//    ros.log.warn('before call remap ' + who.lr + ' seq=' + img.header.seq);
-    let res = await this.remap.call(req);
-//    ros.log.warn('after  call remap ' + who.lr + ' seq=' + img.header.seq);
-    if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
-    else this.rect.publish(res.img);
-    this.caminfo.header = req.img.header;
-    this.caminfo.distortion_model = "plumb_bob";
-    this.info.publish(this.caminfo);
-//    ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
+    try {
+//      ros.log.warn('before call remap ' + who.lr + ' seq=' + img.header.seq);
+      let res = await this.remap.call(req);
+//      ros.log.warn('after  call remap ' + who.lr + ' seq=' + img.header.seq);
+      if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
+      else this.rect.publish(res.img);
+      this.caminfo.header = req.img.header;
+      this.caminfo.distortion_model = "plumb_bob";
+      this.info.publish(this.caminfo);
+      ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
+    }
+    catch(err) {
+      // ros.log.error('remap failed. ' + err);
+    }
   }
   store(count) {
     const who = this;
@@ -122,23 +128,9 @@ class ImageSwitcher {
       this.vue.publish(this.capt[n]);
     }
   }
-  async setCamParam(remapyaml) {
-    this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), remapyaml);
-    let req = new rovi_srvs.SetRemapParam.Request();
-    req.height = remapyaml.height;
-    req.width = remapyaml.width;
-    req.D = remapyaml.D;
-    req.K = remapyaml.K;
-    req.R = remapyaml.R;
-    req.P = remapyaml.P;
-    if (dbg) {
-      ros.log.warn('setCamPareq height=' + req.height + ' P.length=' + req.P.length);
-      ros.log.warn('before call remap set param ' + this.lr);
-    }
-    let res = await this.setremapparam.call(req);
-    if (dbg) {
-      ros.log.warn('after  call remap set param ' + this.lr);
-    }
+  async reloadRemap() {
+    await this.remapreload.call(new std_srvs.Trigger.Request());
+    this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
   }
 }
 
@@ -146,7 +138,7 @@ setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
   let cam_resolution;
 
-  try {
+  if (sensName === 'ycam3') {
     let camera_size = await rosNode.getParam(NSrovi + '/camera');
 //    ros.log.warn('camera_size h=' + camera_size.Height + ' w=' + camera_size.Width);
 
@@ -163,9 +155,6 @@ setImmediate(async function() {
       return;
     }
   }
-  catch(err) {
-    ;
-  }
 
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
@@ -174,13 +163,13 @@ setImmediate(async function() {
   const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
   const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
-  const setgenpcparam = rosNode.serviceClient(NSrovi + '/genpc/set_genpc_param', rovi_srvs.SetGenpcParam);
+  const genpcreload = rosNode.serviceClient(NSrovi + '/genpc/reload', std_srvs.Trigger);
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
     return;
   }
-  if (!await rosNode.waitForService(setgenpcparam.getService(), 2000)) {
-    ros.log.error('set_genpc_param service not available');
+  if (!await rosNode.waitForService(genpcreload.getService(), 2000)) {
+    ros.log.error('genpc reload service not available');
     return;
   }
 
@@ -209,6 +198,9 @@ setImmediate(async function() {
       param_V = nv;
       await sens.pset(paramDiff(param_P, np));
       param_P = np;
+      await image_L.reloadRemap();
+      await image_R.reloadRemap();
+      await genpcreload.call(new std_srvs.Trigger.Request());
     }
     catch(err) {
       ros.log.warn('Exception in paramReloadNow:' + err);
@@ -281,20 +273,11 @@ setImmediate(async function() {
     if (dbg) {
       ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
     }
-    const yamlval = jsyaml.safeLoad(yamlstr);
-//    ros.log.warn('lh=' + yamlval.left.remap.height);
-//    ros.log.warn('rw=' + yamlval.right.remap.width);
-//    ros.log.warn('Q=' + yamlval.genpc.Q);
-    await image_L.setCamParam(yamlval.left.remap);
-    await image_R.setCamParam(yamlval.right.remap);
-    let req = new rovi_srvs.SetGenpcParam.Request();
-    req.Q = yamlval.genpc.Q;
-    if (dbg) {
-      ros.log.warn('before call genpc set param');
-    }
-    let res = await setgenpcparam.call(req);
-    if (dbg) {
-      ros.log.warn('after  call genpc set param');
+    if (sensName === 'ycam3') {
+      const yamlval = jsyaml.safeLoad(yamlstr);
+      await rosNode.setParam(NScamL, yamlval.left);
+      await rosNode.setParam(NScamR, yamlval.right);
+      await rosNode.setParam(NSgenpc, yamlval.genpc);
     }
     param_V = {};
     param_P = {};
@@ -387,18 +370,25 @@ if (dbg) {
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = capt_L;
       gpreq.imgR = capt_R;
-      let gpres = await genpc.call(gpreq);
-      pub_pc.publish(gpres.pc);
-      pub_pc2.publish(gpres.pc2);
+      try {
+        let gpres = await genpc.call(gpreq);
+        pub_pc.publish(gpres.pc);
+        pub_pc2.publish(gpres.pc2);
 if (dbg) {
-      ros.log.warn('pc published');
-      ros.log.warn("genpc DONE");
+        ros.log.warn('pc published');
+        ros.log.warn("genpc DONE");
 }
+        res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
+        res.success = true;
+      }
+      catch(err) {
+//        ros.log.error('genpc failed. ' + err);
+        res.message = 'genpc failed';
+        res.success = false;
+      }
 //      await sens.cset({ 'TriggerMode': 'Off' });
       await sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
       paramScan();
-      res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
-      res.success = true;
       image_L.view(vue_N);
       image_R.view(vue_N);
       resolve(true);

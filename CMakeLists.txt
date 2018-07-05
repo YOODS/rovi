@@ -27,8 +27,6 @@ add_service_files(
   GetParam.srv
   SetParam.srv
   SetPose.srv
-  SetRemapParam.srv
-  SetGenpcParam.srv
   Detect2D.srv
 )
 

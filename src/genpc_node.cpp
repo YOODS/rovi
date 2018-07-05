@@ -6,13 +6,14 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "rovi/GenPC.h"
-#include "rovi/SetGenpcParam.h"
 #include "ps_main.h"
 
 // for disparityCallback() and depthCallback()
 //#include <stereo_msgs/DisparityImage.h>
 //#include <sensor_msgs/Image.h>
 //#include <image_geometry/stereo_camera_model.h>
+
+bool isready = false;
 
 ros::NodeHandle *nh;
 //ros::Publisher *pub1,*pub2;
@@ -136,6 +137,7 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
   res.success = false;
   res.message = "";
+
   nh->getParam("pshift_genpc/calc/search_div", param.search_div);
   nh->getParam("pshift_genpc/calc/bw_diff", param.bw_diff);
   nh->getParam("pshift_genpc/calc/brightness", param.brightness);
@@ -160,20 +162,8 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   ROS_ERROR("reload param.rdup_cnt=%d", param.rdup_cnt);
   ROS_ERROR("reload param.ls_points=%d", param.ls_points);
 */
-  res.success = true;
-  res.message = "genpc calc param ready";
-  ROS_INFO("genpc:reload ok");
-  return true;
-}
 
-bool setGenpcParam(rovi::SetGenpcParam::Request &req, rovi::SetGenpcParam::Response &res)
-{
-  ROS_INFO("setGenpcParam called");
-
-  res.success = false;
-  res.message = "";
-
-  vecQ = req.Q;
+  nh->getParam("genpc/Q", vecQ); 
   if (vecQ.size() != 16)
   {
     ROS_ERROR("Param Q NG");
@@ -182,19 +172,25 @@ bool setGenpcParam(rovi::SetGenpcParam::Request &req, rovi::SetGenpcParam::Respo
 
   if (res.message.size() > 0) // Error happened
   {
+    isready = false;
     return true;
   }
 
   res.success = true;
-  res.message = "GenPC param ready";
-  ROS_INFO("genpc:setGenpcParam ok");
-
+  res.message = "genpc calc param ready";
+  ROS_INFO("genpc:reload ok");
+  isready = true;
   return true;
 }
 
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
   ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
+
+  if (!isready) {
+    ROS_ERROR("genpc calc param is not ready");
+    return false;
+  }
 
   int width = req.imgL[0].width;
   int height = req.imgL[0].height;
@@ -334,22 +330,11 @@ int main(int argc, char **argv)
 //  ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
-  ros::ServiceServer svc2 = n.advertiseService("genpc/set_genpc_param", setGenpcParam);
 //  ros::ServiceServer svc2 = n.advertiseService("genpc/try", trypc);
 //  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("genpc/pcl", 1);
 //  pub1 = &p1;
 //  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("genpc/pcl2", 1);
 //  pub2 = &p2;
-  std_srvs::Trigger::Request req;
-  std_srvs::Trigger::Response res;
-  reload(req, res);
-  if (res.success)
-  {
-    ros::spin();
-  }
-  else
-  {
-    ROS_ERROR("genpc:unmatched parameters");
-  }
+  ros::spin();
   return 0;
 }

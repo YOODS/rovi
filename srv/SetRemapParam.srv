@@ -1,9 +1,0 @@
-int16 height
-int16 width
-float64[] D
-float64[] K
-float64[] R
-float64[] P
----
-bool success
-string message
