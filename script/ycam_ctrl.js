@@ -330,7 +330,7 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
       param_V = Object.assign(param_V, param_C);
-//      await sens.cset({ 'TriggerMode': 'On' });
+      await sens.cset({ 'TriggerMode': 'On' });
       await sens.cset(param_C);
 if (dbg) {
 ros.log.warn('now await livestop and pshift_genpc');
