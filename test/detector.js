@@ -2,6 +2,7 @@
 
 const ros = require('rosnodejs');
 const sensor_msgs = ros.require('sensor_msgs').msg;
+const geometry_msgs = ros.require('geometry_msgs').msg;
 const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
@@ -55,8 +56,8 @@ console.log(req.hello);
 setImmediate(async function(){
   rosNode = await ros.initNode('detector_node');
   const circle=[
-    new ShapeDetector('/left/circle_detector','/left/camera/image_raw'),
-    new ShapeDetector('/right/circle_detector','/right/camera/image_raw')
+    new ShapeDetector('/left/circle_detector','/rovi/left/image_rect'),
+    new ShapeDetector('/right/circle_detector','/rovi/right/image_rect')
   ];
   const detectorParam=new Notifier(rosNode,'/detector');
   detectorParam.on('change',function(key,val){
@@ -64,6 +65,7 @@ setImmediate(async function(){
   });
   const Q=math.reshape(await rosNode.getParam('/rovi/genpc/Q'),[4,4]);
   console.log(Q);
+  const p3d = rosNode.advertise('/detector/position', geometry_msgs.Point);
   setTimeout(async function(){
     detectorParam.start();
     while(true){
@@ -73,6 +75,11 @@ setImmediate(async function(){
       console.log('DIS='+dis);
       let W=math.multiply(Q,math.transpose(dis));
       console.log('3D='+W);
+      let pnt=new geometry_msgs.Point();
+      pnt.x=W[0]/W[3];
+      pnt.y=W[1]/W[3];
+      pnt.z=W[2]/W[3];
+      p3d.publish(pnt);
     }
   },1000);
 });

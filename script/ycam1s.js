@@ -65,15 +65,13 @@ function msleep(t) {
 
 var ycam = {
   cset: function(obj) {
-    console.log("yam1s cset called");
     for (let key in obj) {
       console.log("ycam1s cset key=" + key + ", val=" + obj[key]);
       run_c.cin(key + ' ' + obj[key]);
     }
-    return true;
+    return 'OK';
   },
   pset: function(obj) {
-    console.log("yam1s pset called");
     for (let key in obj) {
       console.log("ycam1s pset key=" + key + ", val=" + obj[key]);
       switch(key){
@@ -95,6 +93,7 @@ var ycam = {
       }
       run_p.setNoDelay(true);
     }
+    return 'OK';
   },
   normal: false,
   stat: function() {
