@@ -3,7 +3,7 @@
 import os
 import cv2
 import numpy as np
-#from scipy import optimize
+from scipy import optimize
 import roslib
 import rospy
 from std_msgs.msg import String
@@ -86,9 +86,9 @@ def cbDo(req):
       detParam=[cx,cy,rad]
       detErr=cerr
 
-# tcont=detCont.transpose()
-# result=optimize.leastsq(fit_func,detParam,args=(tcont[0][0],tcont[1][0]))
-# detParam=[result[0][0],result[0][1],result[0][2]]
+  tcont=detCont.transpose()
+  result=optimize.leastsq(fit_func,detParam,args=(tcont[0][0],tcont[1][0]))
+  detParam=[result[0][0],result[0][1],result[0][2]]
   detParam[0]+=imXo
   detParam[1]+=imYo
 
