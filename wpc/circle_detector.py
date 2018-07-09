@@ -70,7 +70,7 @@ def cbDo(req):
   img2 = img1[imYo:imYe,imXo:imXe]
 #  img2 = cv2.fastNlMeansDenoising(img2,None,9,13)
 #  img2 = cv2.bilateralFilter(img2, 15, 20, 20)
-  ret,img3 = cv2.threshold(img2,0,255,cv2.THRESH_BINARY|cv2.THRESH_OTSU)
+  ret,img3 = cv2.threshold(img2,0,255,cv2.THRESH_BINARY_INV|cv2.THRESH_OTSU)
   img4,contours,hierarchy=cv2.findContours(img3,cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_SIMPLE)
   if len(contours) ==0:
     return Detect2DResponse([],[])

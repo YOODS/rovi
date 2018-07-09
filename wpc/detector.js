@@ -65,6 +65,8 @@ setImmediate(async function(){
   });
   const Q=math.reshape(await rosNode.getParam('/rovi/genpc/Q'),[4,4]);
   console.log(Q);
+  const pleft=rosNode.advertise('/detector/uvL', geometry_msgs.Point);
+  const pright=rosNode.advertise('/detector/uvR', geometry_msgs.Point);
   const p3d = rosNode.advertise('/detector/position', geometry_msgs.Point);
   setTimeout(async function(){
     detectorParam.start();
@@ -75,6 +77,14 @@ setImmediate(async function(){
       console.log('DIS='+dis);
       let W=math.multiply(Q,math.transpose(dis));
       console.log('3D='+W);
+      let pl=new geometry_msgs.Point();
+      pl.x=uvs[0][0];
+      pl.y=uvs[0][1];
+      pleft.publish(pl);
+      let pr=new geometry_msgs.Point();
+      pr.x=uvs[1][0];
+      pr.y=uvs[1][1];
+      pright.publish(pr);
       let pnt=new geometry_msgs.Point();
       pnt.x=W[0]/W[3];
       pnt.y=W[1]/W[3];

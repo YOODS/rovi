@@ -283,7 +283,6 @@ setImmediate(async function() {
     param_P = {};
     paramStop();
     await paramReloadNow();
-    await sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
     paramScan();
     ros.log.warn('NOW ALL READY');
   });
@@ -325,7 +324,7 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         resolve(false);
         image_L.cancel();
         image_R.cancel();
-//        await sens.cset({ 'TriggerMode': 'Off' });
+        await sens.cset({ 'TriggerMode': 'Off' });
         paramScan();
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
@@ -386,8 +385,7 @@ if (dbg) {
         res.message = 'genpc failed';
         res.success = false;
       }
-//      await sens.cset({ 'TriggerMode': 'Off' });
-      await sens.cset({ 'TriggerMode': 'On' }); // live OFF anyway
+      await sens.cset({ 'TriggerMode': 'Off' });
       paramScan();
       image_L.view(vue_N);
       image_R.view(vue_N);
