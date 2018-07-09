@@ -4,8 +4,6 @@
   <rosparam param="/left/camera/ExposureTimeAbs">30000</rosparam>
   <rosparam param="/right/camera/AcquisitionFrameRate">5</rosparam>
   <rosparam param="/right/camera/ExposureTimeAbs">30000</rosparam>
-  <rosparam param="/detector/Roi">[1,1,99,99]</rosparam>
-  <rosparam param="/detector/Radius">60</rosparam>
 
   <node ns="/left" pkg="rovi" type="circle_detector.py" name="circle_detector" />
   <node ns="/right" pkg="rovi" type="circle_detector.py" name="circle_detector" />
