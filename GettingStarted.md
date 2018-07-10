@@ -3,16 +3,20 @@
 
 # 使用ハードウェア
 - PC (ビジョンコントローラ)
-- YCAM3D-I, YCAM3D-II (3Dカメラ)
-- GigE LANケーブル (ビジョンコントローラと3Dカメラを接続)
+- YCAM3D-I, YCAM3D-II, YCAM3D-III のいずれか (3Dカメラ)
+- GigE LANケーブル (ビジョンコントローラと3Dカメラを接続)  
+
+    ※  
+GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属する専用品を使用。  
+(YCAM3D-I, IIの場合は任意のGiE LANケーブルを使用可能。)
 
 # ビジョンコントローラの前提条件
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
 この前提条件を満たしたビジョンコントローラを用意してください。
 
 - OSとしてUbuntu 16.04 LTSをインストール済み。
-- ROS Kineticをインストール済み。
 - gitをインストール済み。
+- ROS Kineticをインストール済み。
 - ROSワークスペースは~/catkin_wsとする。  
 (~/catkin_ws以外のROSワークスペースでも可。  
 その場合は以下の例を読み替えること。)
@@ -25,18 +29,22 @@
 
 ## 1. 3Dカメラ関連の設定
 
-### 1-1. 物理接続
+※3DカメラとしてYCAM3D-IまたはIIを使う場合は次の1A節を、YCAM3D-IIIを使う場合はその次の1B節を実行してください。
+
+## 1A. 3Dカメラ関連の設定 (YCAM3D-IまたはIIを使う場合)
+
+### 1A-1. 物理接続
 ビジョンコントローラと3DカメラをGigE LANケーブルで接続して、3Dカメラの電源を入れる。
 
-### 1-2. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスを設定
+### 1A-2. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスを設定
 3Dカメラの工場出荷時のIPアドレスは以下なので、  
-ビジョンコントローラの3Dカメラ対向のGigEインターフェースに、これらと通信できるIPアドレスを設定する。
+ビジョンコントローラの3Dカメラ対向のGigEインターフェースに、これらと通信できるIPアドレスを設定する。(設定の永続化も行う。)
 - 左側カメラ: 192.168.222.1/24
 - 右側カメラ: 192.168.222.2/24
 - プロジェクター: 192.168.222.10/24
 
 ~~~
-Ubuntu Desktop版での設定例：  
+Ubuntu Desktop版での設定(永続化)例：  
 
 Ubuntuの[システム設定]->[ネットワーク]で、
 3Dカメラ対向のGigEインターフェースに、
@@ -49,9 +57,9 @@ IPアドレスとして 192.168.222.99/24 を以下のように設定する。
 
 IPアドレス設定後、ビジョンコントローラから上述の3つの3DカメラIPアドレスへpingが通ることを確認する。
 
-### 1-3. SentechカメラSDKのインストール
+### 1A-3. SentechカメラSDKのインストール
 
-#### 1-3-1. SDKをダウンロード
+#### 1A-3-1. SDKをダウンロード
 https://sentech.co.jp/products/GigE/software.html  
 から Sentech SDK Package の Linux SDK x86_x64用をダウンロードする。  
 (2018/4/19時点では https://sentech.co.jp/data/software/usb/SentechSDK-1.0.4-x86_64.tgz が最新。)
@@ -60,20 +68,20 @@ cd ~
 wget https://sentech.co.jp/data/software/usb/SentechSDK-1.0.4-x86_64.tgz
 ~~~
 
-#### 1-3-2. SDKを解凍しインストーラを実行してインストール
+#### 1A-3-2. SDKを解凍しインストーラを実行してインストール
 ~~~
 tar xvzf SentechSDK-1.0.4-x86_64.tgz
 cd SentechSDK-1.0.4-x86_64
 ./SentechSDK-1.0.4-x86_64-install.run
 ~~~
 
-#### 1-3-3. 動作用の設定
+#### 1A-3-3. 動作用の設定
 ~~~
 source /opt/sentech/.stprofile
 /opt/sentech/bin/setnetwork.sh <3Dカメラ対向のGigEインターフェース名>
 ~~~
 
-#### 1-3-4. 動作確認
+#### 1A-3-4. 動作確認
 ~~~
 /opt/sentech/bin/StViewer
 ~~~
@@ -96,12 +104,12 @@ source /opt/sentech/.stprofile
 この画面上部の Start Acquisition, Stop Acquisition でライブ映像の ON/OFF を実行できるので、ライブ映像が表示されることを確認する。  
 Close active cameraで接続を閉じ、 Open a camera からもう1台のカメラでも同様にライブ映像の表示を確認する。
 
-#### 1-3-5. 動作用の設定の永続化
+#### 1A-3-5. 動作用の設定の永続化
 ビジョンコントローラの再起動後も動作ができるように、設定の永続化を以下のようにして行う。  
 
 - 3Dカメラ対向のGigEインターフェースのMTUを9000に設定
   ~~~
-  Ubuntu Desktop版での設定例：  
+  Ubuntu Desktop版での設定(永続化)例：  
 
   Ubuntuの[システム設定]->[ネットワーク]で、
   3Dカメラ対向のGigEインターフェースに、
@@ -113,7 +121,7 @@ Close active cameraで接続を閉じ、 Open a camera からもう1台のカメ
 
 - カーネルパラメータnet.core.(r/w)mem_(max/default)を33554432に設定
   ~~~
-  設定例：  
+  設定(永続化)例：  
   sudo vi /etc/sysctl.conf
   で
   net.core.rmem_max = 33554432
@@ -122,6 +130,96 @@ Close active cameraで接続を閉じ、 Open a camera からもう1台のカメ
   net.core.wmem_default = 33554432
   を追加する。
   ~~~
+
+## 1B. 3Dカメラ関連の設定 (YCAM3D-IIIを使う場合)
+
+### 1B-1. 汎用GigEライブラリ (libaravis) のインストール
+
+#### 1B-1-1. ビルド用の前準備
+~~~
+sudo apt-get install automake intltool
+~~~
+
+#### 1B-1-2. ソースをダウンロード
+~~~
+cd ~
+mkdir aravis
+cd aravis
+wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.4/aravis-0.4.1.tar.xz
+~~~
+
+#### 1B-1-3. ソース解凍先でmakeしてインストール
+~~~
+tar xvf aravis-0.4.1.tar.xz
+cd aravis-0.4.1
+./configure
+make
+sudo make install
+~~~
+
+#### 1B-1-4. 動作用の設定
+~~~
+echo "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib" >> ~/.bashrc
+. ~/.bashrc
+~~~
+
+#### 1B-1-5. 動作確認
+~~~
+arv-tool-0.4
+~~~
+
+↓ と表示されることを確認する。  
+`No device found`
+
+### 1B-2. ROSのGigEカメラ汎用ドライバ (camera_aravis) のインストール
+~~~
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/camera_aravis
+cd ~/catkin_ws
+catkin_make
+~~~
+
+*上記git cloneのURIに注意。  
+(RoVIでは、YOODSで一部改変したcamera_aravisドライバを使用する。)*
+
+### 1B-3. 物理接続
+ビジョンコントローラと3DカメラをGigE LANケーブルで接続して、3Dカメラの電源を入れる。
+
+### 1B-4. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスとMTUを設定
+3Dカメラの工場出荷時のIPアドレスは以下なので、  
+ビジョンコントローラの3Dカメラ対向のGigEインターフェースに、これと通信できるIPアドレスを設定する。
+- 192.168.1.250/24
+
+IPアドレス設定後、ビジョンコントローラからこの3DカメラIPアドレスへpingが通ることを確認する。
+
+また、同インターフェースに、MTUとして 9000 を設定する。
+
+(ビジョンコントローラの再起動後も動作ができるように、これらの設定の永続化も行うこと。)
+
+~~~
+Ubuntu Desktop版での設定(永続化)例：  
+
+Ubuntuの[システム設定]->[ネットワーク]で、
+3Dカメラ対向のGigEインターフェースに、
+IPアドレスとして 192.168.1.99/24 を以下のように設定する。
+
+[IPv4設定]タブで
+  方式：手動
+  アドレス：192.168.1.99	24	空
+
+同様に、MTUとして 9000 を以下のように設定する。
+
+[Ethernet]タブで
+  MTU：9000
+~~~
+
+### 1B-5. 接続の最終確認
+~~~
+arv-tool-0.4
+~~~
+
+↓ のようにカメラのIDが表示されることを確認する。  
+`YOODS Co,LTD.-`  
 
 ## 2. 各種ミドルウェアのインストール
 
@@ -132,6 +230,7 @@ sudo apt-get install libopencv-dev
 
 ### 2-2. Node.jsのインストール
 ~~~
+cd ~
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
@@ -155,11 +254,22 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
+### 2-4. js-yamlのインストール
+~~~
+cd ~
+npm install js-yaml
+~~~
+
 ## 3. RoVI本体のROSパッケージのインストール
 ~~~
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 
+cd rovi
+git checkout nedo
+
+【※この段落は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要  
+ (YCAM3D-IIIの場合は実行不要)】
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
 
@@ -182,10 +292,15 @@ catkin_make
 ~~~
 
 ## 4. RoVIの動作設定
+*※この節の内容は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要。  
+(YCAM3D-IIIの場合は実行不要)*
+
 実際の環境に合わせて、RoVIのROS Parameterファイル
-`~/catkin_ws/src/rovi/yaml/rovi_param.yaml`  
+`~/catkin_ws/src/rovi/yaml/ycam1s.yaml`  
 の以下の部分を、編集する。  
-(以下の※2箇所のDisplay Nameは [1-3-4. 動作確認](#memodn) でメモしておいたもの。)
+(以下の※2箇所のDisplay Nameは [1A-3-4. 動作確認](#memodn) でメモしておいたもの。)
+
+TODO YCAM3D-IIはycam2.yamlか?
 
 ~~~
 left:
@@ -200,11 +315,7 @@ right:
   remap:
     『この部分(height:からP:まで)に実際の右側キャリブレーションパラメータ』
 genpc:
-    『この部分(Q:)に実際のキャリブレーションパラメータ』 TODO 透視変換行列
-
-TODO
-http://opencv.jp/opencv-2.1/cpp/camera_calibration_and_3d_reconstruction.html
-
+    『この部分(Q:)に実際のキャリブレーションパラメータ(透視変換行列)』
 ~~~
 
 TODO:  
@@ -216,9 +327,23 @@ TODO:
 # RoVIの実行手順
 
 ## A. RoVIの起動
+
+### A-I. 3DカメラとしてYCAM3D-Iを使う場合 (TODO IIは?)
 ~~~
-roslaunch rovi run.launch
+roslaunch rovi run-ycam1s.launch
 ~~~
+
+### A-IIIvga. 3DカメラとしてYCAM3D-IIIを使い、カメラ解像度を VGA (640x480) にする場合
+~~~
+roslaunch rovi run-ycam3vga.launch
+~~~
+TODO ~/catkin_ws/src/rovi/yaml/ycam3vga.yaml
+
+### A-IIIsxga. 3DカメラとしてYCAM3D-IIIを使い、カメラ解像度を SXGA (1280x1024) にする場合
+~~~
+roslaunch rovi run-ycam3sxga.launch
+~~~
+TODO ~/catkin_ws/src/rovi/yaml/ycam3sxga.yaml
 
 ## B. RoVIの機能
 
@@ -266,13 +391,15 @@ TODO ↑の情報公開する?しない?
 rosservice call /rovi/pshift_genpc
 ~~~
 
-生成された点群は以下のTopicにpublishされる。
+生成された点群は以下の2つのTopicにpublishされる。
 - /rovi/pc  
 (形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud.msg)
+- /rovi/pc2  
+(形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud2.msg)
 ~~~
 点群の表示例:
 rviz
-(そのRvizの画面で /rovi/pc を表示すればよい)
+(そのRvizの画面で /rovi/pc や /rovi/pc2 を表示すればよい)
 ~~~
 
 位相シフト計算と点群生成の入力として使われた左側カメラ13枚、右側カメラ13枚のrectify画像は以下のTopicにpublishされる。  

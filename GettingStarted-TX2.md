@@ -23,9 +23,9 @@
 ## [参考]ビジョンコントローラに関する詳細手順
 
 ### [参考1]OSのインストール手順詳細
-1. 親機(PC)に JetPack 3.2 をインストールする。  
+1. 親機(Ubuntu 16.04.4をインストールしたPC)に JetPack 3.2 をインストールする。  
 ※その際、 jetpack/64_TX2/Linux_for_Tegrakernel/dtb/tegra186-quill-p3310-1000-c03-00-base.dtbを汎用キャリアボード対応版に変更しておくこと。これをやらないとUSBデバイスに電源が供給されない。 (TODO YOODSから供給)
-2. 親機(JetPackをインストールしたPC)とビジョンコントーラをmicro USBで接続して、リカバリーモードにて以下のコマンドを実施する。(コマンド実行には20分程度かかる。)
+2. 親機とビジョンコントーラをmicro USBで接続して、リカバリーモードにて以下のコマンドを実施する。(コマンド実行には20分程度かかる。)
 ~~~
 sudo ./flash.sh  jetson-tx2 mmcblk0p1
 ~~~
@@ -55,7 +55,7 @@ echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
 
 ## 1. 3Dカメラ関連の設定
 
-### 1-1. 汎用GigEライブラリ(libaravis)のインストール
+### 1-1. 汎用GigEライブラリ (libaravis) のインストール
 
 #### 1-1-1. ビルド用の前準備
 ~~~
@@ -93,7 +93,7 @@ arv-tool-0.4
 ↓ と表示されることを確認する。  
 `No device found`
 
-### 1-2. ROSのGigEカメラ汎用ドライバ(camera_aravis)のインストール
+### 1-2. ROSのGigEカメラ汎用ドライバ (camera_aravis) のインストール
 ~~~
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/camera_aravis
@@ -114,7 +114,7 @@ catkin_make
 
 IPアドレス設定後、ビジョンコントローラからこの3DカメラIPアドレスへpingが通ることを確認する。
 
-また、同インターフェースに、MTUとして9000を設定する。
+また、同インターフェースに、MTUとして 9000 を設定する。
 
 (ビジョンコントローラの再起動後も動作ができるように、これらの設定の永続化も行うこと。)
 
@@ -193,6 +193,7 @@ sudo apt-get install cmake
 ~~~
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
+
 cd rovi
 git checkout nedo
 
@@ -224,7 +225,7 @@ catkin_make
 
 ## A. 起動
 
-### A-1. カメラ解像度が VGA (640x480) の場合
+### A-1. カメラ解像度を VGA (640x480) にする場合
 ~~~
 roslaunch rovi run-ycam3vga.launch
 ~~~
@@ -234,7 +235,7 @@ VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シ
 
 TODO ↑この文章要校正。（一部はカメラに入っているし。）
 
-### A-2. カメラ解像度が SXGA (1280x1024) の場合
+### A-2. カメラ解像度を SXGA (1280x1024) にする場合
 ~~~
 roslaunch rovi run-ycam3sxga.launch
 ~~~
