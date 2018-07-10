@@ -6,22 +6,48 @@
 - YCAM3D-III (3Dカメラ)
 - GigE LANケーブル (…YCAM3D-IIIに付属する専用品…) (ビジョンコントローラと3Dカメラを接続)
 
-# ビジョンコントローラの準備
+# ビジョンコントローラの前提条件
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
-この前提条件を満たしたビジョンコントローラを用意してください。
+この前提条件を満たしたビジョンコントローラを用意してください。  
+(※一部の詳細手順は次節に記述していますので参考にしてください。)
 
-##1. JETPACK3.2をインストール
-- jetpack/64_TX2/Linux_for_Tegrakernel/dtb/tegra186-quill-p3310-1000-c03-00-base.dtbを汎用キャリアボード対応版に変更しておくこと。これをやらないとUSBデバイスに電源が供給されない。 (TODO YOODSから供給)
-- 親機(JETPACKをインストールしたPC)とビジョンコントーラをmicro USBで接続して、リカバリーモードにて以下のコマンドを実施 (TODO コマンド実行に20分程度かかる)
+- OSとしてUbuntu 16.04 LTSをインストール済み。
+- gitをインストール済み。
+- ROS Kineticをインストール済み。
+- ROSワークスペースは~/catkin_wsとする。  
+(~/catkin_ws以外のROSワークスペースでも可。  
+その場合は以下の例を読み替えること。)
+
+以下はすべて、(次節の[参考1]の手順123を除いて)このビジョンコントローラでの作業となります。
+
+## [参考]ビジョンコントローラに関する詳細手順
+
+### [参考1]OSのインストール手順詳細
+1. 親機(PC)に JetPack 3.2 をインストールする。  
+※その際、 jetpack/64_TX2/Linux_for_Tegrakernel/dtb/tegra186-quill-p3310-1000-c03-00-base.dtbを汎用キャリアボード対応版に変更しておくこと。これをやらないとUSBデバイスに電源が供給されない。 (TODO YOODSから供給)
+2. 親機(JetPackをインストールしたPC)とビジョンコントーラをmicro USBで接続して、リカバリーモードにて以下のコマンドを実施する。(コマンド実行には20分程度かかる。)
 ~~~
 sudo ./flash.sh  jetson-tx2 mmcblk0p1
 ~~~
-- 上記のflash.shコマンドの終了後、キーボード,マウス,HDMIケーブル,インターネット接続用LANケーブルを接続して、IPアドレス,時刻を設定する。
-- デフォルトではuser: nvidia, password: nvidiaでログインできる。必要に応じて、sudo passwd nvidiaでパスワードを変更可能。
+3. 上記のflash.shコマンドの終了後、キーボード, マウス, HDMIケーブル, インターネット接続用LANケーブルを接続して、IPアドレス, 時刻を設定する。
+4. デフォルトではuser: nvidia, password: nvidiaでログインできる。必要に応じて、sudo passwd nvidiaでパスワードを変更可能。
+5. ビジョンコントローラにログインし、以下のコマンドでOSをアップデートする。
 ~~~
 sudo apt-get update
 ~~~
-以下はすべて、このビジョンコントローラでの作業となります。 (TODO 上記ログインからはすべてビジョンコントローラ。)
+
+### [参考2]ROS Kineticのインストール手順詳細
+~~~
+mkdir ~/src
+cd ~/src
+git clone https://github.com/jetsonhacks/installROSTX2.git
+cd installROSTX2/
+./installROS.sh -p ros-kinetic-desktop-full
+./setupCatkinWorkspace.sh
+rosdep update
+echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+. ~/.bashrc
+~~~
 
 ------
 
@@ -71,7 +97,7 @@ arv-tool-0.4
 ~~~
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/camera_aravis
-cd ..
+cd ~/catkin_ws
 catkin_make
 ~~~
 
@@ -81,35 +107,24 @@ catkin_make
 ### 1-3. 物理接続
 ビジョンコントローラと3DカメラをGigE LANケーブルで接続して、3Dカメラの電源を入れる。
 
-### 1-4. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスを設定
-3Dカメラ(YCAM3D-I)の工場出荷時のIPアドレスは以下なので、  
-ビジョンコントローラ(PC)の3Dカメラ対向のGigEインターフェースに、これらと通信できるIPアドレスを設定する。
-- 左側カメラ: 192.168.222.1/24
-- 右側カメラ: 192.168.222.2/24
-- プロジェクター: 192.168.222.10/24
+### 1-4. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスとMTUを設定
+3Dカメラの工場出荷時のIPアドレスは以下なので、  
+ビジョンコントローラの3Dカメラ対向のGigEインターフェースに、これと通信できるIPアドレスを設定する。
+- 192.168.1.250/24
 
-~~~
-Ubuntu Desktop版での設定例：  
+IPアドレス設定後、ビジョンコントローラからこの3DカメラIPアドレスへpingが通ることを確認する。
 
-Ubuntuの[システム設定]->[ネットワーク]で、
-3Dカメラ対向のGigEインターフェースに 192.168.222.99/24 を以下のように設定する。
+また、同インターフェースに、MTUとして9000を設定する。
 
-[IPv4設定]タブで
-  方式：手動
-  アドレス：192.168.222.99	24	空
-~~~
-
-IPアドレス設定後、ビジョンコントローラから上述の3つの3DカメラIPアドレスへpingが通ることを確認する。
+(ビジョンコントローラの再起動後も動作ができるように、これらの設定の永続化も行うこと。)
 
 ### 1-5. 接続の最終確認
 ~~~
 arv-tool-0.4
 ~~~
 
-↓ のようにカメラ2台(左右)のIDが表示されることを確認する。   
-`SENTECH-17AB755`  
-`SENTECH-17AB756`  
-（各3Dカメラで、IDの具体的な値はこれらと異なる。）
+↓ のようにカメラのIDが表示されることを確認する。  
+`YOODS Co,LTD.-`  
 
 ## 2. 各種ミドルウェアのインストール
 
@@ -148,21 +163,13 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### 2-4. ROSパッケージのインストール
-
+### 2-4. js-yamlのインストール
 ~~~
-mkdir ~/src
-cd ~/src
-git clone https://github.com/jetsonhacks/installROSTX2.git
-cd installROSTX2/
-./installROS.sh -p ros-kinetic-desktop-full
-./setupCatkinWorkspace.sh
-rosdep update
-echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+cd ~
+npm install js-yaml
 ~~~
-一旦、ログアウトして再度、ログインする。または、別ターミナルを開く。
 
-### 2-5. python-catkin-toolsインストール
+### 2-5. python-catkin-toolsのインストール
 ~~~
 sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu `lsb_release -sc` main" > /etc/apt/sources.list.d/ros-latest.list'
 wget http://packages.ros.org/ros.key -O - | sudo apt-key add -
@@ -170,20 +177,20 @@ sudo apt-get update
 sudo apt-get -y install python-catkin-tools
 ~~~
 
-### 2-6  ros-kinetic-opencv3インストール
+### 2-6. ros-kinetic-opencv3のインストール
 ~~~
 sudo apt-get install ros-kinetic-opencv3
 ~~~
 ※ TODO OpenCVはJetson nativeなものをビルドして入れるべき!
 
-### 2-7  cmakeインストール
+### 2-7. cmakeのインストール
 ~~~
 sudo apt-get install cmake
 ~~~
+※ TODO catkin_cmakeが動いているということはすでにcmakeは入っているはずで、この手順は不要と思われる。
 
 ## 3. RoVI本体のROSパッケージのインストール
 ~~~
-mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 cd rovi
@@ -211,53 +218,75 @@ cd ~/catkin_ws
 catkin_make
 ~~~
 
-~~~
-TODO cd ~; npm install js-yaml
-~~~
+------
 
 # RoVIチュートリアル
-## 1. 起動
-### 1-1. カメラ解像度VGAの場合
+
+## A. 起動
+
+### A-1. カメラ解像度が VGA (640x480) の場合
 ~~~
 roslaunch rovi run-ycam3vga.launch
 ~~~
-VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、yaml/ycam3vga.ymalに保存されている。
-### 1-2. カメラ解像度SXGAの場合
+VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、  
+~/catkin_ws/src/rovi/yaml/ycam3vga.yaml  
+に保存されている。
+
+TODO ↑この文章要校正。（一部はカメラに入っているし。）
+
+### A-2. カメラ解像度が SXGA (1280x1024) の場合
 ~~~
 roslaunch rovi run-ycam3sxga.launch
 ~~~
-SXGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、yaml/ycam3sxga.ymalに保存されている。
+SXGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、  
+~/catkin_ws/src/rovi/yaml/ycam3sxga.yaml  
+に保存されている。
 
-### 1-3. トリガーモードのon/off
-起動時はトリガーモードon状態で起動しているので、ライブ状態にするにはoffに変更する必要がある。
+TODO ↑この文章要校正。（一部はカメラに入っているし。）
+
+### A-3. トリガーモードのOn/Off
+起動時はトリガーモードOn状態で起動しているので、ライブ状態にするにはOffに変更する必要がある。
 ~~~
 rosservice call /rovi/ycam_ctrl/parse 'cset {"TriggerMode":"Off"}'
 ~~~
 
-## 2. カメラ画像へのアクセス
-### 2-1. 画像表示
+TODO ライブに関する仕様は検討中。
+
+## B. カメラ画像へのアクセス
+
+### B-1. 画像表示
+TODO A-3節にしたがってライブON状態にしているのが前提。
 ~~~
 rosrun image_view image_view image:=/rovi/camera/image_raw
 ~~~
 
-### 2-2. 画像保存
+### B-2. 画像保存
+TODO A-3節にしたがってライブON状態にする、または、位相シフト撮影キックなどによってカメラ画像が入ってくるようにキックする、のが前提。
 ~~~
-script/imsave.js XX
-leftXX.pgm, rightXX.pgmの2つのファイルをカレントディレクトリに生成
+~/catkin_ws/src/rovi/script/imsave.js XX
 ~~~
-~~~
-script/imsave1.js XX
-raw画像(左右結合)をカレントディレクトリに生成
-~~~
+- XX部分は任意の文字列を指定可能。
+- このコマンドによって、以下の2つの画像ファイルがカレントディレクトリに生成される。
+  - leftXX.pgm ... 左カメラ画像 (/rovi/left/image_raw Topicに入ってきた画像)
+  - rightXX.pgm ... 右カメラ画像 (/rovi/right/image_raw Topicに入ってきた画像)
 
-## 3. カメラパラメータ(live)
-### 3-1. ライブカメラパラメータセット
+~~~
+~/catkin_ws/src/rovi/script/imsave1.js YY
+~~~
+raw画像(左右結合)をカレントディレクトリに生成
+- YY部分は任意の文字列を指定可能。
+- このコマンドによって、以下の画像ファイルがカレントディレクトリに生成される。
+  - captYY.pgm ... 左右カメラ結合画像 (/rovi/camera/image_raw Topicに入ってきた画像。aravisからのraw画像。)
+
+## C. カメラパラメータ (live)
+
+### C-1. ライブカメラパラメータセット
 ~~~
 rosparam get /rovi/live/camera/[Parameter Item]
 [Parameter Item]を省略すると一覧を取得できる
 ~~~
 
-### 3-2. カメラパラメータセット
+### C-2. カメラパラメータセット
 ~~~
 例) rosparam set /rovi/live/camera/ExposureTime 20000
 ~~~
@@ -268,22 +297,24 @@ rosparam get /rovi/live/camera/[Parameter Item]
 |Gain|0|255|100|
 |GainAnalog|0|255|0|
 
-## 4. プロジェクタ制御
-### 4-1. 位相シフトパターン発光(カメラトリガも送出)
+## D. プロジェクタ制御
+
+### D-1. 位相シフトパターン発光 (カメラトリガも送出)
 ~~~
 rosservice call /rovi/ycam_ctrl/parse ‘pset {“Go”:2}’
 ~~~
 ※プロジェクタ制御コマンドについては別紙資料を参照
 
-## 5. 位相シフト
-### 5-1. 計測実行
+## E. 位相シフト
+
+### E-1. 計測実行
 ~~~
 rosservice call /rovi/pshift_genpc
 ~~~
 
-### 5-2. 撮影パラメータ
+### E-2. 撮影パラメータ
 ~~~
-$rosparam get /rovi/pshift_genpc/
+rosparam get /rovi/pshift_genpc/
 
 calc: {brightness: 256, bw_diff: 7, darkness: 5, ls_points: 3, max_parallax: 400,
 max_ph_diff: 3.0, min_parallax: -300, rdup_cnt: 5, reject_diff: 1.5, search_div: 2,
@@ -296,18 +327,19 @@ projector: {ExposureTime: 10, Intencity: 100, Interval: 100}
 rosparam set /rovi/pshift_genpc/camera/Gain 100
 ~~~
 
-## 6. カメラ情報
+## F. カメラ情報
 ~~~
 rostopic echo /rovi/left/camera_info
 ~~~
 
-## 7. aravis関連
-### 7-1. ブートストラップレジスタの内容表示
+## G. aravis関連
+
+### G-1. ブートストラップレジスタの内容表示
 ~~~
-arv-tool-0.4 —debug=all:3
+arv-tool-0.4 --debug=all:3
 ~~~
 
-### 7-2. GENICAM XMLの取得
+### G-2. GenICam XMLの取得
 ~~~
 arv-tool-0.4 genicam
 ~~~
