@@ -22,11 +22,11 @@ pshift_genpc:
     ls_points: 3
 live:
   camera:
-    AcquisitionFrameRate: 10.0
+    AcquisitionFrameRate: 6.0
     ExposureMode: 'Timed'
     ExposureAuto: 'Off'
     ExposureTime: 20000.0
-    Gain: 10.0
+    Gain: 50.0
     GainAuto: 'Off'
     TriggerMode: 'Off'
     TriggerSource: 'Line0'
