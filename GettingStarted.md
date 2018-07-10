@@ -6,9 +6,8 @@
 - YCAM3D-I, YCAM3D-II, YCAM3D-III のいずれか (3Dカメラ)
 - GigE LANケーブル (ビジョンコントローラと3Dカメラを接続)  
 
-    ※  
-GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属する専用品を使用。  
-(YCAM3D-I, IIの場合は任意のGiE LANケーブルを使用可能。)
+    ※GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属する専用品を使用。  
+　(YCAM3D-I, IIの場合は任意のGiE LANケーブルを使用可能。)
 
 # ビジョンコントローラの前提条件
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
@@ -29,7 +28,7 @@ GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属す
 
 ## 1. 3Dカメラ関連の設定
 
-※3DカメラとしてYCAM3D-IまたはIIを使う場合は次の1A節を、YCAM3D-IIIを使う場合はその次の1B節を実行してください。
+*※3DカメラとしてYCAM3D-IまたはIIを使う場合は次の1A節を、YCAM3D-IIIを使う場合はその次の1B節を実行してください。*
 
 ## 1A. 3Dカメラ関連の設定 (YCAM3D-IまたはIIを使う場合)
 
@@ -268,8 +267,7 @@ git clone https://github.com/YOODS/rovi
 cd rovi
 git checkout nedo
 
-【※この段落は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要  
- (YCAM3D-IIIの場合は実行不要)】
+【※この段落は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要 (YCAM3D-IIIの場合は実行不要)】
 cd rovi/sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
 
@@ -293,9 +291,9 @@ catkin_make
 
 ## 4. RoVIの動作設定
 *※この節の内容は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要。  
-(YCAM3D-IIIの場合は実行不要)*
+　(YCAM3D-IIIの場合は実行不要)*
 
-実際の環境に合わせて、RoVIのROS Parameterファイル
+実際の環境に合わせて、RoVIのROS Parameterファイル  
 `~/catkin_ws/src/rovi/yaml/ycam1s.yaml` (... YCAM3D-Iの場合)  
 `~/catkin_ws/src/rovi/yaml/ycam2.yaml` (... YCAM3D-IIの場合)  
 の以下の部分を、編集する。  
