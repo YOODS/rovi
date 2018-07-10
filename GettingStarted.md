@@ -296,11 +296,10 @@ catkin_make
 (YCAM3D-IIIの場合は実行不要)*
 
 実際の環境に合わせて、RoVIのROS Parameterファイル
-`~/catkin_ws/src/rovi/yaml/ycam1s.yaml`  
+`~/catkin_ws/src/rovi/yaml/ycam1s.yaml` (... YCAM3D-Iの場合)  
+`~/catkin_ws/src/rovi/yaml/ycam2.yaml` (... YCAM3D-IIの場合)  
 の以下の部分を、編集する。  
 (以下の※2箇所のDisplay Nameは [1A-3-4. 動作確認](#memodn) でメモしておいたもの。)
-
-TODO YCAM3D-IIはycam2.yamlか?
 
 ~~~
 left:
@@ -328,9 +327,14 @@ TODO:
 
 ## A. RoVIの起動
 
-### A-I. 3DカメラとしてYCAM3D-Iを使う場合 (TODO IIは?)
+### A-I. 3DカメラとしてYCAM3D-Iを使う場合
 ~~~
 roslaunch rovi run-ycam1s.launch
+~~~
+
+### A-II. 3DカメラとしてYCAM3D-IIを使う場合
+~~~
+roslaunch rovi run-ycam2.launch
 ~~~
 
 ### A-IIIvga. 3DカメラとしてYCAM3D-IIIを使い、カメラ解像度を VGA (640x480) にする場合
