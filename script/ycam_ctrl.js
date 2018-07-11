@@ -451,4 +451,39 @@ ros.log.warn('service pshift_genpc resolve true return');
       });
     }
   });
+
+  const svc_livestart = rosNode.advertiseService(NSrovi + '/live_start', std_srvs.Trigger, async (req, res) => {
+    if (!sens.normal) {
+      res.success = false;
+      res.message = 'YCAM not ready';
+      return true;
+    }
+
+    res.message = await sens.cset({ 'TriggerMode': 'Off' });
+    if (res.message === 'OK') {
+      res.success = true;
+    }
+    else {
+      res.success = false;
+    }
+    return true;
+  });
+
+  const svc_livestop = rosNode.advertiseService(NSrovi + '/live_stop', std_srvs.Trigger, async (req, res) => {
+    if (!sens.normal) {
+      res.success = false;
+      res.message = 'YCAM not ready';
+      return true;
+    }
+
+    res.message = await sens.cset({ 'TriggerMode': 'On' });
+    if (res.message === 'OK') {
+      res.success = true;
+    }
+    else {
+      res.success = false;
+    }
+    return true;
+  });
+
 });
