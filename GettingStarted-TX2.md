@@ -274,7 +274,6 @@ TODO A-3節にしたがってライブON状態にする、または、位相シ�
 ~~~
 ~/catkin_ws/src/rovi/script/imsave1.js YY
 ~~~
-raw画像(左右結合)をカレントディレクトリに生成
 - YY部分は任意の文字列を指定可能。
 - このコマンドによって、以下の画像ファイルがカレントディレクトリに生成される。
   - captYY.pgm ... 左右カメラ結合画像 (/rovi/camera/image_raw Topicに入ってきた画像。aravisからのraw画像。)
