@@ -36,6 +36,22 @@ const val_table = {
 }
 
 var ycam = {
+  isliveon: async function() {
+    let ison = false;
+    let greq = new gev_srvs.GevRegs.Request();
+    greq.address = reg_table['TriggerMode'];
+    try {
+      gres = await run_c.reg_read.call(greq);
+      if (gres.data === 0) {
+        ison = true;
+      }
+    }
+    catch(err) {
+      let warnmsg = 'YCAM3 isliveon TriggerMode read ' + err;
+      ros.log.warn(warnmsg);
+    }
+    return ison;
+  },
   cset: async function(obj) {
     let ret = 'OK';
     let greq = new gev_srvs.GevRegs.Request();
@@ -293,6 +309,14 @@ function openCamera(rosrun, ns) {
     }
     else {
       ros.log.error(ns + '/"regw" not available');
+      resolve(false);
+    }
+    let regr = rosNode.serviceClient(ns + '/camera/regr', gev_srvs.GevRegs, { persist: true });
+    if (await rosNode.waitForService(regr.getService(), 2000)) {
+      rosrun.reg_read = regr;
+    }
+    else {
+      ros.log.error(ns + '/"regr" not available');
       resolve(false);
     }
     let cset = rosNode.serviceClient(ns + '/camera/set_parameters', dyn_srvs.Reconfigure, { persist: true });

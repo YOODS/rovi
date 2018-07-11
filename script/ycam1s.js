@@ -64,6 +64,11 @@ function msleep(t) {
 }
 
 var ycam = {
+  isliveon: async function() {
+    // TODO
+    let ison = true;
+    return ison;
+  },
   cset: function(obj) {
     for (let key in obj) {
       console.log("ycam1s cset key=" + key + ", val=" + obj[key]);

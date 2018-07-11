@@ -333,6 +333,19 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         paramScan();
         ros.log.error('livestop and pshift_genpc timed out');
       }, timeoutmsec);
+
+      let waitmsec_before_capture_start;
+      const isliveon = await sens.isliveon();
+      if (isliveon) {
+        waitmsec_before_capture_start = waitmsec_for_livestop;
+      }
+      else {
+        waitmsec_before_capture_start = 0;
+      }
+      if (dbg) {
+        ros.log.warn('isliveon=' + isliveon + ', waitmsec_before_capture_start=' + waitmsec_before_capture_start);
+      }
+
       param_V = Object.assign(param_V, param_C);
       await sens.cset({ 'TriggerMode': 'On' });
       await sens.cset(param_C);
@@ -400,7 +413,7 @@ if (dbg) {
 ros.log.warn('pshift_genpc function end');
 ros.log.warn('service pshift_genpc resolve true return');
 }
-      }, waitmsec_for_livestop); // これはライブの残りカスを捨てるための待ち
+      }, waitmsec_before_capture_start); // これはライブの残りカスを捨てるための待ち
 
     });
   });
