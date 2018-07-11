@@ -326,12 +326,15 @@ if (dbg) {
 ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 }
       let wdt = setTimeout(async function() { // <--------watch dog
-        resolve(false);
         image_L.cancel();
         image_R.cancel();
         await sens.cset({ 'TriggerMode': 'Off' });
         paramScan();
-        ros.log.error('livestop and pshift_genpc timed out');
+        const errmsg = 'pshift_genpc timed out';
+        ros.log.error(errmsg);
+        res.success = false;
+        res.message = errmsg;
+        resolve(true);
       }, timeoutmsec);
 
       let waitmsec_before_capture_start;
