@@ -19,8 +19,7 @@ const jsyaml = require('js-yaml');
 
 const dbg = false;
 
-// TODO from param_V live: camera: AcquisitionFrameRate: ?
-const waitmsec_for_livestop = 200;
+let waitmsec_for_livestop = 200;
 
 let prev_sensstat = false;
 
@@ -201,6 +200,9 @@ setImmediate(async function() {
       await image_L.reloadRemap();
       await image_R.reloadRemap();
       await genpcreload.call(new std_srvs.Trigger.Request());
+      const fps = param_V.AcquisitionFrameRate;
+      waitmsec_for_livestop = 1000 / fps * 2;
+//      ros.log.warn('a fps=' + param_V.AcquisitionFrameRate + ', waitmsec_for_livestop=' + waitmsec_for_livestop);
     }
     catch(err) {
       ros.log.warn('Exception in paramReloadNow:' + err);
@@ -223,6 +225,9 @@ setImmediate(async function() {
         param_V = nv;
         await sens.pset(paramDiff(param_P, np));
         param_P = np;
+        const fps = param_V.AcquisitionFrameRate;
+        waitmsec_for_livestop = 1000 / fps * 2;
+//        ros.log.warn('b fps=' + param_V.AcquisitionFrameRate + ', waitmsec_for_livestop=' + waitmsec_for_livestop);
       }
       catch(err) {
         ros.log.warn('Exception in paramReload:' + err);
