@@ -339,62 +339,62 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
 if (dbg) {
 ros.log.warn('now await livestop and pshift_genpc');
 }
-await setTimeout(async function() {
+      await setTimeout(async function() {
 if (dbg) {
 ros.log.warn('after livestop, pshift_genpc function start');
 }
-      await sens.pset({'Go':2}); // <--------projector sequence start
+        await sens.pset({'Go':2}); // <--------projector sequence start
 if (dbg) {
 ros.log.warn('after pset p2');
 }
 
-      let imgs = await Promise.all([image_L.store(13), image_R.store(13)]);
+        let imgs = await Promise.all([image_L.store(13), image_R.store(13)]);
 if (dbg) {
 ros.log.warn('after await Promise.all (image_L.store(13) and image_R.store(13) resolve)');
 }
-      image_L.cancel();
-      image_R.cancel();
-      clearTimeout(wdt);
-      capt_L = imgs[0];
-      capt_R = imgs[1];
+        image_L.cancel();
+        image_R.cancel();
+        clearTimeout(wdt);
+        capt_L = imgs[0];
+        capt_R = imgs[1];
 if (dbg) {
 ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ', capt_R.length=' + capt_R.length);
 }
 
 if (dbg) {
-      for (let li = 0; li < capt_L.length; li++) {
-        ros.log.warn('Set capt_L[' + li + '].seq=' + capt_L[li].header.seq);
-      }
-      for (let ri = 0; ri < capt_R.length; ri++) {
-        ros.log.warn('Set capt_R[' + ri + '].seq=' + capt_R[ri].header.seq);
-      }
+        for (let li = 0; li < capt_L.length; li++) {
+          ros.log.warn('Set capt_L[' + li + '].seq=' + capt_L[li].header.seq);
+        }
+        for (let ri = 0; ri < capt_R.length; ri++) {
+          ros.log.warn('Set capt_R[' + ri + '].seq=' + capt_R[ri].header.seq);
+        }
 
-      ros.log.warn('genpc CALL');
+        ros.log.warn('genpc CALL');
 }
-      let gpreq = new rovi_srvs.GenPC.Request();
-      gpreq.imgL = capt_L;
-      gpreq.imgR = capt_R;
-      try {
-        let gpres = await genpc.call(gpreq);
-        pub_pc.publish(gpres.pc);
-        pub_pc2.publish(gpres.pc2);
+        let gpreq = new rovi_srvs.GenPC.Request();
+        gpreq.imgL = capt_L;
+        gpreq.imgR = capt_R;
+        try {
+          let gpres = await genpc.call(gpreq);
+          pub_pc.publish(gpres.pc);
+          pub_pc2.publish(gpres.pc2);
 if (dbg) {
-        ros.log.warn('pc published');
-        ros.log.warn('genpc DONE');
+          ros.log.warn('pc published');
+          ros.log.warn('genpc DONE');
 }
-        res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
-        res.success = true;
-      }
-      catch(err) {
-//        ros.log.error('genpc failed. ' + err);
-        res.message = 'genpc failed';
-        res.success = false;
-      }
-      await sens.cset({ 'TriggerMode': 'Off' });
-      paramScan();
-      image_L.view(vue_N);
-      image_R.view(vue_N);
-      resolve(true);
+          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
+          res.success = true;
+        }
+        catch(err) {
+//          ros.log.error('genpc failed. ' + err);
+          res.message = 'genpc failed';
+          res.success = false;
+        }
+        await sens.cset({ 'TriggerMode': 'Off' });
+        paramScan();
+        image_L.view(vue_N);
+        image_R.view(vue_N);
+        resolve(true);
 
 if (dbg) {
 ros.log.warn('pshift_genpc function end');
