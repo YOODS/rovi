@@ -15,7 +15,7 @@ const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter = require('events').EventEmitter;
-const jsyaml = require("js-yaml");
+const jsyaml = require('js-yaml');
 
 const dbg = false;
 
@@ -82,7 +82,7 @@ class ImageSwitcher {
       if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
       else this.rect.publish(res.img);
       this.caminfo.header = req.img.header;
-      this.caminfo.distortion_model = "plumb_bob";
+      this.caminfo.distortion_model = 'plumb_bob';
       this.info.publish(this.caminfo);
       ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
     }
@@ -96,12 +96,12 @@ class ImageSwitcher {
     return new Promise(function(resolve) {
       who.hook.on('store', function(img) {
         if (dbg) {
-          ros.log.warn('capturing img_' + who.lr + '['+ who.capt.length + "] seq=" + img.header.seq);
+          ros.log.warn('capturing img_' + who.lr + '['+ who.capt.length + '] seq=' + img.header.seq);
         }
         if (who.capt.length < count) {
           who.capt.push(img);
           if (dbg) {
-            ros.log.warn('captured  img_' + who.lr + '['+ (who.capt.length - 1) + "] seq=" + img.header.seq + ' ... now capt.length=' + who.capt.length);
+            ros.log.warn('captured  img_' + who.lr + '['+ (who.capt.length - 1) + '] seq=' + img.header.seq + ' ... now capt.length=' + who.capt.length);
           }
           if (who.capt.length == count) {
             if (dbg) {
@@ -118,9 +118,9 @@ class ImageSwitcher {
     });
   }
   cancel() {
-//    ros.log.warn("before this.hook.removeAllListeners()");
+//    ros.log.warn('before this.hook.removeAllListeners()');
     this.hook.removeAllListeners();
-//    ros.log.warn("after  this.hook.removeAllListeners()");
+//    ros.log.warn('after  this.hook.removeAllListeners()');
   }
   get ID() {return this.param.ID;}
   view(n) {
@@ -288,13 +288,13 @@ setImmediate(async function() {
   });
   sensEv.on('left', async function(img) {
     if (dbg) {
-      ros.log.warn("from ycam left seq=" + img.header.seq);
+      ros.log.warn('from ycam left seq=' + img.header.seq);
     }
     image_L.emit(img);
   });
   sensEv.on('right', async function(img) {
     if (dbg) {
-      ros.log.warn("from ycam right seq=" + img.header.seq);
+      ros.log.warn('from ycam right seq=' + img.header.seq);
     }
     image_R.emit(img);
   });
@@ -336,7 +336,7 @@ ros.log.warn('now await livestop and pshift_genpc');
 }
 await setTimeout(async function() {
 if (dbg) {
-ros.log.warn("after livestop, pshift_genpc function start");
+ros.log.warn('after livestop, pshift_genpc function start');
 }
       await sens.pset({'Go':2}); // <--------projector sequence start
 if (dbg) {
@@ -353,18 +353,18 @@ ros.log.warn('after await Promise.all (image_L.store(13) and image_R.store(13) r
       capt_L = imgs[0];
       capt_R = imgs[1];
 if (dbg) {
-ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ", capt_R.length=" + capt_R.length);
+ros.log.warn('capt_L and capt_R set. capt_L.length=' + capt_L.length + ', capt_R.length=' + capt_R.length);
 }
 
 if (dbg) {
       for (let li = 0; li < capt_L.length; li++) {
-        ros.log.warn("Set capt_L[" + li + "].seq=" + capt_L[li].header.seq);
+        ros.log.warn('Set capt_L[' + li + '].seq=' + capt_L[li].header.seq);
       }
       for (let ri = 0; ri < capt_R.length; ri++) {
-        ros.log.warn("Set capt_R[" + ri + "].seq=" + capt_R[ri].header.seq);
+        ros.log.warn('Set capt_R[' + ri + '].seq=' + capt_R[ri].header.seq);
       }
 
-      ros.log.warn("genpc CALL");
+      ros.log.warn('genpc CALL');
 }
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = capt_L;
@@ -375,7 +375,7 @@ if (dbg) {
         pub_pc2.publish(gpres.pc2);
 if (dbg) {
         ros.log.warn('pc published');
-        ros.log.warn("genpc DONE");
+        ros.log.warn('genpc DONE');
 }
         res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
         res.success = true;
@@ -392,7 +392,7 @@ if (dbg) {
       resolve(true);
 
 if (dbg) {
-ros.log.warn("pshift_genpc function end");
+ros.log.warn('pshift_genpc function end');
 ros.log.warn('service pshift_genpc resolve true return');
 }
       }, waitmsec_for_livestop); // これはライブの残りカスを捨てるための待ち
