@@ -68,9 +68,8 @@ var ycam = {
           await run_c.reg_write.call(greq);
         }
         catch(err) {
-          let warnmsg = 'YCAM3 cset write ' + err;
-          ros.log.warn(warnmsg);
-          ret = warnmsg;
+          ros.log.warn('YCAM3 cset write ' + err);
+          ret = 'YCAM not ready';
         }
         if (dbg) {
           ros.log.warn('key=' + key + ', val=' + val + '. reg_write... done.');
@@ -159,9 +158,8 @@ var ycam = {
       await this.pregwrt();
     }
     catch(err) {
-      let warnmsg = 'YCAM3 pset write ' + err;
-      ros.log.warn(warnmsg);
-      ret = warnmsg;
+      ros.log.warn('YCAM3 pset write ' + err);
+      ret = 'YCAM not ready';
       this.pregbuf = '';
     }
 
