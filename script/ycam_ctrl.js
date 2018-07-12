@@ -128,8 +128,9 @@ class ImageSwitcher {
     }
   }
   async reloadRemap() {
-    await this.remapreload.call(new std_srvs.Trigger.Request());
+    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
     this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
+    return res;
   }
 }
 
@@ -186,6 +187,7 @@ setImmediate(async function() {
     return c;
   }
   async function paramReloadNow() {
+    let ret = false;
     if (dbg) {
       ros.log.warn('>>>>*********paramReloadNow called');
     }
@@ -193,24 +195,32 @@ setImmediate(async function() {
     let nv = await rosNode.getParam(NSlive + '/camera');
     let np = await rosNode.getParam(NSpsgenpc + '/projector');
     try {
-      await sens.cset(paramDiff(param_V, nv));
+      let csetret = await sens.cset(paramDiff(param_V, nv));
       param_V = nv;
-      await sens.pset(paramDiff(param_P, np));
+      let psetret = await sens.pset(paramDiff(param_P, np));
       param_P = np;
-      await image_L.reloadRemap();
-      await image_R.reloadRemap();
-      await genpcreload.call(new std_srvs.Trigger.Request());
+      let rrLret = await image_L.reloadRemap();
+      let rrRret = await image_R.reloadRemap();
+      let grret = await genpcreload.call(new std_srvs.Trigger.Request());
       const fps = param_V.AcquisitionFrameRate;
       waitmsec_for_livestop = 1000 / fps * 2;
 //      ros.log.warn('a fps=' + param_V.AcquisitionFrameRate + ', waitmsec_for_livestop=' + waitmsec_for_livestop);
+      if (dbg) {
+        ros.log.warn('c=' + csetret + ' p=' + psetret + ' rL=' + rrLret.success + ' rR=' + rrRret.success + ' gr=' + grret.success);
+      }
+      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success) {
+        ret = true;
+      }
     }
     catch(err) {
-      ros.log.warn('Exception in paramReloadNow:' + err);
-      return;
+      let errmsg = 'Exception in paramReloadNow:' + err;
+      ros.log.error(errmsg);
+      return false;
     }
     if (dbg) {
       ros.log.warn('<<<<*********paramReloadNow end');
     }
+    return ret;
   }
   async function paramReload() {
 //    if (dbg) {
@@ -287,9 +297,15 @@ setImmediate(async function() {
     param_V = {};
     param_P = {};
     paramStop();
-    await paramReloadNow();
+    let prmret = await paramReloadNow();
     paramScan();
-    ros.log.warn('NOW ALL READY');
+    if (prmret) {
+      ros.log.warn('NOW ALL READY');
+    }
+    else {
+      ros.log.error('param reload ERROR');
+      process.exit(99);
+    }
   });
   sensEv.on('left', async function(img) {
     if (dbg) {
