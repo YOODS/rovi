@@ -298,6 +298,7 @@ setImmediate(async function() {
     param_P = {};
     paramStop();
     let prmret = await paramReloadNow();
+    await sens.cset({ 'TriggerMode': 'Off' });
     paramScan();
     if (prmret) {
       ros.log.warn('NOW ALL READY');
