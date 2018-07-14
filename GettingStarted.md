@@ -172,6 +172,7 @@ arv-tool-0.4
 
 ### 1B-2. ROSのGigEカメラ汎用ドライバ (camera_aravis) のインストール
 ~~~
+mkdir -p ~/catkin_ws/src
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/camera_aravis
 cd ~/catkin_ws
@@ -222,19 +223,14 @@ arv-tool-0.4
 
 ## 2. 各種ミドルウェアのインストール
 
-### 2-1. OpenCVのインストール
-~~~
-sudo apt-get install libopencv-dev
-~~~
-
-### 2-2. Node.jsのインストール
+### 2-1. Node.jsのインストール
 ~~~
 cd ~
 curl -sL https://deb.nodesource.com/setup_8.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
 
-### 2-3. rosnodejsのインストール
+### 2-2. rosnodejsのインストール
 ~~~
 cd ~
 npm install rosnodejs
@@ -253,7 +249,7 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### 2-4. js-yamlのインストール
+### 2-3. js-yamlのインストール
 ~~~
 cd ~
 npm install js-yaml
