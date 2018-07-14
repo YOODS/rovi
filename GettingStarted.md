@@ -16,7 +16,7 @@
 - OSとしてUbuntu 16.04 LTSをインストール済み。
 - gitをインストール済み。
 - ROS Kineticをインストール済み。
-- ROSワークスペースは~/catkin_wsとする。  
+- ROSワークスペースは~/catkin_wsとして作成済み。  
 (~/catkin_ws以外のROSワークスペースでも可。  
 その場合は以下の例を読み替えること。)
 
@@ -170,22 +170,10 @@ arv-tool-0.4
 ↓ と表示されることを確認する。  
 `No device found`
 
-### 1B-2. ROSのGigEカメラ汎用ドライバ (camera_aravis) のインストール
-~~~
-mkdir -p ~/catkin_ws/src
-cd ~/catkin_ws/src
-git clone https://github.com/YOODS/camera_aravis
-cd ~/catkin_ws
-catkin_make
-~~~
-
-*上記git cloneのURIに注意。  
-(RoVIでは、YOODSで一部改変したcamera_aravisドライバを使用する。)*
-
-### 1B-3. 物理接続
+### 1B-2. 物理接続
 ビジョンコントローラと3DカメラをGigE LANケーブルで接続して、3Dカメラの電源を入れる。
 
-### 1B-4. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスとMTUを設定
+### 1B-3. 3Dカメラ対向のGigEインターフェースに適切なIPアドレスとMTUを設定
 3Dカメラの工場出荷時のIPアドレスは以下なので、  
 ビジョンコントローラの3Dカメラ対向のGigEインターフェースに、これと通信できるIPアドレスを設定する。
 - 192.168.1.250/24
@@ -213,7 +201,7 @@ IPアドレスとして 192.168.1.99/24 を以下のように設定する。
   MTU：9000
 ~~~
 
-### 1B-5. 接続の最終確認
+### 1B-4. 接続の最終確認
 ~~~
 arv-tool-0.4
 ~~~
@@ -263,9 +251,14 @@ git clone https://github.com/YOODS/rovi
 cd rovi
 git checkout nedo
 
-【※この段落は、3DカメラとしてYCAM3D-IまたはIIを使う場合のみ実行が必要 (YCAM3D-IIIの場合は実行不要)】
-cd rovi/sentech_grabber
+【※YCAM3D-IまたはIIを使う場合のみ、この段落の実行が必要 (YCAM3D-IIIの場合は実行不要)】
+cd sentech_grabber
 make  (←その結果このディレクトリに grabber というファイルができる)
+
+【※YCAM3D-IIIを使う場合のみ、この段落の実行が必要 (YCAM3D-IまたはIIの場合は実行不要)】
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/camera_aravis
+(このgit cloneのURIに注意。RoVIでは、YOODSで一部改変したcamera_aravisドライバを使用する)
 
 cd ~/catkin_ws/src/rovi/shm-typed-array
 npm install nan
