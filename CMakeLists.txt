@@ -80,7 +80,7 @@ target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
 add_executable(genpc_node src/genpc_node.cpp)
-target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d {OpenCV_LIBRARIES})
+target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)
