@@ -245,24 +245,32 @@ SXGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相�
 
 TODO ↑この文章要校正。（一部はカメラに入っているし。）
 
-### A-3. トリガーモードのOn/Off
-起動時はトリガーモードOn状態で起動しているので、ライブ状態にするにはOffに変更する必要がある。
+### A-3. ライブのON/OFF (トリガーモードのOff/On) の切り替え方法
+RoVIのライブ仕様は以下：
+- 起動時はライブONとなっている。
+- E節の位相シフト処理中は自動的にライブOFF状態となり、処理が終わると自動的にライブONに戻る。
+- 上記2つを指して「常時ライブ機能」と呼ぶ。
+- 通常は「常時ライブ」のままでよいが、何らかの事情でライブをOFFしたり、そこから再度ONしたりしたい場合は、以下のようにして可能。  
+(このようにしてライブOFFしても、上記位相シフト処理後の自動的なライブONは実行されることに注意。)
+
 ~~~
+# ライブOFFしたい場合 (以下のどちらでもよい)
+rosservice call /rovi/live_stop
+rosservice call /rovi/ycam_ctrl/parse 'cset {"TriggerMode":"On"}'
+
+# ライブONしたい場合 (以下のどちらでもよい)
+rosservice call /rovi/live_start
 rosservice call /rovi/ycam_ctrl/parse 'cset {"TriggerMode":"Off"}'
 ~~~
-
-TODO ライブに関する仕様は検討中。
 
 ## B. カメラ画像へのアクセス
 
 ### B-1. 画像表示
-TODO A-3節にしたがってライブON状態にしているのが前提。
 ~~~
 rosrun image_view image_view image:=/rovi/camera/image_raw
 ~~~
 
 ### B-2. 画像保存
-TODO A-3節にしたがってライブON状態にする、または、位相シフト撮影キックなどによってカメラ画像が入ってくるようにキックする、のが前提。
 ~~~
 ~/catkin_ws/src/rovi/script/imsave.js XX
 ~~~
