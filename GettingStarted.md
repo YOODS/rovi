@@ -15,7 +15,7 @@
 
 - OSとしてUbuntu 16.04 LTSをインストール済み。
 - gitをインストール済み。
-- ROS Kineticをインストール済み。
+- ROS Kineticを[インストール](http://wiki.ros.org/kinetic/Installation/Ubuntu)済み。
 - ROSワークスペースは~/catkin_wsとして作成済み。  
 (~/catkin_ws以外のROSワークスペースでも可。  
 その場合は以下の例を読み替えること。)
