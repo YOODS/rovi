@@ -76,7 +76,8 @@ cd SentechSDK-1.0.4-x86_64
 
 #### 1A-3-3. 動作用の設定
 ~~~
-source /opt/sentech/.stprofile
+echo "source /opt/sentech/.stprofile" >> ~/.bashrc
+. ~/.bashrc
 /opt/sentech/bin/setnetwork.sh <3Dカメラ対向のGigEインターフェース名>
 ~~~
 
