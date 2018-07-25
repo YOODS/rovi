@@ -8,15 +8,10 @@
 #include "rovi/GenPC.h"
 #include "ps_main.h"
 
-// for disparityCallback() and depthCallback()
-//#include <stereo_msgs/DisparityImage.h>
-//#include <sensor_msgs/Image.h>
-//#include <image_geometry/stereo_camera_model.h>
-
 bool isready = false;
 
 ros::NodeHandle *nh;
-//ros::Publisher *pub1,*pub2;
+ros::Publisher *pub1, *pub2;
 
 std::vector<double> vecQ;
 
@@ -37,102 +32,6 @@ PS_PARAMS param =
   .evec_error = EVEC_ERROR,
 };
 
-/*
-void disparityCallback(const stereo_msgs::DisparityImageConstPtr& msg)
-{
-  ROS_ERROR("disparityCallback");
-  ROS_ERROR("f=%f", msg->f);
-  ROS_ERROR("T=%f", msg->T);
-  ROS_ERROR("min_disparity=%f", msg->min_disparity);
-  ROS_ERROR("max_disparity=%f", msg->max_disparity);
-  ROS_ERROR("width=%u", msg->image.width);
-  ROS_ERROR("height=%u", msg->image.height);
-  ROS_ERROR("step=%u", msg->image.step);
-  ROS_ERROR("image.data.size()=%d", msg->image.data.size());
-  const float *dispfloatp = (float*)&msg->image.data[0];
-  ROS_ERROR("dispfloat=%f", *dispfloatp);
-
-  const cv::Mat_<float> dmat(msg->image.height, msg->image.width, (float*)&msg->image.data[0], msg->image.step);
-
-  float min = 0;
-  float max = 0;
-
-  for (int ri = 0; ri < dmat.rows; ri++)
-  {
-    for (int ci = 0; ci < dmat.cols; ci++)
-    {
-      if (ri < 2 && ci < 2)
-      {
-        ROS_ERROR("disp dmat(%d, %d)=%f", ri, ci, dmat(ri, ci));
-      }
-      if (ri == 0 && ci == 0)
-      {
-        min = dmat(ri, ci);
-        max = dmat(ri, ci);
-      }
-      else
-      {
-        if (dmat(ri, ci) < min)
-        {
-          min = dmat(ri, ci);
-        }
-        if (dmat(ri, ci) > max)
-        {
-          max = dmat(ri, ci);
-        }
-      }
-    }
-  }
-
-  ROS_ERROR("disparity min=%f, max=%f", min, max);
-}
-
-void depthCallback(const sensor_msgs::ImageConstPtr& msg)
-{
-  ROS_ERROR("depthCallback");
-  ROS_ERROR("data.size()=%d", msg->data.size());
-  const float *depthfloatp = (float*)&msg->data[0];
-  ROS_ERROR("depthfloat=%f", *depthfloatp);
-
-  const cv::Mat_<float> dmat(msg->height, msg->width, (float*)&msg->data[0], msg->step);
-
-  float min = 0;
-  float max = 0;
-
-  for (int ri = 0; ri < dmat.rows; ri++)
-  {
-    for (int ci = 0; ci < dmat.cols; ci++)
-    {
-      if (ri < 2 && ci < 2)
-      {
-//        ROS_ERROR("depth dmat(%d, %d)=%f", ri, ci, dmat(ri, ci));
-      }
-      if (dmat(ri, ci) < image_geometry::StereoCameraModel::MISSING_Z)
-      {
-        if (ri == 0 && ci == 0)
-        {
-          min = dmat(ri, ci);
-          max = dmat(ri, ci);
-        }
-        else
-        {
-          if (dmat(ri, ci) < min)
-          {
-            min = dmat(ri, ci);
-          }
-          if (dmat(ri, ci) > max)
-          {
-            max = dmat(ri, ci);
-          }
-        }
-      }
-    }
-  }
-
-  ROS_ERROR("depth min=%f, max=%f", min, max);
-}
-*/
-
 bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
   res.success = false;
@@ -149,6 +48,7 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
   nh->getParam("pshift_genpc/calc/rdup_cnt", param.rdup_cnt);
   nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
+
 /*
   ROS_ERROR("reload param.search_div=%d", param.search_div);
   ROS_ERROR("reload param.bw_diff=%d", param.bw_diff);
@@ -197,36 +97,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 
   ROS_INFO("genpc img w, h: %d %d", width, height);
 
-/*
-  // Making dummy points
-  sensor_msgs::PointCloud pts;
-  pts.header.stamp = ros::Time::now();
-  pts.header.frame_id = "/camera";
-  pts.points.resize(10000);
-  pts.channels.resize(1);
-  pts.channels[0].name = "intensities";
-  pts.channels[0].values.resize(10000);
-  for (int i = 0; i < 100; i++)
-  {
-    for (int j = 0; j < 100; j++)
-    {
-      int k = 100 * i + j;
-      pts.points[k].x = 0.02 * i - 1.0;
-      pts.points[k].y = 0.02 * j - 1.0;
-      pts.points[k].z = 0.002 * (i - 50);
-      pts.channels[0].values[k] = 100;
-    }
-  }
-*/
-
   ps_init(width, height);
   ROS_INFO("ps_init done");
-
-/*
-  ROS_ERROR("param.max_parallax=%f", param.max_parallax);
-  ROS_ERROR("param.rdup_cnt=%d", param.rdup_cnt);
-  ROS_ERROR("param.ls_points=%d", param.ls_points);
-*/
 
   ps_setparams(param);
   ROS_INFO("ps_setparams done");
@@ -301,25 +173,19 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   outPLY("/tmp/test.ply");
   ROS_INFO("after  outPLY");
 
-//  pub1->publish(pts);
-  res.pc = pts;
+  pub1->publish(pts);
 
   sensor_msgs::PointCloud2 pts2;
   sensor_msgs::convertPointCloudToPointCloud2(pts, pts2);
 //  ROS_INFO("genpc::do %d %d %d\n", pts2.width, pts2.height, pts2.point_step);
   pts2.row_step = pts2.width * pts2.point_step;
-//  pub2->publish(pts2);
-  res.pc2 = pts2;
+  pub2->publish(pts2);
+
+  res.pc_cnt = N;
 
   ROS_INFO("now return");
   return true;
 }
-
-//bool trypc(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
-//{
-//  rovi::GenPC srv;
-//  return genpc(srv.request, srv.response);
-//}
 
 int main(int argc, char **argv)
 {
@@ -330,11 +196,10 @@ int main(int argc, char **argv)
 //  ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
-//  ros::ServiceServer svc2 = n.advertiseService("genpc/try", trypc);
-//  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("genpc/pcl", 1);
-//  pub1 = &p1;
-//  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("genpc/pcl2", 1);
-//  pub2 = &p2;
+  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("pc", 1);
+  pub1 = &p1;
+  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("pc2", 1);
+  pub2 = &p2;
   ros::spin();
   return 0;
 }

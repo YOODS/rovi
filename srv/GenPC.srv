@@ -1,5 +1,4 @@
 sensor_msgs/Image[] imgL
 sensor_msgs/Image[] imgR
 ---
-sensor_msgs/PointCloud pc
-sensor_msgs/PointCloud2 pc2
+uint32 pc_cnt

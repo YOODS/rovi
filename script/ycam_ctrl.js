@@ -160,8 +160,6 @@ setImmediate(async function() {
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
   let vue_N = 0;
-  const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
-  const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
   const genpcreload = rosNode.serviceClient(NSrovi + '/genpc/reload', std_srvs.Trigger);
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
@@ -254,7 +252,7 @@ setImmediate(async function() {
     if (dbg) {
       ros.log.warn('paramScan CALLED');
     }
-    if (paramTimer == null) paramTimer = setTimeout(paramReload,1000);
+    if (paramTimer == null) paramTimer = setTimeout(paramReload, 1000);
   }
   function paramStop() {
     if (paramTimer != null) {
@@ -376,7 +374,7 @@ ros.log.warn('now await livestop and pshift_genpc');
 if (dbg) {
 ros.log.warn('after livestop, pshift_genpc function start');
 }
-        await sens.pset({'Go':2}); // <--------projector sequence start
+        await sens.pset({ 'Go': 2 }); // <--------projector sequence start
 if (dbg) {
 ros.log.warn('after pset p2');
 }
@@ -409,13 +407,10 @@ if (dbg) {
         gpreq.imgR = capt_R;
         try {
           let gpres = await genpc.call(gpreq);
-          pub_pc.publish(gpres.pc);
-          pub_pc2.publish(gpres.pc2);
 if (dbg) {
-          ros.log.warn('pc published');
           ros.log.warn('genpc DONE');
 }
-          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
+          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
           res.success = true;
         }
         catch(err) {
@@ -433,7 +428,7 @@ if (dbg) {
 ros.log.warn('pshift_genpc function end');
 ros.log.warn('service pshift_genpc resolve true return');
 }
-      }, waitmsec_before_capture_start); // これはライブの残りカスを捨てるための待ち
+      }, waitmsec_before_capture_start); // wait time for discarding 'tailing live images'
 
     });
   });
