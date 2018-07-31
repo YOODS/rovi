@@ -246,6 +246,10 @@ npm install js-yaml
 
 ## 3. RoVI本体のROSパッケージのインストール
 ~~~
+【TODO: この段落はROSコアパッケージのimage_pipelineへのPull Requestが通るまでの一時的な対処】
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/image_pipeline
+
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 
