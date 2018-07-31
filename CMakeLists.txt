@@ -91,9 +91,9 @@ add_executable(tools_node src/tools_node.cpp)
 target_link_libraries(tools_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(tools_node rovi_gencpp)
 
-add_executable(sgbm_node src/sgbm_node.cpp)
-target_link_libraries(sgbm_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
-add_dependencies(sgbm_node rovi_gencpp)
+add_executable(depth_node src/depth_node.cpp)
+target_link_libraries(depth_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
+add_dependencies(depth_node rovi_gencpp)
 
 #############
 ## Install ##

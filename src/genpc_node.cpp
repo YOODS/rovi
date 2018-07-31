@@ -192,8 +192,6 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "genpc_node");
   ros::NodeHandle n;
   nh = &n;
-//  ros::Subscriber sub_disp = n.subscribe("disparity", 1, disparityCallback);
-//  ros::Subscriber sub_depth = n.subscribe("depth", 1, depthCallback);
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
   ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("pc", 1);

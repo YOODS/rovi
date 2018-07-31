@@ -36,7 +36,6 @@ class ImageSwitcher {
     this.node = node;
     this.ns = ns;
     this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
-    this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
@@ -69,24 +68,26 @@ class ImageSwitcher {
     }
   }
   async emit(img) {
-//    const who = this;
-//    ros.log.warn('got emit img ' + who.lr + ' seq=' + img.header.seq);
-    this.raw.publish(img);
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    try {
-//      ros.log.warn('before call remap ' + who.lr + ' seq=' + img.header.seq);
-      let res = await this.remap.call(req);
-//      ros.log.warn('after  call remap ' + who.lr + ' seq=' + img.header.seq);
-      if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
-      else this.rect.publish(res.img);
-      this.caminfo.header = req.img.header;
-      this.caminfo.distortion_model = 'plumb_bob';
-      this.info.publish(this.caminfo);
-      ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
+    // phase_shift
+    if (this.hook.listenerCount('store') > 0) {
+      let req = new rovi_srvs.ImageFilter.Request();
+      req.img = img;
+      try {
+        let res = await this.remap.call(req);
+        this.hook.emit('store', res.img);
+      }
+      catch(err) {
+        ros.log.error('remap failed. ' + err);
+      }
     }
-    catch(err) {
-      // ros.log.error('remap failed. ' + err);
+    // live
+    else {
+      this.raw.publish(img);
+      if (this.caminfo != undefined) {
+        this.caminfo.header = img.header;
+        this.caminfo.distortion_model = 'plumb_bob';
+        this.info.publish(this.caminfo);
+      }
     }
   }
   store(count) {
