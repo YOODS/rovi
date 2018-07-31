@@ -76,12 +76,3 @@ genpc:
       -1.1332674279214746e-002, 4.4261138195803303e-002,
        3.1102677119457671e+000, -2.0329070537869045e+003, 0., 0.,
        8.3075588582891768e+000, 9.3371696374766107e+003 ]
-sgbm:
-  minDisparity: 0
-  numDisparities: 64
-  blockSize: 3
-  disp12MaxDiff: 0
-  preFilterCap: 31
-  uniquenessRatio: 15
-  speckleWindowSize: 100
-  speckleRange: 2

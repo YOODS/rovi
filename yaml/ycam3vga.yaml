@@ -27,13 +27,3 @@ live:
 camera:
   Height: 480
   Width: 1280
-sgbm:
-  windowSize: 1
-  minDisparity: 0
-  numDisparities: 64
-  blockSize: 3
-  disp12MaxDiff: 0
-  preFilterCap: 31
-  uniquenessRatio: 5
-  speckleWindowSize: 20
-  speckleRange: 2
