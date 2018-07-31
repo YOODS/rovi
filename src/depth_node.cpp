@@ -36,7 +36,7 @@ void outputDepth(const stereo_msgs::DisparityImageConstPtr& disp_msg)
       if (disp > 0 && !std::isinf(disp))
       {
         //depth_mat(v, u) = txf / (disp - (cx_l - cx_r));
-        depth_mat(v, u) = disp_msg->f * disp_msg->T / (disp + 499.796617); // TODO
+        depth_mat(v, u) = disp_msg->f * disp_msg->T / (disp + 499.796617); // TODO 
         ROS_ERROR("disp=%f, depth=%f", disp, depth_mat(v, u));
       }
       else
