@@ -82,3 +82,30 @@ genpc:
        -7.2207847243393658e-002, 5.1065532997899274e-002,
        2.9135366346306419e+000, -5.2753822792334483e+002, 0., 0.,
        8.3487463745308705e+000, 1.0619843833929795e+004 ]
+stereo_image_proc:
+  P1: 200.0
+  P2: 400.0
+  correlation_window_size: 15
+  disp12MaxDiff: 0
+  disparity_range: 256
+  fullDP: false
+  min_disparity: -128
+  prefilter_cap: 31
+  prefilter_size: 9
+  speckle_range: 4
+  speckle_size: 100
+  stereo_algorithm: 1
+  texture_threshold: 10
+  uniqueness_ratio: 15.0
+stereo_image_proc_debayer_left:
+  debayer: 0
+stereo_image_proc_debayer_right:
+  debayer: 0
+stereo_image_proc_rectify_color_left:
+  interpolation: 1
+stereo_image_proc_rectify_color_right:
+  interpolation: 1
+stereo_image_proc_rectify_mono_left:
+  interpolation: 1
+stereo_image_proc_rectify_mono_right:
+  interpolation: 1
