@@ -599,3 +599,32 @@ catkin_make
 ~~~
 TODO cd ~; npm install js-yaml
 ~~~
+
+
+## 番外編 LinuxMintへのインスト−ル
+メインマシンがMintであれば、そこで動かすことができます。以下はMintにインストールするときの注意点です。
+
+### ROSのインストール
+http://wiki.ros.org/kinetic/Installation/Ubuntu
+のとおりですが、apt updateの前に  /etc/apt/sources.list.d/ros-latest.list  を
+~~~
+deb http://packages.ros.org/ros/ubuntu sonya main
+~~~
+から
+~~~
+deb http://packages.ros.org/ros/ubuntu xenial main
+~~~
+に変更  
+SonyaはUbuntu(Xenial)に対応する、LinuxMintのコードネームです。
+
+### Aravisのインストール
+makeの前に以下を追加します。
+~~~
+sudo apt-get install libgstreamer*-dev
+~~~
+
+### rosdep
+~~~
+rosdep --os=ubuntu:xenial
+~~~
+を付けます。
