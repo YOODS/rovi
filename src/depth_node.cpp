@@ -8,61 +8,60 @@
 ros::NodeHandle *nh;
 ros::Publisher pub_depth;
 
-void outputDepth(const stereo_msgs::DisparityImageConstPtr& disp_msg)
+double cx_l = 0;
+double cx_r = 0;
+
+bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
-//  paramUpdate();
+  res.success = false;
+  res.message = "";
 
-  const sensor_msgs::Image& disp_image = disp_msg->image;
-  const cv::Mat_<float> disp_mat(disp_image.height, disp_image.width, (float*)&disp_image.data[0], disp_image.step);
-
-  //// output Depth
-  sensor_msgs::ImagePtr depth_image = boost::make_shared<sensor_msgs::Image>();
-
-  depth_image->header = disp_msg->header;
-  depth_image->width = disp_image.width;
-  depth_image->height = disp_image.height;
-  depth_image->encoding = disp_image.encoding;
-  depth_image->is_bigendian = disp_image.is_bigendian;
-  depth_image->step = disp_image.step;
-  depth_image->data.resize(depth_image->step * depth_image->height);
-
-  cv::Mat_<float> depth_mat(depth_image->height, depth_image->width, (float*)&depth_image->data[0], depth_image->step);
-
-  for (int v = 0; v < depth_mat.rows; ++v)
+  std::vector<double> lP;
+  std::vector<double> rP;
+  nh->getParam("left/remap/P", lP);
+  nh->getParam("right/remap/P", rP);
+  if (lP.size() != 12)
   {
-    for (int u = 0; u < depth_mat.cols; ++u)
-   {
-      const float& disp = disp_mat(v, u);
-      if (disp > 0 && !std::isinf(disp))
-      {
-        //depth_mat(v, u) = txf / (disp - (cx_l - cx_r));
-        depth_mat(v, u) = disp_msg->f * disp_msg->T / (disp + 499.796617); // TODO 
-        ROS_ERROR("disp=%f, depth=%f", disp, depth_mat(v, u));
-      }
-      else
-      {
-        depth_mat(v, u) = image_geometry::StereoCameraModel::MISSING_Z;
-      }
-    }
+    ROS_ERROR("Param left P NG");
+    res.message += "left P NG/";
+  }
+  if (rP.size() != 12)
+  {
+    ROS_ERROR("Param right P NG");
+    res.message += "right P NG/";
   }
 
-  pub_depth.publish(depth_image);
+  if (res.message.size() > 0) // Error happened
+  {
+    return true;
+  }
+
+  cx_l = lP[2];
+  cx_r = rP[2];
+//  ROS_ERROR("cx_l=%f, cx_r=%f", cx_l, cx_r);
+
+  res.success = true;
+  res.message = "depth param ready";
+  ROS_INFO("depth:reload ok");
+
+  return true;
 }
 
-void disparityCallback(const stereo_msgs::DisparityImageConstPtr& msg)
+void outputDepth(const stereo_msgs::DisparityImageConstPtr& disp_msg)
 {
-  ROS_ERROR("disparityCallback");
-  ROS_ERROR("f=%f", msg->f);
-  ROS_ERROR("T=%f", msg->T);
-  ROS_ERROR("min_disparity=%f", msg->min_disparity);
-  ROS_ERROR("max_disparity=%f", msg->max_disparity);
-  ROS_ERROR("width=%u", msg->image.width);
-  ROS_ERROR("height=%u", msg->image.height);
-  ROS_ERROR("step=%u", msg->image.step);
-  ROS_ERROR("image.data.size()=%d", msg->image.data.size());
-  const float *dispfloatp = (float*)&msg->image.data[0];
+/*
+  ROS_ERROR("got disp_msg...");
+  ROS_ERROR("f=%f", disp_msg->f);
+  ROS_ERROR("T=%f", disp_msg->T);
+  ROS_ERROR("min_disparity=%f", disp_msg->min_disparity);
+  ROS_ERROR("max_disparity=%f", disp_msg->max_disparity);
+  ROS_ERROR("width=%u", disp_msg->image.width);
+  ROS_ERROR("height=%u", disp_msg->image.height);
+  ROS_ERROR("step=%u", disp_msg->image.step);
+  ROS_ERROR("image.data.size()=%d", disp_msg->image.data.size());
+  const float *dispfloatp = (float*)&disp_msg->image.data[0];
   ROS_ERROR("dispfloat=%f", *dispfloatp);
-  const cv::Mat_<float> dmat(msg->image.height, msg->image.width, (float*)&msg->image.data[0], msg->image.step);
+  const cv::Mat_<float> dmat(disp_msg->image.height, disp_msg->image.width, (float*)&disp_msg->image.data[0], disp_msg->image.step);
   float min = 0;
   float max = 0;
   for (int ri = 0; ri < dmat.rows; ri++)
@@ -92,187 +91,43 @@ void disparityCallback(const stereo_msgs::DisparityImageConstPtr& msg)
     }
   }
   ROS_ERROR("disparity min=%f, max=%f", min, max);
-
-  outputDepth(msg);
-}
-
-/*
-int windowSize = 1;
-int minDisparity = 0;
-int numDisparities = 64;
-int blockSize = 3; // SADWindowSize
-int P1 = 8 * 3 * windowSize * windowSize;
-int P2 = 32 * 3 * windowSize * windowSize;
-int disp12MaxDiff = 0;
-int preFilterCap = 31;
-int uniquenessRatio = 15;
-int speckleWindowSize = 100;
-int speckleRange = 2;
-
-void paramUpdate()
-{
-  int prev_windowSize = windowSize;
-  int prev_minDisparity = minDisparity;
-  int prev_numDisparities = numDisparities;
-  int prev_blockSize = blockSize;
-  int prev_disp12MaxDiff = disp12MaxDiff;
-  int prev_preFilterCap = preFilterCap;
-  int prev_uniquenessRatio = uniquenessRatio;
-  int prev_speckleWindowSize = speckleWindowSize;
-  int prev_speckleRange = speckleRange;
-
-  nh->getParam("sgbm/windowSize", windowSize);
-  nh->getParam("sgbm/minDisparity", minDisparity);
-  nh->getParam("sgbm/numDisparities", numDisparities);
-  nh->getParam("sgbm/blockSize", blockSize);
-  nh->getParam("sgbm/disp12MaxDiff", disp12MaxDiff);
-  nh->getParam("sgbm/preFilterCap", preFilterCap);
-  nh->getParam("sgbm/uniquenessRatio", uniquenessRatio);
-  nh->getParam("sgbm/speckleWindowSize", speckleWindowSize);
-  nh->getParam("sgbm/speckleRange", speckleRange);
-
-  if (numDisparities < 16)
-  {
-    ROS_WARN("numDisparities(%d) is set to 16", numDisparities);
-    numDisparities = 16;
-    nh->setParam("sgbm/numDisparities", numDisparities);
-  }
-  int ndred = numDisparities % 16;
-  if (ndred != 0)
-  {
-    numDisparities -= ndred;
-    ROS_WARN("ndred=%d, now numDisparities=%d", ndred, numDisparities);
-    nh->setParam("sgbm/numDisparities", numDisparities);
-  }
-
-  if (windowSize < 1)
-  {
-    ROS_WARN("windowSize(%d) is set to 1", windowSize);
-    windowSize = 1;
-    nh->setParam("sgbm/windowSize", windowSize);
-  }
-  if ((windowSize % 2) == 0)
-  {
-    windowSize--;
-    ROS_ERROR("windowSize--, now windowSize=%d", windowSize);
-    nh->setParam("sgbm/windowSize", windowSize);
-  }
-
-  if (blockSize < 1)
-  {
-    ROS_WARN("blockSize(%d) is set to 1", blockSize);
-    blockSize = 1;
-    nh->setParam("sgbm/blockSize", blockSize);
-  }
-  if ((blockSize % 2) == 0)
-  {
-    blockSize--;
-    ROS_ERROR("blockSize--, now blockSize=%d", blockSize);
-    nh->setParam("sgbm/blockSize", blockSize);
-  }
-
-  if (uniquenessRatio < 0)
-  {
-    ROS_WARN("uniquenessRatio(%d) is set to 0", uniquenessRatio);
-    uniquenessRatio = 0;
-    nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
-  }
-  else if (uniquenessRatio > 100)
-  {
-    ROS_WARN("uniquenessRatio(%d) is set to 100", uniquenessRatio);
-    uniquenessRatio = 100;
-    nh->setParam("sgbm/uniquenessRatio", uniquenessRatio);
-  }
-
-  if (speckleWindowSize < 0)
-  {
-    ROS_WARN("speckleWindowSize(%d) is set to 0", speckleWindowSize);
-    speckleWindowSize = 0;
-    nh->setParam("sgbm/speckleWindowSize", speckleWindowSize);
-  }
-
-  if (speckleRange < 0)
-  {
-    ROS_WARN("speckleRange(%d) is set to 0", speckleRange);
-    speckleRange = 0;
-    nh->setParam("sgbm/speckleRange", speckleRange);
-  }
-
-
-  if (prev_windowSize != windowSize)
-  {
-    ROS_INFO("paramUpdate now windowSize=%d", windowSize);
-  }
-  if (prev_minDisparity != minDisparity)
-  {
-    ROS_INFO("paramUpdate now minDisparity=%d", minDisparity);
-  }
-  if (prev_numDisparities != numDisparities)
-  {
-    ROS_INFO("paramUpdate now numDisparities=%d", numDisparities);
-  }
-  if (prev_blockSize != blockSize)
-  {
-    ROS_INFO("paramUpdate now blockSize=%d", blockSize);
-  }
-  if (prev_disp12MaxDiff != disp12MaxDiff)
-  {
-    ROS_INFO("paramUpdate now disp12MaxDiff=%d", disp12MaxDiff);
-  }
-  if (prev_preFilterCap != preFilterCap)
-  {
-    ROS_INFO("paramUpdate now preFilterCap=%d", preFilterCap);
-  }
-  if (prev_uniquenessRatio != uniquenessRatio)
-  {
-    ROS_INFO("paramUpdate now uniquenessRatio=%d", uniquenessRatio);
-  }
-  if (prev_speckleWindowSize != speckleWindowSize)
-  {
-    ROS_INFO("paramUpdate now speckleWindowSize=%d", speckleWindowSize);
-  }
-  if (prev_speckleRange != speckleRange)
-  {
-    ROS_INFO("paramUpdate now speckleRange=%d", speckleRange);
-  }
-
-  ssgbm->setMinDisparity(minDisparity);
-  ssgbm->setNumDisparities(numDisparities);
-  ssgbm->setBlockSize(blockSize);
-  ssgbm->setDisp12MaxDiff(disp12MaxDiff);
-  ssgbm->setPreFilterCap(preFilterCap);
-  ssgbm->setUniquenessRatio(uniquenessRatio);
-  ssgbm->setSpeckleWindowSize(speckleWindowSize);
-  ssgbm->setSpeckleRange(speckleRange);
-  P1 = 8 * 3 * windowSize * windowSize;
-  P2 = 32 * 3 * windowSize * windowSize;
-  ssgbm->setP1(P1);
-  ssgbm->setP2(P2);
-}
 */
 
-/*
-bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
-{
-  res.success = false;
-  res.message = "";
-  paramUpdate();
+  const sensor_msgs::Image& disp_image = disp_msg->image;
+  const cv::Mat_<float> disp_mat(disp_image.height, disp_image.width, (float*)&disp_image.data[0], disp_image.step);
 
-  ROS_ERROR("reload minDisparity=%d", minDisparity);
-  ROS_ERROR("reload numDisparities=%d", numDisparities);
-  ROS_ERROR("reload blockSize=%d", blockSize);
-  ROS_ERROR("reload disp12MaxDiff=%d", disp12MaxDiff);
-  ROS_ERROR("reload preFilterCap=%d", preFilterCap);
-  ROS_ERROR("reload uniquenessRatio=%d", uniquenessRatio);
-  ROS_ERROR("reload speckleWindowSize=%d", speckleWindowSize);
-  ROS_ERROR("reload speckleRange=%d", speckleRange);
+  //// output Depth
+  sensor_msgs::ImagePtr depth_image = boost::make_shared<sensor_msgs::Image>();
 
-  res.success = true;
-  res.message = "depth param ready";
-  ROS_INFO("depth:reload ok");
-  return true;
+  depth_image->header = disp_msg->header;
+  depth_image->width = disp_image.width;
+  depth_image->height = disp_image.height;
+  depth_image->encoding = disp_image.encoding;
+  depth_image->is_bigendian = disp_image.is_bigendian;
+  depth_image->step = disp_image.step;
+  depth_image->data.resize(depth_image->step * depth_image->height);
+
+  cv::Mat_<float> depth_mat(depth_image->height, depth_image->width, (float*)&depth_image->data[0], depth_image->step);
+
+  for (int v = 0; v < depth_mat.rows; ++v)
+  {
+    for (int u = 0; u < depth_mat.cols; ++u)
+   {
+      const float& disp = disp_mat(v, u);
+      if (disp > 0 && !std::isinf(disp))
+      {
+        depth_mat(v, u) = disp_msg->f * disp_msg->T / (disp - (cx_l - cx_r));
+//        ROS_ERROR("disp=%f, depth=%f", disp, depth_mat(v, u));
+      }
+      else
+      {
+        depth_mat(v, u) = image_geometry::StereoCameraModel::MISSING_Z;
+      }
+    }
+  }
+
+  pub_depth.publish(depth_image);
 }
-*/
 
 int main(int argc, char **argv)
 {
@@ -280,22 +135,8 @@ int main(int argc, char **argv)
   ros::NodeHandle n;
   nh = &n;
   pub_depth = n.advertise<sensor_msgs::Image>("depth", 1);
-  ros::Subscriber sub_disp = n.subscribe("disparity", 1, disparityCallback);
-/*
+  ros::Subscriber sub_disp = n.subscribe("disparity", 1, outputDepth);
   ros::ServiceServer svc0 = n.advertiseService("depth/reload", reload);
-  std_srvs::Trigger::Request req;
-  std_srvs::Trigger::Response res;
-  reload(req, res);
-  if (res.success)
-  {
-*/
-    ros::spin();
-/*
-  }
-  else
-  {
-    ROS_ERROR("depth:unmatched parameters");
-  }
-*/
+  ros::spin();
   return 0;
 }
