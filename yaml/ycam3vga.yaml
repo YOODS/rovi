@@ -27,13 +27,30 @@ live:
 camera:
   Height: 480
   Width: 1280
-sgbm:
-  windowSize: 1
-  minDisparity: 0
-  numDisparities: 64
-  blockSize: 3
+stereo_image_proc:
+  P1: 200.0
+  P2: 400.0
+  correlation_window_size: 15
   disp12MaxDiff: 0
-  preFilterCap: 31
-  uniquenessRatio: 5
-  speckleWindowSize: 20
-  speckleRange: 2
+  disparity_range: 256
+  fullDP: false
+  min_disparity: -128
+  prefilter_cap: 31
+  prefilter_size: 9
+  speckle_range: 4
+  speckle_size: 100
+  stereo_algorithm: 1
+  texture_threshold: 10
+  uniqueness_ratio: 15.0
+stereo_image_proc_debayer_left:
+  debayer: 0
+stereo_image_proc_debayer_right:
+  debayer: 0
+stereo_image_proc_rectify_color_left:
+  interpolation: 1
+stereo_image_proc_rectify_color_right:
+  interpolation: 1
+stereo_image_proc_rectify_mono_left:
+  interpolation: 1
+stereo_image_proc_rectify_mono_right:
+  interpolation: 1

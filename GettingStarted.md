@@ -7,7 +7,7 @@
 - GigE LANケーブル (ビジョンコントローラと3Dカメラを接続)  
 
     ※GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属する専用品を使用。  
-　(YCAM3D-I, IIの場合は任意のGiE LANケーブルを使用可能。)
+　(YCAM3D-I, IIの場合は任意のGigE LANケーブルを使用可能。)
 
 # ビジョンコントローラの前提条件
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
@@ -388,14 +388,14 @@ rosservice call /rovi/pshift_genpc
 ~~~
 
 生成された点群は以下の2つのTopicにpublishされる。
-- /rovi/pc  
+- /rovi/ps_pc  
 (形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud.msg)
-- /rovi/pc2  
+- /rovi/ps_pc2  
 (形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud2.msg)
 ~~~
 点群の表示例:
 rviz
-(そのRvizの画面で /rovi/pc や /rovi/pc2 を表示すればよい)
+(そのRvizの画面で /rovi/ps_pc や /rovi/ps_pc2 を表示すればよい)
 ~~~
 
 位相シフト計算と点群生成の入力として使われた左側カメラ13枚、右側カメラ13枚のrectify画像は以下のTopicにpublishされる。  
@@ -466,8 +466,12 @@ rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
   (=[常時ライブ機能](#b-2-)での右側カメラrectify画像)
 - /rovi/right/view  
   (=[位相シフト計算と点群生成機能](#b-3-)の入力として使われた右側カメラrectify画像)
-- /rovi/pc  
+- /rovi/ps_pc  
   (=[位相シフト計算と点群生成機能](#b-3-)の出力点群)
+- /rovi/ps_pc2  
+  (=同上)
+- /rovi/points2  
+  (= TODO SGBMライブ点群。PointCloud2型。)
 ------
 
 # JETSON TX2へのインストール手順

@@ -171,6 +171,11 @@ setImmediate(async function() {
     ros.log.error('genpc reload service not available');
     return;
   }
+  const depthreload = rosNode.serviceClient(NSrovi + '/depth/reload', std_srvs.Trigger);
+  if (!await rosNode.waitForService(depthreload.getService(), 2000)) {
+    ros.log.error('depth reload service not available');
+    return;
+  }
 
   let param_C = await rosNode.getParam(NSpsgenpc + '/camera');
   let param_V = await rosNode.getParam(NSlive + '/camera');
@@ -201,13 +206,14 @@ setImmediate(async function() {
       let rrLret = await image_L.reloadRemap();
       let rrRret = await image_R.reloadRemap();
       let grret = await genpcreload.call(new std_srvs.Trigger.Request());
+      let drret = await depthreload.call(new std_srvs.Trigger.Request());
       const fps = param_V.AcquisitionFrameRate;
       waitmsec_for_livestop = 1000 / fps * 2;
 //      ros.log.warn('a fps=' + param_V.AcquisitionFrameRate + ', waitmsec_for_livestop=' + waitmsec_for_livestop);
       if (dbg) {
-        ros.log.warn('c=' + csetret + ' p=' + psetret + ' rL=' + rrLret.success + ' rR=' + rrRret.success + ' gr=' + grret.success);
+        ros.log.warn('c=' + csetret + ' p=' + psetret + ' rL=' + rrLret.success + ' rR=' + rrRret.success + ' gr=' + grret.success + ' dr=' + drret.success);
       }
-      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success) {
+      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success && drret.success) {
         ret = true;
       }
     }

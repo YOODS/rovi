@@ -194,9 +194,9 @@ int main(int argc, char **argv)
   nh = &n;
   ros::ServiceServer svc0 = n.advertiseService("genpc/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
-  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("pc", 1);
+  ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
   pub1 = &p1;
-  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("pc2", 1);
+  ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("ps_pc2", 1);
   pub2 = &p2;
   ros::spin();
   return 0;
