@@ -1,0 +1,17 @@
+gridboard:
+  do_qualize_hist: 0
+  do_smoothing: 1
+  bin_type: 0
+  bin_param0: 50
+  bin_param1: 0
+  unitleng: 5.0
+  n_circles_x: 13
+  n_circles_y: 17
+  origin_x: 6
+  origin_y: 8
+  distance_between_circles: 1.2
+  n_circles_minimum: 4
+  min_rate: 0.33
+  max_rate: 1.5
+  fitscore: 0.95
+  fitrange: 1.5
