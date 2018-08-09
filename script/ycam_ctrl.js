@@ -36,7 +36,6 @@ class ImageSwitcher {
     this.node = node;
     this.ns = ns;
     this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
-    this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
@@ -69,24 +68,26 @@ class ImageSwitcher {
     }
   }
   async emit(img) {
-//    const who = this;
-//    ros.log.warn('got emit img ' + who.lr + ' seq=' + img.header.seq);
-    this.raw.publish(img);
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    try {
-//      ros.log.warn('before call remap ' + who.lr + ' seq=' + img.header.seq);
-      let res = await this.remap.call(req);
-//      ros.log.warn('after  call remap ' + who.lr + ' seq=' + img.header.seq);
-      if (this.hook.listenerCount('store') > 0) this.hook.emit('store', res.img);
-      else this.rect.publish(res.img);
-      this.caminfo.header = req.img.header;
-      this.caminfo.distortion_model = 'plumb_bob';
-      this.info.publish(this.caminfo);
-      ros.log.warn('after publish caminfo ' + who.lr + ' seq=' + img.header.seq);
+    // phase_shift
+    if (this.hook.listenerCount('store') > 0) {
+      let req = new rovi_srvs.ImageFilter.Request();
+      req.img = img;
+      try {
+        let res = await this.remap.call(req);
+        this.hook.emit('store', res.img);
+      }
+      catch(err) {
+        ros.log.error('remap failed. ' + err);
+      }
     }
-    catch(err) {
-      // ros.log.error('remap failed. ' + err);
+    // live
+    else {
+      this.raw.publish(img);
+      if (this.caminfo != undefined) {
+        this.caminfo.header = img.header;
+        this.caminfo.distortion_model = 'plumb_bob';
+        this.info.publish(this.caminfo);
+      }
     }
   }
   store(count) {
@@ -160,8 +161,6 @@ setImmediate(async function() {
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
   let vue_N = 0;
-  const pub_pc = rosNode.advertise(NSrovi + '/pc', sensor_msgs.PointCloud);
-  const pub_pc2 = rosNode.advertise(NSrovi + '/pc2', sensor_msgs.PointCloud2);
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
   const genpcreload = rosNode.serviceClient(NSrovi + '/genpc/reload', std_srvs.Trigger);
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
@@ -170,6 +169,11 @@ setImmediate(async function() {
   }
   if (!await rosNode.waitForService(genpcreload.getService(), 2000)) {
     ros.log.error('genpc reload service not available');
+    return;
+  }
+  const depthreload = rosNode.serviceClient(NSrovi + '/depth/reload', std_srvs.Trigger);
+  if (!await rosNode.waitForService(depthreload.getService(), 2000)) {
+    ros.log.error('depth reload service not available');
     return;
   }
 
@@ -202,13 +206,14 @@ setImmediate(async function() {
       let rrLret = await image_L.reloadRemap();
       let rrRret = await image_R.reloadRemap();
       let grret = await genpcreload.call(new std_srvs.Trigger.Request());
+      let drret = await depthreload.call(new std_srvs.Trigger.Request());
       const fps = param_V.AcquisitionFrameRate;
       waitmsec_for_livestop = 1000 / fps * 2;
 //      ros.log.warn('a fps=' + param_V.AcquisitionFrameRate + ', waitmsec_for_livestop=' + waitmsec_for_livestop);
       if (dbg) {
-        ros.log.warn('c=' + csetret + ' p=' + psetret + ' rL=' + rrLret.success + ' rR=' + rrRret.success + ' gr=' + grret.success);
+        ros.log.warn('c=' + csetret + ' p=' + psetret + ' rL=' + rrLret.success + ' rR=' + rrRret.success + ' gr=' + grret.success + ' dr=' + drret.success);
       }
-      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success) {
+      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success && drret.success) {
         ret = true;
       }
     }
@@ -254,7 +259,7 @@ setImmediate(async function() {
     if (dbg) {
       ros.log.warn('paramScan CALLED');
     }
-    if (paramTimer == null) paramTimer = setTimeout(paramReload,1000);
+    if (paramTimer == null) paramTimer = setTimeout(paramReload, 1000);
   }
   function paramStop() {
     if (paramTimer != null) {
@@ -376,7 +381,7 @@ ros.log.warn('now await livestop and pshift_genpc');
 if (dbg) {
 ros.log.warn('after livestop, pshift_genpc function start');
 }
-        await sens.pset({'Go':2}); // <--------projector sequence start
+        await sens.pset({ 'Go': 2 }); // <--------projector sequence start
 if (dbg) {
 ros.log.warn('after pset p2');
 }
@@ -409,13 +414,10 @@ if (dbg) {
         gpreq.imgR = capt_R;
         try {
           let gpres = await genpc.call(gpreq);
-          pub_pc.publish(gpres.pc);
-          pub_pc2.publish(gpres.pc2);
 if (dbg) {
-          ros.log.warn('pc published');
           ros.log.warn('genpc DONE');
 }
-          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc.points.length;
+          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
           res.success = true;
         }
         catch(err) {
@@ -433,7 +435,7 @@ if (dbg) {
 ros.log.warn('pshift_genpc function end');
 ros.log.warn('service pshift_genpc resolve true return');
 }
-      }, waitmsec_before_capture_start); // これはライブの残りカスを捨てるための待ち
+      }, waitmsec_before_capture_start); // wait time for discarding 'tailing live images'
 
     });
   });

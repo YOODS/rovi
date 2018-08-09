@@ -8,6 +8,8 @@
   <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />
+  <node ns="/rovi" name="stereo_image_proc" pkg="stereo_image_proc" type="stereo_image_proc" />
+  <node ns="/rovi" name="depth_node" pkg="rovi" type="depth_node" />
   <node ns="/rovi" name="ycam_ctrl" pkg="rovi" type="ycam_ctrl.js" args="ycam1s" />
 
 </launch>

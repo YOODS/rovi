@@ -7,7 +7,7 @@
 - GigE LANケーブル (ビジョンコントローラと3Dカメラを接続)  
 
     ※GigE LANケーブルは、3DカメラがYCAM3D-IIIの場合はそれに付属する専用品を使用。  
-　(YCAM3D-I, IIの場合は任意のGiE LANケーブルを使用可能。)
+　(YCAM3D-I, IIの場合は任意のGigE LANケーブルを使用可能。)
 
 # ビジョンコントローラの前提条件
 このドキュメントでは、ビジョンコントローラについて、以下を前提条件とします。  
@@ -76,7 +76,8 @@ cd SentechSDK-1.0.4-x86_64
 
 #### 1A-3-3. 動作用の設定
 ~~~
-source /opt/sentech/.stprofile
+echo "source /opt/sentech/.stprofile" >> ~/.bashrc
+. ~/.bashrc
 /opt/sentech/bin/setnetwork.sh <3Dカメラ対向のGigEインターフェース名>
 ~~~
 
@@ -245,6 +246,10 @@ npm install js-yaml
 
 ## 3. RoVI本体のROSパッケージのインストール
 ~~~
+【TODO: この段落はROSコアパッケージのimage_pipelineへのPull Requestが通るまでの一時的な対処】
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/image_pipeline
+
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/rovi
 
@@ -383,14 +388,14 @@ rosservice call /rovi/pshift_genpc
 ~~~
 
 生成された点群は以下の2つのTopicにpublishされる。
-- /rovi/pc  
+- /rovi/ps_pc  
 (形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud.msg)
-- /rovi/pc2  
+- /rovi/ps_pc2  
 (形式は /opt/ros/kinetic/share/sensor_msgs/msg/PointCloud2.msg)
 ~~~
 点群の表示例:
 rviz
-(そのRvizの画面で /rovi/pc や /rovi/pc2 を表示すればよい)
+(そのRvizの画面で /rovi/ps_pc や /rovi/ps_pc2 を表示すればよい)
 ~~~
 
 位相シフト計算と点群生成の入力として使われた左側カメラ13枚、右側カメラ13枚のrectify画像は以下のTopicにpublishされる。  
@@ -461,8 +466,12 @@ rosparam dump ~/catkin_ws/src/rovi/yaml/rovi_param.yaml /rovi
   (=[常時ライブ機能](#b-2-)での右側カメラrectify画像)
 - /rovi/right/view  
   (=[位相シフト計算と点群生成機能](#b-3-)の入力として使われた右側カメラrectify画像)
-- /rovi/pc  
+- /rovi/ps_pc  
   (=[位相シフト計算と点群生成機能](#b-3-)の出力点群)
+- /rovi/ps_pc2  
+  (=同上)
+- /rovi/points2  
+  (= TODO SGBMライブ点群。PointCloud2型。)
 ------
 
 # JETSON TX2へのインストール手順
@@ -594,3 +603,32 @@ catkin_make
 ~~~
 TODO cd ~; npm install js-yaml
 ~~~
+
+
+## 番外編 LinuxMintへのインスト−ル
+メインマシンがMintであれば、そこで動かすことができます。以下はMintにインストールするときの注意点です。
+
+### ROSのインストール
+http://wiki.ros.org/kinetic/Installation/Ubuntu
+のとおりですが、apt updateの前に  /etc/apt/sources.list.d/ros-latest.list  を
+~~~
+deb http://packages.ros.org/ros/ubuntu sonya main
+~~~
+から
+~~~
+deb http://packages.ros.org/ros/ubuntu xenial main
+~~~
+に変更  
+SonyaはUbuntu(Xenial)に対応する、LinuxMintのコードネームです。
+
+### Aravisのインストール
+makeの前に以下を追加します。
+~~~
+sudo apt-get install libgstreamer*-dev
+~~~
+
+### rosdep
+~~~
+rosdep --os=ubuntu:xenial
+~~~
+を付けます。
