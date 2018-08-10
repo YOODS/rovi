@@ -54,12 +54,14 @@ roslaunch calib.launch
 ~~~
 
 2. 追加起動
+
 ロボット座標がSocketで取り込めるようになるまでは、以下のJSを起動しSTDINから入力します。
 ~~~
 ./robot_calib.js
 ~~~
 
 3. Tuning
+
 ソフトウェアはリアルタイムにキャリブ板を認識し、その剛体座標を/gridboard/poseトピックに出力します。  
 キャリブ板を正しく認識できているかどうかは、/gridboard/imageトピックで確認します。正しい認識は以下のステップを経たものです。
 - 輪郭を緑色でマーキング
@@ -70,6 +72,7 @@ roslaunch calib.launch
 一方、認識ができないときは下のような表示となります。
 <img src="fig1.png">  
 これは二値化のしきい値が適切でないときです。二値化のしきい値はbin_param0パラメータで以下のように設定します。
+
 ~~~
 rosparam set /gridboard/bin_param0 50
 ~~~
