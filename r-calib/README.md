@@ -17,7 +17,7 @@
 ## キャリブレーション原理(ハンドアイ)
 ハンドアイでは以下の変換が成立する
 
-  <img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}={}^{b}T_{m} {}^{m}T_{c} {}^{c}T_{s}" />
+  <img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}={}^{b}T_{m}\cdot{}^{m}T_{c}\cdot{}^{c}T_{s}" />
 
 visp_hand2eyeおよび佐藤さんのソルバーは、
 
@@ -30,9 +30,9 @@ visp_hand2eyeおよび佐藤さんのソルバーは、
 ## キャリブレーション原理(固定カメラ)
 固定カメラでは求解したい変換は<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{c}" />である。このため上式の<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{c}" />に置き換え下記の等式を得る。
 
-  <img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}={}^{m}T_{b} {}^{b}T_{c} {}^{c}T_{s}" />
+  <img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}={}^{m}T_{b}\cdot{}^{b}T_{c}\cdot{}^{c}T_{s}" />
 
-この式から、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">に代えて<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}^{-1}">を入力とすることで、同じソルバーにて求解できる。
+この式から、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">に代えて<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{b}(={}^{b}T_{m}^{-1})">を入力とすることで、同じソルバーにて求解できる。
 
 ## Install
 
