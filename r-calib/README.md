@@ -80,6 +80,7 @@ rosparam set /gridboard/bin_param0 50
 ## Calibration
 
 1. データ入力
+
 ./robot_calib.jsから、撮影位置に対するロボット座標(６軸)を以下のように入力します。回転はA,B,C表記ですが、内部ではQuaternionに変換されます。  
 逆変換は行っていないので、固定カメラに使うときは逆変換を挿入してください(robot_calib.jsの85行目あたり)
 ~~~
@@ -88,6 +89,7 @@ rosparam set /gridboard/bin_param0 50
 入力を行った直後のフレームでのキャリブ板のPoseが、ロボット座標と共にストアされます。
 
 2. 画像の保存
+
 お馴染みのimsave.jsをこのディレクトリ下にコピーしています。保存するのは左右が結合されたRaw画像です。適切なファイル名に改変して使用します。
 ~~~
 ./imsave 1
@@ -95,13 +97,13 @@ rosparam set /gridboard/bin_param0 50
 
 3. 計算
 ~~~
-r
+c
 ~~~
 を入力するとストアされたデータを元にTransformを算出します。結果は/robot_calib/tfパラメータに保存されます。
 
 4. バッファクリア
 ~~~
-c
+r
 ~~~
 を入力するとストアされたデータをクリアします
 
