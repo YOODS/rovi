@@ -5,13 +5,14 @@
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include "rovi/Floats.h"
 #include "rovi/GenPC.h"
 #include "ps_main.h"
 
 bool isready = false;
 
 ros::NodeHandle *nh;
-ros::Publisher *pub1, *pub2;
+ros::Publisher *pub1, *pub2 ,*pub3;
 
 std::vector<double> vecQ;
 
@@ -147,11 +148,14 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   pts.channels[1].values.resize(N);
   pts.channels[2].name = "b";
   pts.channels[2].values.resize(N);
+  rovi::Floats buf;
+  buf.data.resize(3*N);
   for (int n = 0; n < N; n++)
   {
-    pts.points[n].x = _pcd[n].coord[0];
-    pts.points[n].y = _pcd[n].coord[1];
-    pts.points[n].z = _pcd[n].coord[2];
+    int n3=3*n;
+    buf.data[n3++]=pts.points[n].x = _pcd[n].coord[0];
+    buf.data[n3++]=pts.points[n].y = _pcd[n].coord[1];
+    buf.data[n3]=pts.points[n].z = _pcd[n].coord[2];
     pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
     pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
     pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
@@ -174,6 +178,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
   ROS_INFO("after  outPLY");
 
   pub1->publish(pts);
+  pub3->publish(buf);
 
   sensor_msgs::PointCloud2 pts2;
   sensor_msgs::convertPointCloudToPointCloud2(pts, pts2);
@@ -198,6 +203,8 @@ int main(int argc, char **argv)
   pub1 = &p1;
   ros::Publisher p2 = n.advertise<sensor_msgs::PointCloud2>("ps_pc2", 1);
   pub2 = &p2;
+  ros::Publisher p3 = n.advertise<rovi::Floats>("ps_floats", 1);
+  pub3 = &p3;
   ros::spin();
   return 0;
 }

@@ -30,6 +30,11 @@ add_service_files(
   Detect2D.srv
 )
 
+add_message_files(
+  FILES
+  Floats.msg
+)
+
 generate_messages(
   DEPENDENCIES
   std_msgs
@@ -94,6 +99,10 @@ add_dependencies(tools_node rovi_gencpp)
 add_executable(depth_node src/depth_node.cpp)
 target_link_libraries(depth_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(depth_node rovi_gencpp)
+
+add_executable(floats2pc src/floats2pc.cpp)
+target_link_libraries(floats2pc ${catkin_LIBRARIES})
+add_dependencies(floats2pc rovi_gencpp)
 
 #############
 ## Install ##
