@@ -1,9 +1,9 @@
 #include <ros/ros.h>
-#include <std_srvs/Trigger.h>
+#include <std_msgs/Empty.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point.h>
-#include <geometry_msgs/Pose.h>
+#include <geometry_msgs/Transform.h>
 #include "rovi/ImageFilter.h"
 #include "CircleCalibBoard.h"
 
@@ -13,14 +13,14 @@ std::string paramK("gridboard/K");
 static std::vector<double> kvec;
 static ros::Publisher *pub1, *pub2;
 
-bool get_grid(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res){
+void solve(sensor_msgs::Image src){
   cv_bridge::CvImagePtr cv_ptr1;
   try{
-    cv_ptr1 = cv_bridge::toCvCopy(req.img, sensor_msgs::image_encodings::MONO8);
+    cv_ptr1 = cv_bridge::toCvCopy(src, sensor_msgs::image_encodings::MONO8);
   }
   catch(cv_bridge::Exception& e){
     ROS_ERROR("get_grids:cv_bridge:exception: %s", e.what());
-    return false;
+    return;
   }
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
@@ -32,7 +32,7 @@ bool get_grid(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res)
   pub1->publish(img);
   if(cbres){
     ROS_WARN("CircleCalibBoard::scan:failed:");
-    return true;
+    return;
   }
   std::vector<cv::Point3f> model;
   std::vector<cv::Point2f> scene;
@@ -66,19 +66,18 @@ bool get_grid(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res)
   float ry = rmat.at<double>(1, 0);
   float rz = rmat.at<double>(2, 0);
   float rw = sqrt(rx * rx + ry * ry + rz * rz);
-  geometry_msgs::Pose pose;
-  pose.position.x = tmat.at<double>(0, 0);
-  pose.position.y = tmat.at<double>(1, 0);
-  pose.position.z = tmat.at<double>(2, 0);
-  pose.orientation.x = rw > 0 ? sin(rw / 2) * rx / rw : rx;
-  pose.orientation.y = rw > 0 ? sin(rw / 2) * ry / rw : ry;
-  pose.orientation.z = rw > 0 ? sin(rw / 2) * rz / rw : rz;
-  pose.orientation.w = cos(rw / 2);
-  pub2->publish(pose);
-  return true;
+  geometry_msgs::Transform tf;
+  tf.translation.x = tmat.at<double>(0, 0);
+  tf.translation.y = tmat.at<double>(1, 0);
+  tf.translation.z = tmat.at<double>(2, 0);
+  tf.rotation.x = rw > 0 ? sin(rw / 2) * rx / rw : rx;
+  tf.rotation.y = rw > 0 ? sin(rw / 2) * ry / rw : ry;
+  tf.rotation.z = rw > 0 ? sin(rw / 2) * rz / rw : rz;
+  tf.rotation.w = cos(rw / 2);
+  pub2->publish(tf);
 }
 
-bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+void reload(std_msgs::Empty e)
 {
   for (std::map<std::string, double>::iterator itr = cboard.para.begin(); itr != cboard.para.end(); ++itr)
   {
@@ -93,9 +92,8 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   if (! nh->getParam(paramK.c_str(), kvec))
   {
     ROS_ERROR("GetGrid::paramer \"K\" not found");
-    return false;
+    return;
   }
-  return true;
 }
 
 int main(int argc, char **argv)
@@ -110,14 +108,13 @@ int main(int argc, char **argv)
   nh = &n;
   cboard.para["bin_type"] = 1;
 
-  ros::ServiceServer svc1 = n.advertiseService("gridboard", get_grid);
-  ros::ServiceServer svc2 = n.advertiseService("gridboard/reload", reload);
-  std_srvs::Trigger::Request req;
-  std_srvs::Trigger::Response res;
-  reload(req, res);
-  ros::Publisher p1 = n.advertise<sensor_msgs::Image>("gridboard/image", 1);
+  n.subscribe("gridboard/image_in", 1, solve);
+  n.subscribe("gridboard/X0", 1, reload);
+  std_msgs::Empty msg;
+  reload(msg);
+  ros::Publisher p1 = n.advertise<sensor_msgs::Image>("gridboard/image_out", 1);
   pub1 = &p1;
-  ros::Publisher p2 = n.advertise<geometry_msgs::Pose>("gridboard/pose", 1);
+  ros::Publisher p2 = n.advertise<geometry_msgs::Transform>("gridboard/tf", 1);
   pub2 = &p2;
   ros::spin();
   return 0;
