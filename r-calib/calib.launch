@@ -1,8 +1,8 @@
 <launch>
-  <rosparam command="load" ns="/" file="$(find rovi)/R-Calib/param.yaml" />
+  <rosparam command="load" file="param.yaml" />
   <node pkg="rovi" type="grid_node" name="grid_node" args="/rovi/left/remap/K" output="screen" />
 	<node pkg="visp_hand2eye_calibration" type="visp_hand2eye_calibration_calibrator" name="calibrator" />
-  <node ns="/robot_calib" pkg="image_view" type="image_view" name="image_view" args="image:=/gridboard/image" />
-  <node ns="/rovi" pkg="image_view" type="image_view" name="image_view" args="image:=/rovi/camera/image_raw" />
-<!--  <node pkg="rovi" type="robot_calib.js" name="robot_calib" output="screen" /> -->
+  <node ns="/rcalib" pkg="image_view" type="image_view" name="image_view" args="image:=/gridboard/image_out" />
+  <node pkg="rovi" type="solver.js" name="solver" output="screen" />
+  <node pkg="rovi" type="r-socket.js" name="rsocket" />
 </launch>

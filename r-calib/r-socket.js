@@ -23,23 +23,25 @@ function xyz2quat(e) {
 }
 
 setImmediate(async function(){
-  const rosNode=await ros.initNode('r-socket');
-  const pub=rosNode.advertise('/robot/tf', geometry_msgs.Transform);
+  const rosNode=await ros.initNode('rsocket');
+  const pub1=rosNode.advertise('/robot/tf', geometry_msgs.Transform);
+  const pub2=rosNode.advertise('/solver/X0', std_msgs.Empty);
+  const pub3=rosNode.advertise('/solver/X1', std_msgs.Empty);
+  const pub4=rosNode.advertise('/solver/X2', std_msgs.Empty);
   const event=new EventEmitter();
 
   rosNode.subscribe('/robot/euler', geometry_msgs.Transform, async function(xyz){
     let tf=xyz2quat(xyz);
-    pub.publish(tf);
+    pub1.publish(tf);
   });
-  rosNode.subscribe('/solver/tf', geometry_msgs.Transform, async function(tf){
+  rosNode.subscribe('/solver/mTc', geometry_msgs.Transform, async function(tf){
     event.emit('solve',tf);
   });
 
   const server = net.createServer(function(conn){
     console.log('connection established');
     conn.on('data', function(data){   //data received from robot controller
-//      pub.publish(tf);
-      conn.write('server -> Repeating: ' + data);
+      pub4.publish(new std_msgs.Empty());
     });
     conn.on('close', function(){
       console.log('connection closed');

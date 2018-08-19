@@ -31,6 +31,7 @@ setImmediate(async function(){
   const pub1=rosNode.advertise('/gridboard/image_in', sensor_msgs.Image);
   const pub2=rosNode.advertise('/gridboard/X0', std_msgs.Empty);
   const pub10=rosNode.advertise('/solver/cTs', geometry_msgs.Transform);
+  const pub11=rosNode.advertise('/solver/mTc', geometry_msgs.Transform);
 
   param.on('change',function(key,val){
     pub2.publish(new std_msgs.Empty());
@@ -41,6 +42,7 @@ setImmediate(async function(){
   let mTc=new geometry_msgs.Transform();
   let cTs=new geometry_msgs.Transform();
   rosNode.subscribe('/robot/tf', geometry_msgs.Transform, async function(tf){
+    bTm=tf;
     pub2.publish();
   });
   let c2o=new visp_msgs.TransformArray();
@@ -67,6 +69,7 @@ setImmediate(async function(){
     try {
       res=await get_tf.call(req);
       rosNode.setParam('/robot/calib',res.effector_camera);
+      pub11.publish(res.effector_camera);
       ros.log.info('TF='+JSON.strigify(res.effector_camera));
     }
     catch(err){
