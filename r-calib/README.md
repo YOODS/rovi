@@ -17,7 +17,7 @@
 ## キャリブレーション原理(ハンドアイ)
 ハンドアイでは以下の変換が成立する
 
-  <img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}={}^{b}T_{m}\cdot{}^{m}T_{c}\cdot{}^{c}T_{s}" />
+  <img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}={}^{b}T_{m}\cdot{}^{m}T_{c}\cdot{}^{c}T_{s} -(1)" />
 
 visp_hand2eyeおよび佐藤さんのソルバーは、
 
@@ -30,9 +30,20 @@ visp_hand2eyeおよび佐藤さんのソルバーは、
 ## キャリブレーション原理(固定カメラ)
 固定カメラでは求解したい変換は<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{c}" />である。このため上式の<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{c}" />に置き換え下記の等式を得る。
 
-  <img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}={}^{m}T_{b}\cdot{}^{b}T_{c}\cdot{}^{c}T_{s}" />
+  <img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}={}^{m}T_{b}\cdot{}^{b}T_{c}\cdot{}^{c}T_{s}  -(2)" />
 
 この式から、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">に代えて<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{b}(={}^{b}T_{m}^{-1})">を入力とすることで、同じソルバーにて求解できる。
+
+## キャリブレーション結果の評価
+式(1)を変形し下式を得る
+
+  <img src="https://latex.codecogs.com/gif.latex?{}^{c}T_{s}={}^{c}T_{m}\cdot{}^{m}T_{b}\cdot{}^{b}T_{s}  -(3)" />
+
+つまり先の計算により<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{c}">、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}">、が求められていれば、ロボット座標をもとにキャリブ板のカメラ座標系に対する座標変換を求められる。
+この結果と、カメラから求めたキャリブ板の座標変換とを比較し、キャリブレーションの精度評価を行う。  
+同様に固定カメラでは以下よりキャリブ板の座標を推定する。
+
+  <img src="https://latex.codecogs.com/gif.latex?{}^{c}T_{s}={}^{c}T_{b}\cdot{}^{b}T_{m}\cdot{}^{m}T_{s} -(4)" />
 
 ## Install
 
@@ -77,8 +88,8 @@ rosparam set /gridboard/bin_param0 50
 |トピック名|型|説明|
 |:----|:----|:----|
 |/rovi/left/image_rect|Image|基準カメラ(左)のレクティファイ画像|
-|/robot/tf|Transform|ロボット機械端の座標変換。|
-|/robot/euler|Transform|ロボット機械端の座標変換のオイラー角表記。このトピックに発行したデータはQuaternion変換され、/robot/tfに再発行されます。手入力時のインタフェースとして用意されています|
+|/robot/carte|Transform|ベース座標基準のロボット機械端座標|
+|/robot/euler|Transform|ベース座標基準のロボット機械端座標(オイラー角)。このトピックに発行したデータはQuaternion変換され、/robot/carteに再発行されます。手入力時のインタフェースとして用意されています|
 |/solver/X0|Empty|取得したデータをクリアする|
 |/solver/X1|Empty|データ(物体とロボットのTransformペア)をバッファにストアする|
 |/solver/X2|Empty|ストアされたデータから、機械端からカメラへの座標変換を算出し、パラメータ/robot/calibとトピック/solver/mTcに出力する|
@@ -88,7 +99,7 @@ rosparam set /gridboard/bin_param0 50
 |トピック名|型|説明|
 |:----|:----|:----|
 |/gridboard/image_out|Image|キャリブ板の認識結果|
-|/gridboard/tf|Image|カメラ画像から推定した、キャリブ板のカメラ座標に対する座標変換|
+|/gridboard/tf|Transform|カメラ画像から推定した、キャリブ板のカメラ座標に対する座標変換|
 |/solver/cTs|Transform|ロボット座標から推定した、キャリブ板のカメラ座標に対する座標変換|
 |/solver/mTc|Transform|カメラのロボットエンド座標に対する座標変換|
 

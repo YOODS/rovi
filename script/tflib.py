@@ -12,7 +12,7 @@ def dict2tf(d):
   tf.rotation.w=d['rotation']['w']
   return tf
 
-def tf2rt(tf):
+def toRT(tf):
   x=tf.rotation.x
   y=tf.rotation.y
   z=tf.rotation.z
@@ -25,3 +25,17 @@ def tf2rt(tf):
   zz=z*z
   ww=w*w
   return np.matrix([[xx-yy-zz+ww,2.*(x*y-w*z),2.*(x*z+w*y),tx],[2.*(x*y+w*z),yy+ww-xx-zz,2.*(y*z-w*x),ty],[2.*(x*z-w*y),2.*(y*z+w*x),zz+ww-xx-yy,tz],[ 0, 0, 0, 1]])
+
+def fromRT(rt):
+  return
+
+def inv(tf):
+  ft=Transform()
+  ft.translation.x=-tf.translation.x
+  ft.translation.y=-tf.translation.y
+  ft.translation.z=-tf.translation.z
+  ft.rotation.x=-tf.rotation.x
+  ft.rotation.y=-tf.rotation.y
+  ft.rotation.z=-tf.rotation.z
+  ft.rotation.w=tf.rotation.w
+  return ft
