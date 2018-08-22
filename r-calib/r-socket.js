@@ -5,6 +5,7 @@ const geometry_msgs = ros.require('geometry_msgs').msg;
 const std_msgs = ros.require('std_msgs').msg;
 const rovi_msgs = ros.require('rovi').msg;
 const EventEmitter = require('events').EventEmitter;
+const Notifier = require('../script/notifier.js');
 const net=require('net');
 
 function xyz2quat(e) {
@@ -30,7 +31,14 @@ setImmediate(async function(){
   const pub_solX0=rosNode.advertise('/solver/X0', std_msgs.Empty);
   const pub_solX1=rosNode.advertise('/solver/X1', std_msgs.Empty);
   const pub_solX2=rosNode.advertise('/solver/X2', std_msgs.Empty);
+  const pub_gridX0=rosNode.advertise('/gridboard/X0', std_msgs.Empty);
   const event=new EventEmitter();
+
+  const param=new Notifier(rosNode,'/gridboard');
+  param.on('change',function(key,val){
+    pub_gridX0.publish(new std_msgs.Empty());
+  });
+  setTimeout(function(){ param.start(); },1000);
 
   rosNode.subscribe('/robot/euler', geometry_msgs.Transform, async function(xyz){
     let qt=xyz2quat(xyz);
