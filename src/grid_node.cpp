@@ -14,12 +14,14 @@ static std::vector<double> kvec;
 static ros::Publisher *pub1, *pub2;
 
 void solve(sensor_msgs::Image src){
+  geometry_msgs::Transform tf;
   cv_bridge::CvImagePtr cv_ptr1;
   try{
     cv_ptr1 = cv_bridge::toCvCopy(src, sensor_msgs::image_encodings::MONO8);
   }
   catch(cv_bridge::Exception& e){
     ROS_ERROR("get_grids:cv_bridge:exception: %s", e.what());
+    pub2->publish(tf);
     return;
   }
   std::vector<cv::Point2f> imagePoints;
@@ -32,6 +34,7 @@ void solve(sensor_msgs::Image src){
   pub1->publish(img);
   if(cbres){
     ROS_WARN("CircleCalibBoard::scan:failed:");
+    pub2->publish(tf);
     return;
   }
   std::vector<cv::Point3f> model;
@@ -66,7 +69,6 @@ void solve(sensor_msgs::Image src){
   float ry = rmat.at<double>(1, 0);
   float rz = rmat.at<double>(2, 0);
   float rw = sqrt(rx * rx + ry * ry + rz * rz);
-  geometry_msgs::Transform tf;
   tf.translation.x = tmat.at<double>(0, 0);
   tf.translation.y = tmat.at<double>(1, 0);
   tf.translation.z = tmat.at<double>(2, 0);

@@ -1,4 +1,5 @@
 import numpy as np
+import math
 from geometry_msgs.msg import Transform
 
 def dict2tf(d):
@@ -27,7 +28,19 @@ def toRT(tf):
   return np.matrix([[xx-yy-zz+ww,2.*(x*y-w*z),2.*(x*z+w*y),tx],[2.*(x*y+w*z),yy+ww-xx-zz,2.*(y*z-w*x),ty],[2.*(x*z-w*y),2.*(y*z+w*x),zz+ww-xx-yy,tz],[ 0, 0, 0, 1]])
 
 def fromRT(rt):
-  return
+  qw=2*math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])
+  qx=(rt[2,1]-rt[1,2])/qw
+  qy=(rt[0,2]-rt[2,0])/qw
+  qz=(rt[1,0]-rt[0,1])/qw
+  tf=Transform()
+  tf.rotation.w=qw
+  tf.rotation.x=qx
+  tf.rotation.y=qy
+  tf.rotation.z=qz
+  tf.rotation.x=rt[0,3]
+  tf.rotation.y=rt[1,3]
+  tf.rotation.z=rt[2,3]
+  return tf
 
 def inv(tf):
   ft=Transform()

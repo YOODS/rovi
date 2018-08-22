@@ -25,21 +25,26 @@ function xyz2quat(e) {
 }
 
 setImmediate(async function(){
+  const event=new EventEmitter();
   const rosNode=await ros.initNode('socket');
+
+//Publisher
   const pub_tf=rosNode.advertise('/robot/tf', geometry_msgs.Transform);
   const pub_joint=rosNode.advertise('/robot/joint', geometry_msgs.Transform);
   const pub_solX0=rosNode.advertise('/solver/X0', std_msgs.Empty);
   const pub_solX1=rosNode.advertise('/solver/X1', std_msgs.Empty);
   const pub_solX2=rosNode.advertise('/solver/X2', std_msgs.Empty);
   const pub_gridX0=rosNode.advertise('/gridboard/X0', std_msgs.Empty);
-  const event=new EventEmitter();
+  const pub_gridImg=rosNode.advertise('/gridboard/image_in', sensor_msgs.Image);
 
+//Parameter notifier
   const param=new Notifier(rosNode,'/gridboard');
   param.on('change',function(key,val){
     pub_gridX0.publish(new std_msgs.Empty());
   });
   setTimeout(function(){ param.start(); },1000);
 
+//Subscriber
   rosNode.subscribe('/robot/euler', geometry_msgs.Transform, async function(xyz){
     let qt=xyz2quat(xyz);
     pub_tf.publish(qt);
@@ -47,7 +52,14 @@ setImmediate(async function(){
   rosNode.subscribe('/solver/Y2', std_msgs.Empty, async function(tf){
     event.emit('solve',tf);
   });
+  rosNode.subscribe('/rovi/left/image_rect', sensor_msgs.Image, async function(src){
+    event.emit('image',src);
+  });
+  rosNode.subscribe('/gridboard/tf', geometry_msgs.Transform, async function(tf){
+    event.emit('grid',tf);
+  });
 
+//Socket
   const server = net.createServer(function(conn){
     console.log('connection established');
     conn.on('data', function(data){   //data received from robot controller
@@ -60,4 +72,21 @@ setImmediate(async function(){
       conn.write('');
     });
   }).listen(3000);
+
+//Looping image->grid
+  while(true){
+    await Promise.all([
+      new Promise(function(resolve){
+        event.once('image',async function(img){
+          pub_gridImg.publish(img);
+          resolve(true);
+        });
+      }),
+      new Promise(function(resolve){
+        event.once('grid',async function(tf){
+          resolve(true);
+        });
+      })
+    ]);
+  }
 });

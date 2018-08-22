@@ -68,24 +68,12 @@ def cb_X2(f):
     print 'Service call failed:'+e
   return
 
-def cb_img(img):
-  print "image sub"
-  sb_img.unregister()
-  pb_grid.publish(img)
-  return
-
-def cb_grid(tf):
-  global sb_img
-  print "tf sub"
-  sb_img=rospy.Subscriber('/rovi/left/image_rect',Image,cb_img)
-  return
 
 ###############################################################
 rospy.init_node('solver',anonymous=True)
 
 pb_cTs=rospy.Publisher('/solver/cTs',Transform,queue_size=1)
 pb_Y2=rospy.Publisher('/solver/Y2',Empty,queue_size=1)    #X2 done
-pb_grid=rospy.Publisher('/gridboard/image_in',Image,queue_size=1)
 
 cb_X0(Empty())
 bTm=np.eye(4,dtype=float)
@@ -99,31 +87,12 @@ if rospy.has_param('/robot/calib/bTc'):
 if rospy.has_param('/robot/calib/mTs'):
   mTs=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTs')))
 
-print bTc
-
-sb_img=rospy.Subscriber('/rovi/left/image_rect',Image,cb_img)
 rospy.Subscriber('/robot/tf',Transform,cb_robot)
 rospy.Subscriber('solver/X0',Empty,cb_X0)
 rospy.Subscriber('solver/X1',Empty,cb_X1)
 rospy.Subscriber('solver/X2',Empty,cb_X2)
-rospy.Subscriber('/gridboard/tf',Transform,cb_grid)
-
-#while True:
-#  print "loop"
-#  try:
-#    img=rospy.wait_for_message('/rovi/left/image_rect',Image,timeout=1)
-#    print "image",len(img.data)
-#    pb_grid.publish(img)
-#    tf=rospy.wait_for_message('/gridboard/tf',Transform)
-#    print "tf",tf
-#  except rospy.ROSException, e:
-#    if e.message[:7] == 'timeout':
-#      print 'timeout'
-#      continue
-#    else: break
 
 try:
   rospy.spin()
 except KeyboardInterrupt:
   print "Shutting down"
-
