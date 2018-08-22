@@ -10,7 +10,8 @@ from geometry_msgs.msg import Transform
 from visp_hand2eye_calibration.srv import compute_effector_camera_quick
 from visp_hand2eye_calibration.msg import TransformArray
 import sys
-sys.path.append('../script')
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '../script'))
 import tflib
 
 def cb_robot(tf):
@@ -31,10 +32,11 @@ def cb_X0(f):
 def cb_X1(f):
   global cTsAry,mTbAry,sTcAry,bTmAry
   tf=rospy.wait_for_message('/gridboard/tf',Transform)
-  print "cbX1",tf
+  print "cbX1::grid",tf
   cTsAry.transforms.append(tf)
   sTcAry.transforms.append(tflib.inv(tf))
   tf=rospy.wait_for_message('/robot/tf',Transform)
+  print "cbX1::robot",tf
   bTmAry.transforms.append(tf)
   mTbAry.transforms.append(tflib.inv(tf))
   return
@@ -66,6 +68,18 @@ def cb_X2(f):
     print 'Service call failed:'+e
   return
 
+def cb_img(img):
+  print "image sub"
+  sb_img.unregister()
+  pb_grid.publish(img)
+  return
+
+def cb_grid(tf):
+  global sb_img
+  print "tf sub"
+  sb_img=rospy.Subscriber('/rovi/left/image_rect',Image,cb_img)
+  return
+
 ###############################################################
 rospy.init_node('solver',anonymous=True)
 
@@ -87,23 +101,29 @@ if rospy.has_param('/robot/calib/mTs'):
 
 print bTc
 
+sb_img=rospy.Subscriber('/rovi/left/image_rect',Image,cb_img)
 rospy.Subscriber('/robot/tf',Transform,cb_robot)
 rospy.Subscriber('solver/X0',Empty,cb_X0)
 rospy.Subscriber('solver/X1',Empty,cb_X1)
 rospy.Subscriber('solver/X2',Empty,cb_X2)
+rospy.Subscriber('/gridboard/tf',Transform,cb_grid)
 
-while True:
-  try:
-    img=rospy.wait_for_message('/rovi/left/image_rect',Image,timeout=1)
-    pb_grid.publish(img)
-    tf=rospy.wait_for_message('/gridboard/tf',Transform)
-  except rospy.ROSException, e:
-    if e.message[:7] == 'timeout':
-      print 'timeout'
-      continue
-    else: break
+#while True:
+#  print "loop"
+#  try:
+#    img=rospy.wait_for_message('/rovi/left/image_rect',Image,timeout=1)
+#    print "image",len(img.data)
+#    pb_grid.publish(img)
+#    tf=rospy.wait_for_message('/gridboard/tf',Transform)
+#    print "tf",tf
+#  except rospy.ROSException, e:
+#    if e.message[:7] == 'timeout':
+#      print 'timeout'
+#      continue
+#    else: break
 
-#try:
-#  rospy.spin()
-#except KeyboardInterrupt:
-#  print "Shutting down"
+try:
+  rospy.spin()
+except KeyboardInterrupt:
+  print "Shutting down"
+
