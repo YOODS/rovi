@@ -35,15 +35,10 @@ visp_hand2eyeおよび佐藤さんのソルバーは、
 この式から、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">に代えて<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{b}(={}^{b}T_{m}^{-1})">を入力とすることで、同じソルバーにて求解できる。
 
 ## キャリブレーション結果の評価
-式(1)を変形し下式を得る
-
-  <img src="https://latex.codecogs.com/gif.latex?{}^{c}T_{s}={}^{c}T_{m}\cdot{}^{m}T_{b}\cdot{}^{b}T_{s}~~~~-(3)" />
-
-つまり先の計算により<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{c}">、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}">、が求められていれば、ロボット座標をもとにキャリブ板のカメラ座標系に対する座標変換を求められる。
-この結果と、カメラから求めたキャリブ板の座標変換とを比較し、キャリブレーションの精度評価を行う。  
-同様に固定カメラでは以下よりキャリブ板の座標を推定する。
-
-  <img src="https://latex.codecogs.com/gif.latex?{}^{c}T_{s}={}^{c}T_{b}\cdot{}^{b}T_{m}\cdot{}^{m}T_{s}~~~~-(4)" />
+CSV形式のファイルにてキャリブレーション結果を書き出します。ロボットの各Transformに対しそこでの逆算結果(式(1)または式(2)の演算結果)を１行に示します。  
+- １〜７列目：<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">
+- ８〜１４列目：<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}">
+- １５〜２１列目：<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}">
 
 ## Install
 

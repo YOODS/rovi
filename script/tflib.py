@@ -42,6 +42,14 @@ def fromRT(rt):
   tf.rotation.z=rt[2,3]
   return tf
 
+def fromRTtoVec(rt):
+  qw=2*math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])
+  qx=(rt[2,1]-rt[1,2])/qw
+  qy=(rt[0,2]-rt[2,0])/qw
+  qz=(rt[1,0]-rt[0,1])/qw
+  vec=np.array([[rt[0,3],rt[1,3],rt[2,3],qx,qy,qz,qw]])
+  return vec
+
 def inv(tf):
   ft=Transform()
   ft.translation.x=-tf.translation.x
