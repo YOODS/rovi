@@ -4,7 +4,7 @@ import cv2
 import numpy as np
 import roslib
 import rospy
-from std_msgs.msg import Empty
+from std_msgs.msg import Bool
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Transform
 from visp_hand2eye_calibration.srv import compute_effector_camera_quick
@@ -63,7 +63,7 @@ def cb_X2(f):
     calibrator(req2,res)
     rospy.set_param('/robot/calib/mTs',res.effector_camera)
     mTs=tflib.toRT(res.effector_camera)
-    pb_Y2(Empty())
+    pb_Y2(Bool())
   except rospy.ServiceException, e:
     print 'Service call failed:'+e
   return
@@ -73,9 +73,9 @@ def cb_X2(f):
 rospy.init_node('solver',anonymous=True)
 
 pb_cTs=rospy.Publisher('/solver/cTs',Transform,queue_size=1)
-pb_Y2=rospy.Publisher('/solver/Y2',Empty,queue_size=1)    #X2 done
+pb_Y2=rospy.Publisher('/solver/Y2',Bool,queue_size=1)    #X2 done
 
-cb_X0(Empty())
+cb_X0(Bool())
 bTm=np.eye(4,dtype=float)
 cTs=np.eye(4,dtype=float)
 bTc=np.eye(4,dtype=float)
@@ -88,9 +88,9 @@ if rospy.has_param('/robot/calib/mTs'):
   mTs=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTs')))
 
 rospy.Subscriber('/robot/tf',Transform,cb_robot)
-rospy.Subscriber('solver/X0',Empty,cb_X0)
-rospy.Subscriber('solver/X1',Empty,cb_X1)
-rospy.Subscriber('solver/X2',Empty,cb_X2)
+rospy.Subscriber('/solver/X0',Bool,cb_X0)
+rospy.Subscriber('/solver/X1',Bool,cb_X1)
+rospy.Subscriber('/solver/X2',Bool,cb_X2)
 
 try:
   rospy.spin()
