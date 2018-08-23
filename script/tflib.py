@@ -28,10 +28,10 @@ def toRT(tf):
   return np.matrix([[xx-yy-zz+ww,2.*(x*y-w*z),2.*(x*z+w*y),tx],[2.*(x*y+w*z),yy+ww-xx-zz,2.*(y*z-w*x),ty],[2.*(x*z-w*y),2.*(y*z+w*x),zz+ww-xx-yy,tz],[ 0, 0, 0, 1]])
 
 def fromRT(rt):
-  qw=2*math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])
-  qx=(rt[2,1]-rt[1,2])/qw
-  qy=(rt[0,2]-rt[2,0])/qw
-  qz=(rt[1,0]-rt[0,1])/qw
+  qw=math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])/2
+  qx=(rt[2,1]-rt[1,2])/4/qw
+  qy=(rt[0,2]-rt[2,0])/4/qw
+  qz=(rt[1,0]-rt[0,1])/4/qw
   tf=Transform()
   tf.rotation.w=qw
   tf.rotation.x=qx
@@ -43,10 +43,10 @@ def fromRT(rt):
   return tf
 
 def fromRTtoVec(rt):
-  qw=2*math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])
-  qx=(rt[2,1]-rt[1,2])/qw
-  qy=(rt[0,2]-rt[2,0])/qw
-  qz=(rt[1,0]-rt[0,1])/qw
+  qw=math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])/2
+  qx=(rt[2,1]-rt[1,2])/4/qw
+  qy=(rt[0,2]-rt[2,0])/4/qw
+  qz=(rt[1,0]-rt[0,1])/4/qw
   vec=np.array([[rt[0,3],rt[1,3],rt[2,3],qx,qy,qz,qw]])
   return vec
 

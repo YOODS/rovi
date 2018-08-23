@@ -39,40 +39,72 @@ def cb_X1(f):
   mTbAry.transforms.append(tflib.inv(tf))
   return
 
+def save(name):
+  Tcsv=np.array([]).reshape((-1,21))
+  for M,B,S in zip(bTmAry.transforms,mTbAry.transforms,cTsAry.transforms):
+    bts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)) )
+    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(B),bTc),tflib.toRT(S)) )
+    alin=np.hstack((tflib.fromRTtoVec(tflib.toRT(M)),bts,mts))
+    Tcsv=np.vstack((Tcsv,alin))
+  np.savetxt(name,Tcsv)
+  return
+
 def cb_X2(f):
   global cTsAry,mTbAry,bTmAry
   global bTc,mTc
   print dir(compute_effector_camera_quick)
-  req1=compute_effector_camera_quick.Request()
-  req1.camera_object=cTsAry
-  req1.world_effector=mTbAry
-  res1=compute_effector_camera_quick.Response()
-  req2=compute_effector_camera_quick.Request()
-  req2.camera_object=cTsAry
-  req2.world_effector=bTmAry
-  res2=compute_effector_camera_quick.Response()
   rospy.wait_for_service('/compute_effector_camera_quick')
-  try:
+  calibrator=None
+  try:  #solving as fixed camera
     calibrator=rospy.ServiceProxy('/compute_effector_camera_quick',compute_effector_camera_quick)
-    calibrator(req1,res1)
-    print "calib",res1.effector_camera
-    rospy.set_param('/robot/calib/bTc',res1.effector_camera)
-    bTc=tflib.toRT(res1.effector_camera)
-    calibrator(req2,res2)
-    rospy.set_param('/robot/calib/mTc',res2.effector_camera)
-    mTc=tflib.toRT(res2.effector_camera)
-    pb_Y2(Bool())
   except rospy.ServiceException, e:
-    print 'Service call failed:'+e
-  Tcsv=np.array([])
-  Tcsv.reshape(-1,21)
+    print 'Visp call failed:'+e
+    pb_Y2(Bool())  #return false
+    return
+  
+  req=compute_effector_camera_quick.Request()
+  res=compute_effector_camera_quick.Response()
+
+  req.camera_object=cTsAry
+  req.world_effector=mTbAry
+  try:  #solving as fixed camera
+    calibrator(req,res)
+    print "calib fixed",res.effector_camera
+    rospy.set_param('/robot/calib/bTc',res.effector_camera)
+    bTc=tflib.toRT(res.effector_camera)
+  except rospy.ServiceException, e:
+    print 'Visp call failed:'+e
+    pb_Y2(Bool())  #return false
+    return
+
+  req.camera_object=cTsAry
+  req.world_effector=bTmAry
+  try:
+    calibrator(req,res)
+    print "calib handeye",res.effector_camera
+    rospy.set_param('/robot/calib/mTc',res.effector_camera)
+    mTc=tflib.toRT(res.effector_camera)
+  except rospy.ServiceException, e:
+    print 'Visp call failed:'+e
+    pb_Y2(Bool())  #return false
+    return
+
+  f=Bool()
+  f.data=True
+  pb_Y2(f)
+  save('result.txt')
+  return
+
+def cb_X3():
+  Tcsv=np.array([]).reshape((-1,21))
   for M,B,S in zip(bTmAry.transforms,mTbAry.transforms,cTsAry.transforms):
-    bts=tflib.fromRTtoVec(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)))
-    mts=tflib.fromRTtoVec(np.dot(tflib.toRT(B),bTc),tflib.toRT(S)))
-    alin=Tcsv,np.hstack((M,bts,mts))
-    print alin
+    bts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)) )
+    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(B),bTc),tflib.toRT(S)) )
+    print bts,mts
+    alin=np.hstack((tflib.fromRTtoVec(tflib.toRT(M)),bts,mts))
+    print Tcsv.shape,alin.shape
     Tcsv=np.vstack((Tcsv,alin))
-  np.save('result.csv',Tcsv)
+  np.savetxt('result.txt',Tcsv)
   return
 
 ###############################################################
@@ -89,7 +121,6 @@ bTc=np.eye(4,dtype=float)
 mTc=np.eye(4,dtype=float)
 if rospy.has_param('/robot/calib/bTc'):
   bTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/bTc')))
-  cTb=bTc.I
 if rospy.has_param('/robot/calib/mTc'):
   mTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTc')))
 
