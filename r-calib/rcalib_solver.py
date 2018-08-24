@@ -37,6 +37,9 @@ def cb_X1(f):
   print "cbX1::robot",tf
   bTmAry.transforms.append(tf)
   mTbAry.transforms.append(tflib.inv(tf))
+  f=Bool()
+  f.data=True
+  pb_Y1(f)
   return
 
 def save(name):
@@ -112,6 +115,7 @@ rospy.init_node('solver',anonymous=True)
 
 pb_bTs=rospy.Publisher('/solver/bTs',Transform,queue_size=1)
 pb_mTs=rospy.Publisher('/solver/mTs',Transform,queue_size=1)
+pb_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
 pb_Y2=rospy.Publisher('/solver/Y2',Bool,queue_size=1)    #X2 done
 
 cb_X0(Bool())

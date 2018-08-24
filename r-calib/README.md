@@ -35,10 +35,17 @@ visp_hand2eyeおよび佐藤さんのソルバーは、
 この式から、<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">に代えて<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{b}(={}^{b}T_{m}^{-1})">を入力とすることで、同じソルバーにて求解できる。
 
 ## キャリブレーション結果の評価
-CSV形式のファイルにてキャリブレーション結果を書き出します。ロボットの各Transformに対しそこでの逆算結果(式(1)または式(2)の演算結果)を１行に示します。  
-- １〜７列目：<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">
-- ８〜１４列目：<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}">
-- １５〜２１列目：<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}">
+CSV形式のファイルにてキャリブレーション結果を書き出します。
+
+1. 出力場所  
+$HOME/.ros/以下
+
+2. input.txt
+入力情報(<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{m}">,<img src="https://latex.codecogs.com/gif.latex?{}^{c}T_{s}">)を保存します。
+
+3. result.txt
+入力の各行に対応した検算結果(<img src="https://latex.codecogs.com/gif.latex?{}^{b}T_{s}">,<img src="https://latex.codecogs.com/gif.latex?{}^{m}T_{s}">)を保存します。
+これらは本来不変なTransformですが様々な誤差によりバラつきが生じます。
 
 ## Install
 
