@@ -7,7 +7,7 @@ import rospy
 from std_msgs.msg import Bool
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Transform
-from visp_hand2eye_calibration.srv import compute_effector_camera_quick
+from visp_hand2eye_calibration.srv import * #compute_effector_camera_quick
 from visp_hand2eye_calibration.msg import TransformArray
 import sys
 import os
@@ -22,37 +22,47 @@ def cb_robot(tf):
   return
 
 def cb_X0(f):
-  global cTsAry,mTbAry,bTmAry
+  global cTsAry,bTmAry
   print "cbX0"
   cTsAry=TransformArray()
-  mTbAry=TransformArray()
   bTmAry=TransformArray()
 
 def cb_X1(f):
-  global cTsAry,mTbAry,bTmAry
+  global cTsAry,bTmAry
   tf=rospy.wait_for_message('/gridboard/tf',Transform)
   print "cbX1::grid",tf
   cTsAry.transforms.append(tf)
   tf=rospy.wait_for_message('/robot/tf',Transform)
   print "cbX1::robot",tf
   bTmAry.transforms.append(tf)
-  mTbAry.transforms.append(tflib.inv(tf))
   return
 
-def save(name):
-  Tcsv=np.array([]).reshape((-1,21))
-  for M,B,S in zip(bTmAry.transforms,mTbAry.transforms,cTsAry.transforms):
+def save_input(name):
+  Tcsv=np.array([]).reshape((-1,14))
+  for M,S in zip(bTmAry.transforms,cTsAry.transforms):
+    btm=tflib.fromRTtoVec(tflib.toRT(M))
+    cts=tflib.fromRTtoVec(tflib.toRT(S))
+    alin=np.hstack((btm,cts))
+    Tcsv=np.vstack((Tcsv,alin))
+  np.savetxt(name,Tcsv)
+  return
+
+def save_result(name):
+  Tcsv=np.array([]).reshape((-1,14))
+  for M,S in zip(bTmAry.transforms,cTsAry.transforms):
     bts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)) )
-    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(B),bTc),tflib.toRT(S)) )
-    alin=np.hstack((tflib.fromRTtoVec(tflib.toRT(M)),bts,mts))
+    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M).I,bTc),tflib.toRT(S)) )
+    alin=np.hstack((bts,mts))
     Tcsv=np.vstack((Tcsv,alin))
   np.savetxt(name,Tcsv)
   return
 
 def cb_X2(f):
-  global cTsAry,mTbAry,bTmAry
+  global cTsAry,bTmAry
   global bTc,mTc
   print dir(compute_effector_camera_quick)
+  save_input('input.txt')
+
   rospy.wait_for_service('/compute_effector_camera_quick')
   calibrator=None
   try:  #solving as fixed camera
@@ -62,10 +72,13 @@ def cb_X2(f):
     pb_Y2(Bool())  #return false
     return
   
-  req=compute_effector_camera_quick.Request()
-  res=compute_effector_camera_quick.Response()
+  req=compute_effector_camera_quickRequest()
+  res=compute_effector_camera_quickResponse()
 
   req.camera_object=cTsAry
+  mTbAry=TransformArray()
+  for tf in mTbAry.transforms:
+    mTbAry.transforms.append(tflib.inv(tf))
   req.world_effector=mTbAry
   try:  #solving as fixed camera
     calibrator(req,res)
@@ -92,19 +105,7 @@ def cb_X2(f):
   f=Bool()
   f.data=True
   pb_Y2(f)
-  save('result.txt')
-  return
-
-def cb_X3():
-  Tcsv=np.array([]).reshape((-1,21))
-  for M,B,S in zip(bTmAry.transforms,mTbAry.transforms,cTsAry.transforms):
-    bts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)) )
-    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(B),bTc),tflib.toRT(S)) )
-    print bts,mts
-    alin=np.hstack((tflib.fromRTtoVec(tflib.toRT(M)),bts,mts))
-    print Tcsv.shape,alin.shape
-    Tcsv=np.vstack((Tcsv,alin))
-  np.savetxt('result.txt',Tcsv)
+  save_result('result.txt')
   return
 
 ###############################################################
@@ -124,7 +125,7 @@ if rospy.has_param('/robot/calib/bTc'):
 if rospy.has_param('/robot/calib/mTc'):
   mTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTc')))
 
-rospy.Subscriber('/robot/tf',Transform,cb_robot)
+#rospy.Subscriber('/robot/tf',Transform,cb_robot)
 rospy.Subscriber('/solver/X0',Bool,cb_X0)
 rospy.Subscriber('/solver/X1',Bool,cb_X1)
 rospy.Subscriber('/solver/X2',Bool,cb_X2)
