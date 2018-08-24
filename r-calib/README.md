@@ -92,9 +92,9 @@ rosparam set /gridboard/bin_param0 50
 |/rovi/left/image_rect|Image|基準カメラ(左)のレクティファイ画像|
 |/robot/tf|Transform|ベース座標基準のロボット機械端座標|
 |/robot/euler|Transform|ベース座標基準のロボット機械端座標(オイラー角)。このトピックに発行したデータはQuaternion変換され、/robot/carteに再発行されます。手入力時のインタフェースとして用意されています|
-|/solver/X0|Empty|取得したデータをクリアする|
-|/solver/X1|Empty|データ(物体とロボットのTransformペア)をバッファにストアする|
-|/solver/X2|Empty|ストアされたデータから、機械端からカメラへの座標変換を算出し、パラメータ/robot/calib/mTc(固定カメラではbTc)に出力する。/solver/Y2にて計算完了を通知する。|
+|/solver/X0|Bool|取得したデータをクリアする|
+|/solver/X1|Bool|データ(物体とロボットのTransformペア)をバッファにストアする。/solver/X1にて処理完了を通知します|
+|/solver/X2|Bool|ストアされたデータから、機械端からカメラへの座標変換を算出し、パラメータ/robot/calib/mTc(固定カメラではbTc)に出力する。/solver/Y2にて計算完了を通知します|
 
 2. To publish
 
@@ -102,8 +102,8 @@ rosparam set /gridboard/bin_param0 50
 |:----|:----|:----|
 |/gridboard/image_out|Image|キャリブ板の認識結果|
 |/gridboard/tf|Transform|カメラ画像から推定した、キャリブ板のカメラ座標に対する座標変換|
-|/solver/cTs|Transform|ロボット座標から推定した、キャリブ板のカメラ座標に対する座標変換|
-|/solver/Y2|Empty|座標変換計算完了にて更新|
+|/solver/Y1|Bool|X1処理完了でアサートされます|
+|/solver/Y2|Bool|X2処理完了でアサートされます|
 
 ## 操作
 
@@ -118,7 +118,7 @@ rosparam set /gridboard/bin_param0 50
   - キャリブレーション計算  
 /solver/X2をアサートすることで、カメラへの座標変換を算出します。演算が終わると/solver/Y2がアサートされます。結果はパラメータ/robot/calib/mTc(ハンドアイ)、/robot/calib/bTc(固定カメラ)、に書き出されます。
 3. キャリブレーション結果の評価  
-キャリブレーションが求まると、/solver/cTsトピックには、そこから推定したキャリブ板のカメラ座標系での座標が出力されます。この値をカメラ画像から求めた座標(/gridboard/tf)と比較することで、結果を評価しましょうか？
+$HOME/.rosのinput.txtおよびresult.txtから結果を評価しましょう
 4. 画像の保存  
 お馴染みのimsave.jsをこのディレクトリ下にコピーしています。保存するのは左右が結合されたRaw画像です。適切なファイル名に改変して使用します。
 ~~~
@@ -130,7 +130,7 @@ rosparam set /gridboard/bin_param0 50
 
 - "n_circles_x"	X軸方向のマーカーの数(デフォルト値=13)
 - "n_circles_y"	Y軸方向のマーカーの数(デフォルト値=19)
-- "unitleng"		マーカー重心間の距離[mm](デフォルト値=60.0)<<<ピクセルと
+- "unitleng"		マーカー重心間の距離(デフォルト値=60.0) _実際のキャリブ板の寸法に変更すること_
 - "distance_between_circles"	マーカー端から次のマーカー端までの最大距離のマーカー直径に対する比率(デフォルト値=1.2)
 
 - "n_circles_minimum"	カメラ画像内に写るべき最小マーカー数(デフォルト値=9)
