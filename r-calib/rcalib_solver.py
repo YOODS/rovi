@@ -37,7 +37,7 @@ def cb_X1(f):
   bTmAry.transforms.append(tf)
   f=Bool()
   f.data=True
-  pb_Y1(f)
+  pb_Y1.publish(f)
   return
 
 def save_input(name):
@@ -90,7 +90,7 @@ def cb_X2(f):
     bTc=tflib.toRT(res.effector_camera)
   except rospy.ServiceException, e:
     print 'Visp call failed:'+e
-    pb_Y2(Bool())  #return false
+    pb_Y2.publish(Bool())  #return false
     return
 
   req.camera_object=cTsAry
@@ -102,12 +102,12 @@ def cb_X2(f):
     mTc=tflib.toRT(res.effector_camera)
   except rospy.ServiceException, e:
     print 'Visp call failed:'+e
-    pb_Y2(Bool())  #return false
+    pb_Y2.publish(Bool())  #return false
     return
 
   f=Bool()
   f.data=True
-  pb_Y2(f)
+  pb_Y2.publish(f)
   save_result('result.txt')
   return
 
