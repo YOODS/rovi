@@ -1,5 +1,5 @@
 #include <ros/ros.h>
-#include <std_msgs/Empty.h>
+#include <std_msgs/Bool.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point.h>
@@ -14,12 +14,14 @@ static std::vector<double> kvec;
 static ros::Publisher *pub1, *pub2;
 
 void solve(sensor_msgs::Image src){
+  geometry_msgs::Transform tf;
   cv_bridge::CvImagePtr cv_ptr1;
   try{
     cv_ptr1 = cv_bridge::toCvCopy(src, sensor_msgs::image_encodings::MONO8);
   }
   catch(cv_bridge::Exception& e){
     ROS_ERROR("get_grids:cv_bridge:exception: %s", e.what());
+    pub2->publish(tf);
     return;
   }
   std::vector<cv::Point2f> imagePoints;
@@ -32,6 +34,7 @@ void solve(sensor_msgs::Image src){
   pub1->publish(img);
   if(cbres){
     ROS_WARN("CircleCalibBoard::scan:failed:");
+    pub2->publish(tf);
     return;
   }
   std::vector<cv::Point3f> model;
@@ -66,7 +69,6 @@ void solve(sensor_msgs::Image src){
   float ry = rmat.at<double>(1, 0);
   float rz = rmat.at<double>(2, 0);
   float rw = sqrt(rx * rx + ry * ry + rz * rz);
-  geometry_msgs::Transform tf;
   tf.translation.x = tmat.at<double>(0, 0);
   tf.translation.y = tmat.at<double>(1, 0);
   tf.translation.z = tmat.at<double>(2, 0);
@@ -77,7 +79,7 @@ void solve(sensor_msgs::Image src){
   pub2->publish(tf);
 }
 
-void reload(std_msgs::Empty e)
+void reload(std_msgs::Bool e)
 {
   for (std::map<std::string, double>::iterator itr = cboard.para.begin(); itr != cboard.para.end(); ++itr)
   {
@@ -94,6 +96,7 @@ void reload(std_msgs::Empty e)
     ROS_ERROR("GetGrid::paramer \"K\" not found");
     return;
   }
+  ROS_WARN("grid::param::reload");
 }
 
 int main(int argc, char **argv)
@@ -108,9 +111,9 @@ int main(int argc, char **argv)
   nh = &n;
   cboard.para["bin_type"] = 1;
 
-  n.subscribe("gridboard/image_in", 1, solve);
-  n.subscribe("gridboard/X0", 1, reload);
-  std_msgs::Empty msg;
+  ros::Subscriber s1=n.subscribe("gridboard/image_in", 1, solve);
+  ros::Subscriber s2=n.subscribe("gridboard/X0", 1, reload);
+  std_msgs::Bool msg;
   reload(msg);
   ros::Publisher p1 = n.advertise<sensor_msgs::Image>("gridboard/image_out", 1);
   pub1 = &p1;
