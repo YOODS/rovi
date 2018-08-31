@@ -80,7 +80,7 @@ def cb_X2(f):
 
   req.camera_object=cTsAry
   mTbAry=TransformArray()
-  for tf in mTbAry.transforms:
+  for tf in bTmAry.transforms:
     mTbAry.transforms.append(tflib.inv(tf))
   req.world_effector=mTbAry
   try:  #solving as fixed camera
