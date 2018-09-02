@@ -28,10 +28,30 @@ def toRT(tf):
   return np.matrix([[xx-yy-zz+ww,2.*(x*y-w*z),2.*(x*z+w*y),tx],[2.*(x*y+w*z),yy+ww-xx-zz,2.*(y*z-w*x),ty],[2.*(x*z-w*y),2.*(y*z+w*x),zz+ww-xx-yy,tz],[ 0, 0, 0, 1]])
 
 def fromRT(rt):
-  qw=math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])/2
-  qx=(rt[2,1]-rt[1,2])/4/qw
-  qy=(rt[0,2]-rt[2,0])/4/qw
-  qz=(rt[1,0]-rt[0,1])/4/qw
+  if (rt[0,0]+rt[1,1]+rt[2,2]>0):
+    s=math.sqrt(1.0+rt[0,0]+rt[1,1]+rt[2,2])*2  #s=qw*4
+    qw=s/4
+    qx=(rt[2,1]-rt[1,2])/s
+    qy=(rt[0,2]-rt[2,0])/s
+    qz=(rt[1,0]-rt[0,1])/s
+  elif ((rt[0,0]>rt[1,1]) and (rt[0,0]>rt[2,2])):
+    s=math.sqrt(1.0+rt[0,0]-rt[1,1]-rt[2,2])*2  #s=qx*4
+    qw=(rt[2,1]-rt[1,2])/s
+    qx=s/4
+    qy=(rt[0,1]+rt[1,0])/s
+    qz=(rt[0,2]+rt[2,0])/s
+  elif (rt[1,1]>rt[2,2]):
+    s=math.sqrt(1.0-rt[0,0]+rt[1,1]-rt[2,2])*2  #s=qy*4
+    qw=(rt[0,2]-rt[2,0])/s
+    qx=(rt[0,1]+rt[1,0])/s
+    qy=s/4
+    qz=(rt[1,2]+rt[2,1])/s
+  else:
+    s=math.sqrt(1.0-rt[0,0]-rt[1,1]+rt[2,2])*2  #s=qz*4
+    qw=(rt[1,0]-rt[0,1])/s
+    qx=(rt[0,2]+rt[2,0])/s
+    qy=(rt[1,2]+rt[2,1])/s
+    qz=s/4
   tf=Transform()
   tf.rotation.w=qw
   tf.rotation.x=qx
@@ -43,10 +63,30 @@ def fromRT(rt):
   return tf
 
 def fromRTtoVec(rt):
-  qw=math.sqrt(1+rt[0,0]+rt[1,1]+rt[2,2])/2
-  qx=(rt[2,1]-rt[1,2])/4/qw
-  qy=(rt[0,2]-rt[2,0])/4/qw
-  qz=(rt[1,0]-rt[0,1])/4/qw
+  if (rt[0,0]+rt[1,1]+rt[2,2]>0):
+    s=math.sqrt(1.0+rt[0,0]+rt[1,1]+rt[2,2])*2  #s=qw*4
+    qw=s/4
+    qx=(rt[2,1]-rt[1,2])/s
+    qy=(rt[0,2]-rt[2,0])/s
+    qz=(rt[1,0]-rt[0,1])/s
+  elif ((rt[0,0]>rt[1,1]) and (rt[0,0]>rt[2,2])):
+    s=math.sqrt(1.0+rt[0,0]-rt[1,1]-rt[2,2])*2  #s=qx*4
+    qw=(rt[2,1]-rt[1,2])/s
+    qx=s/4
+    qy=(rt[0,1]+rt[1,0])/s
+    qz=(rt[0,2]+rt[2,0])/s
+  elif (rt[1,1]>rt[2,2]):
+    s=math.sqrt(1.0-rt[0,0]+rt[1,1]-rt[2,2])*2  #s=qy*4
+    qw=(rt[0,2]-rt[2,0])/s
+    qx=(rt[0,1]+rt[1,0])/s
+    qy=s/4
+    qz=(rt[1,2]+rt[2,1])/s
+  else:
+    s=math.sqrt(1.0-rt[0,0]-rt[1,1]+rt[2,2])*2  #s=qz*4
+    qw=(rt[1,0]-rt[0,1])/s
+    qx=(rt[0,2]+rt[2,0])/s
+    qy=(rt[1,2]+rt[2,1])/s
+    qz=s/4
   vec=np.array([[rt[0,3],rt[1,3],rt[2,3],qx,qy,qz,qw]])
   return vec
 
