@@ -100,3 +100,14 @@ def inv(tf):
   ft.rotation.z=-tf.rotation.z
   ft.rotation.w=tf.rotation.w
   return ft
+
+def fromVec(vec):
+  tf=Transform()
+  tf.translation.x=vec[0]
+  tf.translation.y=vec[1]
+  tf.translation.z=vec[2]
+  tf.rotation.x=vec[3]
+  tf.rotation.y=vec[4]
+  tf.rotation.z=vec[5]
+  tf.rotation.w=vec[6]
+  return tf

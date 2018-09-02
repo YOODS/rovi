@@ -2,12 +2,14 @@
 
 import cv2
 import numpy as np
+import math
 import roslib
 import rospy
 from std_msgs.msg import Bool
+from std_msgs.msg import Header
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Transform
-from visp_hand2eye_calibration.srv import * #compute_effector_camera_quick
+from visp_hand2eye_calibration.srv import reset,resetRequest,resetResponse,compute_effector_camera_quick,compute_effector_camera_quickRequest,compute_effector_camera_quickResponse
 from visp_hand2eye_calibration.msg import TransformArray
 import sys
 import os
@@ -41,6 +43,7 @@ def cb_X1(f):
   return
 
 def save_input(name):
+  print "save input",len(bTmAry.transforms),len(cTsAry.transforms)
   Tcsv=np.array([]).reshape((-1,14))
   for M,S in zip(bTmAry.transforms,cTsAry.transforms):
     btm=tflib.fromRTtoVec(tflib.toRT(M))
@@ -60,55 +63,111 @@ def save_result(name):
   np.savetxt(name,Tcsv)
   return
 
-def cb_X2(f):
+def save_result_mTs(name):
+  Tcsv=np.array([]).reshape((-1,7))
+  for M,S in zip(bTmAry.transforms,cTsAry.transforms):
+    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M).I,bTc),tflib.toRT(S)) )
+    Tcsv=np.vstack((Tcsv,mts))
+  np.savetxt(name,Tcsv)
+  return
+
+def set_param_tf(name,tf):
+  rospy.set_param(name+'/translation/x',tf.translation.x)
+  rospy.set_param(name+'/translation/y',tf.translation.y)
+  rospy.set_param(name+'/translation/z',tf.translation.z)
+  rospy.set_param(name+'/rotation/x',tf.rotation.x)
+  rospy.set_param(name+'/rotation/y',tf.rotation.y)
+  rospy.set_param(name+'/rotation/z',tf.rotation.z)
+  rospy.set_param(name+'/rotation/w',tf.rotation.w)
+  return
+
+def call_visp():
   global cTsAry,bTmAry
   global bTc,mTc
-  print dir(compute_effector_camera_quick)
-  save_input('input.txt')
 
-  rospy.wait_for_service('/compute_effector_camera_quick')
+  creset=None
+  try:
+    creset=rospy.ServiceProxy('/reset',reset)
+  except rospy.ServiceException, e:
+    print 'Visp reset failed:'+e
+    return
+
   calibrator=None
   try:  #solving as fixed camera
     calibrator=rospy.ServiceProxy('/compute_effector_camera_quick',compute_effector_camera_quick)
   except rospy.ServiceException, e:
     print 'Visp call failed:'+e
-    pb_Y2(Bool())  #return false
     return
-  
-  req=compute_effector_camera_quickRequest()
-  res=compute_effector_camera_quickResponse()
 
+  creset(resetRequest())
+  req=compute_effector_camera_quickRequest()
   req.camera_object=cTsAry
   mTbAry=TransformArray()
   for tf in bTmAry.transforms:
     mTbAry.transforms.append(tflib.inv(tf))
   req.world_effector=mTbAry
   try:  #solving as fixed camera
-    calibrator(req,res)
+    res=calibrator(req)
     print "calib fixed",res.effector_camera
-    rospy.set_param('/robot/calib/bTc',res.effector_camera)
+    set_param_tf('/robot/calib/bTc',res.effector_camera)
     bTc=tflib.toRT(res.effector_camera)
   except rospy.ServiceException, e:
     print 'Visp call failed:'+e
-    pb_Y2.publish(Bool())  #return false
     return
 
+  creset(resetRequest())
+  req=compute_effector_camera_quickRequest()
   req.camera_object=cTsAry
   req.world_effector=bTmAry
   try:
-    calibrator(req,res)
+    res=calibrator(req)
     print "calib handeye",res.effector_camera
-    rospy.set_param('/robot/calib/mTc',res.effector_camera)
+    set_param_tf('/robot/calib/mTc',res.effector_camera)
     mTc=tflib.toRT(res.effector_camera)
   except rospy.ServiceException, e:
     print 'Visp call failed:'+e
-    pb_Y2.publish(Bool())  #return false
     return
 
-  f=Bool()
-  f.data=True
-  pb_Y2.publish(f)
-  save_result('result.txt')
+  return
+
+def cb_X2(f):
+  global cTsAry,bTmAry
+  global bTc,mTc
+  save_input('input.txt')
+  call_visp()
+  save_result_mTs('result.txt')
+  return
+
+def xyz2quat(e):
+  tf=Transform()
+  k = math.pi / 180 * 0.5;
+  cx = math.cos(e.rotation.x * k)
+  cy = math.cos(e.rotation.y * k)
+  cz = math.cos(e.rotation.z * k)
+  sx = math.sin(e.rotation.x * k)
+  sy = math.sin(e.rotation.y * k)
+  sz = math.sin(e.rotation.z * k)
+  tf.translation.x=e.translation.x
+  tf.translation.y=e.translation.y
+  tf.translation.z=e.translation.z
+  tf.rotation.x = cy * cz * sx - cx * sy * sz
+  tf.rotation.y = cy * sx * sz + cx * cz * sy
+  tf.rotation.z = cx * cy * sz - cz * sx * sy
+  tf.rotation.w = sx * sy * sz + cx * cy * cz
+  return tf
+
+def cb_X3(f):
+  global cTsAry,bTmAry
+  Tcsv=np.loadtxt('input.txt')
+  bTmAry=TransformArray()
+  cTsAry=TransformArray()
+  for vec in Tcsv:
+    bTmAry.transforms.append(xyz2quat(tflib.fromVec(vec[0:7])))
+    cTsAry.transforms.append(tflib.fromVec(vec[7:14]))
+  print bTmAry.transforms[0]
+  print cTsAry.transforms[0]
+  call_visp()
+  save_result_mTs('result.txt')
   return
 
 ###############################################################
@@ -133,6 +192,7 @@ if rospy.has_param('/robot/calib/mTc'):
 rospy.Subscriber('/solver/X0',Bool,cb_X0)
 rospy.Subscriber('/solver/X1',Bool,cb_X1)
 rospy.Subscriber('/solver/X2',Bool,cb_X2)
+rospy.Subscriber('/solver/X3',Bool,cb_X3)
 
 try:
   rospy.spin()
