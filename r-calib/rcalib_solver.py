@@ -66,7 +66,9 @@ def save_result(name):
 def save_result_mTs(name):
   Tcsv=np.array([]).reshape((-1,7))
   for M,S in zip(bTmAry.transforms,cTsAry.transforms):
-    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M).I,bTc),tflib.toRT(S)) )
+    mTb=tflib.toRT(M).I
+    cTs=tflib.toRT(S)
+    mts=tflib.fromRTtoVec(np.dot(np.dot(mTb,bTc),cTs))
     Tcsv=np.vstack((Tcsv,mts))
   np.savetxt(name,Tcsv)
   return

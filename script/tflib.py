@@ -1,5 +1,9 @@
+#!/usr/bin/python
+
 import numpy as np
 import math
+import roslib
+import rospy
 from geometry_msgs.msg import Transform
 
 def dict2tf(d):
@@ -57,9 +61,9 @@ def fromRT(rt):
   tf.rotation.x=qx
   tf.rotation.y=qy
   tf.rotation.z=qz
-  tf.rotation.x=rt[0,3]
-  tf.rotation.y=rt[1,3]
-  tf.rotation.z=rt[2,3]
+  tf.translation.x=rt[0,3]
+  tf.translation.y=rt[1,3]
+  tf.translation.z=rt[2,3]
   return tf
 
 def fromRTtoVec(rt):
@@ -91,15 +95,8 @@ def fromRTtoVec(rt):
   return vec
 
 def inv(tf):
-  ft=Transform()
-  ft.translation.x=-tf.translation.x
-  ft.translation.y=-tf.translation.y
-  ft.translation.z=-tf.translation.z
-  ft.rotation.x=-tf.rotation.x
-  ft.rotation.y=-tf.rotation.y
-  ft.rotation.z=-tf.rotation.z
-  ft.rotation.w=tf.rotation.w
-  return ft
+  RT=toRT(tf)
+  return fromRT(RT.I)
 
 def fromVec(vec):
   tf=Transform()
@@ -111,3 +108,13 @@ def fromVec(vec):
   tf.rotation.z=vec[5]
   tf.rotation.w=vec[6]
   return tf
+
+if __name__ == '__main__':
+  vec=np.array([350, 0, 415, 0.35330038553 ,0.712956175793, -0.542718550391, -0.268940335466])
+  tf=fromVec(vec)
+  print tf
+  RT=toRT(tf)
+  print fromRT(RT)
+  TR=RT.I
+  ft=fromRT(TR)
+  print ft
