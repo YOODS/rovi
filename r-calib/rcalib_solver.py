@@ -70,6 +70,8 @@ def save_result_mTs(name):
     cTs=tflib.toRT(S)
     mts=tflib.fromRTtoVec(np.dot(np.dot(mTb,bTc),cTs))
     Tcsv=np.vstack((Tcsv,mts))
+  Tn=map(np.linalg.norm,Tcsv.T[:3].T)
+  print "Translation error:",max(Tn)-min(Tn)
   np.savetxt(name,Tcsv)
   return
 
@@ -160,11 +162,13 @@ def xyz2quat(e):
 
 def cb_X3(f):
   global cTsAry,bTmAry
+  print "X3"
   Tcsv=np.loadtxt('input.txt')
   bTmAry=TransformArray()
   cTsAry=TransformArray()
   for vec in Tcsv:
-    bTmAry.transforms.append(xyz2quat(tflib.fromVec(vec[0:7])))
+#    bTmAry.transforms.append(xyz2quat(tflib.fromVec(vec[0:7])))
+    bTmAry.transforms.append(tflib.fromVec(vec[0:7]))
     cTsAry.transforms.append(tflib.fromVec(vec[7:14]))
   print bTmAry.transforms[0]
   print cTsAry.transforms[0]
