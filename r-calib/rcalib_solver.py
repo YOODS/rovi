@@ -31,15 +31,19 @@ def cb_X0(f):
 
 def cb_X1(f):
   global cTsAry,bTmAry
+  done=rospy.wait_for_message('/gridboard/done',Bool)
+  if done.data is False:
+    print "cbX1::grid",done
+    pb_Y1.publish(done)
+    return
   tf=rospy.wait_for_message('/gridboard/tf',Transform)
   print "cbX1::grid",tf
   cTsAry.transforms.append(tf)
   tf=rospy.wait_for_message('/robot/tf',Transform)
   print "cbX1::robot",tf
   bTmAry.transforms.append(tf)
-  f=Bool()
-  f.data=True
-  pb_Y1.publish(f)
+  done.data=True
+  pb_Y1.publish(done)
   return
 
 def save_input(name):
