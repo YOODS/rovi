@@ -13,12 +13,16 @@ imageL=None
 imageR=None
 
 def imgCat():
+  global imageL,imageR,Count
   imgc=cv2.hconcat([imageL,imageR])
   if len(Count)==1: Count='0'+Count
   cv2.imwrite('calib'+Count+'.pgm',imgc)
+  rospy.signal_shutdown('done.')
   return
 
 def cbL(img):
+  global imageL
+  if imageL is not None: return
   try:
     imageL = bridge.imgmsg_to_cv2(img, "mono8")
   except CvBridgeError, e:
@@ -28,6 +32,8 @@ def cbL(img):
   quit()
 
 def cbR(img):
+  global imageR
+  if imageR is not None: return
   try:
     imageR = bridge.imgmsg_to_cv2(img, "mono8")
   except CvBridgeError, e:
@@ -42,6 +48,7 @@ if len(sys.argv)<2:
 
 Count=sys.argv[1]
 
+bridge=CvBridge()
 rospy.init_node("imsave", anonymous=True)
 rospy.Subscriber("/rovi/left/image_raw",Image,cbL)
 rospy.Subscriber("/rovi/right/image_raw",Image,cbR)
