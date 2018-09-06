@@ -72,8 +72,8 @@ setImmediate(async function(){
     rosNode.subscribe('/rovi/left/image_rect', sensor_msgs.Image, async function(img){
       event.emit('image',img);
     });
-    rosNode.subscribe('/gridboard/tf', geometry_msgs.Transform, async function(tf){
-      event.emit('grid',tf);
+    rosNode.subscribe('/gridboard/done', std_msgs.Bool, async function(f){
+      event.emit('grid',f);
     });
   },1000);
 
