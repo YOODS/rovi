@@ -21,11 +21,15 @@ let camera_r = '/camera/';
 diffTime = function(t1, t0) {
   let dt = ros.Time.now();
   dt.secs = t1.secs - t0.secs;
-  dt.nsecs = t1.nsecs - t0.nsecs;
   return ros.Time.toSeconds(dt);
 }
 
 var ycam = {
+  isliveon: async function() {
+    // TODO
+    let ison = true;
+    return ison;
+  },
   cset: async function(obj) {
     let request = new dyn_srvs.Reconfigure.Request();
     for (let key in obj) {
@@ -47,15 +51,43 @@ console.log('ycam.cset as double:' + key + '=' + val);
     }
     let res_l = await run_l.dynparam_set.call(request);
     let res_r = await run_r.dynparam_set.call(request);
-    return true;
+    return 'OK';
   },
-  pset: function(str) {
-    run_p.write(str + '\n');
-    run_p.setNoDelay(true);
+  pset: function(obj) {
+    for (let key in obj) {
+      switch(key){
+      case 'ExposureTime':
+        run_p.write('x' + obj[key]+'\n');
+        break;
+      case 'Interval':
+        run_p.write('p' + obj[key]+'\n');
+        break;
+      case 'Intencity':
+        let ix = obj[key] < 256 ? obj[key] : 255;
+        ix=ix.toString(16);
+        run_p.write('i'+ix+ix+ix+'\n');
+        break;
+      case 'Go':
+        let gx= obj[key]<2? obj[key]:2;
+        run_p.write('p'+gx+'\n');
+        break;
+      }
+      run_p.setNoDelay(true);
+    }
+    return 'OK';
   },
   normal: false,
   stat: function() {
-    return { 'left': run_l.running, 'right': run_r.running, 'projector': !run_p.destroyed };
+    let fl=false,fr=false,fp=false;
+    try{
+      fl=run_l.running;
+      fr=run_r.running;
+      fp=!run_p.destroyed
+    }
+    catch(e){
+      ros.log.error(e);
+    }
+    return { 'left': fl, 'right': fr, 'projector': fp };
   },
   scan: function() {
     let s;
@@ -95,7 +127,7 @@ console.log('ycam.cset as double:' + key + '=' + val);
 
 async function openCamera(rosrun, ns, evname) {
   let sub = rosNode.subscribe(ns + 'image_raw', sensor_msgs.Image, (src) => {
-    if (diffTime(src.header.stamp, rosrun.timestamp) > 0.01) {
+    if (diffTime(src.header.stamp, rosrun.timestamp) > 0.001) {
       Notifier.emit(evname, src);
       rosrun.timestamp = src.header.stamp;
     }
@@ -113,6 +145,7 @@ function openYPJ(port, url, sock) {
   if (arguments.length < 3) sock = new Net.Socket();
   sock.on('connect', function() {
     ros.log.info('***YPJ connected***');
+    if(run_l.running && run_r.running) Notifier.emit('wake');
   });
   sock.on('error', function() {
     ros.log.error('YPJ error');
