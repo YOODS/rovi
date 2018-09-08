@@ -4,6 +4,7 @@
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include "rovi/ImageFilter.h"
+#include <iostream>
 
 bool isready = false;
 
@@ -44,9 +45,12 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
     ROS_ERROR("Param P NG");
     res.message += "P NG/";
   }
+  std::vector<double> ncam;
   cv::Mat Pro(P), nCam, nRot, nTrans;
   cv::OutputArray oCam(nCam), oRot(nRot), oTrans(nTrans);
   cv::decomposeProjectionMatrix(Pro.reshape(1, 3), oCam, oRot, oTrans);
+  ncam.assign(nCam.begin<double>(), nCam.end<double>());
+  nh->setParam("remap/Kn", ncam);
   int width = 0, height = 0;
   nh->getParam("remap/width", width);
   nh->getParam("remap/height", height);
