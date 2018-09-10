@@ -113,14 +113,16 @@ console.log('ycam.cset as double:' + key + '=' + val);
       openCamera(run_l, camera_l, 'left');
     });
     camera_r = nsr + '/camera/';
-    run_r = Rosrun.run('camera_aravis camnode ' + idr, nsr);
-    run_r.on('start', function() {
-      openCamera(run_r, camera_r, 'right');
-    });
-    this.scan();
+    setTimeout(function(){
+      run_r = Rosrun.run('camera_aravis camnode ' + idr, nsr);
+      run_r.on('start', function() {
+        openCamera(run_r, camera_r, 'right');
+      });
+    },1000);
     setTimeout(function() {
       run_p = openYPJ(port, url);
     }, 5000);
+    this.scan();
     return Notifier;
   }
 }
