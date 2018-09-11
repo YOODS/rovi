@@ -13,8 +13,8 @@ LDFLAGS = -shared
 $LIBS = 
 
 AR_EXT         = so
-HINCLUDES      = -I$(HINC_DIR) -I$(HCPPINC_DIR) -I/usr/include/eigen3 -I/usr/include/python2.7
-HLIBRARIES     = -L$(HLIB_DIR) -lhalconcpp$(HSUFFIX) -lhalcon$(HSUFFIX) -L/usr/lib
+HINCLUDES      = -I/usr/include/eigen3 -I/usr/include/python2.7
+HLIBRARIES     = -L/usr/lib
 
 ifeq ($(PLATFORM),x64)
         LIBRARIES       = -L/usr/X11R6/lib64 -lXext -lX11 -lpthread -lm -ldl
