@@ -10,4 +10,9 @@
   現状は、入出力ともPLYファイルです。
 
 <サンプルの起動方法>
-  python3 test.py
+  ・python2.7
+    python2 test.py
+
+  ・python3
+    python3 test.py
+
