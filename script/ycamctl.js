@@ -64,7 +64,7 @@ class ImageSwitcher {
     }
   }
   async imgproc(){
-    let img=this.imgqueue.shift();
+    let img=this.imgqueue[0];
     this.raw.publish(img);
     let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
@@ -74,15 +74,17 @@ class ImageSwitcher {
         this.hook.emit('store', res.img);
       }
       else this.rect.publish(res.img);
-      if(this.imgqueue.length>0){
-        let who=this;
-        setImmediate(function(){
-          who.imgproc();
-        });
-      }
+      this.imgqueue.shift();
     }
     catch(err) {
       ros.log.error('ImageSwitcher::emit "remap failed:"'+err);
+      this.imgqueue=[];
+    }
+    if(this.imgqueue.length>0){
+      let who=this;
+      setImmediate(function(){
+        who.imgproc();
+      });
     }
   }
   async emit(img) {
