@@ -97,14 +97,26 @@ Point *read_ply_from_array(py::array_t<double>scene,int *dn) {
 		for(ssize_t i=0; i < scene.size(); i++){
 			dp[current_pos].r=dp[current_pos].g=dp[current_pos].b=255;
 			dp[current_pos].x = *scene.data(i);
+
+			//---DEBUG------
+			/*
 			if(i<15){
 				printf("read_ply_from_array dp[%d].x=%f\n",current_pos,*scene.data(i));
 			}
+			*/
+			//---DEBUG------
+			
 			i += 1;
 			dp[current_pos].y = *scene.data(i);
+
+			//---DEBUG------
+			/*
 			if(i<15){
 				printf("read_ply_from_array dp[%d].y=%f\n",current_pos,*scene.data(i));
 			}
+			*/
+			//---DEBUG------
+
 			i += 1;
 			dp[current_pos].z = *scene.data(i);
 			current_pos++;
