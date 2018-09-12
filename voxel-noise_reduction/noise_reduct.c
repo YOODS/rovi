@@ -18,6 +18,7 @@ void Delete_Noise::work(void*) {
 int Delete_Noise::work1(void) {
 	int deln=0;
 	int rn=0;
+
 	for(int i=r; i<cx-r; i++) {
 		for(int j=r; j<cy-r; j++) {
 			for(int k=0; k<cz; k++) {

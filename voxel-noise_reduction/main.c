@@ -15,14 +15,28 @@
 namespace py = pybind11;
 using namespace std;
 
+auto loadPLY(char* FileName){
+	//retcode
+	int ret=0;
+	//normalize後の点群配列(x,y,zの順でNx3の配列)
+	py::array_t<double>scene = py::array_t<double>(1);
 
-auto normalize(std::vector<std::string> & param) {
+	try{
+		ret = read_ply_from_file_to_array(FileName,&scene);
+	}catch(...){
+		ret = -1;
+	}
+	return py::make_tuple(ret, &scene);
+}
+
+//点群配列をnormalizeする
+//auto normalize(std::vector<std::string> & param) {
+auto normalize(std::vector<std::string> & param, py::array_t<double>scene) {
 	//retcode
 	int ret=0;
 	//normalize後の点群配列(x,y,zの順でNx3の配列)
 	py::array_t<double>pc = py::array_t<double>(1);
 
-	char *infn=NULL;
 	float msize=0.1;
 	Delete_Noise mesh;
 	AreaLimits varea;
@@ -120,24 +134,15 @@ auto normalize(std::vector<std::string> & param) {
 				}
 			}
 		}
-		else {
-			infn = new char[strlen(argv) + 1];
-			strcpy(infn,argv);
-			//printf("infn=[%s]\n",infn);
-		}
-
 		delete[] argv; // メモリ解放
 	}
 
-	if(infn==NULL) {
-		fprintf(stderr,"No input file.\n");
-		ret = -1;
-	}
-	
 	if(ret == 0){
-		dp=read_ply(infn, &dn);
+		//dp=read_ply(infn, &dn);
+		dp=read_ply_from_array(scene, &dn);
+
 		if(dp==NULL) {
-			fprintf(stderr,"read file error(%s).\n", infn);
+			fprintf(stderr,"read array data error.\n");
 			ret = -1;
 		}
 	}
@@ -168,8 +173,6 @@ auto normalize(std::vector<std::string> & param) {
 		delete[] dp;
 	}
 
-	delete[] infn;
-
 	return py::make_tuple(ret, pc);
 }
 
@@ -177,6 +180,7 @@ auto normalize(std::vector<std::string> & param) {
 PYBIND11_MODULE(yodpy2, m) {
         m.doc() = "Normalize python library";
 
+        m.def("loadPLY", &loadPLY, "Normalize from PLY file");
         m.def("normalize", &normalize, "Normalize from PLY file");
 }
 

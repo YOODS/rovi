@@ -101,6 +101,7 @@ void Voxel::dist_pc(int min,int max) {
 		return;
 	}
 	printf("pn=%d\n", pn);
+
 	for (int i = 0; i<pn; i++) {
 		int x=(pp[i].x-area.xmin)/unitl;
 		int y=(pp[i].y-area.ymin)/unitl;
