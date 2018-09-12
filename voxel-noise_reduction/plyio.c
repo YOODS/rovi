@@ -71,52 +71,31 @@ Point *read_ply(char *fname,int *dn) {
 	return dp;
 }
 
-void write_ply(Point *dp,int dn,char *outfn,int ascf,int notexf,unsigned char *color) {
-	printf("outputfile=%s, n=%d\n",outfn,dn);
-	FILE *fp=fopen(outfn,"wb");
-	fprintf(fp,"ply\n");
-	if(ascf) {
-		fprintf(fp,"format ascii 1.0\n");
+//normalize後の点群を作成する。
+int make_ply(Point *dp,int dn,py::array_t<double>*pc) {
+	printf("make_ply dn=%d\n",dn);
+	int ret = 0;
 
-	}
-	else {
-		fprintf(fp,"format binary_little_endian 1.0\n");
-	}
-	fprintf(fp,"comment VCGLIB generated\n");
-	fprintf(fp,"element vertex %d\n",dn);
-	fprintf(fp,"property float x\n");
-	fprintf(fp,"property float y\n");
-	fprintf(fp,"property float z\n");
-	if(!notexf) {
-		fprintf(fp,"property uchar red\n");
-		fprintf(fp,"property uchar green\n");
-		fprintf(fp,"property uchar blue\n");
-	}
-	fprintf(fp,"element face 0\n");
-	fprintf(fp,"property list uchar int vertex_indices\n");
-	fprintf(fp,"end_header\n");
-	for(int i=0; i<dn; i++) {
-		if(color) {
-			dp[i].r=color[0];
-			dp[i].g=color[1];
-			dp[i].b=color[2];
+	try{
+		//pcのサイズ変更
+		*pc = py::array_t<double>(dn*3);
+
+		printf("pc size=%d\n",(int)pc->size());
+
+		auto buf = pc->request();
+		double *ptr = (double*)buf.ptr;
+		int cur_pos = 0;
+		for (int i=0; i < dn; i++)
+		{
+			ptr[cur_pos] = dp[i].x;
+			cur_pos += 1;
+			ptr[cur_pos] = dp[i].y;
+			cur_pos += 1;
+			ptr[cur_pos] = dp[i].z;
+			cur_pos += 1;
 		}
-		if(ascf) {
-			if(notexf) {
-				fprintf(fp,"%f %f %f\n",dp[i].x,dp[i].y,dp[i].z);
-			}
-			else {
-				fprintf(fp,"%f %f %f %d %d %d\n",dp[i].x,dp[i].y,dp[i].z,dp[i].r,dp[i].g,dp[i].b);
-			}
-		}
-		else {
-			if(notexf) {
-				fwrite(&dp[i],sizeof(float)*3,1,fp);
-			}
-			else {
-				fwrite(&dp[i],sizeof(float)*3+3,1,fp);
-			}
-		}
+	}catch(...){
+		ret = -1;
 	}
-	fclose(fp);
+	return ret;
 }
