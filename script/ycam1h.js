@@ -1,6 +1,7 @@
 const Net = require('net');
 const EventEmitter = require('events').EventEmitter;
-const Rosrun = require('./rosrun.js');
+const RosrunL = require('./rosrun.js');
+const RosrunR = require('./rosrun.js');
 const Notifier = new EventEmitter;
 
 const ros = require('rosnodejs');
@@ -108,21 +109,22 @@ console.log('ycam.cset as double:' + key + '=' + val);
   open: function(nh, nsl, idl, nsr, idr, url, port) {
     rosNode = nh;
     camera_l = nsl + '/camera/';
-    run_l = Rosrun.run('camera_aravis camnode ' + idl, nsl);
+    camera_r = nsr + '/camera/';
+    run_l = RosrunL.run('camera_aravis camnode ' + idl, nsl);
+    let who=this;
     run_l.on('start', function() {
       openCamera(run_l, camera_l, 'left');
-    });
-    camera_r = nsr + '/camera/';
-    setTimeout(function(){
-      run_r = Rosrun.run('camera_aravis camnode ' + idr, nsr);
+      run_r = RosrunR.run('camera_aravis camnode ' + idr, nsr);
       run_r.on('start', function() {
         openCamera(run_r, camera_r, 'right');
+        run_p = openYPJ(port, url);
+        run_p.on('connect',function(){
+          console.log('ycam1h-emit-wake');
+          Notifier.emit('wake');
+          who.scan();
+        });
       });
-    },1000);
-    setTimeout(function() {
-      run_p = openYPJ(port, url);
-    }, 5000);
-    this.scan();
+    });
     return Notifier;
   }
 }
@@ -147,7 +149,6 @@ function openYPJ(port, url, sock) {
   if (arguments.length < 3) sock = new Net.Socket();
   sock.on('connect', function() {
     ros.log.info('***YPJ connected***');
-    if(run_l.running && run_r.running) Notifier.emit('wake');
   });
   sock.on('error', function() {
     ros.log.error('YPJ error');
