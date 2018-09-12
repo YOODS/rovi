@@ -1,13 +1,9 @@
 SL       = /
 include ./macros.mak
-#SRCS = yod_A02.cpp
 SRCS = main.c noise_reduct.c voxel.c plyio.c point_mesh.c mycommons.c
-#OBJS = $(SRCS:.cpp=.o)
 OBJS = main.o noise_reduct.o voxel.o plyio.o point_mesh.o mycommons.o
-#TARGET = libyodpy.so
 TARGET = yodpy2
 CXX = g++
-#CXXFLAGS = -O3 -Wall -fPIC -std=c++14 -fPIC `python3 -m pybind11 --includes` 
 CXXFLAGS = -O3 -Wall -fPIC -std=c++14 -fPIC `python2 -m pybind11 --includes` 
 LDFLAGS = -shared
 $LIBS = 
@@ -27,7 +23,6 @@ else
 endif
 
 all: $(OBJS)
-#	$(CXX) $(LDFLAGS) $(OBJS) $(LIBS) $(HLIBRARIES) $(HINCLUDES) -o $(TARGET)`python3-config --extension-suffix`
 	$(CXX) $(LDFLAGS) $(OBJS) $(LIBS) $(HLIBRARIES) $(HINCLUDES) -o $(TARGET)`python2-config --extension-suffix`
 	@echo done.
 
@@ -35,6 +30,5 @@ $(OBJS): $(SRCS)
 	$(CXX) $(CXXFLAGS) $(HINCLUDES) $(SRCS) -c
 
 clean:
-#	rm -rf *.o core.* *# *~ $(TARGET)`python3-config --extension-suffix`
 	rm -rf *.o core.* *# *~ $(TARGET)`python2-config --extension-suffix`
 
