@@ -15,158 +15,168 @@
 namespace py = pybind11;
 using namespace std;
 
+#define RET_OK			  0
+#define RET_NG_AREA		-10
+#define RET_NG_INPUT_ARRAY_DATA	-20
+#define RET_NG_OTHER		-90
+
+//グローバル変数
+//area
+AreaLimits gl_varea;
+//mesh size
+float gl_msize;
+//mesh
+Delete_Noise *gl_mesh = NULL;
+
+//mesh初期化関数
+//処理に時間がかかるので、流用できるようにした
+int makeMesh(std::vector<std::string> & param){
+	int ret=RET_OK;
+	char* argv;
+	char* para;
+	char* val;
+	string st;
+	int area_flag = 0;
+
+	gl_msize=0.1;
+
+	for (auto item : param){
+		st = item;
+
+		argv = new char[st.size() + 1]; // メモリ確保
+
+		std::char_traits<char>::copy(argv, st.c_str(), st.size() + 1);
+	
+		if(strncmp(argv,"area=",5) == 0){ //area
+			area_flag = 0;
+			para=&argv[5];	
+
+			//printf("### para=%s\n",para);
+
+			int start = 0;
+			for(int i=0;i<(int)strlen(para);i++){
+				if(para[i] == '(' ){
+					start = i;
+				}
+				if(para[i] == ')' ){
+					int len = i - (start + 1); 
+
+					val = new char[len + 1];
+					strncpy(val,&para[start+1],len);
+
+					if(area_flag == 0){ //X
+						gl_varea.xmin=atof(val); val=strchr(val,',')+1;
+						gl_varea.xmax=atof(val);
+						area_flag = 1;
+					}else if(area_flag == 1){ //Y
+						gl_varea.ymin=atof(val); val=strchr(val,',')+1;
+						gl_varea.ymax=atof(val);
+						area_flag = 2;
+					}else if(area_flag == 2){ //Z
+						gl_varea.zmin=atof(val); val=strchr(val,',')+1;
+						gl_varea.zmax=atof(val);
+						area_flag = 3;
+						break;
+					}
+					start=i;
+				}
+			}	
+		}
+		else if(strncmp(argv,"mesh=",5) == 0){ //mesh
+			para=&argv[5];
+
+			//printf("para=%s\n",para);
+
+			if((int)strlen(para) > 0){
+		 		gl_msize=atof(para);
+			}
+		}
+		if(area_flag != 3){
+			ret = RET_NG_AREA;
+		}
+		
+	}
+
+	//---DEBUG-------
+	/*
+	printf("gl_varea.xmin=[%f] gl_varea.xmax=[%f] gl_varea.ymin=[%f] gl_varea.ymax=[%f] gl_varea.zmin=[%f] gl_varea.zmax=[%f] gl_msize=%f\n",
+		gl_varea.xmin, gl_varea.xmax, gl_varea.ymin, gl_varea.ymax, gl_varea.zmin, gl_varea.zmax,gl_msize);
+	*/
+	//---DEBUG-------
+
+	//make mesh
+	if(ret==RET_OK){
+		if(gl_mesh == NULL){
+			gl_mesh = new Delete_Noise;
+			printf("allocating mesh....\n");
+		}
+		gl_mesh->mk_mesh(&gl_varea, gl_msize);
+	}
+
+	return ret;
+}
+
 auto loadPLY(char* FileName){
 	//retcode
-	int ret=0;
+	int ret=RET_OK;
 	//normalize後の点群配列(x,y,zの順でNx3の配列)
 	py::array_t<double>scene = py::array_t<double>(1);
 
 	try{
 		ret = read_ply_from_file_to_array(FileName,&scene);
 	}catch(...){
-		ret = -1;
+		ret = RET_NG_OTHER;
 	}
 	return py::make_tuple(ret, &scene);
 }
 
 //点群配列をnormalizeする
-//auto normalize(std::vector<std::string> & param) {
-auto normalize(std::vector<std::string> & param, py::array_t<double>scene) {
+auto normalize(py::array_t<double>scene) {
 	//retcode
-	int ret=0;
+	int ret=RET_OK;
 	//normalize後の点群配列(x,y,zの順でNx3の配列)
 	py::array_t<double>pc = py::array_t<double>(1);
 
-	float msize=0.1;
-	Delete_Noise mesh;
-	AreaLimits varea;
 	Point *dp=NULL;
 	int dn;
 	int r=2, dir=3;
 	int th[2]={0,0};
-	double smth=0.0;
 
-	//printf("param size=%d\n",(int)param.size());
+	//sceneを読み込む
+	dp=read_ply_from_array(scene, &dn);
 
-	for (auto item : param){
-		string st = item;
-
-		char* argv = new char[st.size() + 1]; // メモリ確保
-
-		std::char_traits<char>::copy(argv, st.c_str(), st.size() + 1);
-
-		//printf("argv=%s\n",argv);
-
-		if(argv[0]=='-') {
-			if(argv[1]=='m') { // mesh size(mm)
-				int j;
-				for(j=2; j < (int)strlen(argv)-2 ; j++){
-					if(argv[j] != ' '){
-						break;
-					}
-				}
-				char *p=&argv[j];
-
-				if((int)strlen(p) > 0){
-					msize=atof(&argv[j]);
-					//printf("msize=[%f]\n",msize);
-				}
-			}
-			else if(argv[1]=='r') { // noise judge(pixel)
-				int j;
-				for(j=2; j < (int)strlen(argv)-2 ; j++){
-					if(argv[j] != ' '){
-						break;
-					}
-				}
-				char *p=&argv[j];
-				if((int)strlen(p) > 0){
-					r=atoi(&argv[j]);
-					//printf("r=[%d]\n",r);
-				}
-			}
-			else if(argv[1]=='d') { // noise judge(directions)
-				int j;
-				for(j=2; j < (int)strlen(argv)-2 ; j++){
-					if(argv[j] != ' '){
-						break;
-					}
-				}
-				char *p=&argv[j];
-
-				if((int)strlen(p) > 0){
-					dir=atoi(&argv[j]);
-					//printf("dir=[%d]\n",dir);
-				}
-			}
-			else if(argv[1]=='s') { // smooth
-				int j;
-				for(j=2; j < (int)strlen(argv)-2 ; j++){
-					if(argv[j] != ' '){
-						break;
-					}
-				}
-				char *p=&argv[j];
-
-				if((int)strlen(p) > 0){
-					smth=atof(&argv[j]);
-					//printf("smth=[%f]\n",smth);
-				}
-			}
-			else if(argv[1]=='A') { // area
-				int j;
-				for(j=2; j < (int)strlen(argv)-2 ; j++){
-					if(argv[j] != ' '){
-						break;
-					}
-				}
-				char *p=&argv[j];
-
-				if((int)strlen(p) > 0){
-					varea.xmin=atof(p); p=strchr(p,',')+1;
-					varea.xmax=atof(p); p=strchr(p,',')+1;
-					varea.ymin=atof(p); p=strchr(p,',')+1;
-					varea.ymax=atof(p); p=strchr(p,',')+1;
-					varea.zmin=atof(p); p=strchr(p,',')+1;
-					varea.zmax=atof(p); p=strchr(p,',')+1;
-					//printf("varea.xmin=[%f] varea.xmax=[%f] varea.ymin=[%f] varea.ymax=[%f] varea.zmin=[%f] varea.zmax=[%f]\n",
-					//        varea.xmin, varea.xmax, varea.ymin, varea.ymax, varea.zmin, varea.zmax);
-				}
-			}
-		}
-		delete[] argv; // メモリ解放
+	if(dp==NULL) {
+		fprintf(stderr,"read array data error.\n");
+		ret = RET_NG_INPUT_ARRAY_DATA;
 	}
 
-	if(ret == 0){
-		//dp=read_ply(infn, &dn);
-		dp=read_ply_from_array(scene, &dn);
-
-		if(dp==NULL) {
-			fprintf(stderr,"read array data error.\n");
-			ret = -1;
-		}
-	}
+	//---DEBUG-------
+	/*
+	printf("gl_varea.xmin=[%f] gl_varea.xmax=[%f] gl_varea.ymin=[%f] gl_varea.ymax=[%f] gl_varea.zmin=[%f] gl_varea.zmax=[%f] gl_msize=%f\n",
+			        gl_varea.xmin, gl_varea.xmax, gl_varea.ymin, gl_varea.ymax, gl_varea.zmin, gl_varea.zmax,gl_msize);
+	*/
+	//---DEBUG-------
 
 	if(ret == 0){
-		mesh.set_points(dp,dn);
-		if(__isnan(varea.xmin)) {
-			get_minmax(dp,dn,&varea);
+		gl_mesh->set_points(dp,dn);
+		if(__isnan(gl_varea.xmin)) {
+			get_minmax(dp,dn,&gl_varea);
 		}
-		mesh.mk_mesh(&varea,msize);
+		//mesh.mk_mesh(&varea,msize);
 
 		fprintf(stderr,"dist_pc().\n");
-		mesh.dist_pc(th[0],th[1]);
+		gl_mesh->dist_pc(th[0],th[1]);
 		fprintf(stderr,"set_param().\n");
-		mesh.set_params(r,dir);
-		mesh.work(0);
-		if(smth!=0.0) mesh.smooth(smth);
+		gl_mesh->set_params(r,dir);
+		gl_mesh->work(0);
+		//if(smth!=0.0) mesh.smooth(smth);
 		int rn;
-		Point *rslt=mesh.output(&rn);
+		Point *rslt=gl_mesh->output(&rn);
 
 		ret = make_ply(rslt,rn,&pc);
 
 		delete[] rslt;
-		mesh.deleteMesh();
+		//mesh.deleteMesh();
 	}
 
 	if(dp != NULL){
@@ -180,6 +190,7 @@ auto normalize(std::vector<std::string> & param, py::array_t<double>scene) {
 PYBIND11_MODULE(yodpy2, m) {
         m.doc() = "Normalize python library";
 
+        m.def("makeMesh", &makeMesh, "Normalize from PLY file");
         m.def("loadPLY", &loadPLY, "Normalize from PLY file");
         m.def("normalize", &normalize, "Normalize from PLY file");
 }
