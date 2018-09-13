@@ -1,18 +1,33 @@
 <使い方>
-  test.pyに記載していますが、
-　argv = ["-A20,250,-100,100,250,350","-m 2"]
-  のように、パラメータを「"」で囲い、「,」区切りで定義します。
+  1.mesh初期化
+    パラメータ:
+	area:省略不可
+		area=((xmin,xmax),(ymin,ymax),(zmin,zmax))
+	mesh:省略可能
+		mesh=0.2
+    戻り値:
+	retcode:処理結果
+		  0 正常終了
+		-10 areaパラメータ設定エラー
+    使用例:
+    	retcode = yod2.makeMesh(["area=((-50,50),(-50,50),(-50,50))","mesh=0.2"])
 
-  関数呼び出しは、以下のように定義したargvと点群データのscene(numpy::array)を引数にします。
-  戻り値として、リターンコード、normalize後の点群データの配列(result)です。
-  pcはx,y,zの順のNx3の配列です。
+  2.normalize
+    パラメータ:
+	scene:点群データ配列(x,y,zの順のNx3の配列)
+    戻り値:
+	result:配列
+		0番目:処理結果
+		  	  0 正常終了
+			-20 sceneエラー
+			-90 その他エラー
 
-　result = yodpy2.normalize(argv,scene)
-  retcode = result[0]
-  pc = result[1]
+    使用例:
+	result = yodpy2.normalize(scene)
+	retcode = result[0]
+	pc = result[1]
 
-
-<サンプルの起動方法>
+<サンプルの実行方法>
   ・python2.7
     python2 test.py
 
@@ -27,6 +42,6 @@
 　※テスト用にnormalizeの入力に使うため。
   戻り値はリターンコードとPLYファイルから作成した点群データのnumpy::arrayの配列です。
  
-  result = loadPLY("out.ply")
+  result = loadPLY("input.ply")
   retcode = result[0]
   scene = result[1]
