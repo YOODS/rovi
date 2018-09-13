@@ -5,7 +5,6 @@
 #include "plyio.h"
 #include "mycommons.h"
 
-
 #include <pybind11/pybind11.h>
 #include <pybind11/numpy.h> // numpy
 #include <pybind11/stl.h> // vector用
@@ -30,39 +29,52 @@ Delete_Noise *gl_mesh = NULL;
 
 //mesh初期化関数
 //処理に時間がかかるので、流用できるようにした
-int makeMesh(std::vector<std::string> & param){
+int makeMesh(py::kwargs kwargs){
 	int ret=RET_OK;
-	char* argv;
+	int key_len;
+	int para_len;
+	int val_len;
+	char* key;
 	char* para;
 	char* val;
-	string st;
 	int area_flag = 0;
 
 	gl_msize=0.1;
 
-	for (auto item : param){
-		st = item;
 
-		argv = new char[st.size() + 1]; // メモリ確保
+	if(gl_mesh != NULL){
+		delete gl_mesh;
+		gl_mesh = NULL;
+	}
 
-		std::char_traits<char>::copy(argv, st.c_str(), st.size() + 1);
-	
-		if(strncmp(argv,"area=",5) == 0){ //area
-			area_flag = 0;
-			para=&argv[5];	
+	int i=0;
+	for (auto item : kwargs){
+		//key
+		key_len = strlen((py::cast<string>(item.first)).c_str());
+		key = new char[key_len + 1]; // メモリ確保
+		std::char_traits<char>::copy(key, (py::cast<string>(py::str(item.first))).c_str(), key_len + 1);
 
-			//printf("### para=%s\n",para);
+		//param
+		para_len = strlen((py::cast<string>(py::str(item.second))).c_str());
+		para = new char[para_len + 1]; // メモリ確保
+		std::char_traits<char>::copy(para, (py::cast<string>(py::str(item.second))).c_str(), para_len + 1);
 
+		if(strcmp(key,"mesh")==0){ //mesh size
+			if(para_len > 0){
+				gl_msize = atof(para);
+			}
+		}
+		else if(strcmp(key,"area") == 0){ //area
 			int start = 0;
-			for(int i=0;i<(int)strlen(para);i++){
+			for(int i=0;i<para_len;i++){
 				if(para[i] == '(' ){
 					start = i;
 				}
 				if(para[i] == ')' ){
-					int len = i - (start + 1); 
+					val_len = i - (start + 1); 
 
-					val = new char[len + 1];
-					strncpy(val,&para[start+1],len);
+					val = new char[val_len + 1];
+					strncpy(val,&para[start+1],val_len);
 
 					if(area_flag == 0){ //X
 						gl_varea.xmin=atof(val); val=strchr(val,',')+1;
@@ -82,19 +94,12 @@ int makeMesh(std::vector<std::string> & param){
 				}
 			}	
 		}
-		else if(strncmp(argv,"mesh=",5) == 0){ //mesh
-			para=&argv[5];
+		i++;
+	}
 
-			//printf("para=%s\n",para);
-
-			if((int)strlen(para) > 0){
-		 		gl_msize=atof(para);
-			}
-		}
-		if(area_flag != 3){
-			ret = RET_NG_AREA;
-		}
-		
+	//areaが指定されていない場合はNG
+	if(area_flag != 3){
+		ret = RET_NG_AREA;
 	}
 
 	//---DEBUG-------
@@ -140,7 +145,7 @@ auto normalize(py::array_t<double>scene) {
 	Point *dp=NULL;
 	int dn;
 	int r=2, dir=3;
-	int th[2]={0,0};
+	//int th[2]={0,0};
 
 	//sceneを読み込む
 	dp=read_ply_from_array(scene, &dn);
@@ -164,19 +169,19 @@ auto normalize(py::array_t<double>scene) {
 		}
 		//mesh.mk_mesh(&varea,msize);
 
-		fprintf(stderr,"dist_pc().\n");
-		gl_mesh->dist_pc(th[0],th[1]);
 		fprintf(stderr,"set_param().\n");
 		gl_mesh->set_params(r,dir);
 		gl_mesh->work(0);
-		//if(smth!=0.0) mesh.smooth(smth);
-		int rn;
-		Point *rslt=gl_mesh->output(&rn);
+		int rn=gl_mesh->get_vcount();
+		Point *rslt=gl_mesh->get_vpoints();
 
 		ret = make_ply(rslt,rn,&pc);
 
-		delete[] rslt;
+		gl_mesh->clearMesh();
+
+		//delete[] rslt;
 		//mesh.deleteMesh();
+
 	}
 
 	if(dp != NULL){
@@ -190,8 +195,7 @@ auto normalize(py::array_t<double>scene) {
 PYBIND11_MODULE(yodpy2, m) {
         m.doc() = "Normalize python library";
 
-        m.def("makeMesh", &makeMesh, "Normalize from PLY file");
-        m.def("loadPLY", &loadPLY, "Normalize from PLY file");
-        m.def("normalize", &normalize, "Normalize from PLY file");
+        m.def("makeMesh", &makeMesh, "Make mesh");
+        m.def("loadPLY", &loadPLY, "Load PLY file");
+        m.def("normalize", &normalize, "Normalize from array(PLY)");
 }
-

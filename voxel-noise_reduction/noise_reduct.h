@@ -10,6 +10,5 @@ public:
 	Delete_Noise(void);
 	void set_params(int rm, int fn);
 	void work(void*);
-	int work1(void);
 };
 

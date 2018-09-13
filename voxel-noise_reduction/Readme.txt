@@ -10,7 +10,7 @@
 		  0 正常終了
 		-10 areaパラメータ設定エラー
     使用例:
-    	retcode = yod2.makeMesh(["area=((-50,50),(-50,50),(-50,50))","mesh=0.2"])
+    	retcode = yod2.makeMesh(area=((-50,50),(-50,50),(-50,50)),mesh=0.2)
 
   2.normalize
     パラメータ:

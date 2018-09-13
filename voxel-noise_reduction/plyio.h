@@ -9,6 +9,7 @@ namespace py = pybind11;
 using namespace std;
 
 extern Point *read_ply(char *fname,int *dn);
+extern void write_ply(Point *dp,int dn,char *outfn,int ascf,int notexf,unsigned char *color);
 
 //テスト用--------------------------------
 extern int read_ply_from_file_to_array(char *fname,py::array_t<double>*scene);

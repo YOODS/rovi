@@ -12,15 +12,15 @@ import numpy as np
 # area=は省略不可,mesh=を省略した場合は0.1が設定されたものとみなす。
 
 # NG test area未設定
-#retcode = yodpy2.makeMesh(["mesh=2.0"])
+#retcode = yodpy2.makeMesh(mesh=2.0)
 
 # OK test mesh省略
-#retcode = yodpy2.makeMesh(["area=((20,250),(-100,100),(250,350))"])
+#retcode = yodpy2.makeMesh(area=((20,250),(-100,100),(250,350)))
 
 # OK test area,mesh設定
-retcode = yodpy2.makeMesh(["area=((20,250),(-100,100),(250,350))","mesh=2.0"])
-#retcode = yodpy2.makeMesh(["area=((-50,50),(-50,50),(-50,50))","mesh=0.2"])
-#retcode = yodpy2.makeMesh(["area=((-40,40),(-30,50),(-20,60))","mesh=1.0"])
+retcode = yodpy2.makeMesh(area=((20,250),(-100,100),(250,350)),mesh=2.0)
+#retcode = yodpy2.makeMesh(area=((-50,50),(-50,50),(-50,50)),mesh=0.2)
+#retcode = yodpy2.makeMesh(area=((-40,40),(-30,50),(-20,60)),mesh=1.0)
 
 print('makeMesh retcode=',retcode)
 
@@ -95,7 +95,7 @@ if retcode == 0:
 #####################################
 # area=は省略不可,mesh=を省略した場合は0.1が設定されたものとみなす。
 if retcode == 0:
-	retcode = yodpy2.makeMesh(["area=((-50,50),(-50,50),(-50,50))","mesh=0.2"])
+	retcode = yodpy2.makeMesh(area=((-50,50),(-50,50),(-50,50)),mesh=0.2)
 
 	print('makeMesh retcode=',retcode)
 

@@ -1,6 +1,6 @@
 SL       = /
 include ./macros.mak
-SRCS = main.c noise_reduct.c voxel.c plyio.c point_mesh.c mycommons.c
+SRCS = main.cpp noise_reduct.cpp voxel.cpp plyio.cpp point_mesh.cpp mycommons.cpp
 OBJS = main.o noise_reduct.o voxel.o plyio.o point_mesh.o mycommons.o
 TARGET = yodpy2
 CXX = g++

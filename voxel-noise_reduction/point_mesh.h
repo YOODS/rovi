@@ -6,8 +6,7 @@ struct PointChain {
 	Point *p;
 	PointChain *next;
 	PointChain(Point *a);
-	PointChain *add(Point *ap);
-	PointChain *copy(PointChain *ac);
+	PointChain* add(Point *ap);
 	int count(void);
 	~PointChain(void);
 };

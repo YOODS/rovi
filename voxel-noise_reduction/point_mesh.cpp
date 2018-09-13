@@ -19,19 +19,6 @@ PointChain* PointChain::add(Point *ap) {
 	return next;
 }
 
-PointChain *PointChain::copy(PointChain *ac) {
-	PointChain *ret;
-	for(PointChain *r=this; r;) {
-		if(ac==NULL) {
-			ac=new PointChain(r->p);
-			ret=ac;
-		}
-		ret=ac->add(r->p);
-		r=r->next;
-	}
-	return ret;
-}
-
 int PointChain::count(void) {
 	if(next) return next->count()+1;
 	else return p ? 1: 0;
