@@ -8,11 +8,13 @@ popen.run = function(node, ns, eo) {
   let env = process.env;
   env = Object.assign(env, { ROS_NAMESPACE: ns });
   let proc = popen.exec('rosrun ' + node, { env: process.env });
-//  let proc = popen.spawn('rosrun', node.slice(' '), { env: process.env });
+  let arg=node.split(' ');
+  arg.push('');
+//  let proc=popen.exec('/home/ca/catkin_ws/devel/lib/'+arg[0]+'/'+arg[1]+' '+arg[2],{ env: process.env });
   let stm = setTimeout(function() {
     ev.running = true;
     ev.emit('start'); // rosrun success
-  }, 3000);
+  }, 5000);
   proc.stdout.on('data', function(data) {
     console.log('rosrun:stdout:' + data);
     ev.emit('cout', data);

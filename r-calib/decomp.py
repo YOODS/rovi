@@ -7,7 +7,7 @@ import rospy
 from geometry_msgs.msg import Transform
 
 
-rospy.init_node("solver",anonymous=True)
+rospy.init_node("decomp",anonymous=True)
 Pmat=rospy.get_param('/rovi/left/remap/P')
 Pmat=np.reshape(Pmat,(3,4))
 Kmat=rospy.get_param('/rovi/left/remap/K')
