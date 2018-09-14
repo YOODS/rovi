@@ -76,7 +76,7 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 bool remap(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res)
 {
   if (!isready) {
-    ROS_ERROR("remap table is not ready");
+    ROS_WARN("remap table is not ready");
     return false;
   }
 
