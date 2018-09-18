@@ -307,7 +307,9 @@ setImmediate(async function() {
       await sens.cset({ 'TriggerMode': 'On' });
       await sens.cset(param_C);
       await setTimeout(async function() {
-        await sens.pset({ 'Go': 2 }); // <--------projector sequence start
+	setTimeout(function(){
+		sens.pset({ 'Go': 2 }); // <--------projector sequence start
+	},500);
         let imgs = await Promise.all([image_L.store(13), image_R.store(13)]);
         image_L.cancel();
         image_R.cancel();
