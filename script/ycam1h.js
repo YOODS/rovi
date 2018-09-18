@@ -131,7 +131,7 @@ console.log('ycam.cset as double:' + key + '=' + val);
 
 async function openCamera(rosrun, ns, evname) {
   let sub = rosNode.subscribe(ns + 'image_raw', sensor_msgs.Image, (src) => {
-    if (diffTime(src.header.stamp, rosrun.timestamp) > 0.001) {
+    if (diffTime(src.header.stamp, rosrun.timestamp) >= 0.0) {
       Notifier.emit(evname, src);
       rosrun.timestamp = src.header.stamp;
     }
