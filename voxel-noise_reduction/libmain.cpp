@@ -24,6 +24,8 @@ using namespace std;
 AreaLimits gl_varea;
 //mesh size
 float gl_msize;
+//voxel
+int gl_voxel;
 //mesh
 Delete_Noise *gl_mesh = NULL;
 
@@ -40,7 +42,6 @@ int makeMesh(py::kwargs kwargs){
 	int area_flag = 0;
 
 	gl_msize=0.1;
-
 
 	if(gl_mesh != NULL){
 		delete gl_mesh;
@@ -136,7 +137,7 @@ auto loadPLY(char* FileName){
 }
 
 //点群配列をnormalizeする
-auto normalize(py::array_t<double>scene) {
+auto normalize(py::array_t<double>scene,py::kwargs kwargs) {
 	//retcode
 	int ret=RET_OK;
 	//normalize後の点群配列(x,y,zの順でNx3の配列)
@@ -144,8 +145,14 @@ auto normalize(py::array_t<double>scene) {
 
 	Point *dp=NULL;
 	int dn;
-	int r=2, dir=3;
+	int dir=3;
 	//int th[2]={0,0};
+
+	int key_len;
+	int para_len;
+	char* key;
+	char* para;
+	gl_voxel = 0;
 
 	//sceneを読み込む
 	dp=read_ply_from_array(scene, &dn);
@@ -155,8 +162,30 @@ auto normalize(py::array_t<double>scene) {
 		ret = RET_NG_INPUT_ARRAY_DATA;
 	}
 
+	//voxel取得
+	int i=0;
+	for (auto item : kwargs){
+		//key
+		key_len = strlen((py::cast<string>(item.first)).c_str());
+		key = new char[key_len + 1]; // メモリ確保
+		std::char_traits<char>::copy(key, (py::cast<string>(py::str(item.first))).c_str(), key_len + 1);
+
+		//param
+		para_len = strlen((py::cast<string>(py::str(item.second))).c_str());
+		para = new char[para_len + 1]; // メモリ確保
+		std::char_traits<char>::copy(para, (py::cast<string>(py::str(item.second))).c_str(), para_len + 1);
+
+		if(strcmp(key,"voxel")==0){ //voxel
+			if(para_len > 0){
+				gl_voxel = atoi(para);
+			}
+		}
+		i++;
+	}
+
 	//---DEBUG-------
 	/*
+	printf("gl_voxel=[%d]\n",gl_voxel);
 	printf("gl_varea.xmin=[%f] gl_varea.xmax=[%f] gl_varea.ymin=[%f] gl_varea.ymax=[%f] gl_varea.zmin=[%f] gl_varea.zmax=[%f] gl_msize=%f\n",
 			        gl_varea.xmin, gl_varea.xmax, gl_varea.ymin, gl_varea.ymax, gl_varea.zmin, gl_varea.zmax,gl_msize);
 	*/
@@ -170,7 +199,10 @@ auto normalize(py::array_t<double>scene) {
 		//mesh.mk_mesh(&varea,msize);
 
 		fprintf(stderr,"set_param().\n");
-		gl_mesh->set_params(r,dir);
+
+		//gl_mesh->set_params(r,dir);
+		gl_mesh->set_params(gl_voxel,dir);
+
 		gl_mesh->work(0);
 		int rn=gl_mesh->get_vcount();
 		Point *rslt=gl_mesh->get_vpoints();

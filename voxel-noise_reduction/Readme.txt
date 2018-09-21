@@ -3,18 +3,24 @@
     パラメータ:
 	area:省略不可
 		area=((xmin,xmax),(ymin,ymax),(zmin,zmax))
-	mesh:省略可能
+	mesh:省略可能(省略時にはmesh=0.1が指定されたものとみなす)
 		mesh=0.2
     戻り値:
 	retcode:処理結果
 		  0 正常終了
 		-10 areaパラメータ設定エラー
     使用例:
+	# mesh省略
+    	retcode = yod2.makeMesh(area=((-50,50),(-50,50),(-50,50)))
+
+	# mesh指定
     	retcode = yod2.makeMesh(area=((-50,50),(-50,50),(-50,50)),mesh=0.2)
 
   2.normalize
     パラメータ:
 	scene:点群データ配列(x,y,zの順のNx3の配列)
+	voxel:省略可能(省略時にはvoxel=0が指定されたものとみなす)
+		voxel=1
     戻り値:
 	result:配列
 		0番目:処理結果
@@ -23,7 +29,12 @@
 			-90 その他エラー
 
     使用例:
+	# voxel省略
 	result = yodpy2.normalize(scene)
+
+	# voxel指定
+	result = yodpy2.normalize(scene,voxel=1)
+
 	retcode = result[0]
 	pc = result[1]
 
