@@ -94,6 +94,29 @@ def fromRTtoVec(rt):
   vec=np.array([[rt[0,3],rt[1,3],rt[2,3],qx,qy,qz,qw]])
   return vec
 
+def fromRTtoEuler(matrix44):  # RobotRTToRxyzCBA
+  half_pi=np.pi/2.0
+  A=B=C=0
+  req_limit=1e-8
+  if (abs(matrix44[2,0]+1)<=req_limit or abs(matrix44[2,0]-1)<=req_limit):
+    # cosB = 0 sinB = pm1 
+    A=0;
+    if (abs(matrix44[2,0]-1)<=req_limit): B=-half_pi
+    if (abs(matrix44[2,0]+1)<=req_limit): B=half_pi
+    C = math.atan2(-matrix44[0,1],matrix44[1,1])
+  else:
+    B = math.asin(-1*matrix44[2,0])
+    C = math.atan2(matrix44[1,0],matrix44[0,0])
+    A = math.atan2(matrix44[2,1],matrix44[2,2])
+  Rx=matrix44[0,3]
+  Ry=matrix44[1,3]
+  Rz=matrix44[2,3]
+  A_degree=A/np.pi*180.
+  B_degree=B/np.pi*180.
+  C_degree=C/np.pi*180.
+  vec=np.array([[Rx,Ry,Rz,A_degree,B_degree,C_degree,0]])
+  return vec
+
 def inv(tf):
   RT=toRT(tf)
   return fromRT(RT.I)
