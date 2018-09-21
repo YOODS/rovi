@@ -275,7 +275,7 @@ var ycam = {
   }
 }
 
-function openCamera(rosrun, ns) {
+async function openCamera(rosrun, ns) {
   let sub = rosNode.subscribe(ns + '/camera/image_raw', sensor_msgs.Image, (src) => {
 //    ros.log.warn('ycam3.js:: Got seq=' + src.header.seq);
     let image_l = new sensor_msgs.Image();
