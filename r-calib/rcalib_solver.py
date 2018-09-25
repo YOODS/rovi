@@ -24,10 +24,11 @@ def cb_robot(tf):
   return
 
 def cb_X0(f):
-  global cTsAry,bTmAry
+  global cTsAry,bTmAry,idx
   print "cbX0"
   cTsAry=TransformArray()
   bTmAry=TransformArray()
+  idx=0
 
 def cb_X1(f):
   global cTsAry,bTmAry
@@ -39,7 +40,11 @@ def cb_X1(f):
   tf=rospy.wait_for_message('/gridboard/tf',Transform)
   print "cbX1::grid",tf
   cTsAry.transforms.append(tf)
-  tf=rospy.wait_for_message('/robot/tf',Transform)
+#  tf=rospy.wait_for_message('/robot/tf',Transform)
+  # set tf from param.yaml
+  global idx
+  tf=xyz2quat(rpos[idx])
+  idx=idx+1
   print "cbX1::robot",tf
   bTmAry.transforms.append(tf)
   done.data=True
@@ -146,6 +151,24 @@ def cb_X2(f):
   save_result_mTs('result.txt')
   return
 
+#def xyz2quat(e):
+#  tf=Transform()
+#  k = math.pi / 180 * 0.5;
+#  cx = math.cos(e.rotation.x * k)
+#  cy = math.cos(e.rotation.y * k)
+#  cz = math.cos(e.rotation.z * k)
+#  sx = math.sin(e.rotation.x * k)
+#  sy = math.sin(e.rotation.y * k)
+#  sz = math.sin(e.rotation.z * k)
+#  tf.translation.x=e.translation.x
+#  tf.translation.y=e.translation.y
+#  tf.translation.z=e.translation.z
+#  tf.rotation.x = cy * cz * sx - cx * sy * sz
+#  tf.rotation.y = cy * sx * sz + cx * cz * sy
+#  tf.rotation.z = cx * cy * sz - cz * sx * sy
+#  tf.rotation.w = sx * sy * sz + cx * cy * cz
+#  return tf
+
 def xyz2quat(e):
   tf=Transform()
   k = math.pi / 180 * 0.5;
@@ -158,10 +181,10 @@ def xyz2quat(e):
   tf.translation.x=e.translation.x
   tf.translation.y=e.translation.y
   tf.translation.z=e.translation.z
-  tf.rotation.x = cy * cz * sx - cx * sy * sz
-  tf.rotation.y = cy * sx * sz + cx * cz * sy
-  tf.rotation.z = cx * cy * sz - cz * sx * sy
-  tf.rotation.w = sx * sy * sz + cx * cy * cz
+  tf.rotation.x = sx * cy * cz - cx * sy * sz
+  tf.rotation.y = cx * sy * cz + sx * cy * sz
+  tf.rotation.z = cx * cy * sz - sx * sy * cz
+  tf.rotation.w = cx * cy * cz + sx * sy * sz
   return tf
 
 def cb_X3(f):
@@ -197,6 +220,16 @@ if rospy.has_param('/robot/calib/bTc'):
   bTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/bTc')))
 if rospy.has_param('/robot/calib/mTc'):
   mTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTc')))
+
+# read robotpos from param.yaml
+cnt=0
+idx=0
+rpos=[]
+if rospy.has_param('/robot/position/cnt'):
+  cnt=int(rospy.get_param('/robot/position/cnt'))
+for i in range(cnt):
+  if rospy.has_param('/robot/position/rpos'+str(i+1)):
+    rpos.append(tflib.dict2tf(rospy.get_param('/robot/position/rpos'+str(i+1))))
 
 #rospy.Subscriber('/robot/tf',Transform,cb_robot)
 rospy.Subscriber('/solver/X0',Bool,cb_X0)
