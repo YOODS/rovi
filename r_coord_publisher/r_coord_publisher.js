@@ -14,7 +14,7 @@ const jnt = new sensor_msgs.JointState();
 function startPubJs(pubjs) {
   // init
   for (let i = 0; i < 6; i++) {
-    jnt.name[i] = 'joint_' + (i + 1);
+    jnt.name[i] = 'joint' + (i + 1);
     jnt.position[i] = 0.0;
   }
 
@@ -34,7 +34,7 @@ function startPubJs(pubjs) {
 }
 
 function toCoords(data) {
-// data format is 'P1******(X,Y,Z,A,B,C)(F1,F2)(J1,J2,J3,J4,J5,J6)\n'.
+// data format is 'P1[NNNNNNNNNN.NNN](X,Y,Z,A,B,C)(F1,F2)(J1,J2,J3,J4,J5,J6)\n'.
   const str = data.toString();
   const ary = str.replace(/\)\(/g, '],[').replace(/P1.*\(/, '[').replace(/\)/, ']').replace(/\+/g, '');
 //  console.log('ary={' + ary + '}');
