@@ -61,9 +61,14 @@ if retcode == 0:
 	#argv = ["-r 10","-d 20", "-s 2.1","-A20,250,-100,100,250,350","-m 2"]
 	#
 	# -r -dは何か設定した方が良さげ？なので、元のソースのデフォルト値をそのまま使っている。
+	#
+	# 2018.09.20
+	# voxelパラメータ追加
+	# 省略時にはvoxel=0が指定されたものとみなす。
 
 	#call normalize
-	result = yodpy2.normalize(scene)
+	#result = yodpy2.normalize(scene)
+	result = yodpy2.normalize(scene,voxel=0)
 	retcode = result[0]
 	pc = result[1]
 
@@ -77,7 +82,7 @@ if retcode == 0:
 # call normalize 2回目
 #####################################
 if retcode == 0:
-	result = yodpy2.normalize(scene)
+	result = yodpy2.normalize(scene,voxel=1)
 	retcode = result[0]
 	pc = result[1]
 
@@ -115,7 +120,8 @@ if retcode == 0:
 # call normalize 3回目
 #####################################
 if retcode == 0:
-	result = yodpy2.normalize(scene)
+	#result = yodpy2.normalize(scene)
+	result = yodpy2.normalize(scene,voxel=2)
 	retcode = result[0]
 	pc = result[1]
 

@@ -1,7 +1,7 @@
 SL       = /
 include ./macros.mak
-SRCS = main.cpp noise_reduct.cpp voxel.cpp plyio.cpp point_mesh.cpp mycommons.cpp
-OBJS = main.o noise_reduct.o voxel.o plyio.o point_mesh.o mycommons.o
+SRCS = libmain.cpp noise_reduct.cpp voxel.cpp plyio.cpp point_mesh.cpp mycommons.cpp
+OBJS = libmain.o noise_reduct.o voxel.o plyio.o point_mesh.o mycommons.o
 TARGET = yodpy2
 CXX = g++
 CXXFLAGS = -O3 -Wall -fPIC -std=c++14 -fPIC `python3 -m pybind11 --includes` 
