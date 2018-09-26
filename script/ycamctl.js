@@ -26,6 +26,14 @@ ros.Time.diff = function(t0) {
   return ros.Time.toSeconds(t1);
 }
 
+function sleep(n){
+  return new Promise(function(resolve){
+    setTimeout(function(){
+      resolve(true);
+    },n);
+  });
+}
+
 class ImageSwitcher {
   constructor(node, ns) {
     const who = this;
@@ -38,6 +46,7 @@ class ImageSwitcher {
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
     this.remapreload = node.serviceClient(ns + '/remap/reload', std_srvs.Trigger);
     this.imgqueue=[];
+    this.pstat=0;   //0:live,1:settling,2:pshift
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
@@ -68,12 +77,18 @@ class ImageSwitcher {
     this.raw.publish(img);
     let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
+    let res;
     try {
-      let res = await this.remap.call(req);
-      if (this.hook.listenerCount('store') > 0){
+      switch(this.pstat){
+      case 0:
+        res=await this.remap.call(req);
+        this.rect.publish(res.img);
+        break;
+      case 2:
+        res=await this.remap.call(req);
         this.hook.emit('store', res.img);
+        break;
       }
-      else this.rect.publish(res.img);
       this.imgqueue.shift();
     }
     catch(err) {
@@ -96,24 +111,32 @@ class ImageSwitcher {
       });
     }
   }
-  store(count) {
+  store(count,delay) {
     const who = this;
     this.capt = [];
+    this.pstat=1;
+    setTimeout(function(){ who.pstat=2;},delay);
     return new Promise(function(resolve) {
       who.hook.on('store', function(img) {
-        console.log(who.ns+':'+who.capt.length);
-        if (who.capt.length < count) {
-          who.capt.push(img);
-          if (who.capt.length == count) {
-            who.hook.removeAllListeners();
-            resolve(who.capt);
-          }
+        let icnt=who.capt.length;
+        console.log(who.ns+':'+icnt);
+        who.capt.push(img);
+        icnt++;
+        if(icnt==2) who.rect.publish(img);
+        else if(icnt==count){
+          who.pstat=3;
+          resolve(who.capt);
         }
       });
     });
   }
   cancel() {
+    let who=this;
     this.hook.removeAllListeners();
+    this.pstat=3;
+    setTimeout(function(){
+      who.pstat=0;
+    },1000);
   }
   get ID() {return this.param.ID;}
   view(n) {
@@ -126,6 +149,7 @@ class ImageSwitcher {
     this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
     return res;
   }
+  
 }
 
 setImmediate(async function() {
@@ -212,8 +236,6 @@ setImmediate(async function() {
       }
       catch(err) {
         ros.log.warn('Exception in paramReload:' + err);
-        paramTimer = null;
-        return;
       }
     }
     if (paramTimer != null) paramTimer = setTimeout(paramReload, 1000);
@@ -278,6 +300,8 @@ setImmediate(async function() {
     image_R.emit(img);
   });
 
+  paramScan();
+
 // ---------Definition of services
   let capt_L; // <--------captured images of the left camera
   let capt_R; // <--------same as right
@@ -302,39 +326,37 @@ setImmediate(async function() {
         res.message = errmsg;
         resolve(true);
       }, timeoutmsec);
-
       param_V = Object.assign(param_V, param_C);
       await sens.cset({ 'TriggerMode': 'On' });
       await sens.cset(param_C);
-      await setTimeout(async function() {
-	setTimeout(function(){
-		sens.pset({ 'Go': 2 }); // <--------projector sequence start
-	},500);
-        let imgs = await Promise.all([image_L.store(13), image_R.store(13)]);
-        image_L.cancel();
-        image_R.cancel();
-        clearTimeout(wdt);
-        capt_L = imgs[0];
-        capt_R = imgs[1];
-        let gpreq = new rovi_srvs.GenPC.Request();
-        gpreq.imgL = capt_L;
-        gpreq.imgR = capt_R;
-        try {
-          let gpres = await genpc.call(gpreq);
-          res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
-          res.success = true;
-        }
-        catch(err) {
-//          ros.log.error('genpc failed. ' + err);
-          res.message = 'genpc failed';
-          res.success = false;
-        }
-        await sens.cset({ 'TriggerMode': 'Off' });
-        paramScan();
-        image_L.view(vue_N);
-        image_R.view(vue_N);
-        resolve(true);
-      }, Math.floor(1000.0/param_V.AcquisitoionFrameRate));
+      const settletm=Math.floor(1000.0/param_V.AcquisitoionFrameRate);
+    	setTimeout(function(){
+    		sens.pset({ 'Go': 2 }); // <--------projector sequence start
+	    },settletm+500);
+      let imgs=await Promise.all([image_L.store(13,settletm),image_R.store(13,settletm)]);
+      clearTimeout(wdt);
+      capt_L = imgs[0];
+      capt_R = imgs[1];
+      let gpreq = new rovi_srvs.GenPC.Request();
+      gpreq.imgL = capt_L;
+      gpreq.imgR = capt_R;
+      try {
+        let gpres = await genpc.call(gpreq);
+        res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
+        res.success = true;
+      }
+      catch(err) {
+//      ros.log.error('genpc failed. ' + err);
+        res.message = 'genpc failed';
+        res.success = false;
+      }
+      await sens.cset({ 'TriggerMode': 'Off' });
+      paramScan();
+      image_L.view(vue_N);
+      image_R.view(vue_N);
+      image_L.cancel();
+      image_R.cancel();
+      resolve(true);
     });
   });
 
