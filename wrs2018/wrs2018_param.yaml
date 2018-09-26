@@ -1,0 +1,144 @@
+gridboard:
+  do_qualize_hist: 0
+  do_smoothing: 1
+  bin_type: 1
+  bin_param0: 50
+  bin_param1: 0
+  unitleng: 0.005
+  n_circles_x: 20
+  n_circles_y: 27
+  origin_x: 10
+  origin_y: 13
+  distance_between_circles: 1.2
+  n_circles_minimum: 4
+  min_rate: 0.33
+  max_rate: 1.5
+  fitscore: 0.95
+  fitrange: 1.5
+  torelance: 1.5
+
+robot:
+  calib:
+    bTc:
+      translation:
+        x: 1
+        y: 1
+        z: 0
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+    mTc:
+      translation:
+        x: 0.1
+        y: 0.1
+        z: 0
+      rotation:
+        x: 0
+        y: 0
+        z: 0
+        w: 1
+  position:
+    cnt: 10
+    rpos1:
+      translation:
+        x: 1020.007
+        y: 1538.732
+        z: 947.154
+      rotation:
+        x: 112.807
+        y: -88.890
+        z: 155.276
+        w: 1
+    rpos2:
+      translation:
+        x: 1127.044
+        y: 1476.902
+        z: 947.156
+      rotation:
+        x: 112.807
+        y: -88.890
+        z: 171.859
+        w: 1
+    rpos3:
+      translation:
+        x: 913.973
+        y: 1583.886
+        z: 947.132
+      rotation:
+        x: 112.864
+        y: -88.891
+        z: 136.911
+        w: 1
+    rpos4:
+      translation:
+        x: 1020.010
+        y: 1537.213
+        z: 1028.038
+      rotation:
+        x: 173.357
+        y: -77.927
+        z: 94.827
+        w: 1
+    rpos5:
+      translation:
+        x: 1021.450
+        y: 1564.958
+        z: 851.537
+      rotation:
+        x: 2.547
+        y: -77.271
+        z: -94.581
+        w: 1
+    rpos6:
+      translation:
+        x: 1025.327
+        y: 1518.816
+        z: 1012.536
+      rotation:
+        x: -92.814
+        y: -62.730
+        z: 1.013
+        w: 1
+    rpos7:
+      translation:
+        x: 1051.566
+        y: 1518.816
+        z: 909.855
+      rotation:
+        x: 89.120
+        y: -65.803
+        z: 178.867
+        w: 1
+    rpos8:
+      translation:
+        x: 1189.818
+        y: 1518.814
+        z: 891.696
+      rotation:
+        x: 88.081
+        y: 0.720
+        z: 179.536
+        w: 1
+    rpos9:
+      translation:
+        x: 1020.010
+        y: 1450.415
+        z: 932.736
+      rotation:
+        x: 112.844
+        y: -88.890
+        z: 155.239
+        w: 1
+    rpos10:
+      translation:
+        x: 966.383
+        y: 1511.843
+        z: 981.702
+      rotation:
+        x: 162.825
+        y: -82.586
+        z: 97.248
+        w: 1
+
