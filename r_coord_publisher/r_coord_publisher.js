@@ -77,7 +77,7 @@ setImmediate(async function() {
       }
       if (coords[2].length == 6) {
         for (let i = 0; i < 6; i++) {
-          jnt.position[i] = coords[2][i];
+          jnt.position[i] = coords[2][i] * Math.PI / 180.0;
         }
       }
     });

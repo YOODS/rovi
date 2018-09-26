@@ -47,6 +47,7 @@ class ImageSwitcher {
     this.remapreload = node.serviceClient(ns + '/remap/reload', std_srvs.Trigger);
     this.imgqueue=[];
     this.pstat=0;   //0:live,1:settling,2:pshift
+    this.pimg;
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
@@ -122,11 +123,12 @@ class ImageSwitcher {
         console.log(who.ns+':'+icnt);
         who.capt.push(img);
         icnt++;
-        if(icnt==2) who.rect.publish(img);
+        if(icnt==2) who.pimg=img;
         else if(icnt==count){
           who.pstat=3;
           resolve(who.capt);
         }
+        else if(icnt>2) who.rect.publish(who.pimg);
       });
     });
   }
