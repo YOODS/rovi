@@ -1,11 +1,21 @@
 <launch>
 
+  <env name="ROVI_PATH" value="$(find rovi)" />
+
   <include file="$(find rovi)/launch/run-ycam3vga.launch" />
 
   <param name="robot_description" command="$(find xacro)/xacro '$(find robot_model)/rv4fl/RV_4FL_SH_model_forPublic.xacro'" />
 
   <node ns="/robot" name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
-  <node ns="/robot" pkg="tf" type="static_transform_publisher" name="camera_to_world" args="-0.4 0.3 0.35 -1.57 0 3.14 camera world 10" />
+
+  <node ns="/robot" pkg="tf" type="static_transform_publisher" name="camera_to_world" args="-0.4 0.3 0.30 -1.57 0 3.14 camera world 10" />
+
+  <node pkg="rovi" type="wrs2018_solver.py" name="solver" output="screen" />
+  <!-- TODO hand ?? -->
+  <node ns="/scene" pkg="rovi" type="floats2pc" name="floats2pc" args="/hand" />
+<!--
+  <node pkg="rovi" type="wrs2018_socket.js" name="socket" output="screen" />
+-->
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find rovi)/wrs2018/wrs2018.rviz" />
 
