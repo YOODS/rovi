@@ -4,7 +4,6 @@
 
   <param name="robot_description" command="$(find xacro)/xacro '$(find robot_model)/rv4fl/RV_4FL_SH_model_forPublic.xacro'" />
 
-  <include file="$(find rovi)/r_coord_publisher/r_coord_publisher.launch" />
   <node ns="/robot" name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" />
   <node ns="/robot" pkg="tf" type="static_transform_publisher" name="camera_to_world" args="-0.4 0.3 0.35 -1.57 0 3.14 camera world 10" />
 
