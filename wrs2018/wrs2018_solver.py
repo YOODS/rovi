@@ -64,7 +64,7 @@ def cb_ps(msg): #callback of ps_floats
     print "ERROR: prepare_model() is NOT done. ignore this ps_floats."
     return
 
-  result = yodpy.loadPLY("/tmp/test.ply")
+  result = yodpy.loadPLY("/tmp/test.ply", scale="m")
   retcode = result[0]
   scene = result[1]
   print('loadPLY retcode=',retcode)
@@ -74,8 +74,9 @@ def cb_ps(msg): #callback of ps_floats
     print "ERROR: loadPLY() failed. ignore this ps_floats."
     return
 
+  # TODO
   #result = yodpy.match3D(scene,0.11)
-  result = yodpy.match3D(scene,0.005)
+  result = yodpy.match3D(scene,0.07)
   retcode = result[0]
   transforms = result[1]
   matchRates = result[2]

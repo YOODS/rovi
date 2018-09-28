@@ -10,7 +10,7 @@ pshift_genpc:
     search_div: 2
     bw_diff: 7
     brightness: 256
-    darkness: 5
+    darkness: 50
     step_diff: 1.2
     reject_diff: 5.0
     max_ph_diff: 3.0
@@ -21,7 +21,7 @@ pshift_genpc:
 live:
   camera:
     AcquisitionFrameRate: 10
-    ExposureTime: 20000
+    ExposureTime: 20000 # 5000 for rcalib
     GainAnalog: 0
     Gain: 100
 camera:
