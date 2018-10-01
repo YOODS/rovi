@@ -44,15 +44,14 @@ def np2PC(d):  #numpy to PointCloud
 
 def prepare_model(stl_file):
   global model, is_prepared
-  result = yodpy.loadSTL(stl_file)
+  result = yodpy.train3D(stl_file, relSamplingDistance=0.03)
   retcode = result[0]
   model = result[1]
-  print('loadSTL retcode=',retcode)
+  print('train3D retcode=',retcode)
+  print('train3D model size=',len(model))
+  print('train3D model=',model)
   if retcode == 0:
-    retcode = yodpy.train3D(model)
-    print('train3D retcode=',retcode)
-    if retcode == 0:
-      is_prepared = True
+    is_prepared = True
   return
 
 def cb_ps(msg): #callback of ps_floats
@@ -75,17 +74,27 @@ def cb_ps(msg): #callback of ps_floats
     return
 
   # TODO
-  #result = yodpy.match3D(scene,0.11)
-  result = yodpy.match3D(scene,0.07)
+  #result = yodpy.match3D(scene)
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
+  #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
+  #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
+
   retcode = result[0]
   transforms = result[1]
-  matchRates = result[2]
+  quats = result[2]
+  matchRates = result[3]
   print('match3D retcode=',retcode)
   print('match3D transforms size=',len(transforms))
+  print('match3D quats size=',len(quats))
   print('match3D matchRates size=',len(matchRates))
 
   print('match3D transforms type=',type(transforms))
+  print('match3D quat type=',type(quat))
   print('match3D matchRates type=',type(matchRates))
+
+  for quat in quats:
+    print('match3D quat type=',type(quat))
+    print('match3D quat=',quat)
 
   for matchRate in matchRates:
     print('match3D matchRate type=',type(matchRate))
