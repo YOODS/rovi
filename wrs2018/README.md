@@ -17,21 +17,17 @@ catkin_make
 
 ## 起動方法
 ~~~
-roslaunch rovi r_coord_publisher.launch
-# ここでロボットコントローラの電源を入れる。
-# その後、ロボットコントローラの電源OFF, ONは自由に行っていいが、
-# その間、上記r_coord_publisher.launchはずっと立ち上げておくこと。
-# もしもr_coord_publisher.launchを落とした場合は、再度立ち上げて、
-# ロボットコントローラの電源をOFF->ONすること。
-# (ロボット側CURR.prgが切断検知をうまくしてくれないことに対する手順回避。)
 roslaunch rovi wrs2018.launch
 ~~~
 
 ## 動作確認
+実際にロボットコントローラの電源をONする、  
+または  
 ~~~
 ~/catkin_ws/src/rovi/r_coord_publisher/test_r_coord_publisher.js
 ~~~
-により、RViz上のロボットが動くことを確認できる。
+により、  
+RViz上のロボットが動くことを確認できる。
 
 ~~~
 rosservice call /rovi/pshift_genpc
