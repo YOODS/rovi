@@ -89,7 +89,7 @@ def cb_ps(msg): #callback of ps_floats
   print('match3D matchRates size=',len(matchRates))
 
   print('match3D transforms type=',type(transforms))
-  print('match3D quat type=',type(quat))
+  print('match3D quats type=',type(quats))
   print('match3D matchRates type=',type(matchRates))
 
   for quat in quats:
