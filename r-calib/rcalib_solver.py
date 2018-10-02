@@ -62,16 +62,6 @@ def save_input(name):
   np.savetxt(name,Tcsv)
   return
 
-def save_result(name):
-  Tcsv=np.array([]).reshape((-1,14))
-  for M,S in zip(bTmAry.transforms,cTsAry.transforms):
-    bts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M),mTc),tflib.toRT(S)) )
-    mts=tflib.fromRTtoVec( np.dot(np.dot(tflib.toRT(M).I,bTc),tflib.toRT(S)) )
-    alin=np.hstack((bts,mts))
-    Tcsv=np.vstack((Tcsv,alin))
-  np.savetxt(name,Tcsv)
-  return
-
 def save_result_mTs(name):
   Tcsv=np.array([]).reshape((-1,7))
   for M,S in zip(bTmAry.transforms,cTsAry.transforms):
@@ -80,7 +70,19 @@ def save_result_mTs(name):
     mts=tflib.fromRTtoVec(np.dot(np.dot(mTb,bTc),cTs))
     Tcsv=np.vstack((Tcsv,mts))
   Tn=map(np.linalg.norm,Tcsv.T[:3].T)
-  print "Translation error:",max(Tn)-min(Tn)
+  print "mTs translation error:",max(Tn)-min(Tn)
+  np.savetxt(name,Tcsv)
+  return
+
+def save_result_bTs(name):
+  Tcsv=np.array([]).reshape((-1,7))
+  for M,S in zip(bTmAry.transforms,cTsAry.transforms):
+    bTm=tflib.toRT(M)
+    cTs=tflib.toRT(S)
+    bts=tflib.fromRTtoVec(np.dot(np.dot(bTm,mTc),cTs))
+    Tcsv=np.vstack((Tcsv,bts))
+  Tn=map(np.linalg.norm,Tcsv.T[:3].T)
+  print "bTs translation error:",max(Tn)-min(Tn)
   np.savetxt(name,Tcsv)
   return
 
@@ -148,7 +150,8 @@ def cb_X2(f):
   global bTc,mTc
   save_input('input.txt')
   call_visp()
-  save_result_mTs('result.txt')
+  save_result_mTs('result_mts.txt')
+  save_result_bTs('result_bts.txt')
   return
 
 #def xyz2quat(e):
@@ -200,7 +203,8 @@ def cb_X3(f):
   print bTmAry.transforms[0]
   print cTsAry.transforms[0]
   call_visp()
-  save_result_mTs('result.txt')
+  save_result_mTs('result_mts.txt')
+  save_result_bTs('result_bts.txt')
   return
 
 ###############################################################

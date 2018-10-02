@@ -48,17 +48,34 @@ function toCoords(data) {
   return coords;
 }
 
+function xyz2quatCBA(e) {
+  let tf = Object.assign({}, e);
+  let k = Math.PI / 180 * 0.5;
+  let cx = Math.cos(e.rotation.x * k);
+  let cy = Math.cos(e.rotation.y * k);
+  let cz = Math.cos(e.rotation.z * k);
+  let sx = Math.sin(e.rotation.x * k);
+  let sy = Math.sin(e.rotation.y * k);
+  let sz = Math.sin(e.rotation.z * k);
+  tf.rotation.x = cy * cz * sx - cx * sy * sz;
+  tf.rotation.y = cy * sx * sz + cx * cz * sy;
+  tf.rotation.z = cx * cy * sz - cz * sx * sy;
+  tf.rotation.w = sx * sy * sz + cx * cy * cz;
+  return tf;
+}
+
 setImmediate(async function() {
   const rosNode = await ros.initNode(ns + '/r_coord_publisher');
 
 //Publisher
   const pub_euler = rosNode.advertise(ns + '/euler', geometry_msgs.Transform);
+  const pub_tf = rosNode.advertise(ns + '/tf', geometry_msgs.Transform);
   const pub_js = rosNode.advertise(ns + '/joint_states', sensor_msgs.JointState);
   startPubJs(pub_js);
 
 //Socket
   const server = net.createServer(function(conn) {
-    console.log('connection established');
+    console.log('r_coord connection established');
     conn.on('data', function(data) {
       const coords = toCoords(data);
       if (coords.length < 3) {
@@ -74,6 +91,8 @@ setImmediate(async function() {
         tfe.rotation.y = coords[0][4];
         tfe.rotation.z = coords[0][5];
         pub_euler.publish(tfe);
+        let qt = xyz2quatCBA(tfe);
+        pub_tf.publish(qt);
       }
       if (coords[2].length == 6) {
         for (let i = 0; i < 6; i++) {
@@ -82,7 +101,7 @@ setImmediate(async function() {
       }
     });
     conn.on('close', function() {
-      console.log('connection closed');
+      console.log('r_coord connection closed');
     });
   }).listen(10002);
 
