@@ -64,6 +64,10 @@ def cb_ps(msg): #callback of ps_floats
     pub_Y1.publish(False)
     return
 
+
+
+  pub_Y1.publish(True)
+  # TODO recognition
   result = yodpy.loadPLY("/tmp/test.ply", scale="m")
   retcode = result[0]
   scene = result[1]
@@ -76,7 +80,8 @@ def cb_ps(msg): #callback of ps_floats
     return
 
   pub_Y1.publish(True)
-
+  #### TODO
+  """
   # TODO
   #result = yodpy.match3D(scene)
   result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
@@ -103,21 +108,53 @@ def cb_ps(msg): #callback of ps_floats
   for matchRate in matchRates:
     print('match3D matchRate type=',type(matchRate))
     print('match3D matchRate=',matchRate)
+  """
 
+
+  #### TODO
+
+  global bTmLat, mTc, scnPn, scnMk
+  #mTb=np.linalg.inv(bTmLat)
+  P=np.reshape(msg.data,(-1,3))
+  n,m=P.shape
+  #P=voxel(P)
+  print "PointCloud In:",n
+  print "PC(camera)",P
+  n,m=P.shape
+  print "PointCloud Out:",n
+  P=np.vstack((P.T,np.ones((1,n))))
+  P=np.dot(bTm[:3],np.dot(mTc,P)).T
+  print "P2",P # now unit is mm
+  print P.shape
+  if (not np.isnan(xmin)):
+    W = np.where(P.T[0] >= xmin)
+    P=P[W[len(W)-1]]
+  if (not np.isnan(xmax)):
+    W = np.where(P.T[0] <= xmax)
+    P=P[W[len(W)-1]]
+  if (not np.isnan(ymin)):
+    W = np.where(P.T[1] >= ymin)
+    P=P[W[len(W)-1]]
+  if (not np.isnan(ymax)):
+    W = np.where(P.T[1] <= ymax)
+    P=P[W[len(W)-1]]
+  if (not np.isnan(zmin)):
+    W = np.where(P.T[2] >= zmin)
+    P=P[W[len(W)-1]]
+  if (not np.isnan(zmax)):
+    W = np.where(P.T[2] <= zmax)
+    P=P[W[len(W)-1]]
+  print "where",P
+  n,m=P.shape
+  print P.shape
+  print "PC",P
+  P=P.reshape((-1,3))
+  scnPn=np.vstack((scnPn,P))
+  pub_scf.publish(np2F(scnPn))
+  pub_sck.publish(np2PC(scnPn))
   return
 
 """
-  global bTmLat,bTc,scnPn,scnMk
-  mTb=np.linalg.inv(bTmLat)
-  P=np.reshape(msg.data,(-1,3))
-  n,m=P.shape
-  print "PointClour In:",n
-  print "PC(camera)",P
-  n,m=P.shape
-  print "PointClour Out:",n
-  P=np.vstack((P.T,np.ones((1,n))))
-  P=np.dot(mTb[:3],np.dot(bTc,P)).T
-  print "PC",P
   scnPn=np.vstack((scnPn,P))
   pub_scf.publish(np2F(scnPn))
   P=np.dot(mTb[:3],np.dot(bTc,P)).T
@@ -164,11 +201,15 @@ def cb_X2(f):
   P=np.vstack((scnPn.T,np.ones((1,len(scnPn)))))
   scnPn=np.dot(TR[:3],P).T
   pub_scf.publish(np2F(scnPn))
+
+  #sprintf_s(buf, sizeof(buf), "OK\x0d(%.3f,%.3f,%.3f,%.3f,%.3f,%.3f)(7,0)\x0d", rpos.x, rpos.y, rpos.z, rpos.rx, rpos.ry, rpos.rz);
+  #sprintf_s(buf, sizeof(buf), "NG\x0d");
+  #pub_Y2.publish(True)
+
   return
 
 def cb_X3(f):
   pub_scf.publish(np2F(scnPn))
-  pub_mdf.publish(np2F(modPn))
   pub_sck.publish(np2PC(scnMk))
   return
 
@@ -192,8 +233,6 @@ rospy.Subscriber("/solver/X3",Bool,cb_X3)  #redraw
 pub_tf=rospy.Publisher("/solver/tf",Transform,queue_size=1)
 pub_scf=rospy.Publisher("/scene/floats",numpy_msg(Floats),queue_size=1)
 pub_sck=rospy.Publisher("/scene/marker",PointCloud,queue_size=1)
-pub_mdf=rospy.Publisher("/model/floats",numpy_msg(Floats),queue_size=1)
-pub_mdk=rospy.Publisher("/model/marker",PointCloud,queue_size=1)
 pub_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
 pub_Y2=rospy.Publisher('/solver/Y2',Bool,queue_size=1)    #X2 done
 
@@ -208,6 +247,14 @@ scnPn=P0()  #Scene points
 scnMk=P0()  #Scene Marker points
 modPn=P0()  #Model points
 is_prepared = False
+
+xmin = float(rospy.get_param('/volume_of_interest/xmin'))
+xmax = float(rospy.get_param('/volume_of_interest/xmax'))
+ymin = float(rospy.get_param('/volume_of_interest/ymin'))
+ymax = float(rospy.get_param('/volume_of_interest/ymax'))
+zmin = float(rospy.get_param('/volume_of_interest/zmin'))
+zmax = float(rospy.get_param('/volume_of_interest/zmax'))
+print "xmin=", xmin, "xmax=", xmax, "ymin=", ymin, "ymax=", ymax, "zmin=", zmin, "zmax=", zmax
 
 try:
   prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
