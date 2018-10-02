@@ -75,7 +75,7 @@ setImmediate(async function() {
 
 //Socket
   const server = net.createServer(function(conn) {
-    console.log('connection established');
+    console.log('r_coord connection established');
     conn.on('data', function(data) {
       const coords = toCoords(data);
       if (coords.length < 3) {
@@ -101,7 +101,7 @@ setImmediate(async function() {
       }
     });
     conn.on('close', function() {
-      console.log('connection closed');
+      console.log('r_coord connection closed');
     });
   }).listen(10002);
 

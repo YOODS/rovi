@@ -14,9 +14,7 @@
   <node pkg="rovi" type="wrs2018_solver.py" name="solver" output="screen" />
   <!-- TODO hand ?? -->
   <node ns="/scene" pkg="rovi" type="floats2pc" name="floats2pc" args="/hand" />
-<!--
   <node pkg="rovi" type="wrs2018_socket.js" name="socket" output="screen" />
--->
 
   <node pkg="rviz" type="rviz" name="rviz" args="-d $(find rovi)/wrs2018/wrs2018.rviz" />
 
