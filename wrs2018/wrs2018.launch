@@ -4,6 +4,8 @@
 
   <include file="$(find rovi)/launch/run-ycam3vga.launch" />
 
+  <rosparam command="load" ns="/" file="$(find rovi)/wrs2018/wrs2018_param.yaml" />
+
   <param name="robot_description" command="$(find xacro)/xacro '$(find robot_model)/rv4fl/RV_4FL_SH_model_forPublic.xacro'" />
 
   <include file="$(find rovi)/r_coord_publisher/r_coord_publisher.launch" />

@@ -5,8 +5,7 @@ const std_msgs = ros.require('std_msgs').msg;
 const EventEmitter = require('events').EventEmitter;
 const net = require('net');
 
-// TODO 撮影結果もY1で捕まえてロボットに返す
-// そしてそこからX2を打つ
+// TODO on capt からX2を打つ
 
 setImmediate(async function() {
   const event = new EventEmitter();
@@ -21,18 +20,32 @@ setImmediate(async function() {
   const server = net.createServer(function(conn) {
     console.log('robot controller connection established');
     conn.on('data', function(data) {   //data received from robot controller
-      pub_solX0.publish(new std_msgs.Bool());
-      pub_solX1.publish(new std_msgs.Bool());
+      console.log('from robot controller data[' + data + ']');
+      if (String(data).charAt(0) === 'H') {
+        pub_solX0.publish(new std_msgs.Bool());
+        pub_solX1.publish(new std_msgs.Bool());
+      }
     });
     conn.on('close', function() {
       console.log('robot controller connection closed');
     });
-    event.on('solve', function(tf) {   //reply to robot controller
+    event.on('capt', function(success) {   // reply capture result to robot controller
+      if (success) {
+        conn.write('OK\x0d');
+      }
+      else {
+        conn.write('NG\x0d');
+      }
+    });
+    event.on('solve', function(tf) {   //reply picking point to robot controller
       conn.write(''); // TODO ピッキング位置姿勢
     });
   }).listen(3000);
 
 //Subscriber
+  rosNode.subscribe('/solver/Y1', std_msgs.Bool, async function(isok) {
+    event.emit('capt', isok.data);
+  });
   rosNode.subscribe('/solver/Y2', std_msgs.Bool, async function(tf) {
     event.emit('solve', tf);
   });

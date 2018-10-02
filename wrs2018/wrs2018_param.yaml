@@ -19,23 +19,13 @@ gridboard:
 
 robot:
   calib:
-    bTc:
-      translation:
-        x: 1
-        y: 1
-        z: 0
-      rotation:
-        x: 0
-        y: 0
-        z: 0
-        w: 1
     mTc:
       translation:
-        x: 0.1
-        y: 0.1
-        z: 0
+        x: -54.2132627517
+        y: 1.30258998554
+        z: 396.05172514
       rotation:
-        x: 0
-        y: 0
-        z: 0
-        w: 1
+        x: -0.00742541787591
+        y: 0.0167104156603
+        z: -0.709101299155
+        w: 0.704869472111
