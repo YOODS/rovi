@@ -1,5 +1,4 @@
 #pragma once
-
 #include <opencv2/opencv.hpp>
 #include <vector>
 #include "CalibBoard.h"
@@ -42,17 +41,24 @@ public:
 	/**
 	 * 初期化を行います. scan()を呼び出す前に必ず一度は呼び出してください.
 	 * @return なし
+	 * @param setting_filename 設定ファイル名. 指定がなければデフォルト値を使用
 	 */
-	void init();
+	void init(const char *setting_filename = 0);
 
+	/**
+	 * 設定をファイルに出力します.
+	 * @return なし
+	 * @param setting_filename 設定ファイル名
+	 */
+	void save_config(const char *setting_filename);
 
 	/**
 	 * 与えられた画像から特徴点の座標値を見つけ出します.
 	 * @param image キャリブレーションボード画像
-	 * @param points 画像座標値画像(para["n_circles_x"] × para["n_circles_y"])
+	 * @param imgpoints 画像座標値画像(para["n_circles_x"] × para["n_circles_y"])
 	 * @param dispimg デバッグ用結果表示画像
 	 */
-	int scan(cv::Mat &image, std::vector<cv::Point2f> &imgpoints, cv::Mat *dispimg = 0);
+	int scan(cv::Mat &image, std::vector<cv::Point2f> &imgpoints, cv::Mat *_dispimg = 0);
 
 
 	/**
@@ -84,11 +90,20 @@ public:
 	}
 
 	/**
+	 * 原点マーカを原点とするマーカ位置を、格納順(ボード右下端から左上端へ向かうラスタスキャン順)に変更します.
+	 * @return 格納順
+	 * @param mpos マーカ位置(原点マーカ基準)
+	 */
+	size_t get_marker_index(const cv::Point mpos) {
+		return (mpos.x + mkr_offset.x) + (mpos.y + mkr_offset.y) * ((int)para["n_circles_x"]);
+	}
+
+	/**
 	 * 原点マーカが格納されているインデックスを返します.
 	 * @return 原点マーカが格納されているインデックス
 	 */
 	size_t get_origin_marker_index() {
-		return origin_pos.x + origin_pos.y * ((int)para["n_circles_x"]);
+		return get_marker_index(cv::Point(0, 0));
 	}
 
 	/**
@@ -96,7 +111,7 @@ public:
 	 * @return X軸マーカが格納されているインデックス
 	 */
 	size_t get_x_axis_marker_index() {
-		return x_axis_pos.x + x_axis_pos.y * ((int)para["n_circles_x"]);
+		return get_marker_index(cv::Point(2, 0));
 	}
 
 	/**
@@ -104,7 +119,7 @@ public:
 	 * @return Y軸マーカが格納されているインデックス
 	 */
 	size_t get_y_axis_marker_index() {
-		return y_axis_pos.x + y_axis_pos.y * ((int)para["n_circles_x"]);
+		return get_marker_index(cv::Point(0, 1));
 	}
 
 
@@ -119,11 +134,21 @@ private:
 	size_t max_radius;	///< マーカー円半径の上限値
 
 	cv::Mat_<cv::Point3f> world_position;	///< ワールド座標値(キャリブレーション板のプラスの方向からマイナスの方向に向かって並べられている(ややこしい))
-	std::vector<cv::Point> marker_position;	///< 原点マーカを基準としたマーカ位置(画像座標位置を決定する順番に並べ替えられる)
-	cv::Point origin_pos;	///< マーカー原点のキャリブ板左上端マーカからの位置
-	cv::Point x_axis_pos;	///< X軸方向点のキャリブ板左上端マーカからの位置
-	cv::Point y_axis_pos;	///< Y軸方向点のキャリブ板左上端マーカからの位置
 
+	cv::Point mkr_offset;	///< キャリブ板左上端マーカからマーカー原点までの位置
+
+	cv::Point mrkid_minimum;	///< マーカーインデックスの最小値
+	cv::Point mrkid_maximum;	///< マーカーインデックスの最大値
+
+	cv::Point2f origin;			///< マーカ原点の画像内位置
+
+	cv::Vec2f x_axis_vector;	///< マーカによって構築されるX軸ベクトル(単位ベクトル)
+	float x_axis_norm;			///< X軸ベクトルのノルム
+
+	cv::Vec2f y_axis_vector;	///< マーカによって構築されるY軸ベクトル(単位ベクトル)
+	float y_axis_norm;			///< Y軸ベクトルのノルム
+
+	cv::Mat *dispimg;		///< デバッグ用画像バッファ
 
 private:
 	/**
@@ -168,12 +193,70 @@ private:
 
 
 	/**
-	 * 基準マーカーの位置を探します.
-	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
-	 * @param base0 基準マーカー原点
-	 * @param base1 基準マーカー水平方向点
-	 * @param base2 基準マーカー垂直方向点
+	 * キャリブボードの座標系(基準マーカーによって決定される)を計算します.
+	 * @return 処理に成功した場合はtrue, 失敗した場合は false.
+	 * @param centers 輪郭線の重心点集合
+	 * @param contours 輪郭線集合
 	 */
-	bool search_base_marker_position(cv::Point2f &base0, cv::Point2f &base1, cv::Point2f &base2, std::vector<cv::Point2f> &centers, std::vector< std::vector<cv::Point> > &contours);
+	bool calc_board_coordinate(std::vector<cv::Point2f> &centers, std::vector< std::vector<cv::Point> > &contours);
+
+	/**
+	 * 与えられた輪郭線が、指定条件を満足する場合に、その輪郭線を削除する
+	 * @return 残った輪郭線の数
+	 * @param contours 輪郭線集合
+	 * @param condf 条件関数
+	 */
+	int remove_contour(std::vector< std::vector<cv::Point> > &contours, bool(CircleCalibBoard::*condf)(std::vector<cv::Point>&));
+
+
+	/**
+	 * 与えられた輪郭線が短い(< min_length)場合はtrue, そうでなければfalseを返します.
+	 * @param cnt 輪郭線
+	 */
+	bool is_shorter(std::vector<cv::Point> &cnt) {
+		return (cnt.size() < min_length) ? true : false;
+	}
+
+	/**
+	 * 与えられた輪郭線が長い(> max_length)場合はtrue, そうでなければfalseを返します.
+	 * @param cnt 輪郭線
+	 */
+	bool is_longer(std::vector<cv::Point> &cnt) {
+		return (cnt.size() > max_length) ? true : false;
+	}
+
+	/**
+	 * 指定された方向でcurに最も近い点を探します.
+	 * @return 見つかった点のcentersにおける添字. 見つからない場合は-1.
+	 * @param vec 探す方向
+	 * @param thr 点間距離の許容誤差
+	 * @param cur この点に最も近い点を探す
+	 * @param centers 点候補バッファ
+	 */
+	int find_nearest_in_direction(cv::Vec2f vec, const float thr, cv::Point2f cur, std::vector<cv::Point2f> &centers);
+
+	/**
+	 */
+	cv::Point2f checkin(const int index, std::vector<cv::Point2f>& centers, cv::Point mpos, std::vector<cv::Point2f>& imgpoints);
+
+
+	/**
+	 * X軸方向に沿ってマーカを探します.
+	 * @return 正の方向に探索未完了0x01, 負の方向に探索未完了0x10(これらが合わさったフラグ値が返る).両方とも探索完了ならば0
+	 * @param mpos 探索開始マーカ位置(マーカ原点座標系)
+	 * @param bpos 探索開始マーカ位置(画像座標系)
+	 * @param centers 輪郭線重心集合
+	 * @param imgpoints マーカの画像座標格納用バッファ
+	 */
+	int x_direction_scan(cv::Point mpos, cv::Point2f bpos, std::vector<cv::Point2f> &centers, std::vector<cv::Point2f> &imgpoints);
+
+
+	/**
+	 * 検出されたマーカの位置を描画します.
+	 * @return なし
+	 * @param mrk マーカ位置(マーカ原点座標系)
+	 * @param cen 検出されたマーカの画像上での位置
+	 */
+	void draw_marker_position(cv::Point &mrk, cv::Point2f &cen);
 };
 

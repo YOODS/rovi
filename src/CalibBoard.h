@@ -16,21 +16,51 @@ public:
 
 	virtual ~CalibBoard() {	}
 
+
 protected:
+	/**
+	 * 初期化を行います.
+	 * @return なし
+	 * @param setting_filename 設定ファイル名(YAML形式)
+	 */
+	void init(const char *setting_filename = 0)
+	{
+		if (setting_filename == 0) return;
+
+		cv::FileStorage fs(std::string(setting_filename), cv::FileStorage::READ);
+		if (!fs.isOpened()) 
+		{
+#ifdef _DEBUG
+			std::cerr << setting_filename << ": file not found\n";
+#endif
+			return;
+		}
+
+		fs["do_qualize_hist"] >> para["do_qualize_hist"];
+		fs["do_smoothing"] >> para["do_smoothing"];
+		fs["bin_type"] >> para["bin_type"];
+		fs["bin_param0"] >> para["bin_param0"];
+		fs["bin_param1"] >> para["bin_param1"];
+		fs.release();
+	}
+
 	/**
 	 * キャリブレーションボードから特徴点を抽出するための前処理を実行する
 	 * @return 前処理後の画像
 	 * @param source 処理対象の画像
 	 */
-	cv::Mat preprocess(cv::Mat &source) {
+	cv::Mat preprocess(cv::Mat &source) 
+	{
 		// ノイズ除去
-		if (para["do_smoothing"] != 0) {
+		if (para["do_smoothing"] != 0) 
+		{
 			cv::Mat tmpim = source.clone();
 			cv::medianBlur(tmpim, source, 3);
 		}
 
 		// ヒストグラム均一化
-		if (para["do_equalize_hist"] != 0) {
+		if (para["do_equalize_hist"] != 0) 
+		{
 			cv::Mat tmpim = source.clone();
 			cv::equalizeHist(tmpim, source);
 		}
@@ -39,6 +69,24 @@ protected:
 		return binarize(source);
 	}
 
+	/**
+	 * この設定をファイルに出力します.
+	 * @return なし
+	 * @param setting_filename 設定ファイル名
+	 */
+	void save_config(const char *setting_filename)
+	{
+		cv::FileStorage fs(std::string(setting_filename), cv::FileStorage::WRITE);
+		if (fs.isOpened())
+		{
+			fs << "do_qualize_hist" << ((int) para["do_qualize_hist"]);
+			fs << "do_smoothing" << ((int) para["do_smoothing"]);
+			fs << "bin_type" << ((int) para["bin_type"]);
+			fs << "bin_param0" << ((int) para["bin_param0"]);
+			fs << "bin_param1" << ((int) para["bin_param1"]);
+		}
+		fs.release();
+	}
 
 private:
 	/**

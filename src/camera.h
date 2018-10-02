@@ -3,8 +3,10 @@
 #include <string>
 #include "PointCloud.h"
 
+
 /// レクティファイマップデータのアライメント
 #define MAP_DATA_ALIGNMENT	(8)
+
 
 /**
  * ピンホールカメラモデル
@@ -119,6 +121,7 @@ public:
 class DistortCamera : public PinHoleCamera {
 public:
 	cv::Mat_<double> D;		///< 歪みパラメータ
+    cv::Mat_<double> R2;     ///< カメラ回転行列(平行化前行列保存用)
 
 public:
 	/// コンストラクタ
@@ -132,14 +135,14 @@ public:
 	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
 	 * @param[in] fs ファイルストレージへのポインタ.0が指定された場合は、create_param_filename()で得られるファイル名で出力する。
 	 */
-	bool save(cv::FileStorage *_fs = 0, const char *dirname = 0);
+	bool save(cv::FileStorage *_fs = 0);
 
 	/**
 	 * カメラパラメータをファイルストレージから読み込む。
 	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
 	 * @param[in] fs ファイルストレージへのポインタ.0が指定された場合は、create_param_filename()で得られるファイル名で出力する。
 	 */
-	bool load(cv::FileStorage *_fs = 0, const char *dirname = 0);
+	bool load(cv::FileStorage *_fs = 0);
 };
 
 
@@ -153,6 +156,7 @@ public:
 	cv::Mat Map[2];			///< 歪み補正(0: X成分, 1: Y成分)
 	cv::Rect roi;			///< 全てのピクセルが有効である範囲
 	cv::Scalar nop;			///< 対応する画素が無い場合に挿入される画素値
+    cv::Mat_<double> P2;    ///< 順方向透視投影行列(キャリブ板座標系変換前保存用)
 
 
 public:
