@@ -4,16 +4,16 @@ gridboard:
   bin_type: 1
   bin_param0: 50
   bin_param1: 0
-  unitleng: 0.005
-  n_circles_x: 20
-  n_circles_y: 27
-  origin_x: 10
-  origin_y: 13
-#  unitleng: 0.01
-#  n_circles_x: 10
-#  n_circles_y: 14
-#  origin_x: 5
-#  origin_y: 7
+#  unitleng: 0.005
+#  n_circles_x: 20
+#  n_circles_y: 27
+#  origin_x: 10
+#  origin_y: 13
+  unitleng: 0.01
+  n_circles_x: 10
+  n_circles_y: 14
+  origin_x: 5
+  origin_y: 7
   distance_between_circles: 1.2
   n_circles_minimum: 4
   min_rate: 0.33
@@ -26,14 +26,14 @@ robot:
   calib:
     mTc:
       translation:
-        x: -54.2132627517
-        y: 1.30258998554
-        z: 396.05172514
+        x: -56.1686605113
+        y: -0.0362621655397
+        z: 397.51772939
       rotation:
-        x: -0.00742541787591
-        y: 0.0167104156603
-        z: -0.709101299155
-        w: 0.704869472111
+        x: -0.000897123953533
+        y: -0.00318707193057
+        z: -0.698141596766
+        w: 0.715952057478
 
 volume_of_interest:
   xmin: nan #20
