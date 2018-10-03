@@ -126,7 +126,7 @@ def cb_X2(f):
 
   if retcode != 0:
     print "ERROR: X2 loadPLY() failed."
-    pub_Y1.publish(False)
+    pub_Y2.publish(False)
     return
 
   # TODO
@@ -156,6 +156,17 @@ def cb_X2(f):
     print('match3D matchRate type=',type(matchRate))
     print('match3D matchRate=',matchRate)
 
+  if retcode != 0:
+    print "ERROR: X2 match3D() failed."
+    pub_Y2.publish(False)
+    return
+
+  if (len(matchRates) <= 0):
+    print "ERROR: X2 match3D() no match."
+    pub_Y2.publish(False)
+    return
+
+
   # TODO determine a picking pose, and publish /solver/tf (Y2?)
   """
   global scnPn,modPn
@@ -176,6 +187,9 @@ def cb_X2(f):
   #sprintf_s(buf, sizeof(buf), "NG\x0d");
   #pub_Y2.publish(True)
   """
+
+
+  pub_Y2.publish(True)
 
   return
 

@@ -36,8 +36,14 @@ setImmediate(async function() {
         conn.write('NG\x0d');
       }
     });
-    event.on('solve', function(tf) {   //reply picking point to robot controller
-      conn.write(''); // TODO ピッキング位置姿勢
+    event.on('solve', function(success) {   //reply picking point to robot controller
+      console.log('got Y2 solve. result=' + success);
+      if (success) {
+        conn.write('OK\x0d(TODO)'); // TODO ピッキング位置姿勢
+      }
+      else {
+        conn.write('NG\x0d');
+      }
     });
   }).listen(3000);
 
@@ -45,8 +51,8 @@ setImmediate(async function() {
   rosNode.subscribe('/solver/Y1', std_msgs.Bool, async function(isok) {
     event.emit('capt', isok.data);
   });
-  rosNode.subscribe('/solver/Y2', std_msgs.Bool, async function(tf) {
-    event.emit('solve', tf);
+  rosNode.subscribe('/solver/Y2', std_msgs.Bool, async function(isok) {
+    event.emit('solve', isok.data);
   });
 
 });
