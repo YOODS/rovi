@@ -5,12 +5,14 @@
 ros::NodeHandle *nh;
 ros::Publisher *pub;
 
+std::string fl2pc_frameid("/hand");
+
 void subn(const rovi::Floats& buf){
   int N=buf.data.size()/3;
   ROS_INFO("points=%d",N);
   sensor_msgs::PointCloud pts;
   pts.header.stamp = ros::Time::now();
-  pts.header.frame_id = "/hand";
+  pts.header.frame_id = fl2pc_frameid;
   pts.points.resize(N);
   for (int n=0,i=0; n<N; n++){
     pts.points[n].x=buf.data[i++];
@@ -21,6 +23,10 @@ void subn(const rovi::Floats& buf){
 }
 
 int main(int argc, char **argv){
+  if (argc >= 4)
+  {
+    fl2pc_frameid = argv[1];
+  }
   ros::init(argc, argv, "floats2pc");
   ros::NodeHandle n;
   nh = &n;
