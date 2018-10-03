@@ -11,6 +11,7 @@ from std_msgs.msg import Bool
 from std_msgs.msg import String
 from std_srvs.srv import Trigger,TriggerRequest
 from sensor_msgs.msg import PointCloud
+from sensor_msgs.msg import ChannelFloat32
 from geometry_msgs.msg import Point32
 from geometry_msgs.msg import Point
 from geometry_msgs.msg import Transform
@@ -27,19 +28,39 @@ def P0():
 
 def np2F(d):  #numpy to Floats
   f=Floats()
-  f.data=np.ravel(d)
+  f.data=np.ravel(d) / 1000.0
   return f
 
-def np2PC(d):  #numpy to PointCloud
-  pc=PointCloud()
-  pc.header.frame_id='hand' # TODO?
-  f=np.ravel(d)
-  for e in f.reshape((-1,3)):
-    p=Point32()
-    p.x=e[0]
-    p.y=e[1]
-    p.z=e[2]
+def np2PCm(d):  #numpy to PointCloud for RViz. frame_id is base_link and unit is meter.
+  pc = PointCloud()
+  pc.header.stamp = rospy.Time.now(); # TODO ?
+  pc.header.frame_id = 'disp' # TODO ?
+  ch_r = ChannelFloat32()
+  ch_r.name = "r"
+  ch_g = ChannelFloat32()
+  ch_g.name = "g"
+  ch_b = ChannelFloat32()
+  ch_b.name = "b"
+  pc.channels.append(ch_r)
+  pc.channels.append(ch_g)
+  pc.channels.append(ch_b)
+  f = np.ravel(d)
+  for e in f.reshape((-1, 3)):
+    p = Point32()
+    p.x = e[0] / 1000.0
+    p.y = e[1] / 1000.0
+    p.z = e[2] / 1000.0
     pc.points.append(p)
+    ch_r.values.append(200 / 255.0) # TODO
+    ch_g.values.append(0 / 255.0) # TODO
+    ch_b.values.append(0 / 255.0) # TODO
+    #print 'x=', p.x
+    #print 'y=', p.y
+    #print 'z=', p.z
+
+  tmpd = d.astype(np.float32)
+  cv2.ppf_match_3d.writePLY(tmpd, '/tmp/mytest.ply')
+
   return pc
 
 def prepare_model(stl_file):
@@ -59,14 +80,13 @@ def cb_ps(msg): #callback of ps_floats
 
   print "cb_ps called!"
 
+  # TODO
+  """
   if not is_prepared:
     print "ERROR: prepare_model() is NOT done. ignore this ps_floats."
     pub_Y1.publish(False)
     return
 
-
-
-  pub_Y1.publish(True)
   # TODO recognition
   result = yodpy.loadPLY("/tmp/test.ply", scale="m")
   retcode = result[0]
@@ -79,9 +99,6 @@ def cb_ps(msg): #callback of ps_floats
     pub_Y1.publish(False)
     return
 
-  pub_Y1.publish(True)
-  #### TODO
-  """
   # TODO
   #result = yodpy.match3D(scene)
   result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
@@ -113,8 +130,7 @@ def cb_ps(msg): #callback of ps_floats
 
   #### TODO
 
-  global bTmLat, mTc, scnPn, scnMk
-  #mTb=np.linalg.inv(bTmLat)
+  global bTmLat, mTc, scnPn
   P=np.reshape(msg.data,(-1,3))
   n,m=P.shape
   #P=voxel(P)
@@ -151,26 +167,15 @@ def cb_ps(msg): #callback of ps_floats
   P=P.reshape((-1,3))
   scnPn=np.vstack((scnPn,P))
   pub_scf.publish(np2F(scnPn))
-  pub_sck.publish(np2PC(scnPn))
+  #pub_scp.publish(np2PCm(scnPn))
   return
 
-"""
-  scnPn=np.vstack((scnPn,P))
-  pub_scf.publish(np2F(scnPn))
-  P=np.dot(mTb[:3],np.dot(bTc,P)).T
-  print "Marker",P
-  scnMk=np.vstack((scnMk,P))
-  pc=np2PC(scnMk)
-  pub_sck.publish(pc)
-"""
-
 def cb_X0(f):
-  global scnPn,scnMk
+  global scnPn
   print "X0:scene reset"
   scnPn=P0()
-  scnMk=P0()
-  pub_scf.publish(np2F(scnPn))
-  pub_sck.publish(np2PC(scnMk))
+  #pub_scf.publish(np2F(scnPn))
+  #pub_scp.publish(np2PCm(scnPn))
   return
 
 def cb_X1(f):
@@ -188,7 +193,7 @@ def cb_X1(f):
   return
 
 def cb_X2(f):
-  global scnPn,scnMk,modPn
+  global scnPn,modPn
   print "X2:ICP",modPn.shape,scnPn.shape
   icp=cv2.ppf_match_3d_ICP(100,Tolerance,Rejection,8)
   mp=modPn.astype(np.float32)
@@ -208,11 +213,6 @@ def cb_X2(f):
 
   return
 
-def cb_X3(f):
-  pub_scf.publish(np2F(scnPn))
-  pub_sck.publish(np2PC(scnMk))
-  return
-
 def cb_tf(tf):
   global bTm
   bTm=tflib.toRT(tf)
@@ -225,14 +225,13 @@ rospy.init_node("solver",anonymous=True)
 rospy.Subscriber("/robot/tf",Transform,cb_tf)
 rospy.Subscriber("/rovi/ps_floats",numpy_msg(Floats),cb_ps)
 rospy.Subscriber("/solver/X0",Bool,cb_X0)  #Clear scene
-rospy.Subscriber("/solver/X1",Bool,cb_X1)  #Capture position of marker and robot
-rospy.Subscriber("/solver/X2",Bool,cb_X2)  #Calc transform
-rospy.Subscriber("/solver/X3",Bool,cb_X3)  #redraw
+rospy.Subscriber("/solver/X1",Bool,cb_X1)  #Capture and genpc into scene
+rospy.Subscriber("/solver/X2",Bool,cb_X2)  #Recognize work and calc picking pose
 
 ###Output topics
 pub_tf=rospy.Publisher("/solver/tf",Transform,queue_size=1)
 pub_scf=rospy.Publisher("/scene/floats",numpy_msg(Floats),queue_size=1)
-pub_sck=rospy.Publisher("/scene/marker",PointCloud,queue_size=1)
+#pub_scp=rospy.Publisher("/scene/pc",PointCloud,queue_size=1)
 pub_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
 pub_Y2=rospy.Publisher('/solver/Y2',Bool,queue_size=1)    #X2 done
 
@@ -244,7 +243,6 @@ bTm=np.eye(4).astype(float)
 
 ###Globals
 scnPn=P0()  #Scene points
-scnMk=P0()  #Scene Marker points
 modPn=P0()  #Model points
 is_prepared = False
 
@@ -257,7 +255,8 @@ zmax = float(rospy.get_param('/volume_of_interest/zmax'))
 print "xmin=", xmin, "xmax=", xmax, "ymin=", ymin, "ymax=", ymax, "zmin=", zmin, "zmax=", zmax
 
 try:
-  prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
+  # TODO
+  #prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
   rospy.spin()
 except KeyboardInterrupt:
   print "Shutting down"
