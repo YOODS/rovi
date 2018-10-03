@@ -36,9 +36,9 @@ robot:
         w: 0.715452260147
 
 volume_of_interest:
-  xmin: nan #20
-  xmax: nan #388.9
-  ymin: nan #-300
-  ymax: nan # 78.8
-  zmin: nan #-1.5
-  zmax: nan #38.42
+  xmin: 250
+  xmax: 563 # xmin + 313
+  ymin: -300
+  ymax: -80 # ymin + 220
+  zmin: 0
+  zmax: 95 # zmin + 95
