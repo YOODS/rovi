@@ -5,8 +5,6 @@ const std_msgs = ros.require('std_msgs').msg;
 const EventEmitter = require('events').EventEmitter;
 const net = require('net');
 
-// TODO on capt からX2を打つ
-
 setImmediate(async function() {
   const event = new EventEmitter();
   const rosNode = await ros.initNode('socket');
@@ -32,6 +30,7 @@ setImmediate(async function() {
     event.on('capt', function(success) {   // reply capture result to robot controller
       if (success) {
         conn.write('OK\x0d');
+        pub_solX2.publish(new std_msgs.Bool());
       }
       else {
         conn.write('NG\x0d');

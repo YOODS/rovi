@@ -22,6 +22,7 @@ import tflib
 
 Tolerance=0.001
 Rejection=2.5
+scene_ply = "/tmp/wrs2018_scene.ply"
 
 def P0():
   return np.array([]).reshape((-1,3))
@@ -44,59 +45,12 @@ def prepare_model(stl_file):
   return
 
 def cb_ps(msg): #callback of ps_floats
-  #global model
-
   print "cb_ps called!"
 
-  # TODO
-  """
   if not is_prepared:
     print "ERROR: prepare_model() is NOT done. ignore this ps_floats."
     pub_Y1.publish(False)
     return
-
-  # TODO recognition
-  result = yodpy.loadPLY("/tmp/test.ply", scale="m")
-  retcode = result[0]
-  scene = result[1]
-  print('loadPLY retcode=',retcode)
-  print('loadPLY scene=',scene)
-
-  if retcode != 0:
-    print "ERROR: loadPLY() failed. ignore this ps_floats."
-    pub_Y1.publish(False)
-    return
-
-  # TODO
-  #result = yodpy.match3D(scene)
-  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
-  #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
-  #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
-
-  retcode = result[0]
-  transforms = result[1]
-  quats = result[2]
-  matchRates = result[3]
-  print('match3D retcode=',retcode)
-  print('match3D transforms size=',len(transforms))
-  print('match3D quats size=',len(quats))
-  print('match3D matchRates size=',len(matchRates))
-
-  print('match3D transforms type=',type(transforms))
-  print('match3D quats type=',type(quats))
-  print('match3D matchRates type=',type(matchRates))
-
-  for quat in quats:
-    print('match3D quat type=',type(quat))
-    print('match3D quat=',quat)
-
-  for matchRate in matchRates:
-    print('match3D matchRate type=',type(matchRate))
-    print('match3D matchRate=',matchRate)
-  """
-
-
-  #### TODO
 
   global bTmLat, mTc, scnPn
   P=np.reshape(msg.data,(-1,3))
@@ -137,6 +91,9 @@ def cb_ps(msg): #callback of ps_floats
   P=P.reshape((-1,3))
   scnPn=np.vstack((scnPn,P))
   pub_scf.publish(np2Fm(scnPn))
+
+  cv2.ppf_match_3d.writePLY(scnPn.astype(np.float32), scene_ply)
+  pub_Y1.publish(True)
   return
 
 def cb_X0(f):
@@ -161,6 +118,46 @@ def cb_X1(f):
   return
 
 def cb_X2(f):
+  result = yodpy.loadPLY(scene_ply, scale="mm")
+  retcode = result[0]
+  scene = result[1]
+  print('loadPLY retcode=',retcode)
+  print('loadPLY scene=',scene)
+
+  if retcode != 0:
+    print "ERROR: X2 loadPLY() failed."
+    pub_Y1.publish(False)
+    return
+
+  # TODO
+  #result = yodpy.match3D(scene)
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
+  #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
+  #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
+
+  retcode = result[0]
+  transforms = result[1]
+  quats = result[2]
+  matchRates = result[3]
+  print('match3D retcode=',retcode)
+  print('match3D transforms size=',len(transforms))
+  print('match3D quats size=',len(quats))
+  print('match3D matchRates size=',len(matchRates))
+
+  print('match3D transforms type=',type(transforms))
+  print('match3D quats type=',type(quats))
+  print('match3D matchRates type=',type(matchRates))
+
+  for quat in quats:
+    print('match3D quat type=',type(quat))
+    print('match3D quat=',quat)
+
+  for matchRate in matchRates:
+    print('match3D matchRate type=',type(matchRate))
+    print('match3D matchRate=',matchRate)
+
+  # TODO determine a picking pose, and publish /solver/tf (Y2?)
+  """
   global scnPn,modPn
   print "X2:ICP",modPn.shape,scnPn.shape
   icp=cv2.ppf_match_3d_ICP(100,Tolerance,Rejection,8)
@@ -178,6 +175,7 @@ def cb_X2(f):
   #sprintf_s(buf, sizeof(buf), "OK\x0d(%.3f,%.3f,%.3f,%.3f,%.3f,%.3f)(7,0)\x0d", rpos.x, rpos.y, rpos.z, rpos.rx, rpos.ry, rpos.rz);
   #sprintf_s(buf, sizeof(buf), "NG\x0d");
   #pub_Y2.publish(True)
+  """
 
   return
 
@@ -222,8 +220,7 @@ zmax = float(rospy.get_param('/volume_of_interest/zmax'))
 print "xmin=", xmin, "xmax=", xmax, "ymin=", ymin, "ymax=", ymax, "zmin=", zmin, "zmax=", zmax
 
 try:
-  # TODO
-  #prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
+  prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
   rospy.spin()
 except KeyboardInterrupt:
   print "Shutting down"
