@@ -140,6 +140,7 @@ def cb_X2(f):
   quats = result[2]
   matchRates = result[3]
   print('match3D retcode=',retcode)
+  """
   print('match3D transforms size=',len(transforms))
   print('match3D quats size=',len(quats))
   print('match3D matchRates size=',len(matchRates))
@@ -148,6 +149,10 @@ def cb_X2(f):
   print('match3D quats type=',type(quats))
   print('match3D matchRates type=',type(matchRates))
 
+  for transform in transforms:
+    print('match3D transform type=',type(transform))
+    print('match3D transform=',transform)
+
   for quat in quats:
     print('match3D quat type=',type(quat))
     print('match3D quat=',quat)
@@ -155,6 +160,32 @@ def cb_X2(f):
   for matchRate in matchRates:
     print('match3D matchRate type=',type(matchRate))
     print('match3D matchRate=',matchRate)
+  """
+  for transform, quat, matchRate in zip(transforms, quats, matchRates):
+    # NOTE:
+    # 1. 'matchRates' are in descending order.
+    # 2. 'quat' consists of 7 numpy.float64 values. They are x, y, z of Pose, and w, x, y, z of Quarternion.
+    # 3. Unit of x, y, z of Pose of 'quat' is meter.
+    """
+    print('match3D transform type=', type(transform))
+    print('match3D transform len=', len(transform))
+    print('match3D transform=', transform)
+    print('match3D quat type=', type(quat))
+    print('match3D quat0 type=', type(quat[0]))
+    print('match3D quat6 type=', type(quat[6]))
+    print('match3D quat len=', len(quat))
+    """
+    print('match3D quat=', quat)
+    #print('match3D matchRate type=', type(matchRate))
+    print('match3D matchRate=', matchRate)
+    """
+    if (matchRate >= 0.3):
+      print('well matches!')
+    else:
+      print('not so well matches...')
+    """
+    # TODO tmp. try only 1st one
+    break
 
   if retcode != 0:
     print "ERROR: X2 match3D() failed."
