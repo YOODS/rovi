@@ -168,17 +168,20 @@ def cb_X2(f):
     deg_euler_x = rad_euler[0] * 180 / np.pi
     deg_euler_y = rad_euler[1] * 180 / np.pi
     deg_euler_z = rad_euler[2] * 180 / np.pi
-    #print "rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
+    print "quat.x=", quat[3], "quat.y=", quat[4], "quat.z=", quat[5], "quat.w=", quat[6]
+    print "rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
     print "deg_euler_x=", deg_euler_x, "deg_euler_y=", deg_euler_y, "deg_euler_z=", deg_euler_z
     ppx = quat[0] * 1000
     ppy = quat[1] * 1000
     ppz = quat[2] * 1000
-    pprx = conv_ra(-180.0 - deg_euler_x)
-    #pprx = deg_euler_x
-    ppry = conv_ra(0 - deg_euler_y)
-    #ppry = deg_euler_y
-    pprz = conv_ra(-180.0 - deg_euler_z)
+    #pprx = conv_ra(-180.0 - deg_euler_x)
+    pprx = deg_euler_x
+    #ppry = conv_ra(0 - deg_euler_y)
+    ppry = deg_euler_y
+    #pprz = conv_ra(-180.0 - deg_euler_z)
+    pprz = deg_euler_z
     print "Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
+    # TODO if orientation is upwards, reverse it.
 
     # TODO tmp. try only 1st one
     #break
