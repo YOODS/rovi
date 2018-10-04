@@ -19,6 +19,7 @@ import sys
 import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../script'))
 import tflib
+import tf
 
 Tolerance=0.001
 Rejection=2.5
@@ -117,6 +118,9 @@ def cb_X1(f):
     pub_Y1.publish(False)
   return
 
+def conv_ra(rx):
+  return rx + 2 * 180 * (-1 if (rx > 180) else (1 if (rx <= -180) else 0))
+
 def cb_X2(f):
   result = yodpy.loadPLY(scene_ply, scale="mm")
   retcode = result[0]
@@ -131,7 +135,7 @@ def cb_X2(f):
 
   # TODO
   #result = yodpy.match3D(scene)
-  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11)
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11) # 0.25?
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
   #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
 
@@ -154,12 +158,30 @@ def cb_X2(f):
   for transform, quat, matchRate in zip(transforms, quats, matchRates):
     # NOTE:
     # 1. 'matchRates' are in descending order.
-    # 2. 'quat' consists of 7 numpy.float64 values. They are x, y, z of Pose, and w, x, y, z of Quarternion.
-    # 3. Unit of x, y, z of Pose of 'quat' is meter.
-    print('match3D quat=', quat)
+    # 2. 'quat' means a picking Pose.
+    #    'quat' consists of 7 numpy.float64 values. They are x, y, z of Point position, and x, y, z, w of Quaternion orientation.
+    # 3. Unit of x, y, z of Point position of 'quat' is meter.
+    #
+    #print('match3D quat=', quat)
     print('match3D matchRate=', matchRate)
+    rad_euler = tf.transformations.euler_from_quaternion((quat[3], quat[4], quat[5], quat[6]))
+    deg_euler_x = rad_euler[0] * 180 / np.pi
+    deg_euler_y = rad_euler[1] * 180 / np.pi
+    deg_euler_z = rad_euler[2] * 180 / np.pi
+    #print "rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
+    print "deg_euler_x=", deg_euler_x, "deg_euler_y=", deg_euler_y, "deg_euler_z=", deg_euler_z
+    ppx = quat[0] * 1000
+    ppy = quat[1] * 1000
+    ppz = quat[2] * 1000
+    pprx = conv_ra(-180.0 - deg_euler_x)
+    #pprx = deg_euler_x
+    ppry = conv_ra(0 - deg_euler_y)
+    #ppry = deg_euler_y
+    pprz = conv_ra(-180.0 - deg_euler_z)
+    print "Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
+
     # TODO tmp. try only 1st one
-    break
+    #break
 
   # TODO determine a picking pose, and publish /solver/tf (Y2?)
   """
