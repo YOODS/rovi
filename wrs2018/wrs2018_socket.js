@@ -2,6 +2,7 @@
 
 const ros = require('rosnodejs');
 const std_msgs = ros.require('std_msgs').msg;
+const rovi_msgs = ros.require('rovi').msg;
 const EventEmitter = require('events').EventEmitter;
 const net = require('net');
 
@@ -36,10 +37,12 @@ setImmediate(async function() {
         conn.write('NG\x0d');
       }
     });
-    event.on('solve', function(success) {   //reply picking point to robot controller
-      console.log('got Y2 solve. result=' + success);
-      if (success) {
-        conn.write('OK\x0d(TODO)'); // TODO ピッキング位置姿勢
+    event.on('solve', function(pp) {   //reply picking pose to robot controller
+      console.log('got Y2 solve. pp.ok=' + pp.ok);
+      if (pp.ok) {
+        okstr = 'OK\x0d(' + pp.x.toFixed(3) + ',' + pp.y.toFixed(3) + ',' + pp.z.toFixed(3) + ',' + pp.a.toFixed(3) + ',' + pp.b.toFixed(3) + ',' + pp.c.toFixed(3) + ')(7,0)\x0d';
+        console.log(okstr);
+        conn.write(okstr);
       }
       else {
         conn.write('NG\x0d');
@@ -51,8 +54,8 @@ setImmediate(async function() {
   rosNode.subscribe('/solver/Y1', std_msgs.Bool, async function(isok) {
     event.emit('capt', isok.data);
   });
-  rosNode.subscribe('/solver/Y2', std_msgs.Bool, async function(isok) {
-    event.emit('solve', isok.data);
+  rosNode.subscribe('/solver/Y2', rovi_msgs.PickingPose, async function(picking_pose) {
+    event.emit('solve', picking_pose);
   });
 
 });

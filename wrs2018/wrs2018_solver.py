@@ -6,6 +6,7 @@ import roslib
 import rospy
 import yodpy
 from rovi.msg import Floats
+from rovi.msg import PickingPose
 from rospy.numpy_msg import numpy_msg
 from std_msgs.msg import Bool
 from std_msgs.msg import String
@@ -24,6 +25,55 @@ import tf
 Tolerance=0.001
 Rejection=2.5
 scene_ply = "/tmp/wrs2018_scene.ply"
+
+def robot_rxyzabc_to_rt(rx, ry, rz, a_rad, b_rad, c_rad):
+  matrix44 = np.zeros((4, 4))
+  x_mat = np.zeros((4, 4))
+  y_mat = np.zeros((4, 4))
+  z_mat = np.zeros((4, 4))
+
+  matrix44[3][3] = 1
+  matrix44[0][3] = rx;
+  matrix44[1][3] = ry;
+  matrix44[2][3] = rz;
+
+  x_mat[0][0] = 1.0;
+  x_mat[1][1] = np.cos(a_rad)
+  x_mat[1][2] = -np.sin(a_rad);
+  x_mat[2][1] = np.sin(a_rad);
+  x_mat[2][2] = np.cos(a_rad);
+
+  y_mat[0][0] = np.cos(a_rad);
+  y_mat[0][2] = np.sin(b_rad);
+  y_mat[1][1] = 1.0;
+  y_mat[2][0] = -np.sin(b_rad);
+  y_mat[2][2] = np.cos(b_rad);
+
+  z_mat[0][0] = np.cos(c_rad);
+  z_mat[0][1] = -np.sin(c_rad);
+  z_mat[1][0] = np.sin(c_rad);
+
+  z_mat[1][1] = np.cos(c_rad);
+  z_mat[2][2] = 1.0;
+
+  temp_mat1 = np.zeros((3, 3))
+  temp_mat2 = np.zeros((3, 3))
+
+  for m in range(3):
+    for n in range(3):
+      for k in range(3):
+        temp_mat1[m][n] += y_mat[m][k] * z_mat[k][n]
+
+  for m in range(3):
+    for n in range(3):
+      for k in range(3):
+        temp_mat2[m][n] += x_mat[m][k] * temp_mat1[k][n]
+
+  for m in range(3):
+    for n in range(3):
+      matrix44[m][n] = temp_mat2[m][n]
+
+  return matrix44
 
 def P0():
   return np.array([]).reshape((-1,3))
@@ -122,6 +172,15 @@ def conv_ra(rx):
   return rx + 2 * 180 * (-1 if (rx > 180) else (1 if (rx <= -180) else 0))
 
 def cb_X2(f):
+  pp = PickingPose()
+  pp.ok = False
+  pp.x = 0
+  pp.y = 0
+  pp.z = 0
+  pp.a = 0
+  pp.b = 0
+  pp.c = 0
+
   result = yodpy.loadPLY(scene_ply, scale="mm")
   retcode = result[0]
   scene = result[1]
@@ -130,7 +189,7 @@ def cb_X2(f):
 
   if retcode != 0:
     print "ERROR: X2 loadPLY() failed."
-    pub_Y2.publish(False)
+    pub_Y2.publish(pp)
     return
 
   # TODO
@@ -147,15 +206,15 @@ def cb_X2(f):
 
   if retcode != 0:
     print "ERROR: X2 match3D() failed."
-    pub_Y2.publish(False)
+    pub_Y2.publish(pp)
     return
 
   if (len(matchRates) <= 0):
     print "ERROR: X2 match3D() no match."
-    pub_Y2.publish(False)
+    pub_Y2.publish(pp)
     return
 
-  for transform, quat, matchRate in zip(transforms, quats, matchRates):
+  for i, (transform, quat, matchRate) in enumerate(zip(transforms, quats, matchRates)):
     # NOTE:
     # 1. 'matchRates' are in descending order.
     # 2. 'quat' means a picking Pose.
@@ -164,29 +223,94 @@ def cb_X2(f):
     #
     #print('match3D quat=', quat)
     print('match3D matchRate=', matchRate)
-    rad_euler = tf.transformations.euler_from_quaternion((quat[3], quat[4], quat[5], quat[6]))
+    qx = quat[3]
+    qy = quat[4]
+    qz = quat[5]
+    qw = quat[6]
+    """
+    if (qz < 0):
+      qx = -qx
+      qy = -qy
+      qz = -qz
+    """
+    rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
     deg_euler_x = rad_euler[0] * 180 / np.pi
     deg_euler_y = rad_euler[1] * 180 / np.pi
     deg_euler_z = rad_euler[2] * 180 / np.pi
-    print "quat.x=", quat[3], "quat.y=", quat[4], "quat.z=", quat[5], "quat.w=", quat[6]
+    #print "org quat.x=", quat[3], "quat.y=", quat[4], "quat.z=", quat[5], "quat.w=", quat[6]
+    print "now quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
     print "rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
     print "deg_euler_x=", deg_euler_x, "deg_euler_y=", deg_euler_y, "deg_euler_z=", deg_euler_z
     ppx = quat[0] * 1000
     ppy = quat[1] * 1000
     ppz = quat[2] * 1000
-    #pprx = conv_ra(-180.0 - deg_euler_x)
-    pprx = deg_euler_x
-    #ppry = conv_ra(0 - deg_euler_y)
-    ppry = deg_euler_y
-    #pprz = conv_ra(-180.0 - deg_euler_z)
-    pprz = deg_euler_z
-    print "Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
+    pprx = conv_ra(-180.0 - deg_euler_x)
+    #pprx = deg_euler_x
+    ppry = conv_ra(0 - deg_euler_y)
+    #ppry = deg_euler_y
+    pprz = conv_ra(-180.0 - deg_euler_z)
+    #pprz = deg_euler_z
+    print "****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
     # TODO if orientation is upwards, reverse it.
 
-    # TODO tmp. try only 1st one
-    #break
+    m2b44 = robot_rxyzabc_to_rt(ppx, ppy, ppz, rad_euler[0], rad_euler[1], rad_euler[2])
 
-  # TODO determine a picking pose, and publish /solver/tf (Y2?)
+    radian = m2b44[0][2] * 0 + m2b44[1][2] * 0 + m2b44[2][2] * 1
+    radian = radian / np.sqrt((np.power(m2b44[0][2], 2) + np.power(m2b44[1][2], 2) + np.power(m2b44[2][2], 2)) * (0 + 0 + 1))
+    radian = np.arccos(radian)
+    degree = radian * 180.0 / np.pi
+    abs_deg = np.abs(degree)
+    deg_threshold1 = 30.0
+    deg_threshold2 = 30.0
+    print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree
+    if (abs_deg <= deg_threshold1):
+      print "==[", i, "]== angle between Picking Vector and Z-Axis(", degree, ") <= ", deg_threshold1, "TODO cannot pick!!!!!!!!!!!!!!!!!!!"
+      qx = -qx
+      qy = -qy
+      qz = -qz
+      rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
+      deg_euler_x = rad_euler[0] * 180 / np.pi
+      deg_euler_y = rad_euler[1] * 180 / np.pi
+      deg_euler_z = rad_euler[2] * 180 / np.pi
+      deg_euler_x = rad_euler[0] * 180 / np.pi
+      deg_euler_y = rad_euler[1] * 180 / np.pi
+      deg_euler_z = rad_euler[2] * 180 / np.pi
+      print "inverse quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
+      print "now rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
+      print "now deg_euler_x=", deg_euler_x, "deg_euler_y=", deg_euler_y, "deg_euler_z=", deg_euler_z
+      pprx = conv_ra(-180.0 - deg_euler_x)
+      #pprx = deg_euler_x
+      ppry = conv_ra(0 - deg_euler_y)
+      #ppry = deg_euler_y
+      pprz = conv_ra(-180.0 - deg_euler_z)
+      #pprz = deg_euler_z
+      print "inversed. ****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz, "TODO more check for picking"
+      pp.ok = True
+      pp.x = ppx
+      pp.y = ppy
+      pp.z = ppz
+      pp.a = pprx
+      pp.b = ppry
+      pp.c = pprz
+      # determined!
+      break
+      break
+    elif (abs_deg <= deg_threshold2):
+      print "vv[", i, "]vv angle between Picking Vector and Z-Axis(", degree, ") <= ", deg_threshold2, "TODO cannot pick!!!!!!!!!!!!!!!!!!!"
+      continue
+    else:
+      print "^^[", i, "]^^ angle between Picking Vector and Z-Axis(", degree, ") > ", deg_threshold2, "TODO more check for picking"
+      pp.ok = True
+      pp.x = ppx
+      pp.y = ppy
+      pp.z = ppz
+      pp.a = pprx
+      pp.b = ppry
+      pp.c = pprz
+      # determined!
+      break
+
+  # TODO determine a picking pose
   """
   global scnPn,modPn
   print "X2:ICP",modPn.shape,scnPn.shape
@@ -201,14 +325,9 @@ def cb_X2(f):
   P=np.vstack((scnPn.T,np.ones((1,len(scnPn)))))
   scnPn=np.dot(TR[:3],P).T
   pub_scf.publish(np2Fm(scnPn))
-
-  #sprintf_s(buf, sizeof(buf), "OK\x0d(%.3f,%.3f,%.3f,%.3f,%.3f,%.3f)(7,0)\x0d", rpos.x, rpos.y, rpos.z, rpos.rx, rpos.ry, rpos.rz);
-  #sprintf_s(buf, sizeof(buf), "NG\x0d");
-  #pub_Y2.publish(True)
   """
 
-
-  pub_Y2.publish(True)
+  pub_Y2.publish(pp)
 
   return
 
@@ -231,7 +350,7 @@ rospy.Subscriber("/solver/X2",Bool,cb_X2)  #Recognize work and calc picking pose
 pub_tf=rospy.Publisher("/solver/tf",Transform,queue_size=1)
 pub_scf=rospy.Publisher("/scene/floats",numpy_msg(Floats),queue_size=1)
 pub_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
-pub_Y2=rospy.Publisher('/solver/Y2',Bool,queue_size=1)    #X2 done
+pub_Y2=rospy.Publisher('/solver/Y2',PickingPose,queue_size=1)    #X2 done
 
 ###Transform
 mTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTc')))  # arM tip To Camera

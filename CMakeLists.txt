@@ -33,6 +33,7 @@ add_service_files(
 add_message_files(
   FILES
   Floats.msg
+  PickingPose.msg
 )
 
 generate_messages(
