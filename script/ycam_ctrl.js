@@ -294,10 +294,16 @@ setImmediate(async function() {
       ros.log.warn('wake. yamlstr=[' + yamlstr + ']');
     }
     if (sensName === 'ycam3') {
-      const yamlval = jsyaml.safeLoad(yamlstr);
-      await rosNode.setParam(NScamL, yamlval.left);
-      await rosNode.setParam(NScamR, yamlval.right);
-      await rosNode.setParam(NSgenpc, yamlval.genpc);
+      try {
+        const yamlval = jsyaml.safeLoad(yamlstr);
+        await rosNode.setParam(NScamL, yamlval.left);
+        await rosNode.setParam(NScamR, yamlval.right);
+        await rosNode.setParam(NSgenpc, yamlval.genpc);
+      }
+      catch(err) {
+        let errmsg = 'Exception in jsyaml.safeLoad:' + err;
+        ros.log.error(errmsg);
+      }
     }
     param_V = {};
     param_P = {};
