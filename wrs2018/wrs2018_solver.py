@@ -26,35 +26,57 @@ Tolerance=0.001
 Rejection=2.5
 scene_ply = "/tmp/wrs2018_scene.ply"
 
+def robot_rt_to_abc(matrix44):
+  half_pi = np.pi / 2
+  A = B = C = 0.0
+  req_limit = 1e-8
+
+  if (abs(matrix44[0, 2] + 1) <= req_limit or abs(matrix44[0, 2] - 1) <= req_limit): # cosB = 0 sinB = pm1
+    A = 0.0
+    if (abs(matrix44[0, 2] - 1) <= req_limit):
+      B = half_pi
+    if (abs(matrix44[0, 2] + 1) <= req_limit):
+      B = -half_pi
+    C = np.arcatan2(matrix44[1, 0], matrix44[1, 1])
+  else:
+    B = np.arcsin(matrix44[0, 2])
+    C = np.arctan2(-matrix44[0, 1], matrix44[0, 0])
+    A = np.arctan2(-matrix44[1, 2], matrix44[2, 2])
+  a_deg= A / np.pi * 180.
+  b_deg= B / np.pi * 180.
+  c_deg= C / np.pi * 180.
+  print "***** now a_deg=", a_deg, "b_deg=", b_deg, "c_deg=", c_deg
+  return a_deg, b_deg, c_deg
+
 def robot_rxyzabc_to_rt(rx, ry, rz, a_rad, b_rad, c_rad):
   matrix44 = np.zeros((4, 4))
   x_mat = np.zeros((4, 4))
   y_mat = np.zeros((4, 4))
   z_mat = np.zeros((4, 4))
 
-  matrix44[3][3] = 1
-  matrix44[0][3] = rx;
-  matrix44[1][3] = ry;
-  matrix44[2][3] = rz;
+  matrix44[3, 3] = 1
+  matrix44[0, 3] = rx
+  matrix44[1, 3] = ry
+  matrix44[2, 3] = rz
 
-  x_mat[0][0] = 1.0;
-  x_mat[1][1] = np.cos(a_rad)
-  x_mat[1][2] = -np.sin(a_rad);
-  x_mat[2][1] = np.sin(a_rad);
-  x_mat[2][2] = np.cos(a_rad);
+  x_mat[0, 0] = 1.0
+  x_mat[1, 1] = np.cos(a_rad)
+  x_mat[1, 2] = -np.sin(a_rad)
+  x_mat[2, 1] = np.sin(a_rad)
+  x_mat[2, 2] = np.cos(a_rad)
 
-  y_mat[0][0] = np.cos(a_rad);
-  y_mat[0][2] = np.sin(b_rad);
-  y_mat[1][1] = 1.0;
-  y_mat[2][0] = -np.sin(b_rad);
-  y_mat[2][2] = np.cos(b_rad);
+  y_mat[0, 0] = np.cos(a_rad)
+  y_mat[0, 2] = np.sin(b_rad)
+  y_mat[1, 1] = 1.0
+  y_mat[2, 0] = -np.sin(b_rad)
+  y_mat[2, 2] = np.cos(b_rad)
 
-  z_mat[0][0] = np.cos(c_rad);
-  z_mat[0][1] = -np.sin(c_rad);
-  z_mat[1][0] = np.sin(c_rad);
+  z_mat[0, 0] = np.cos(c_rad)
+  z_mat[0, 1] = -np.sin(c_rad)
+  z_mat[1, 0] = np.sin(c_rad)
 
-  z_mat[1][1] = np.cos(c_rad);
-  z_mat[2][2] = 1.0;
+  z_mat[1, 1] = np.cos(c_rad)
+  z_mat[2, 2] = 1.0
 
   temp_mat1 = np.zeros((3, 3))
   temp_mat2 = np.zeros((3, 3))
@@ -62,16 +84,16 @@ def robot_rxyzabc_to_rt(rx, ry, rz, a_rad, b_rad, c_rad):
   for m in range(3):
     for n in range(3):
       for k in range(3):
-        temp_mat1[m][n] += y_mat[m][k] * z_mat[k][n]
+        temp_mat1[m, n] += y_mat[m, k] * z_mat[k, n]
 
   for m in range(3):
     for n in range(3):
       for k in range(3):
-        temp_mat2[m][n] += x_mat[m][k] * temp_mat1[k][n]
+        temp_mat2[m, n] += x_mat[m, k] * temp_mat1[k, n]
 
   for m in range(3):
     for n in range(3):
-      matrix44[m][n] = temp_mat2[m][n]
+      matrix44[m, n] = temp_mat2[m, n]
 
   return matrix44
 
@@ -227,12 +249,6 @@ def cb_X2(f):
     qy = quat[4]
     qz = quat[5]
     qw = quat[6]
-    """
-    if (qz < 0):
-      qx = -qx
-      qy = -qy
-      qz = -qz
-    """
     rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
     deg_euler_x = rad_euler[0] * 180 / np.pi
     deg_euler_y = rad_euler[1] * 180 / np.pi
@@ -244,62 +260,63 @@ def cb_X2(f):
     ppx = quat[0] * 1000
     ppy = quat[1] * 1000
     ppz = quat[2] * 1000
-    pprx = conv_ra(-180.0 - deg_euler_x)
-    #pprx = deg_euler_x
-    ppry = conv_ra(0 - deg_euler_y)
-    #ppry = deg_euler_y
-    pprz = conv_ra(-180.0 - deg_euler_z)
-    #pprz = deg_euler_z
+    #pprx = conv_ra(-180.0 - deg_euler_x)
+    pprx = deg_euler_x
+    #ppry = conv_ra(0 + deg_euler_y)
+    ppry = deg_euler_y
+    #pprz = conv_ra(-180.0 - deg_euler_z)
+    pprz = deg_euler_z
     print "****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
-    # TODO if orientation is upwards, reverse it.
 
     m2b44 = robot_rxyzabc_to_rt(ppx, ppy, ppz, rad_euler[0], rad_euler[1], rad_euler[2])
+    print "XXX ORG m2b44=\n", m2b44
+    bTw = m2b44
 
-    radian = m2b44[0][2] * 0 + m2b44[1][2] * 0 + m2b44[2][2] * 1
-    radian = radian / np.sqrt((np.power(m2b44[0][2], 2) + np.power(m2b44[1][2], 2) + np.power(m2b44[2][2], 2)) * (0 + 0 + 1))
+    bRw=bTw[:3,:3]   #rotation of bTw, assume bTw has been gotten form Halcon
+    theta=0 #np.pi
+    bv=np.array([[np.cos(theta),np.sin(theta),0]]).T
+    #wv=np.dot(bRw.I,bv)
+    wv=np.dot(np.linalg.inv(bRw),bv)
+    wv[2]=0 #z=0
+    wv=wv/np.linalg.norm(wv)
+    ex=np.array([[1,0,0]])
+    cs=np.dot(ex,wv)[0,0]  #inner product of identity vectors or Cos
+    sn=np.cross(ex,wv.T)[0,2]  #z element of outer product or Sin
+    vTw=np.matrix([[cs,sn,0,0],[-sn,cs,0,0],[0,0,1,0],[0,0,0,1]])
+    bTv=np.dot(bTw,vTw.I)
+    if bTv[2,2]<0:
+      print "*********************************************inverse!!!!!!"
+      bTv=np.dot(bTv,np.array([[1,0,0,0],[0,-1,0,0],[0,0,-1,0],[0,0,0,1]]))
+
+    m2b44 = bTv
+    print "YYY NEW m2b44=\n", m2b44
+    newabc = robot_rt_to_abc(m2b44)
+    pprx = newabc[0]
+    #pprx = conv_ra(-180.0 - newabc[0])
+    #pprx = conv_ra(180.0 - newabc[0])
+    #ppry = conv_ra(0 - newabc[1])
+    ppry = newabc[1]
+    pprz = newabc[2]
+
+    #pprx = conv_ra(-180.0 - newabc[0])
+    #ppry = conv_ra(0 + newabc[1])
+    #pprz = conv_ra(-180.0 - newabc[2])
+
+
+    print "=============================after robot_rt_to_abc(), pprx=", pprx, "ppry=", ppry, "pprz=", pprz
+
+    radian = m2b44[0, 2] * 0 + m2b44[1, 2] * 0 + m2b44[2, 2] * 1
+    radian = radian / np.sqrt((np.power(m2b44[0, 2], 2) + np.power(m2b44[1, 2], 2) + np.power(m2b44[2, 2], 2)) * (0 + 0 + 1))
     radian = np.arccos(radian)
     degree = radian * 180.0 / np.pi
     abs_deg = np.abs(degree)
-    deg_threshold1 = 30.0
-    deg_threshold2 = 30.0
-    print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree
-    if (abs_deg <= deg_threshold1):
-      print "==[", i, "]== angle between Picking Vector and Z-Axis(", degree, ") <= ", deg_threshold1, "TODO cannot pick!!!!!!!!!!!!!!!!!!!"
-      qx = -qx
-      qy = -qy
-      qz = -qz
-      rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
-      deg_euler_x = rad_euler[0] * 180 / np.pi
-      deg_euler_y = rad_euler[1] * 180 / np.pi
-      deg_euler_z = rad_euler[2] * 180 / np.pi
-      deg_euler_x = rad_euler[0] * 180 / np.pi
-      deg_euler_y = rad_euler[1] * 180 / np.pi
-      deg_euler_z = rad_euler[2] * 180 / np.pi
-      print "inverse quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
-      print "now rad_euler[0]=", rad_euler[0], "rad_euler[1]=", rad_euler[1], "rad_euler[2]=", rad_euler[2]
-      print "now deg_euler_x=", deg_euler_x, "deg_euler_y=", deg_euler_y, "deg_euler_z=", deg_euler_z
-      pprx = conv_ra(-180.0 - deg_euler_x)
-      #pprx = deg_euler_x
-      ppry = conv_ra(0 - deg_euler_y)
-      #ppry = deg_euler_y
-      pprz = conv_ra(-180.0 - deg_euler_z)
-      #pprz = deg_euler_z
-      print "inversed. ****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz, "TODO more check for picking"
-      pp.ok = True
-      pp.x = ppx
-      pp.y = ppy
-      pp.z = ppz
-      pp.a = pprx
-      pp.b = ppry
-      pp.c = pprz
-      # determined!
-      break
-      break
-    elif (abs_deg <= deg_threshold2):
-      print "vv[", i, "]vv angle between Picking Vector and Z-Axis(", degree, ") <= ", deg_threshold2, "TODO cannot pick!!!!!!!!!!!!!!!!!!!"
+    deg_threshold = 43 # TODO 30.0
+    print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree, "its abs=", abs_deg
+    if (abs_deg >= deg_threshold):
+      print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "TODO cannot pick!!!!!!!!!"
       continue
     else:
-      print "^^[", i, "]^^ angle between Picking Vector and Z-Axis(", degree, ") > ", deg_threshold2, "TODO more check for picking"
+      print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "TODO more check for picking"
       pp.ok = True
       pp.x = ppx
       pp.y = ppy
