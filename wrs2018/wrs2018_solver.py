@@ -195,6 +195,9 @@ def cb_X0(f):
   global scnPn, mfoPn, mnpPn, mpiPn
   print "X0:scene reset"
   scnPn=P0()
+  mfoPn=P0()
+  mnpPn=P0()
+  mpiPn=P0()
   pub_scf.publish(np2Fm(scnPn))
   pub_mfof.publish(np2FmNoDivide(mfoPn))
   pub_mnpf.publish(np2FmNoDivide(mnpPn))
@@ -279,12 +282,7 @@ def cb_X2(f):
 
     tm_xyz_nvxyz = np.reshape(transform, (-1, 3))
     tmP_xyz = tm_xyz_nvxyz[::2, :] 
-    print "tm_xyz_nvxyz=", tm_xyz_nvxyz
-    print "lenlen=", len(tm_xyz_nvxyz)
-    print "shape=", tm_xyz_nvxyz.shape
-    print "tmP_xyz=", tmP_xyz
-    print "lenlen2=", len(tmP_xyz)
-    print "shape2=", tmP_xyz.shape
+    #print "tmP_xyz=", tmP_xyz
 
     qx = quat[3]
     qy = quat[4]
