@@ -23,8 +23,6 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '../script'))
 import tflib
 import tf
 
-Tolerance=0.001
-Rejection=2.5
 scene_ply = "/tmp/wrs2018_scene.ply"
 
 def xyz2quat(e):
@@ -51,9 +49,9 @@ def get_fix_zaxis_rotation(x, y, z, w):  #fix z rotation
   hq.rotation.y=y
   hq.rotation.z=z
   hq.rotation.w=w
-  print 'halcon quat',hq
+  #print 'halcon quat',hq
   hmat=tflib.toRT(hq)
-  print 'halcon mat',hmat
+  #print 'halcon mat',hmat
   hcba=tflib.fromRTtoEulerCBA(hmat)
   print 'halcon deg euler',hcba
   ze=Transform()
@@ -61,9 +59,9 @@ def get_fix_zaxis_rotation(x, y, z, w):  #fix z rotation
   ze.rotation.y=0
   ze.rotation.z=-hcba[5]
   ze.rotation.w=0
-  print 'zoffset deg euler',ze
+  #print 'zoffset deg euler',ze
   zq=xyz2quat(ze)
-  print 'zoffset quat',zq
+  #print 'zoffset quat',zq
   mat=np.dot(tflib.toRT(hq),tflib.toRT(zq))
   deg=tflib.fromRTtoEulerCBA(mat)
   print 'result deg euler',deg
@@ -124,6 +122,11 @@ def P0():
 def np2Fm(d):  #numpy to Floats (unit is meter for RViZ)
   f=Floats()
   f.data=np.ravel(d) / 1000.0
+  return f
+
+def np2FmNoDivide(d):  #numpy to Floats (unit is already meter for RViZ)
+  f=Floats()
+  f.data=np.ravel(d)
   return f
 
 def prepare_model(stl_file):
@@ -189,10 +192,13 @@ def cb_ps(msg): #callback of ps_floats
   return
 
 def cb_X0(f):
-  global scnPn
+  global scnPn, mfoPn, mnpPn, mpiPn
   print "X0:scene reset"
   scnPn=P0()
   pub_scf.publish(np2Fm(scnPn))
+  pub_mfof.publish(np2FmNoDivide(mfoPn))
+  pub_mnpf.publish(np2FmNoDivide(mnpPn))
+  pub_mpif.publish(np2FmNoDivide(mpiPn))
   return
 
 def cb_X1(f):
@@ -206,11 +212,17 @@ def cb_X1(f):
     req=TriggerRequest()
     genpc(req)      #will continue to callback cb_ps
   except rospy.ServiceException, e:
-    print 'Genpc proxy failed:'+e
+    print 'Genpc proxy failed:',e
     pub_Y1.publish(False)
   return
 
 def cb_X2(f):
+  global mfoPn, mnpPn, mpiPn
+
+  # Picking Pose Determination is done
+  isppd = False
+
+  # Picking Pose to be returned
   pp = PickingPose()
   pp.ok = False
   pp.x = 0
@@ -254,20 +266,31 @@ def cb_X2(f):
     pub_Y2.publish(pp)
     return
 
+
   for i, (transform, quat, matchRate) in enumerate(zip(transforms, quats, matchRates)):
     # NOTE:
     # 1. 'matchRates' are in descending order.
     # 2. 'quat' means a picking Pose.
     #    'quat' consists of 7 numpy.float64 values. They are x, y, z of Point position, and x, y, z, w of Quaternion orientation.
-    # 3. Unit of x, y, z of Point position of 'quat' is meter.
+    # 3. Unit of x, y, z of Point position of 'quat' is meter. (transform's xyz unit is also meter.)
     #
     #print('match3D quat=', quat)
     print('match3D matchRate=', matchRate)
+
+    tm_xyz_nvxyz = np.reshape(transform, (-1, 3))
+    tmP_xyz = tm_xyz_nvxyz[::2, :] 
+    print "tm_xyz_nvxyz=", tm_xyz_nvxyz
+    print "lenlen=", len(tm_xyz_nvxyz)
+    print "shape=", tm_xyz_nvxyz.shape
+    print "tmP_xyz=", tmP_xyz
+    print "lenlen2=", len(tmP_xyz)
+    print "shape2=", tmP_xyz.shape
+
     qx = quat[3]
     qy = quat[4]
     qz = quat[5]
     qw = quat[6]
-    print "from HALCON quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
+    #print "from HALCON quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
 
     fixz_rot = get_fix_zaxis_rotation(qx, qy, qz, qw)
     ppx = quat[0] * 1000.0
@@ -279,10 +302,9 @@ def cb_X2(f):
 
     print "****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
 
-    rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz,
-qw))
+    rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
     m2b44 = robot_rxyzabc_to_rt(ppx, ppy, ppz, rad_euler[0], rad_euler[1], rad_euler[2])
-    print "m2b44=\n", m2b44
+    #print "m2b44=\n", m2b44
 
     radian = m2b44[0, 2] * 0 + m2b44[1, 2] * 0 + m2b44[2, 2] * 1
     radian = radian / np.sqrt((np.power(m2b44[0, 2], 2) + np.power(m2b44[1, 2], 2) + np.power(m2b44[2, 2], 2)) * (0 + 0 + 1))
@@ -292,36 +314,31 @@ qw))
     deg_threshold = 43.0
     print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree, "its abs=", abs_deg
     if (abs_deg >= deg_threshold):
-      print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "TODO cannot pick!!!!!!!!!"
+      print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "can NOT Pick"
+      mnpPn = np.vstack((mnpPn, tmP_xyz))
       continue
     else:
-      print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "TODO more check for picking"
-      pp.ok = True
-      pp.x = ppx
-      pp.y = ppy
-      pp.z = ppz
-      pp.a = pprx
-      pp.b = ppry
-      pp.c = pprz
-      # determined!
-      break
+      if (isppd):
+        print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "but Picking Pose To Return is already determined"
+        mfoPn = np.vstack((mfoPn, tmP_xyz))
+        continue
+      else:
+        print "vv[", i, "]vv angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "TODO more check for picking"
+        mpiPn = np.vstack((mpiPn, tmP_xyz))
+        pp.ok = True
+        pp.x = ppx
+        pp.y = ppy
+        pp.z = ppz
+        pp.a = pprx
+        pp.b = ppry
+        pp.c = pprz
+        # determined!
+        isppd = True
+        continue
 
-  # TODO determine a picking pose
-  """
-  global scnPn,modPn
-  print "X2:ICP",modPn.shape,scnPn.shape
-  icp=cv2.ppf_match_3d_ICP(100,Tolerance,Rejection,8)
-  mp=modPn.astype(np.float32)
-  sp=scnPn.astype(np.float32)
-  ret,residu,RT=icp.registerModelToScene(mp,sp)
-  print "Residue=",residu
-  print RT
-  pub_tf.publish(tflib.fromRT(RT))
-  TR=np.linalg.inv(RT)
-  P=np.vstack((scnPn.T,np.ones((1,len(scnPn)))))
-  scnPn=np.dot(TR[:3],P).T
-  pub_scf.publish(np2Fm(scnPn))
-  """
+  pub_mfof.publish(np2FmNoDivide(mfoPn))
+  pub_mnpf.publish(np2FmNoDivide(mnpPn))
+  pub_mpif.publish(np2FmNoDivide(mpiPn))
 
   pub_Y2.publish(pp)
 
@@ -345,6 +362,9 @@ rospy.Subscriber("/solver/X2",Bool,cb_X2)  #Recognize work and calc picking pose
 ###Output topics
 pub_tf=rospy.Publisher("/solver/tf",Transform,queue_size=1)
 pub_scf=rospy.Publisher("/scene/floats",numpy_msg(Floats),queue_size=1)
+pub_mfof=rospy.Publisher("/model/found/floats",numpy_msg(Floats),queue_size=1)
+pub_mnpf=rospy.Publisher("/model/cannotpick/floats",numpy_msg(Floats),queue_size=1)
+pub_mpif=rospy.Publisher("/model/picking/floats",numpy_msg(Floats),queue_size=1)
 pub_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
 pub_Y2=rospy.Publisher('/solver/Y2',PickingPose,queue_size=1)    #X2 done
 
@@ -356,7 +376,9 @@ bTm=np.eye(4).astype(float)
 
 ###Globals
 scnPn=P0()  #Scene points
-modPn=P0()  #Model points
+mfoPn=P0()  # Model Found points
+mnpPn=P0()  # Model Cannot Pick points
+mpiPn=P0()  # Model Picking points
 is_prepared = False
 
 xmin = float(rospy.get_param('/volume_of_interest/xmin'))

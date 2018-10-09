@@ -10,6 +10,8 @@ cd ~/catkin_ws/src
 # を
 # ~/catkin_ws/src/robot_model/
 # として配置する
+#
+# HALCONインストールも行う
 
 cd ..
 catkin_make
