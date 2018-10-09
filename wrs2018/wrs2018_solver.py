@@ -151,9 +151,7 @@ def cb_ps(msg): #callback of ps_floats
   n,m=P.shape
   #P=voxel(P)
   print "PointCloud In:",n
-  #print "PC(camera in meter)",P
-  P=P*1000
-  #print "PC(camera in mm)",P
+  print "PC(camera in mm)",P
   n,m=P.shape
   #print "PointCloud Out:",n
   P=np.vstack((P.T,np.ones((1,n))))
@@ -198,6 +196,7 @@ def cb_X0(f):
   return
 
 def cb_X1(f):
+  cb_X0(True)
   global bTm,bTmLat
   bTmLat=np.copy(bTm)
   print "bTm latched",bTmLat
@@ -234,7 +233,8 @@ def cb_X2(f):
 
   # TODO
   #result = yodpy.match3D(scene)
-  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11) # 0.25?
+  #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11) # 0.25?
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.3,minScore=0.11) # 0.25?
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
   #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
 
@@ -270,9 +270,9 @@ def cb_X2(f):
     print "from HALCON quat.x=", qx, "quat.y=", qy, "quat.z=", qz, "quat.w=", qw
 
     fixz_rot = get_fix_zaxis_rotation(qx, qy, qz, qw)
-    ppx = quat[0] * 1000
-    ppy = quat[1] * 1000
-    ppz = quat[2] * 1000
+    ppx = quat[0] * 1000.0
+    ppy = quat[1] * 1000.0
+    ppz = quat[2] * 1000.0
     pprx = fixz_rot[0]
     ppry = fixz_rot[1]
     pprz = fixz_rot[2]
@@ -289,7 +289,7 @@ qw))
     radian = np.arccos(radian)
     degree = radian * 180.0 / np.pi
     abs_deg = np.abs(degree)
-    deg_threshold = 30.0
+    deg_threshold = 43.0
     print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree, "its abs=", abs_deg
     if (abs_deg >= deg_threshold):
       print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "TODO cannot pick!!!!!!!!!"
@@ -338,7 +338,7 @@ rospy.init_node("solver",anonymous=True)
 ###Input topics
 rospy.Subscriber("/robot/tf",Transform,cb_tf)
 rospy.Subscriber("/rovi/ps_floats",numpy_msg(Floats),cb_ps)
-rospy.Subscriber("/solver/X0",Bool,cb_X0)  #Clear scene
+#rospy.Subscriber("/solver/X0",Bool,cb_X0)  #Clear scene
 rospy.Subscriber("/solver/X1",Bool,cb_X1)  #Capture and genpc into scene
 rospy.Subscriber("/solver/X2",Bool,cb_X2)  #Recognize work and calc picking pose
 

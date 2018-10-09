@@ -21,7 +21,7 @@ setImmediate(async function() {
     conn.on('data', function(data) {   //data received from robot controller
       console.log('from robot controller data[' + data + ']');
       if (String(data).charAt(0) === 'H') {
-        pub_solX0.publish(new std_msgs.Bool());
+        //pub_solX0.publish(new std_msgs.Bool());
         pub_solX1.publish(new std_msgs.Bool());
       }
     });
