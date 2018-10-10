@@ -160,9 +160,9 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 1
       Size (m): 0.000500000024
-      Style: Flat Squares
+      Style: Points
       Topic: /scene/pc
       Unreliable: false
       Use Fixed Frame: true
@@ -180,7 +180,7 @@ Visualization Manager:
       Color: 0; 255; 0
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -190,14 +190,14 @@ Visualization Manager:
       Position Transformer: XYZ
       Queue Size: 10
       Selectable: true
-      Size (Pixels): 3
+      Size (Pixels): 2
       Size (m): 0.000500000024
-      Style: Flat Squares
+      Style: Points
       Topic: /model/found/pc
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -210,7 +210,7 @@ Visualization Manager:
       Color: 255; 0; 255
       Color Transformer: FlatColor
       Decay Time: 0
-      Enabled: true
+      Enabled: false
       Invert Rainbow: false
       Max Color: 255; 255; 255
       Max Intensity: 4096
@@ -227,7 +227,7 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
-      Value: true
+      Value: false
     - Alpha: 1
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
@@ -252,7 +252,7 @@ Visualization Manager:
       Selectable: true
       Size (Pixels): 3
       Size (m): 0.000500000024
-      Style: Flat Squares
+      Style: Points
       Topic: /model/picking/pc
       Unreliable: false
       Use Fixed Frame: true
@@ -283,25 +283,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz/XYOrbit
-      Distance: 1.29812419
+      Distance: 1.38372624
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.0599999987
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 0.171420336
-        Y: -0.0333687067
-        Z: 5.96046448e-08
+        X: 0.0315163136
+        Y: -0.180463016
+        Z: 9.31322575e-08
       Focal Shape Fixed Size: true
       Focal Shape Size: 0.0500000007
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.00999999978
-      Pitch: 0.135398954
+      Pitch: 0.149798691
       Target Frame: <Fixed Frame>
       Value: XYOrbit (rviz)
-      Yaw: 0.760398328
+      Yaw: 0.655411124
     Saved: ~
 Window Geometry:
   Displays:
@@ -319,5 +319,5 @@ Window Geometry:
   Views:
     collapsed: true
   Width: 1404
-  X: 428
-  Y: 73
+  X: 425
+  Y: 49
