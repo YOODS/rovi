@@ -22,6 +22,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '../script'))
 import tflib
 import tf
+from jsk_rviz_plugins.msg import OverlayText
 
 scene_ply = "/tmp/wrs2018_scene.ply"
 
@@ -213,7 +214,10 @@ def cb_X1(f):
   try:
     genpc=rospy.ServiceProxy('/rovi/pshift_genpc',Trigger)
     req=TriggerRequest()
-    genpc(req)      #will continue to callback cb_ps
+    ret=genpc(req)      #will continue to callback cb_ps
+    print "genpc result: ",ret
+    if (ret.success==False):
+      pub_Y1.publish(False)
   except rospy.ServiceException, e:
     print 'Genpc proxy failed:',e
     pub_Y1.publish(False)
@@ -269,7 +273,10 @@ def cb_X2(f):
     pub_Y2.publish(pp)
     return
 
-
+  text=OverlayText()
+  text.text="Matching rate %f" %(matchRates[0])
+  pub_msg.publish(text)
+  
   for i, (transform, quat, matchRate) in enumerate(zip(transforms, quats, matchRates)):
     # NOTE:
     # 1. 'matchRates' are in descending order.
@@ -365,6 +372,7 @@ pub_mnpf=rospy.Publisher("/model/cannotpick/floats",numpy_msg(Floats),queue_size
 pub_mpif=rospy.Publisher("/model/picking/floats",numpy_msg(Floats),queue_size=1)
 pub_Y1=rospy.Publisher('/solver/Y1',Bool,queue_size=1)    #X1 done
 pub_Y2=rospy.Publisher('/solver/Y2',PickingPose,queue_size=1)    #X2 done
+pub_msg=rospy.Publisher('/solver/message',OverlayText,queue_size=1)
 
 ###Transform
 mTc=tflib.toRT(tflib.dict2tf(rospy.get_param('/robot/calib/mTc')))  # arM tip To Camera

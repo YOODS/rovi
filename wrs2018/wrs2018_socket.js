@@ -20,7 +20,8 @@ setImmediate(async function() {
     console.log('robot controller connection established');
     conn.on('data', function(data) {   //data received from robot controller
       console.log('from robot controller data[' + data + ']');
-      if (String(data).charAt(0) === 'H') {
+      if (String(data).charAt(0) == 'H') {
+        console.log('[0]received H command\x0d');
         //pub_solX0.publish(new std_msgs.Bool());
         pub_solX1.publish(new std_msgs.Bool());
       }
@@ -30,12 +31,15 @@ setImmediate(async function() {
     });
     event.on('capt', function(success) {   // reply capture result to robot controller
       if (success) {
+        console.log('[1]send robot OK...\x0d');
         conn.write('OK\x0d');
         pub_solX2.publish(new std_msgs.Bool());
       }
       else {
+        console.log('[1]send robot NG\x0d');
         conn.write('NG\x0d');
       }
+      console.log('[1]sent!\x0d');
     });
     event.on('solve', function(pp) {   //reply picking pose to robot controller
       console.log('got Y2 solve. pp.ok=' + pp.ok);
@@ -45,8 +49,10 @@ setImmediate(async function() {
         conn.write(okstr);
       }
       else {
+        console.log('[2]send robot NG...\x0d');
         conn.write('NG\x0d');
       }
+      console.log('[2]sent!\x0d');
     });
   }).listen(3000);
 
