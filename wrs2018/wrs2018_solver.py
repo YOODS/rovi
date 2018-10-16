@@ -244,7 +244,7 @@ def cb_X2(f):
   match_rate_ret = 0
 
   maxz = -10000
-  maxz_i = -1
+  maxz_tpli = -1
 
   result = yodpy.loadPLY(scene_ply, scale="mm")
   retcode = result[0]
@@ -340,17 +340,17 @@ def cb_X2(f):
       tpcl_tp.append(tmP_xyz)
       if (i == 0 or ppz > maxz):
         maxz = ppz
-        maxz_i = i
+        maxz_tpli = len(tpcl_tp) - 1
         match_rate_ret = matchRate
-        print "now maxz=", maxz, "maxz_i=", maxz_i, "match_rate_ret=", match_rate_ret
+        print "now maxz=", maxz, "maxz_tpli=", maxz_tpli, "match_rate_ret=", match_rate_ret
       continue
 
-  if (maxz_i >= 0):
-    maxz_tp = tpcl_tp.pop(maxz_i)
-    maxz_pp = tpcl_pp.pop(maxz_i)
+  if (maxz_tpli >= 0):
+    maxz_tp = tpcl_tp.pop(maxz_tpli)
+    maxz_pp = tpcl_pp.pop(maxz_tpli)
     mpiPn = np.vstack((mpiPn, maxz_tp))
     pp = maxz_pp
-    print "*=*=*=*[", maxz_i, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.a, "pitch=", pp.b, "yaw=", pp.c
+    print "*=*=*=*maxz_tpli[", maxz_tpli, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.a, "pitch=", pp.b, "yaw=", pp.c
     for fo_tp in tpcl_tp:
       mfoPn = np.vstack((mfoPn, fo_tp))
 
