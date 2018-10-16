@@ -316,7 +316,7 @@ setImmediate(async function() {
       return true;
     }
     return new Promise(async (resolve) => {
-      const timeoutmsec = param_P.Interval*13*2;
+      const timeoutmsec = param_P.Interval*13*2 + 1000;
       let wdt = setTimeout(async function() { // <--------watch dog
         image_L.cancel();
         image_R.cancel();

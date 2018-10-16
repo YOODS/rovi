@@ -10,7 +10,7 @@ pshift_genpc:
     search_div: 2
     bw_diff: 7
     brightness: 256
-    darkness: 50
+    darkness: 80
     step_diff: 1.2
     reject_diff: 5.0
     max_ph_diff: 3.0
