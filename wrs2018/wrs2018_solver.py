@@ -240,6 +240,9 @@ def cb_X2(f):
   tpcl_pp = []
   tpcl_tp = []
 
+  # match rate to return
+  match_rate_ret = 0
+
   maxz = -10000
   maxz_i = -1
 
@@ -257,7 +260,7 @@ def cb_X2(f):
   # TODO
   #result = yodpy.match3D(scene)
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11) # 0.25?
-  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.3,minScore=0.11) # 0.25?
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.3,minScore=0.25)
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
   #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
 
@@ -277,10 +280,6 @@ def cb_X2(f):
     pub_Y2.publish(pp)
     return
 
-  text=OverlayText()
-  text.text="Matching rate %f" %(matchRates[0])
-  pub_msg.publish(text)
-  
   for i, (transform, quat, matchRate) in enumerate(zip(transforms, quats, matchRates)):
     # NOTE:
     # 1. 'matchRates' are in descending order.
@@ -289,7 +288,7 @@ def cb_X2(f):
     # 3. Unit of x, y, z of Point position of 'quat' is meter. (transform's xyz unit is also meter.)
     #
     #print('match3D quat=', quat)
-    print('match3D matchRate=', matchRate)
+    print('i=', i, 'match3D matchRate=', matchRate)
 
     tm_xyz_nvxyz = np.reshape(transform, (-1, 3))
     tmP_xyz = tm_xyz_nvxyz[::2, :] 
@@ -320,7 +319,7 @@ def cb_X2(f):
     radian = np.arccos(radian)
     degree = radian * 180.0 / np.pi
     abs_deg = np.abs(degree)
-    deg_threshold = 43.0
+    deg_threshold = 20.0
     print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree, "its abs=", abs_deg
     if (abs_deg >= deg_threshold):
       print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "can NOT Pick"
@@ -342,7 +341,8 @@ def cb_X2(f):
       if (i == 0 or ppz > maxz):
         maxz = ppz
         maxz_i = i
-        print "now maxz=", maxz, "maxz_i=", maxz_i
+        match_rate_ret = matchRate
+        print "now maxz=", maxz, "maxz_i=", maxz_i, "match_rate_ret=", match_rate_ret
       continue
 
   if (maxz_i >= 0):
@@ -350,9 +350,13 @@ def cb_X2(f):
     maxz_pp = tpcl_pp.pop(maxz_i)
     mpiPn = np.vstack((mpiPn, maxz_tp))
     pp = maxz_pp
-    print "*=*=*=*[", maxz_i, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.rx, "pitch=", pp.ry, "yaw=", pp.rz
+    print "*=*=*=*[", maxz_i, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.a, "pitch=", pp.b, "yaw=", pp.c
     for fo_tp in tpcl_tp:
       mfoPn = np.vstack((mfoPn, fo_tp))
+
+  text=OverlayText()
+  text.text="Matching rate %f" %(match_rate_ret)
+  pub_msg.publish(text)
 
   pub_mfof.publish(np2FmNoDivide(mfoPn))
   pub_mnpf.publish(np2FmNoDivide(mnpPn))
