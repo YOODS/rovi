@@ -355,7 +355,7 @@ def cb_X2(f):
       mfoPn = np.vstack((mfoPn, fo_tp))
 
   text=OverlayText()
-  text.text="Matching rate %f" %(match_rate_ret)
+  text.text="Matching Rate %.1f %%" %(match_rate_ret * 100)
   pub_msg.publish(text)
 
   pub_mfof.publish(np2FmNoDivide(mfoPn))
