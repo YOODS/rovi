@@ -28,7 +28,7 @@ scene_ply = "/tmp/wrs2018_scene.ply"
 
 def xyz2quat(e):
   tf=Transform()
-  k = math.pi / 180 * 0.5;
+  k = math.pi / 180 * 0.5
   cx = math.cos(e.rotation.x * k)
   cy = math.cos(e.rotation.y * k)
   cz = math.cos(e.rotation.z * k)
@@ -226,9 +226,6 @@ def cb_X1(f):
 def cb_X2(f):
   global mfoPn, mnpPn, mpiPn
 
-  # Picking Pose Determination is done
-  isppd = False
-
   # Picking Pose to be returned
   pp = PickingPose()
   pp.ok = False
@@ -238,6 +235,13 @@ def cb_X2(f):
   pp.a = 0
   pp.b = 0
   pp.c = 0
+
+  # To Pick Candidate List (Picking Pose and tmP_xyz (see below))
+  tpcl_pp = []
+  tpcl_tp = []
+
+  maxz = -10000
+  maxz_i = -1
 
   result = yodpy.loadPLY(scene_ply, scale="mm")
   retcode = result[0]
@@ -323,23 +327,32 @@ def cb_X2(f):
       mnpPn = np.vstack((mnpPn, tmP_xyz))
       continue
     else:
-      if (isppd):
-        print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "but Picking Pose To Return is already determined"
-        mfoPn = np.vstack((mfoPn, tmP_xyz))
-        continue
-      else:
-        print "vv[", i, "]vv angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "TODO more check for picking"
-        mpiPn = np.vstack((mpiPn, tmP_xyz))
-        pp.ok = True
-        pp.x = ppx
-        pp.y = ppy
-        pp.z = ppz
-        pp.a = pprx
-        pp.b = ppry
-        pp.c = pprz
-        # determined!
-        isppd = True
-        continue
+      print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "can Pick (...append to candidate list)"
+      # TODO more check
+      cpp = PickingPose()
+      cpp.ok = True
+      cpp.x = ppx
+      cpp.y = ppy
+      cpp.z = ppz
+      cpp.a = pprx
+      cpp.b = ppry
+      cpp.c = pprz
+      tpcl_pp.append(cpp)
+      tpcl_tp.append(tmP_xyz)
+      if (i == 0 or ppz > maxz):
+        maxz = ppz
+        maxz_i = i
+        print "now maxz=", maxz, "maxz_i=", maxz_i
+      continue
+
+  if (maxz_i >= 0):
+    maxz_tp = tpcl_tp.pop(maxz_i)
+    maxz_pp = tpcl_pp.pop(maxz_i)
+    mpiPn = np.vstack((mpiPn, maxz_tp))
+    pp = maxz_pp
+    print "*=*=*=*[", maxz_i, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.rx, "pitch=", pp.ry, "yaw=", pp.rz
+    for fo_tp in tpcl_tp:
+      mfoPn = np.vstack((mfoPn, fo_tp))
 
   pub_mfof.publish(np2FmNoDivide(mfoPn))
   pub_mnpf.publish(np2FmNoDivide(mnpPn))
