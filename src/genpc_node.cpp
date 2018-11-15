@@ -175,6 +175,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 
   ROS_INFO("before outPLY");
   outPLY("/tmp/test.ply");
+  outPLY("/tmp/testRG.ply", RANGE_GRID);
   ROS_INFO("after  outPLY");
 
   pub1->publish(pts);

@@ -16,6 +16,7 @@
 
 // 点群データ
 extern PointCloud *_pcd;
+extern unsigned int *_rgd;
 extern int _pcn;
 
 // 位相シフト計算クラス(Global)
@@ -75,7 +76,7 @@ extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp 
  * flags
  */
 #define WO_TEXTURE     0x00000001
-#define RANGE_GRID     0x00000002	//実装途中20180701
+#define RANGE_GRID     0x00000002
 
 extern void outPLY(const char *fname,int flags =0);
 
