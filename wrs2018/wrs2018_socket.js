@@ -49,8 +49,24 @@ setImmediate(async function() {
         conn.write(okstr);
       }
       else {
-        console.log('[2]send robot NG...\x0d');
-        conn.write('NG\x0d');
+        if (pp.errorreason == "SPARSE") {
+          console.log('[2]send robot SKIP...\x0d');
+          conn.write('SKIP\x0d');
+        }
+        else if (pp.errorreason == "CL") {
+          console.log('[2]send robot CL...\x0d');
+          if (pp.x>0) {
+            clstr = 'CL\x0d(' + pp.x.toFixed(3) + ',' + pp.y.toFixed(3) + ',' + pp.z.toFixed(3) + ',0,0,0)(7,0)\x0d(' + pp.a.toFixed(3) + ',' + pp.b.toFixed(3) + ',' + pp.c.toFixed(3) + ',0,0,0)(7,0)\x0d';
+          } else {
+            clstr = 'CL\x0d(' + pp.a.toFixed(3) + ',' + pp.b.toFixed(3) + ',' + pp.c.toFixed(3) + ',0,0,0)(7,0)\x0d(' + pp.x.toFixed(3) + ',' + pp.y.toFixed(3) + ',' + pp.z.toFixed(3) + ',0,0,0)(7,0)\x0d';
+          }
+          console.log(clstr);
+          conn.write(clstr);
+        }
+        else {
+          console.log('[2]send robot NG...\x0d');
+          conn.write('NG\x0d');
+        }
       }
       console.log('[2]sent!\x0d');
     });

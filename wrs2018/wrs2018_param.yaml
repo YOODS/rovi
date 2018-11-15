@@ -30,25 +30,21 @@ gridboard:
 robot:
   calib:
     mTc:
-#      rotation: {w: 0.7039748506996654, x: 0.0015602831643268505, y: -0.0006332186538407281, z: -0.7102229045398123}
-#      translation: {x: -50.91637127654924, y: 39.757136320041496, z: 132.22347936120667}
-      translation: 
-        x: -72.9894132764
-        y: 39.0974859918
-        z: 70.766241205
-      rotation: 
-        x: 0.00694654337257
-        y: 0.00622137330761
-        z: -0.710492083279
-        w: 0.703643403755
+      rotation: {w: 0.7039545991365834, x: 0.005868404671366433, y: 0.004573876582155458, z: -0.7102060009842752}
+      translation: {x: -72.7151292455967, y: 38.69286961056048, z: 70.5830183868652}
 
 volume_of_interest:
-  xmin: nan #250
-  xmax: nan #563 # xmin + 313
-  ymin: nan #-300
-  ymax: nan #-80 # ymin + 220
-  zmin: nan #4
-  zmax: nan #99 # zmin + 95
+  xmin: nan #382 #387 #250
+  xmax: nan #592 #567 #563
+  ymin: nan #-78 #-60 #-300
+  ymax: nan #228 #176 #-80
+#  zmin: 10.5 #19.5 #4
+  zmin: 11.5 #19.5 #4
+  zmax: nan #105 #113 #99
 
 image_publisher:
   file_name: /home/yoods/.ros/image.png
+
+dense_sparse:
+  threshold: 2000
+

@@ -316,13 +316,13 @@ setImmediate(async function() {
       return true;
     }
     return new Promise(async (resolve) => {
-      const timeoutmsec = param_P.Interval*13*2;
+      const timeoutmsec = param_P.Interval*13*2 + 1000;
       let wdt = setTimeout(async function() { // <--------watch dog
         image_L.cancel();
         image_R.cancel();
         await sens.cset({ 'TriggerMode': 'Off' });
         paramScan();
-        const errmsg = 'pshift_genpc timed out';
+        const errmsg = 'pshift_genpc timed out AAA';
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;
@@ -331,6 +331,7 @@ setImmediate(async function() {
       param_V = Object.assign(param_V, param_C);
       await sens.cset({ 'TriggerMode': 'On' });
       await sens.cset(param_C);
+      await sleep(10);
       const settletm=Math.floor(1000.0/param_V.AcquisitoionFrameRate);
     	setTimeout(function(){
     		sens.pset({ 'Go': 2 }); // <--------projector sequence start

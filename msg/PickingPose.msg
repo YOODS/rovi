@@ -1,4 +1,5 @@
 bool ok
+string errorreason
 float64 x
 float64 y
 float64 z
