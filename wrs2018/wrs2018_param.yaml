@@ -34,12 +34,17 @@ robot:
       translation: {x: -72.7151292455967, y: 38.69286961056048, z: 70.5830183868652}
 
 volume_of_interest:
-  xmin: nan #250
-  xmax: nan #563 # xmin + 313
-  ymin: nan #-300
-  ymax: nan #-80 # ymin + 220
-  zmin: nan #4
-  zmax: nan #99 # zmin + 95
+  xmin: nan #382 #387 #250
+  xmax: nan #592 #567 #563
+  ymin: nan #-78 #-60 #-300
+  ymax: nan #228 #176 #-80
+#  zmin: 10.5 #19.5 #4
+  zmin: 11.5 #19.5 #4
+  zmax: nan #105 #113 #99
 
 image_publisher:
   file_name: /home/yoods/.ros/image.png
+
+dense_sparse:
+  threshold: 2000
+

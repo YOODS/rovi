@@ -358,7 +358,7 @@ ros.log.warn('livestop and pshift_genpc setTimeout ' + timeoutmsec + ' msec');
         image_R.cancel();
         await sens.cset({ 'TriggerMode': 'Off' });
         paramScan();
-        const errmsg = 'pshift_genpc timed out';
+        const errmsg = 'pshift_genpc timed out BBB';
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;

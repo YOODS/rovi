@@ -44,6 +44,73 @@ def xyz2quat(e):
   tf.rotation.w = sx * sy * sz + cx * cy * cz
   return tf
 
+def check_obst(e):
+  global scnPn
+  q=xyz2quat(e)
+#  print 'base2work quat',e
+  i=np.linalg.inv(tflib.toRT(q))
+#  print 'base2work inv rt',i
+  P=np.vstack((scnPn.T,np.ones((1,len(scnPn)))))
+  tp=np.dot(i[:3],P).T
+#  print "work2base points",tp.shape,tp
+  W=np.where(tp.T[0]>=-6.0)
+  tp=tp[W[len(W)-1]]
+  W=np.where(tp.T[0]<=+6.0)
+  tp=tp[W[len(W)-1]]
+  W=np.where(tp.T[1]>=-6.0)
+  tp=tp[W[len(W)-1]]
+  W=np.where(tp.T[1]<=+6.0)
+  tp=tp[W[len(W)-1]]
+  W=np.where(tp.T[2]>=+8.0)
+  tp=tp[W[len(W)-1]]
+  W=np.where(tp.T[2]<=+50.0)
+  tp=tp[W[len(W)-1]]
+#  d=tp.astype(np.float32)
+#  cv2.ppf_match_3d.writePLY(d,'obs.ply')
+  print "tp",len(tp),tp.shape
+  return True if (len(tp)<100) else False
+
+def get_clps(e,start):
+  global scnPn
+  print 'pp deg euler',e
+  q=xyz2quat(e)
+  print 'pp quat',q
+  ze=Transform()
+  ze.translation.x=0
+  ze.translation.y=0
+  ze.translation.z=15 * (1 if (start==True) else -1)
+  ze.rotation.x=0
+  ze.rotation.y=0
+  ze.rotation.z=0
+  ze.rotation.w=0
+#  print 'zoffset+ deg euler',ze
+  zq=xyz2quat(ze)
+#  print 'zoffset+ quat',zq
+  mat=np.dot(tflib.toRT(q),tflib.toRT(zq))
+  deg=tflib.fromRTtoEulerCBA(mat)
+  deg[2]=deg[2]+20
+  # check obstacle
+  P=np.vstack((scnPn.T,np.ones((1,len(scnPn)))))
+  W=np.where(P.T[0]>=-6.0)
+  P=P[W[len(W)-1]]
+  W=np.where(P.T[0]<=+6.0)
+  P=P[W[len(W)-1]]
+  W=np.where(P.T[1]>=-6.0)
+  P=P[W[len(W)-1]]
+  W=np.where(P.T[1]<=+6.0)
+  P=P[W[len(W)-1]]
+  W=np.where(P.T[2]>=-2.0)
+  P=P[W[len(W)-1]]
+  W=np.where(P.T[2]<=+50.0)
+  P=P[W[len(W)-1]]
+  print "P",len(P),P.shape
+  if (len(P)>100):
+    deg[0]=-999
+    deg[1]=-999
+    deg[2]=-999
+  print "deg",deg
+  return deg
+
 def get_fix_zaxis_rotation(x, y, z, w):  #fix z rotation
   hq=Transform()
   hq.rotation.x=x
@@ -229,6 +296,7 @@ def cb_X2(f):
   # Picking Pose to be returned
   pp = PickingPose()
   pp.ok = False
+  pp.errorreason = ""
   pp.x = 0
   pp.y = 0
   pp.z = 0
@@ -257,12 +325,22 @@ def cb_X2(f):
     pub_Y2.publish(pp)
     return
 
+  sP = scene.reshape((-1,3))
+  sPn, sPm = sP.shape
+  print "sPn=", sPn
+  if (sPn < sparse_threshold):
+    print "ERROR: X2 loadPLY() and PC is sparse."
+    pp.errorreason = "SPARSE"
+    pub_Y2.publish(pp)
+    return
+
   # TODO
   #result = yodpy.match3D(scene)
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.11) # 0.25?
-  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.3,minScore=0.25)
+#  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.3,minScore=0.25)
   #result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.05,minScore=0.11)
   #result = yodpy.match3D(scene,relSamplingDistance=0.05,keyPointFraction=0.1,minScore=0.11)
+  result = yodpy.match3D(scene,relSamplingDistance=0.03,keyPointFraction=0.1,minScore=0.095) # 0.25?
 
   retcode = result[0]
   transforms = result[1]
@@ -280,6 +358,7 @@ def cb_X2(f):
     pub_Y2.publish(pp)
     return
 
+  isCL=False
   for i, (transform, quat, matchRate) in enumerate(zip(transforms, quats, matchRates)):
     # NOTE:
     # 1. 'matchRates' are in descending order.
@@ -293,6 +372,10 @@ def cb_X2(f):
     tm_xyz_nvxyz = np.reshape(transform, (-1, 3))
     tmP_xyz = tm_xyz_nvxyz[::2, :] 
     #print "tmP_xyz=", tmP_xyz
+
+    isRateOK=True
+    if (matchRate<=0.25):
+      isRateOK=False
 
     qx = quat[3]
     qy = quat[4]
@@ -310,6 +393,22 @@ def cb_X2(f):
 
     print "****[", i, "]**** Picking Pose: x=", ppx, "y=", ppy, "z=", ppz, "roll=", pprx, "pitch=", ppry, "yaw=", pprz
 
+    me=Transform()
+    me.translation.x=ppx
+    me.translation.y=ppy
+    me.translation.z=ppz
+    me.rotation.x=pprx
+    me.rotation.y=ppry
+    me.rotation.z=pprz
+    if (isRateOK==True):
+      # check obstacles
+      if (check_obst(me)==False):
+        print "  [", i, "]   check_obst NG"
+        mnpPn = np.vstack((mnpPn, tmP_xyz))
+        continue
+      else:
+        print "  [", i, "]   check_obst OK"
+
     rad_euler = tf.transformations.euler_from_quaternion((qx, qy, qz, qw))
     m2b44 = robot_rxyzabc_to_rt(ppx, ppy, ppz, rad_euler[0], rad_euler[1], rad_euler[2])
     #print "m2b44=\n", m2b44
@@ -319,17 +418,32 @@ def cb_X2(f):
     radian = np.arccos(radian)
     degree = radian * 180.0 / np.pi
     abs_deg = np.abs(degree)
-    deg_threshold = 20.0
+    deg_threshold = 35.0
+    deg_stand=85.0
+    cs=[0,0,0]
     print "--[", i, "]-- angle between Picking Vector and Z-Axis=", degree, "its abs=", abs_deg
     if (abs_deg >= deg_threshold):
       print "==[", i, "]== angle between Picking Vector and Z-Axis abs(", abs_deg, ") >= ", deg_threshold, "can NOT Pick"
-      mnpPn = np.vstack((mnpPn, tmP_xyz))
+      if (isRateOK==True):
+        mnpPn = np.vstack((mnpPn, tmP_xyz))
+      if ((isCL==False) and (abs_deg>=deg_stand)):
+        print "cl detected!"
+        isCL=True
+        cs=get_clps(me,True)
+        ce=get_clps(me,False)
+        if (cs[0]==-999 and ce[0]==-999):
+          isCL=False
       continue
+
     else:
+      if (isRateOK==False):
+        continue
+
       print "^^[", i, "]^^ angle between Picking Vector and Z-Axis abs(", abs_deg, ") < ", deg_threshold, "can Pick (...append to candidate list)"
       # TODO more check
       cpp = PickingPose()
       cpp.ok = True
+      cpp.errorreason = ""
       cpp.x = ppx
       cpp.y = ppy
       cpp.z = ppz
@@ -353,6 +467,17 @@ def cb_X2(f):
     print "*=*=*=*maxz_tpli[", maxz_tpli, "]*=*=*=* Picking Pose to return (maxz): x=", pp.x, "y=", pp.y, "z=", pp.z, "roll=", pp.a, "pitch=", pp.b, "yaw=", pp.c
     for fo_tp in tpcl_tp:
       mfoPn = np.vstack((mfoPn, fo_tp))
+  else:
+    if (isCL==True):
+      pp.errorreason="CL"
+      pp.x=cs[0]
+      pp.y=cs[1]
+      pp.z=cs[2]
+      pp.a=ce[0]
+      pp.b=ce[1]
+      pp.c=ce[2]
+      pub_Y2.publish(pp)
+      return
 
   text=OverlayText()
   text.text="Matching Rate %.1f %%" %(match_rate_ret * 100)
@@ -411,6 +536,9 @@ ymax = float(rospy.get_param('/volume_of_interest/ymax'))
 zmin = float(rospy.get_param('/volume_of_interest/zmin'))
 zmax = float(rospy.get_param('/volume_of_interest/zmax'))
 print "xmin=", xmin, "xmax=", xmax, "ymin=", ymin, "ymax=", ymax, "zmin=", zmin, "zmax=", zmax
+
+sparse_threshold = int(rospy.get_param('/dense_sparse/threshold'))
+print "sparse_threshold=", sparse_threshold
 
 try:
   prepare_model(os.environ['ROVI_PATH'] + '/wrs2018/model/Gear.stl')
