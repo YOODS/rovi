@@ -308,8 +308,8 @@ namespace node_shm {
 		ShmBufferType type = (ShmBufferType) info[4]->Int32Value();
 		size_t size = count * getSize1ForShmBufferType(type);
 		bool isCreate = (size > 0);
-		
-		int resId = isCreate? shmget(key, size, shmflg):key;//------------KZ modified
+
+		int resId = isCreate? shmget(key, size, shmflg):key;
 		if (resId == -1) {
 			switch(errno) {
 				case EEXIST: // already exists

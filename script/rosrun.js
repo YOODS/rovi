@@ -10,7 +10,6 @@ popen.run = function(node, ns, eo) {
   let proc = popen.exec('rosrun ' + node, { env: process.env });
   let arg=node.split(' ');
   arg.push('');
-//  let proc=popen.exec('/home/ca/catkin_ws/devel/lib/'+arg[0]+'/'+arg[1]+' '+arg[2],{ env: process.env });
   let stm = setTimeout(function() {
     ev.running = true;
     ev.emit('start'); // rosrun success

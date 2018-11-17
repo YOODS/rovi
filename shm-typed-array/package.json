@@ -1,47 +1,12 @@
 {
-  "_from": "shm-typed-array",
-  "_id": "shm-typed-array@0.0.10",
-  "_inBundle": false,
-  "_integrity": "sha1-HVMVrLjf1yKx5m/eo4tSVv8CIRA=",
-  "_location": "/shm-typed-array",
-  "_phantomChildren": {},
-  "_requested": {
-    "type": "tag",
-    "registry": true,
-    "raw": "shm-typed-array",
-    "name": "shm-typed-array",
-    "escapedName": "shm-typed-array",
-    "rawSpec": "",
-    "saveSpec": null,
-    "fetchSpec": "latest"
-  },
-  "_requiredBy": [
-    "#USER",
-    "/"
-  ],
-  "_resolved": "https://registry.npmjs.org/shm-typed-array/-/shm-typed-array-0.0.10.tgz",
-  "_shasum": "1d5315acb8dfd722b1e66fdea38b5256ff022110",
-  "_spec": "shm-typed-array",
-  "_where": "/home/yoods",
-  "author": {
-    "name": "Oblogin Denis",
-    "email": "ukrbublik@gmail.com",
-    "url": "https://github.com/ukrbublik"
-  },
-  "bugs": {
-    "url": "https://github.com/ukrbublik/shm-typed-array/issues"
-  },
-  "bundleDependencies": false,
-  "dependencies": {
-    "nan": "^2.1.0",
-    "node-cleanup": "^1.0.1"
-  },
-  "deprecated": false,
+  "name": "shm-typed-array",
+  "version": "0.0.10",
   "description": "IPC shared memory for NodeJs. Use as Buffer or TypedArray.",
-  "engines": {
-    "node": ">=4.0.0"
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ukrbublik/shm-typed-array.git"
   },
-  "homepage": "https://github.com/ukrbublik/shm-typed-array",
   "keywords": [
     "ipc",
     "shm",
@@ -60,19 +25,28 @@
     "Float32Array",
     "Float64Array"
   ],
+  "author": {
+    "name": "Oblogin Denis",
+    "email": "ukrbublik@gmail.com",
+    "url": "https://github.com/ukrbublik"
+  },
   "license": "MIT",
-  "main": "index.js",
-  "name": "shm-typed-array",
+  "dependencies": {
+    "nan": "^2.1.0",
+    "node-cleanup": "^1.0.1"
+  },
   "os": [
     "!win32"
   ],
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/ukrbublik/shm-typed-array.git"
+  "engines": {
+    "node": ">=4.0.0"
   },
+  "bugs": {
+    "url": "https://github.com/ukrbublik/shm-typed-array/issues"
+  },
+  "homepage": "https://github.com/ukrbublik/shm-typed-array",
   "scripts": {
     "install": "node-gyp configure && node-gyp rebuild",
     "test": "node ./example.js"
-  },
-  "version": "0.0.10"
+  }
 }

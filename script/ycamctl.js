@@ -75,8 +75,7 @@ class ImageSwitcher {
   }
   async imgproc(){
     let img=this.imgqueue[0];
-    this.raw.publish(img);
-    let req = new rovi_srvs.ImageFilter.Request();
+/*    let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
     let res;
     try {
@@ -101,10 +100,11 @@ class ImageSwitcher {
       setImmediate(function(){
         who.imgproc();
       });
-    }
+    }*/
   }
   async emit(img) {
     this.imgqueue.push(img);
+    this.raw.publish(img);
     if(this.imgqueue.length==1){
       let who=this;
       setImmediate(function(){
@@ -147,31 +147,25 @@ class ImageSwitcher {
     }
   }
   async reloadRemap() {
-    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
+/*    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
     this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
-    return res;
+    return res;*/
   }
   
 }
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
-  let cam_resolution;
-
-  if (sensName === 'ycam3') {
-    let camera_size = await rosNode.getParam(NSrovi + '/camera');
-    if (camera_size.Height == 480 && camera_size.Width == 1280) {
-      ros.log.warn('camera size = VGA');
-      cam_resolution = 'vga';
-    }
-    else if (camera_size.Height == 1024 && camera_size.Width == 2560) {
-      ros.log.warn('camera size = SXGA');
-      cam_resolution = 'sxga';
-    }
-    else {
-      ros.log.error('Invalid camera size');
-      return;
-    }
+  let cam_resolution='640x480';
+  if(await rosNode.hasParam(NSrovi+'/camera/Height')){
+    const h=await rosNode.getParam(NSrovi+'/camera/Height');
+    const w=await rosNode.getParam(NSrovi+'/camera/Width');
+    cam_resolution=w+'x'+h;
+  }
+  else{
+    const h=await rosNode.getParam(NSrovi+'/left/camera/Height');
+    const w=await rosNode.getParam(NSrovi+'/left/camera/Width');
+    cam_resolution=w+'x'+h;
   }
 
   const image_L = new ImageSwitcher(rosNode, NScamL);
@@ -188,6 +182,7 @@ setImmediate(async function() {
     ros.log.error('genpc reload service not available');
     return;
   }
+
   let param_C = await rosNode.getParam(NSpsgenpc + '/camera');
   let param_V = await rosNode.getParam(NSlive + '/camera');
   let param_P = await rosNode.getParam(NSpsgenpc + '/projector');
@@ -202,7 +197,7 @@ setImmediate(async function() {
     return c;
   }
   async function paramReloadNow() {
-    let ret = false;
+/*    let ret = false;
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
     let nv = await rosNode.getParam(NSlive + '/camera');
     let np = await rosNode.getParam(NSpsgenpc + '/projector');
@@ -223,7 +218,7 @@ setImmediate(async function() {
       ros.log.error(errmsg);
       return false;
     }
-    return ret;
+    return ret;*/
   }
   async function paramReload() {
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
@@ -251,13 +246,10 @@ setImmediate(async function() {
     }
     paramTimer = null;
   }
-
   let sensEv;
   switch (sensName) {
-  case 'ycam1s':
-    sensEv = sens.open(image_L.ID, image_R.ID, param_P.Url, param_P.Port);
-    break;
   case 'ycam3':
+  case 'ycam3s':
     sensEv = sens.open(rosNode, NSrovi, cam_resolution);
     break;
   case 'ycam1h':
@@ -292,7 +284,7 @@ setImmediate(async function() {
     }
     else {
       ros.log.error('param reload ERROR');
-      process.exit(99);
+//      process.exit(99);
     }
   });
   sensEv.on('left', async function(img) {

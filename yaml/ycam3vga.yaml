@@ -27,6 +27,7 @@ live:
 camera:
   Height: 480
   Width: 1280
+  shmem: 615000
 stereo_image_proc:
   P1: 200.0
   P2: 400.0
