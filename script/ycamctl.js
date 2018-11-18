@@ -75,7 +75,7 @@ class ImageSwitcher {
   }
   async imgproc(){
     let img=this.imgqueue[0];
-/*    let req = new rovi_srvs.ImageFilter.Request();
+    let req = new rovi_srvs.ImageFilter.Request();
     req.img = img;
     let res;
     try {
@@ -100,7 +100,7 @@ class ImageSwitcher {
       setImmediate(function(){
         who.imgproc();
       });
-    }*/
+    }
   }
   async emit(img) {
     this.imgqueue.push(img);
@@ -147,9 +147,9 @@ class ImageSwitcher {
     }
   }
   async reloadRemap() {
-/*    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
+    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
     this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
-    return res;*/
+    return res;
   }
   
 }
@@ -197,7 +197,7 @@ setImmediate(async function() {
     return c;
   }
   async function paramReloadNow() {
-/*    let ret = false;
+    let ret = false;
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
     let nv = await rosNode.getParam(NSlive + '/camera');
     let np = await rosNode.getParam(NSpsgenpc + '/projector');
@@ -218,7 +218,7 @@ setImmediate(async function() {
       ros.log.error(errmsg);
       return false;
     }
-    return ret;*/
+    return ret;
   }
   async function paramReload() {
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
@@ -267,7 +267,8 @@ setImmediate(async function() {
     prev_sensstat = s;
   });
   sensEv.on('wake', async function(yamlstr) {
-    if (sensName === 'ycam3') {
+    console.log('wake '+yamlstr);
+    if (yamlstr!=null && yamlstr.length>0) {
       const yamlval = jsyaml.safeLoad(yamlstr);
       await rosNode.setParam(NScamL, yamlval.left);
       await rosNode.setParam(NScamR, yamlval.right);
