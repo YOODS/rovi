@@ -206,6 +206,9 @@ int main(int argc, char **argv)
   pub2 = &p2;
   ros::Publisher p3 = n.advertise<rovi::Floats>("ps_floats", 1);
   pub3 = &p3;
+  std_srvs::Trigger::Request req;
+  std_srvs::Trigger::Response res;
+  reload(req,res);
   ros::spin();
   return 0;
 }

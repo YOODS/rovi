@@ -155,80 +155,16 @@ var ycam = {
     Notifier.emit('stat', this.normal = f);
     setTimeout(function() {ycam.scan();}, 1000);
   },
-  open: function(nh, ns, resolution) {
+  open: function(nh, ns) {
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
     run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
-
-//      ros.log.warn('before execSync get_genicam_xml');
-      const xmlstr = execSync('arv-tool-0.4 genicam | tail -n +2 | tee /tmp/genicam.xml').toString();
-//      ros.log.warn('after  execSync get_genicam_xml ... xmlstr=[' + xmlstr + ']');
-//      ros.log.warn('after  execSync get_genicam_xml');
-
-      let lines = xmlstr.split(/\n/);
-
-      const yoods = '==YOODS==';
-
-      let vga_yamlstr ='';
-      let sxga_yamlstr ='';
-
-      let curkey = '';
-
-      for (let li = 0; li < lines.length; li++) {
-//        ros.log.warn('lines[' + li + ']=[' + lines[li] + ']');
-
-        if (lines[li].startsWith(yoods)) {
-          const key = lines[li].slice(yoods.length);
-//          ros.log.warn('key=[' + key + ']');
-          if (key === 'start') {
-            // ignore
-          }
-          else if (key === 'vga') {
-            curkey = 'vga';
-          }
-          else if (key === 'sxga') {
-            curkey= 'sxga';
-          }
-          else if (key === 'end') {
-            break;
-          }
-          else {
-            ros.log.error(yoods + ' UNKNOWN key...[' + key + ']');
-            process.exit(102);
-          }
-        }
-        else {
-          if (curkey === 'vga') {
-            vga_yamlstr += lines[li] + '\n';
-          }
-          else if (curkey === 'sxga') {
-            sxga_yamlstr += lines[li] + '\n';
-          }
-        }
-      }
-
-//      ros.log.warn('vga_yamlstr=[' + vga_yamlstr + ']');
-//      ros.log.warn('sxga_yamlstr=[' + sxga_yamlstr + ']');
-
-      let yamlstr = '';
-      if (resolution.endsWith('x480')) {
-         yamlstr = vga_yamlstr;
-      }
-      else if (resolution.endsWith('x1024')) {
-         yamlstr = sxga_yamlstr;
-      }
-
-      if (yamlstr.length === 0) {
-        ros.log.error('Cannot get Camera Parameter');
-        process.exit(103);
-      }
-
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');
         process.exit(101);
       }
-      Notifier.emit('wake', yamlstr);
+      Notifier.emit('wake');
     });
 
     run_c.on('stop', async function() {

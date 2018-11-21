@@ -44,17 +44,12 @@ class ImageSwitcher {
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
-    this.remapreload = node.serviceClient(ns + '/remap/reload', std_srvs.Trigger);
     this.imgqueue=[];
     this.pstat=0;   //0:live,1:settling,2:pshift
     this.pimg;
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
-        return;
-      }
-      if (!await node.waitForService(who.remapreload.getService(), 2000)) {
-        ros.log.error('remap reload service not available');
         return;
       }
       try {
@@ -138,7 +133,7 @@ class ImageSwitcher {
     this.pstat=3;
     setTimeout(function(){
       who.pstat=0;
-    },1000);
+    },500);
   }
   get ID() {return this.param.ID;}
   view(n) {
@@ -146,28 +141,10 @@ class ImageSwitcher {
       this.vue.publish(this.capt[n]);
     }
   }
-  async reloadRemap() {
-    let res = await this.remapreload.call(new std_srvs.Trigger.Request());
-    this.caminfo = Object.assign(new sensor_msgs.CameraInfo(), await this.node.getParam(this.ns + '/remap'));
-    return res;
-  }
-  
 }
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
-  let cam_resolution='640x480';
-  if(await rosNode.hasParam(NSrovi+'/camera/Height')){
-    const h=await rosNode.getParam(NSrovi+'/camera/Height');
-    const w=await rosNode.getParam(NSrovi+'/camera/Width');
-    cam_resolution=w+'x'+h;
-  }
-  else{
-    const h=await rosNode.getParam(NSrovi+'/left/camera/Height');
-    const w=await rosNode.getParam(NSrovi+'/left/camera/Width');
-    cam_resolution=w+'x'+h;
-  }
-
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
@@ -195,30 +172,6 @@ setImmediate(async function() {
       }
     }
     return c;
-  }
-  async function paramReloadNow() {
-    let ret = false;
-    param_C = await rosNode.getParam(NSpsgenpc + '/camera');
-    let nv = await rosNode.getParam(NSlive + '/camera');
-    let np = await rosNode.getParam(NSpsgenpc + '/projector');
-    try {
-      let csetret = await sens.cset(paramDiff(param_V, nv));
-      param_V = nv;
-      let psetret = await sens.pset(paramDiff(param_P, np));
-      param_P = np;
-      let rrLret = await image_L.reloadRemap();
-      let rrRret = await image_R.reloadRemap();
-      let grret = await genpcreload.call(new std_srvs.Trigger.Request());
-      if (csetret === 'OK' && psetret === 'OK' && rrLret.success && rrRret.success && grret.success) {
-        ret = true;
-      }
-    }
-    catch(err) {
-      let errmsg = 'Exception in paramReloadNow:' + err;
-      ros.log.error(errmsg);
-      return false;
-    }
-    return ret;
   }
   async function paramReload() {
     param_C = await rosNode.getParam(NSpsgenpc + '/camera');
@@ -250,7 +203,7 @@ setImmediate(async function() {
   switch (sensName) {
   case 'ycam3':
   case 'ycam3s':
-    sensEv = sens.open(rosNode, NSrovi, cam_resolution);
+    sensEv = sens.open(rosNode, NSrovi);
     break;
   case 'ycam1h':
     sensEv = sens.open(rosNode,NScamL,image_L.ID,NScamR,image_R.ID, param_P.Url, param_P.Port);
@@ -266,27 +219,14 @@ setImmediate(async function() {
     }
     prev_sensstat = s;
   });
-  sensEv.on('wake', async function(yamlstr) {
-    console.log('wake '+yamlstr);
-    if (yamlstr!=null && yamlstr.length>0) {
-      const yamlval = jsyaml.safeLoad(yamlstr);
-      await rosNode.setParam(NScamL, yamlval.left);
-      await rosNode.setParam(NScamR, yamlval.right);
-      await rosNode.setParam(NSgenpc, yamlval.genpc);
-    }
+  sensEv.on('wake', async function() {
+    console.log('ycam wake');
     param_V = {};
     param_P = {};
     paramStop();
-    let prmret = await paramReloadNow();
     await sens.cset({ 'TriggerMode': 'Off' });
     paramScan();
-    if (prmret) {
-      ros.log.warn('NOW ALL READY');
-    }
-    else {
-      ros.log.error('param reload ERROR');
-//      process.exit(99);
-    }
+    ros.log.warn('NOW ALL READY');
   });
   sensEv.on('left', async function(img) {
     image_L.emit(img);
@@ -326,9 +266,9 @@ setImmediate(async function() {
       await sens.cset(param_C);
       await sleep(10);
       const settletm=Math.floor(1000.0/param_V.AcquisitoionFrameRate);
-    	setTimeout(function(){
-    		sens.pset({ 'Go': 2 }); // <--------projector sequence start
-	    },settletm+500);
+      setTimeout(function(){
+    	  sens.pset({ 'Go': 2 }); // <--------projector sequence start
+      },settletm+100);
       let imgs=await Promise.all([image_L.store(13,settletm),image_R.store(13,settletm)]);
       clearTimeout(wdt);
       capt_L = imgs[0];

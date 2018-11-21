@@ -1,6 +1,7 @@
 <launch>
 
   <rosparam command="load" ns="/rovi" file="$(find rovi)/yaml/ycam3vga.yaml" />
+  <node name="gvparam" pkg="rovi" type="gvdumpVGA.js" />
   <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" />

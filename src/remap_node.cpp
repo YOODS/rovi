@@ -109,6 +109,9 @@ int main(int argc, char **argv)
   ros::ServiceServer svc0 = n.advertiseService("remap/reload", reload);
   ros::ServiceServer svc1 = n.advertiseService("remap", remap);
   pub = n.advertise<std_msgs::Float64>("remap/tat", 1);
+  std_srvs::Trigger::Request req;
+  std_srvs::Trigger::Response res;
+  reload(req,res);
   ros::spin();
   return 0;
 }
