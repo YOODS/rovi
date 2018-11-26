@@ -168,6 +168,7 @@ var ycam = {
     });
 
     run_c.on('stop', async function() {
+      Notifier.emit('shutdown');
       ros.log.warn('YCAM3 Stopped');
       rosNode.unsubscribe(ns + '/camera/image_raw');
     });

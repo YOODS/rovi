@@ -20,3 +20,35 @@ SGBMはコアパッケージから削除され、RoVIアプリのひとつに位
 
 インクルードされているClassの外部(ライブラリ)化を徹底し、見通しのよいコードに整理しました。
 
+
+## 追加パッケージのインストール
+
+1. shm-typed-array
+
+NodejsのSys-V共有メモリパッケージです。
+~~~
+npm install shm-typed-array
+~~~
+
+2. camera_aravis
+
+最新にupdateします。
+~~~
+roscd camera_aravis
+git pull
+~~~
+リビルドも忘れず
+
+
+## 起動
+
+1. SXGAモード
+~~~
+roslaunch rovi ycam3sxga.launch
+~~~
+
+2. VGAモード
+~~~
+roslaunch rovi ycam3vga.launch
+~~~
+

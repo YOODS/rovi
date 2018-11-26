@@ -19,9 +19,19 @@ class Notifier extends EventEmitter{
     super();
     this.ros=ros;
     this.ns=ns;
-    this.params={};
+    this.hashes={};
+    this.objs={};
     this.tid=null;
     this.enable=false;
+    this.init();
+  }
+  async init(){
+    try{
+      this.objs=await this.ros.getParam(this.ns);
+    }
+    catch(err){
+      console.log('Init Param err:'+this.ns);
+    }
   }
   check(param){
     let keys=Object.keys(param);
@@ -30,8 +40,9 @@ class Notifier extends EventEmitter{
         let key=keys[0];
         let val=param[key];
         let hash=calcHash(JSON.stringify(val));
-        if(! this.params.hasOwnProperty(key) || this.params[key]!=hash){
-          this.params[key]=hash;
+        if(! this.hashes.hasOwnProperty(key) || this.hashes[key]!=hash){
+          this.hashes[key]=hash;
+          this.objs[key]=val;
           this.emit('change',key,val);
         }
         delete param[key];
@@ -55,11 +66,12 @@ class Notifier extends EventEmitter{
       }
     }
   }
-  start(){
+  async start(){
     if(!this.enable){
       this.enable=true;
       this.emit('start');
-      this.check({}); //start scanning
+      let param=await this.ros.getParam(this.ns);
+      this.check(param); //start scanning
     }
   }
   stop(){
@@ -68,6 +80,20 @@ class Notifier extends EventEmitter{
       if(this.tid!=null) clearTimeout(this.tid);
       this.emit('stop');
     }
+  }
+  reset(){
+    this.stop();
+    this.hashes={};
+    this.objs={};
+  }
+  diff(obj){
+    let c={};
+    for(let k in obj){
+      if (this.objs.hasOwnProperty(k)){
+        if(this.objs[k]!=c[k]) c[k]=this.objs[k];
+      }
+    }
+    return c;
   }
 }
 

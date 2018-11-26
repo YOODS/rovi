@@ -2,6 +2,7 @@
 
 const NSycamctrl = '/rovi/ycam_ctrl';
 const NSpsgenpc = '/rovi/pshift_genpc';
+const NSX1 = '/rovi/X1';
 const NSgenpc = '/rovi/genpc';
 const NScamL = '/rovi/left';
 const NScamR = '/rovi/right';
@@ -16,15 +17,8 @@ const std_srvs = ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
 const EventEmitter = require('events').EventEmitter;
 const jsyaml = require('js-yaml');
-
-let prev_sensstat = false;
-
-ros.Time.diff = function(t0) {
-  let t1 = ros.Time.now();
-  t1.secs -= t0.secs;
-  t1.nsecs -= t0.nsecs;
-  return ros.Time.toSeconds(t1);
-}
+const ImageSwitcher = require('./image_switcher.js');
+const Notifier = require('./notifier.js');
 
 function sleep(n){
   return new Promise(function(resolve){
@@ -34,115 +28,6 @@ function sleep(n){
   });
 }
 
-class ImageSwitcher {
-  constructor(node, ns) {
-    const who = this;
-    this.node = node;
-    this.ns = ns;
-    this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
-    this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
-    this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
-    this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
-    this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
-    this.imgqueue=[];
-    this.pstat=0;   //0:live,1:settling,2:pshift
-    this.pimg;
-    setImmediate(async function() {
-      if (!await node.waitForService(who.remap.getService(), 2000)) {
-        ros.log.error('remap service not available');
-        return;
-      }
-      try {
-        who.param = await node.getParam(ns + '/camera');
-      }
-      catch(err) {
-        ros.log.warn('getParam ' + err);
-      }
-    });
-    this.hook = new EventEmitter();
-    this.capt = [];
-    if (ns === NScamL) {
-      this.lr = 'L';
-    }
-    else {
-      this.lr = 'R';
-    }
-  }
-  async imgproc(){
-    let img=this.imgqueue[0];
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    let res;
-    try {
-      switch(this.pstat){
-      case 0:
-        res=await this.remap.call(req);
-        this.rect.publish(res.img);
-        break;
-      case 2:
-        res=await this.remap.call(req);
-        this.hook.emit('store', res.img);
-        break;
-      }
-      this.imgqueue.shift();
-    }
-    catch(err) {
-      ros.log.error('ImageSwitcher::emit "remap failed:"'+err);
-      this.imgqueue=[];
-    }
-    if(this.imgqueue.length>0){
-      let who=this;
-      setImmediate(function(){
-        who.imgproc();
-      });
-    }
-  }
-  async emit(img) {
-    this.imgqueue.push(img);
-    this.raw.publish(img);
-    if(this.imgqueue.length==1){
-      let who=this;
-      setImmediate(function(){
-        who.imgproc();
-      });
-    }
-  }
-  store(count,delay) {
-    const who = this;
-    this.capt = [];
-    this.pstat=1;
-    setTimeout(function(){ who.pstat=2;},delay);
-    return new Promise(function(resolve) {
-      who.hook.on('store', function(img) {
-        let icnt=who.capt.length;
-        console.log(who.ns+':'+icnt);
-        who.capt.push(img);
-        icnt++;
-        if(icnt==2) who.pimg=img;
-        else if(icnt==count){
-          who.pstat=3;
-          resolve(who.capt);
-        }
-        else if(icnt>2) who.rect.publish(who.pimg);
-      });
-    });
-  }
-  cancel() {
-    let who=this;
-    this.hook.removeAllListeners();
-    this.pstat=3;
-    setTimeout(function(){
-      who.pstat=0;
-    },500);
-  }
-  get ID() {return this.param.ID;}
-  view(n) {
-    if (n < this.capt.length) {
-      this.vue.publish(this.capt[n]);
-    }
-  }
-}
-
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
   const image_L = new ImageSwitcher(rosNode, NScamL);
@@ -150,55 +35,27 @@ setImmediate(async function() {
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
   let vue_N = 0;
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
-  const genpcreload = rosNode.serviceClient(NSrovi + '/genpc/reload', std_srvs.Trigger);
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
     return;
   }
-  if (!await rosNode.waitForService(genpcreload.getService(), 2000)) {
-    ros.log.error('genpc reload service not available');
-    return;
-  }
 
-  let param_C = await rosNode.getParam(NSpsgenpc + '/camera');
-  let param_V = await rosNode.getParam(NSlive + '/camera');
-  let param_P = await rosNode.getParam(NSpsgenpc + '/projector');
-  let paramTimer = null;
-  function paramDiff(o, n) {
-    let c = Object.assign({}, n);
-    for (let key in c) {
-      if (o.hasOwnProperty(key)) {
-        if (o[key] == c[key]) delete c[key];
-      }
-    }
-    return c;
-  }
-  async function paramReload() {
-    param_C = await rosNode.getParam(NSpsgenpc + '/camera');
-    let nv = await rosNode.getParam(NSlive + '/camera');
-    let np = await rosNode.getParam(NSpsgenpc + '/projector');
-    if (paramTimer != null) {
-      try {
-        await sens.cset(paramDiff(param_V, nv));
-        param_V = nv;
-        await sens.pset(paramDiff(param_P, np));
-        param_P = np;
-      }
-      catch(err) {
-        ros.log.warn('Exception in paramReload:' + err);
-      }
-    }
-    if (paramTimer != null) paramTimer = setTimeout(paramReload, 1000);
-  }
-  function paramScan() {
-    if (paramTimer == null) paramTimer = setTimeout(paramReload, 1000);
-  }
-  function paramStop() {
-    if (paramTimer != null) {
-      clearTimeout(paramTimer);
-    }
-    paramTimer = null;
-  }
+  let param={
+    camps: new Notifier(rosNode,NSpsgenpc + '/camera'),//Genpc mode camera params
+    camlv: new Notifier(rosNode,NSlive + '/camera'),  //Live mode camera params
+    proj: new Notifier(rosNode,NSpsgenpc + '/projector') //projector params
+  };
+  param.camlv.on('change',async function(key,val){
+    let obj={};
+    obj[key]=val;
+    await sens.cset(obj);
+  });
+  param.proj.on('change',async function(key,val){
+    let obj={};
+    obj[key]=val;
+    await sens.pset(obj);
+  });
+
   let sensEv;
   switch (sensName) {
   case 'ycam3':
@@ -206,27 +63,29 @@ setImmediate(async function() {
     sensEv = sens.open(rosNode, NSrovi);
     break;
   case 'ycam1h':
-    sensEv = sens.open(rosNode,NScamL,image_L.ID,NScamR,image_R.ID, param_P.Url, param_P.Port);
+    sensEv = sens.open(rosNode,NScamL,image_L.ID,NScamR,image_R.ID, param.proj.objs.Url, param.proj.objs.Port);
     break;
 
   }
+  sensEv.pstat_=false;
   sensEv.on('stat', function(s) {
     let f = new std_msgs.Bool();
     f.data = s;
     pub_stat.publish(f);
-    if (prev_sensstat != s) {
+    if (sensEv.pstat_ != s) {
       ros.log.warn('YCAM stat becomes ' + s);
     }
-    prev_sensstat = s;
+    sensEv.pstat_ = s;
   });
   sensEv.on('wake', async function() {
     console.log('ycam wake');
-    param_V = {};
-    param_P = {};
-    paramStop();
+    for(let n in param) param[n].start();
     await sens.cset({ 'TriggerMode': 'Off' });
-    paramScan();
     ros.log.warn('NOW ALL READY');
+  });
+  sensEv.on('shutdown', async function() {
+    console.log('ycam down');
+    for(let n in param) param[n].reset();
   });
   sensEv.on('left', async function(img) {
     image_L.emit(img);
@@ -235,67 +94,74 @@ setImmediate(async function() {
     image_R.emit(img);
   });
 
-  paramScan();
+
 
 // ---------Definition of services
   let capt_L; // <--------captured images of the left camera
   let capt_R; // <--------same as right
-  const svc_do = rosNode.advertiseService(NSpsgenpc, std_srvs.Trigger, (req, res) => { // <--------generate PCL
-    paramStop();
+  let failcnt=0;
+  let psgenpc = function(req,res){
     if (!sens.normal) {
       ros.log.warn(res.message = 'YCAM not ready');
       res.success = false;
-      paramScan();
       return true;
     }
     return new Promise(async (resolve) => {
-      const timeoutmsec = param_P.Interval*13*2 + 1000;
+      ros.log.info('Failed '+failcnt+' times');
+      const timeoutmsec = param.proj.objs.Interval*13*2 + 1000;
       let wdt = setTimeout(async function() { // <--------watch dog
         image_L.cancel();
         image_R.cancel();
         await sens.cset({ 'TriggerMode': 'Off' });
-        paramScan();
         const errmsg = 'pshift_genpc timed out AAA';
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;
+        failcnt++;
         resolve(true);
       }, timeoutmsec);
-      param_V = Object.assign(param_V, param_C);
       await sens.cset({ 'TriggerMode': 'On' });
-      await sens.cset(param_C);
+      await sens.cset(param.camps.objs);
       await sleep(10);
-      const settletm=Math.floor(1000.0/param_V.AcquisitoionFrameRate);
       setTimeout(function(){
     	  sens.pset({ 'Go': 2 }); // <--------projector sequence start
-      },settletm+100);
-      let imgs=await Promise.all([image_L.store(13,settletm),image_R.store(13,settletm)]);
+      },100);
+      let imgs=await Promise.all([image_L.store(13,50),image_R.store(13,50)]);
       clearTimeout(wdt);
       capt_L = imgs[0];
       capt_R = imgs[1];
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = capt_L;
       gpreq.imgR = capt_R;
+      let gpres;
       try {
-        let gpres = await genpc.call(gpreq);
+        gpres = await genpc.call(gpreq);
         res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
         res.success = true;
       }
       catch(err) {
-//      ros.log.error('genpc failed. ' + err);
         res.message = 'genpc failed';
         res.success = false;
       }
-      await sens.cset({ 'TriggerMode': 'Off' });
-      paramScan();
+      let ts=Math.floor(gpres.pc_cnt*0.001)+1;
+      setTimeout(function(){
+        sens.cset({ 'TriggerMode': 'Off' });
+      },ts);
+      await sens.cset(param.camlv.diff(param.camps.objs));
       image_L.view(vue_N);
       image_R.view(vue_N);
-      image_L.cancel();
-      image_R.cancel();
+      image_L.cancel(ts);
+      image_R.cancel(ts);
+      ros.log.info('Time to publish pc '+ts+' ms');
       resolve(true);
     });
+  }
+  const svc_do = rosNode.advertiseService(NSpsgenpc, std_srvs.Trigger, psgenpc);
+  const sub_do = rosNode.subscribe(NSX1, std_msgs.Bool,async function(){
+    let req=new std_srvs.Trigger.Request();
+    let res=new std_srvs.Trigger.Response();
+    await psgenpc(req,res);
   });
-
   const svc_parse = rosNode.advertiseService(NSycamctrl + '/parse', rovi_srvs.Dialog, async (req, res) => {
     let cmd = req.hello;
     let lbk = cmd.indexOf('{');
