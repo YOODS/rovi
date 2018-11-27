@@ -13,7 +13,8 @@ live:
     GainAnalog: 0
     Gain: 100
 camera:
+  AcquisitionFrameRate: 10
   Height: 480
   Width: 1280
   shmem: 614400
-
+  ID: VGA

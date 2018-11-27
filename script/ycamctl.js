@@ -97,8 +97,6 @@ setImmediate(async function() {
 
 
 // ---------Definition of services
-  let capt_L; // <--------captured images of the left camera
-  let capt_R; // <--------same as right
   let failcnt=0;
   let psgenpc = function(req,res){
     if (!sens.normal) {
@@ -128,11 +126,9 @@ setImmediate(async function() {
       },100);
       let imgs=await Promise.all([image_L.store(13,50),image_R.store(13,50)]);
       clearTimeout(wdt);
-      capt_L = imgs[0];
-      capt_R = imgs[1];
       let gpreq = new rovi_srvs.GenPC.Request();
-      gpreq.imgL = capt_L;
-      gpreq.imgR = capt_R;
+      gpreq.imgL = imgs[0];
+      gpreq.imgR = imgs[1];
       let gpres;
       try {
         gpres = await genpc.call(gpreq);
