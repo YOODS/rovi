@@ -17,7 +17,6 @@ class ImageSwitcher {
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
     this.imgqueue=[];
     this.pstat=0;   //0:live,1:settling,2:pshift
-    this.pimg;
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
         ros.log.error('remap service not available');
@@ -63,13 +62,18 @@ class ImageSwitcher {
       });
     }
   }
-  async emit(img) {
-    this.imgqueue.push(img);
-    if(this.imgqueue.length==1){
-      let who=this;
-      setImmediate(function(){
-        who.imgproc();
-      });
+  async emit(img){
+    switch(this.pstat){
+    case 0:
+      this.raw.publish(img);
+      let req=new rovi_srvs.ImageFilter.Request();
+      req.img=img;
+      let res=await this.remap.call(req);
+      this.rect.publish(res.img);
+      break;
+    case 2:
+      this.hook.emit('store',img);
+      break;
     }
   }
   store(count,delay) {
@@ -78,19 +82,23 @@ class ImageSwitcher {
     this.capt = [];
     this.pstat=1;
     setTimeout(function(){ who.pstat=2;},delay);
-    return new Promise(function(resolve) {
-      who.hook.on('store', function(img) {
+    return new Promise(function(resolve){
+      who.hook.on('store', async function(img){
         let icnt=who.capt.length;
         console.log(who.ns+':'+icnt);
         who.capt.push(img);
         icnt++;
-        if(icnt==2) who.pimg=img;
-        else if(icnt==count){
+        if(icnt==count){
           who.pstat=3;
-          who.rect.publish(who.pimg);
+          for(let i=0;i<count;i++){
+            let req=new rovi_srvs.ImageFilter.Request();
+            req.img=who.capt[i];
+            let res=await who.remap.call(req);
+            who.capt[i]=res.img;
+          }
+          who.rect.publish(who.capt[1]);
           resolve(who.capt);
         }
-//        else if(icnt>2) who.rect.publish(who.pimg);
       });
     });
   }
