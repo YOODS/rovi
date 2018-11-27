@@ -192,10 +192,10 @@ async function openCamera(rosrun, ns) {
         console.log('get:'+err);
       }
     }
+    src.data = new Uint8Array(src.height*src.step);
+    src.data.set(shmptr);
     let image_l = new sensor_msgs.Image();
     let image_r = new sensor_msgs.Image();
-    image_l.data = new Uint8Array();
-    image_r.data = new Uint8Array();
     const h = image_l.height = image_r.height = src.height;
     const w = image_l.step = image_r.step = src.step / 2;
     image_l.header = image_r.header = src.header;
@@ -205,9 +205,9 @@ async function openCamera(rosrun, ns) {
     image_l.data = new Uint8Array(sz);
     image_r.data = new Uint8Array(sz);
     for (let i = 0, s = 0, t = 0; i < h; i++, t += w) {
-      image_l.data.subarray(t).set(shmptr.subarray(s, s + w));
+      image_l.data.subarray(t).set(src.data.subarray(s, s + w));
       s += w;
-      image_r.data.subarray(t).set(shmptr.subarray(s, s + w));
+      image_r.data.subarray(t).set(src.data.subarray(s, s + w));
       s += w;
     }
     Notifier.emit('left', image_l);
