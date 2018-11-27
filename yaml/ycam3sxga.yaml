@@ -13,10 +13,11 @@ live:
     GainAnalog: 0
     Gain: 100
 camera:
+  AcquisitionFrameRate: 10
   Height: 1024
   Width: 2560
   shmem: 2621440
-  ID: YCM3
+  ID: SXGA
 left:
   remap:
     height: 1024
