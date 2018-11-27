@@ -6,44 +6,40 @@
 #include "rovi/ImageFilter.h"
 #include <iostream>
 
-bool isready = false;
-
 ros::NodeHandle *nh;
 ros::Publisher pub;
 
 cv::Mat rmapx, rmapy;
 
-bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
+int reload()
 {
-  res.success = false;
-  res.message = "";
   std::vector<double> D;
   nh->getParam("remap/D", D);
   if (D.size() != 5)
   {
     ROS_ERROR("Param D NG");
-    res.message += "D NG/";
+    return -1;
   }
   std::vector<double> K;
   nh->getParam("remap/K", K);
   if (K.size() != 9)
   {
     ROS_ERROR("Param K NG");
-    res.message += "K NG/";
+    return -1;
   }
   std::vector<double> R;
   nh->getParam("remap/R", R);
   if (R.size() != 9)
   {
     ROS_ERROR("Param R NG");
-    res.message += "R NG/";
+    return -1;
   }
   std::vector<double> P;
   nh->getParam("remap/P", P);
   if (P.size() != 12)
   {
     ROS_ERROR("Param P NG");
-    res.message += "P NG/";
+    return -1;
   }
   std::vector<double> ncam;
   cv::Mat Pro(P), nCam, nRot, nTrans;
@@ -57,29 +53,17 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   cv::Size imgsz(width, height);
   if (imgsz.area() == 0)
   {
-    res.message += "Size NG/";
-  }
-  if (res.message.size() > 0)
-  {
-    isready = false;
-    return true;
+    ROS_ERROR("Size NG");
+    return -1;
   }
   cv::Mat Cam(K), Rot(R);
   cv::initUndistortRectifyMap(Cam.reshape(1, 3), D, Rot.reshape(1, 3), nCam, imgsz, CV_32FC1, rmapx, rmapy);
-  res.success = true;
-  res.message = "Remap table ready";
   ROS_INFO("remap:reload ok");
-  isready = true;
-  return true;
+  return 0;
 }
 
 bool remap(rovi::ImageFilter::Request &req, rovi::ImageFilter::Response &res)
 {
-  if (!isready) {
-    ROS_WARN("remap table is not ready");
-    return false;
-  }
-
   ros::Time t0 = ros::Time::now();
   cv_bridge::CvImagePtr cv_ptr;
   try
@@ -106,12 +90,9 @@ int main(int argc, char **argv)
   ros::init(argc, argv, "remap_node");
   ros::NodeHandle n;
   nh = &n;
-  ros::ServiceServer svc0 = n.advertiseService("remap/reload", reload);
+  if(reload()<0) return 1;
   ros::ServiceServer svc1 = n.advertiseService("remap", remap);
   pub = n.advertise<std_msgs::Float64>("remap/tat", 1);
-  std_srvs::Trigger::Request req;
-  std_srvs::Trigger::Response res;
-  reload(req,res);
   ros::spin();
   return 0;
 }
