@@ -82,7 +82,6 @@ public:
 private:
 	PS_PARAMS param;
 	Eigen::MatrixXp _bw[CAMN][2];
-	Eigen::MatrixXd _bg;
 	Eigen::MatrixXp _threshold;
 	Eigen::MatrixXp _bin[CAMN][7];
 	Eigen::MatrixXd _ph[CAMN][4];
