@@ -8,6 +8,7 @@
 #include "rovi/Floats.h"
 #include "rovi/GenPC.h"
 #include "ps_main.h"
+#include <stdio.h>
 
 bool isready = false;
 
@@ -77,13 +78,15 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
       cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(0, j, img);
       cv::imwrite(cv::format("/tmp/capt%02d_0.pgm", j), img);
-    }
-    for (int j = 0; j < 13; j++)
-    {
-      cv::Mat img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
+      img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(1, j, img);
       cv::imwrite(cv::format("/tmp/capt%02d_1.pgm", j), img);
     }
+    FILE *f=fopen("/tmp/captseq.log","w");
+    for(int j=0;j<13;j++){
+      fprintf(f,"(%d) %d %d\n",j,req.imgL[j].header.seq,req.imgR[j].header.seq);
+    }
+    fclose(f);
   }
   catch (cv_bridge::Exception& e)
   {
