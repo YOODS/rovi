@@ -8,8 +8,8 @@ export ROS_MASTER_URI=http://localhost:11311
 export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
 
 roscd rovi
-ROS_NAMESPACE=/rovi rosparam load yaml/ycam3sxga.yaml
-script/gvloadSXGA.js
+ROS_NAMESPACE=/rovi rosparam load yaml/ycam3vga.yaml
+script/gvloadVGA.js
 roslaunch launch/ycam3s.launch
 pkill camnode
 echo -n 'y' | rosnode cleanup
