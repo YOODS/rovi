@@ -115,7 +115,7 @@ var ycam = {
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
-        ix=('00'+ix.toString(16)).substr(-2);
+        ix=('00'+ix.toString(16).toUpperCase()).substr(-2);
         str += '\n' + 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
