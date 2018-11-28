@@ -65,7 +65,7 @@ console.log('ycam.cset as double:' + key + '=' + val);
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
-        ix=ix.toString(16);
+        ix=('00'+ix.toString(16).toUpperCase()).substr(-2);
         run_p.write('i'+ix+ix+ix+'\n');
         break;
       case 'Go':
