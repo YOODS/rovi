@@ -115,21 +115,27 @@ var ycam = {
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
-        ix = ix.toString(16);
+        ix=('00'+ix.toString(16)).substr(-2);
         str += '\n' + 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
-        let gx = obj[key] < 2 ? obj[key] : 2;
-        str += '\n' + 'o' + gx + '\n';
+        str += '\n' + 'o' + obj[key] + '\n';
+        break;
+      case 'Inv':
+        str += '\n' + 'b' + obj[key] + '\n';
+        break;
+      case 'Mode':
+        str += '\n' + 'z' + obj[key] + '\n';
         break;
       }
     }
+    ros.log.info('YCAM3 pset '+str.substring(1));
     this.pregbuf += str;
     try {
       await this.pregwrt();
     }
     catch(err) {
-      ros.log.error('YCAM3 pset write ' + err);
+      ros.log.error('YCAM3 pset ' + err);
       ret = 'YCAM not ready';
       this.pregbuf = '';
     }
@@ -156,6 +162,7 @@ var ycam = {
     setTimeout(function() {ycam.scan();}, 1000);
   },
   open: function(nh, ns) {
+    const who=this;
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
     run_c = Rosrun.run('camera_aravis camnode', ns);
