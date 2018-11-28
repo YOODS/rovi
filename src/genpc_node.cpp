@@ -65,10 +65,10 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
     ROS_INFO("genpc img w, h: %d %d", width, height);
     ps_init(width, height);
     ROS_INFO("ps_init done");
-    ps_setparams(param);
-    ROS_INFO("ps_setparams done");
     isready=true;
   }
+  reload();
+  ps_setparams(param);
 
   // read Phase Shift data images. (13 left images and 13 right images)
   try
