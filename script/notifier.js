@@ -28,9 +28,11 @@ class Notifier extends EventEmitter{
   async init(){
     try{
       this.objs=await this.ros.getParam(this.ns);
+      return true;
     }
     catch(err){
       console.log('Init Param err:'+this.ns);
+      return false;
     }
   }
   check(param){
@@ -66,13 +68,26 @@ class Notifier extends EventEmitter{
       }
     }
   }
-  async start(){
-    if(!this.enable){
-      this.enable=true;
-      this.emit('start');
-      let param=await this.ros.getParam(this.ns);
-      this.check(param); //start scanning
+  push(param){
+    for(let key in param){
+      let val=param[key];
+      this.emit('change',key,val);
     }
+  }
+  async start(){
+    if(this.enable) return;
+    if(! await this.init()) return;
+    this.enable=true;
+    for(let key in this.objs){
+      let val=this.objs[key];
+      let hash=calcHash(JSON.stringify(val));
+      if(! this.hashes.hasOwnProperty(key) || this.hashes[key]!=hash){
+        this.hashes[key]=hash;
+        this.emit('change',key,val);
+      }
+    }
+    this.emit('start');
+    this.check({});
   }
   stop(){
     if(this.enable){

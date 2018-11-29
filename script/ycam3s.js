@@ -102,35 +102,42 @@ var ycam = {
       await ycam.pregwrt();
     }
   },
+  pblock:false,
   pset: async function(obj) {
+    if(this.pblock) return 'BLOCKED';
     let ret = 'OK';
     let str = '';
     for (let key in obj) {
       switch (key) {
       case 'ExposureTime':
-        str += '\n' + 'x' + obj[key] + '\n';
+        str += 'x' + obj[key] + '\n';
         break;
       case 'Interval':
-        str += '\n' + 'o' + obj[key] + '\n';
+        str += 'o' + obj[key] + '\n';
         break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
         ix=('00'+ix.toString(16).toUpperCase()).substr(-2);
-        str += '\n' + 'i' + ix + ix + ix + '\n';
+        str += 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
-        str += '\n' + 'o' + obj[key] + '\n';
+        str += 'o' + obj[key] + '\n';
         break;
       case 'Inv':
-        str += '\n' + 'b' + obj[key] + '\n';
+        str += 'b' + obj[key] + '\n';
         break;
       case 'Mode':
-        str += '\n' + 'z' + obj[key] + '\n';
+        str += 'z' + obj[key] + '\n';
+        break;
+      case 'Init':
+        str += '\n';
         break;
       }
     }
-    ros.log.info('YCAM3 pset '+str.substring(1));
+    const bs=this.pregbuf.length;
+//    ros.log.info('YCAM3 pset '+bs+' + '+str);
     this.pregbuf += str;
+    if(bs>0) return ret;
     try {
       await this.pregwrt();
     }
@@ -171,6 +178,7 @@ var ycam = {
         ros.log.error('Failure in openCamera');
         process.exit(101);
       }
+      who.pset({Init:0});
       Notifier.emit('wake');
     });
 
