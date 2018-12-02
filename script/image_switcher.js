@@ -15,7 +15,6 @@ class ImageSwitcher {
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
-    this.imgqueue=[];
     this.pstat=0;   //0:live,1:settling,2:pshift
     setImmediate(async function() {
       if (!await node.waitForService(who.remap.getService(), 2000)) {
@@ -32,36 +31,6 @@ class ImageSwitcher {
     this.hook = new EventEmitter();
     this.capt = [];
   }
-  async imgproc(){
-    let img=this.imgqueue[0];
-    let req = new rovi_srvs.ImageFilter.Request();
-    req.img = img;
-    let res;
-    try {
-      switch(this.pstat){
-      case 0:
-        this.raw.publish(img);
-        res=await this.remap.call(req);
-        this.rect.publish(res.img);
-        break;
-      case 2:
-        res=await this.remap.call(req);
-        this.hook.emit('store', res.img);
-        break;
-      }
-      this.imgqueue.shift();
-    }
-    catch(err) {
-      ros.log.error('ImageSwitcher::emit "remap failed:"'+err);
-      this.imgqueue=[];
-    }
-    if(this.imgqueue.length>0){
-      let who=this;
-      setImmediate(function(){
-        who.imgproc();
-      });
-    }
-  }
   async emit(img){
     switch(this.pstat){
     case 0:
@@ -76,12 +45,12 @@ class ImageSwitcher {
       break;
     }
   }
-  store(count,delay) {
+  store(count) {
     if(this.pstat!=0) return Promise.reject(new Error('genpc busy'));
     const who = this;
     this.capt = [];
-    this.pstat=1;
-    setTimeout(function(){ who.pstat=2;},delay);
+    this.pstat=2;
+
     return new Promise(function(resolve){
       who.hook.on('store', async function(img){
         let icnt=who.capt.length;
@@ -97,19 +66,15 @@ class ImageSwitcher {
             who.capt[i]=res.img;
           }
           who.rect.publish(who.capt[1]);
+          setTimeout(function(){ if(who.pstat==3) who.thru();},1000);
           resolve(who.capt);
         }
       });
     });
   }
-  cancel() {
-    let who=this;
-    let ts=arguments.length>0? arguments[0]:1;
+  thru() {
     this.hook.removeAllListeners();
-    this.pstat=3;
-    setTimeout(function(){
-      who.pstat=0;
-    },ts);
+    this.pstat=0;
   }
   get ID() {return this.param.ID;}
   view(n) {

@@ -102,9 +102,7 @@ var ycam = {
       await ycam.pregwrt();
     }
   },
-  pblock:false,
   pset: async function(obj) {
-    if(this.pblock) return 'BLOCKED';
     let ret = 'OK';
     let str = '';
     for (let key in obj) {

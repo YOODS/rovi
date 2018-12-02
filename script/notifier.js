@@ -68,9 +68,12 @@ class Notifier extends EventEmitter{
       }
     }
   }
-  push(param){
+  raise(param){
     for(let key in param){
       let val=param[key];
+      let hash=calcHash(JSON.stringify(val));
+      this.objs[key]=val;
+      this.hashes[key]=hash;
       this.emit('change',key,val);
     }
   }

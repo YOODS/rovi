@@ -50,20 +50,6 @@ setImmediate(async function() {
     await sens.pset(obj);
   });
 
-  sens.scanID=null;
-  sens.scanOn=function(){
-    if(sens.scanID!=null) return;
-    param.proj.push({Go:-1});
-    sens.scanID=setTimeout(function(){
-      sens.scanID=null;
-      sens.scanOn();
-    },Math.floor(1000/param.camlv.objs.AcquisitionFrameRate));
-  }
-  sens.scanOff=function(){
-    if(sens.scanID!=null) clearTimeout(sens.scanID);
-    sens.scanID=null;
-  }
-
   let sensEv;
   switch (sensName) {
   case 'ycam3':
@@ -76,6 +62,8 @@ setImmediate(async function() {
 
   }
   sensEv.pstat_=false;
+  sensEv.reqL_=0;
+  sensEv.reqR_=0;
   sensEv.on('stat', function(s) {
     let f = new std_msgs.Bool();
     f.data = s;
@@ -88,24 +76,75 @@ setImmediate(async function() {
   sensEv.on('wake', async function() {
     console.log('ycam wake');
     for(let n in param) await param[n].start();
-    param.camlv.push({TriggerMode:'On'});
-    param.proj.push({Mode:1});//--- let projector pattern to be phase shift
-    setTimeout(sens.scanOn,3000);
+    param.camlv.raise({TriggerMode:'On'});
+    param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
+    setTimeout(sensEv.scanOn,3000);
     ros.log.warn('NOW ALL READY');
   });
   sensEv.on('shutdown', async function() {
     console.log('ycam down');
-    sens.scanOff();
+    sensEv.scanOff();
     for(let n in param) param[n].reset();
   });
   sensEv.on('left', async function(img) {
+    sensEv.reqL_--;
+    if(sensEv.reqL_<=0){
+      sensEv.emit('syncL');
+      sensEv.reqL_=0;
+    }
     image_L.emit(img);
   });
   sensEv.on('right', async function(img) {
+    sensEv.reqR_--;
+    if(sensEv.reqR_<=0){
+      sensEv.emit('syncR');
+      sensEv.reqR_=0;
+    }
     image_R.emit(img);
   });
-
-
+  sensEv.syncL=async function(tmo){
+    return new Promise(function(resolve){
+      setTimeout(function(){  sensEv.reqL_=0; resolve(true);},tmo);
+      sensEv.once('syncL',function(){ resolve(true);});
+    });
+  }
+  sensEv.syncR=async function(tmo){
+    return new Promise(function(resolve){
+      setTimeout(function(){ sensEv.reqR_=0; resolve(true);},tmo);
+      sensEv.once('syncR',function(){ resolve(true);});
+    });
+  }
+  sensEv.scanID=null;
+  sensEv.scanOn=function(){
+    if(sensEv.scanID!=null) return;
+    param.proj.raise({Go:-1});
+    sensEv.reqL_++;
+    sensEv.reqR_++;
+    sensEv.scanID=setTimeout(function(){
+      sensEv.scanID=null;
+      sensEv.scanOn();
+    },Math.floor(1000/param.camlv.objs.AcquisitionFrameRate));
+  }
+  sensEv.scanOff=function(tmo){
+    if(sensEv.scanID!=null) clearTimeout(sensEv.scanID);
+    sensEv.scanID=null;
+    if(sensEv.reqL_>0 && sensEv.reqR_>0){
+ros.log.info('Stop streaming both');
+      return Promise.all([sensEv.syncL(tmo),sensEv.syncR(tmo)]);
+    }
+    else if(sensEv.reqL_>0){
+ros.log.info('Stop streaming left');
+      return sensEv.syncL(tmo);
+    }
+    else if(sensEv.reqR_>0){
+ros.log.info('Stop streaming right');
+      return sensEv.syncR(tmo);
+    }
+    else{
+ros.log.info('Stop streaming neither');
+      return Promise.resolve(true);
+    }
+  }
 
 // ---------Definition of services
   let pserror=0,psthres=0;
@@ -118,27 +157,22 @@ setImmediate(async function() {
     }
     return new Promise(async (resolve) => {
       let wdt = setTimeout(async function() { //---start watch dog
-        image_L.cancel();
-        image_R.cancel();
-        sens.pblock=false;//---release pset method
-        sens.scanOn();
+        image_L.thru();
+        image_R.thru();
+        sensEv.scanOn();
         const errmsg = 'pshift_genpc timed out AAA';
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;
         pserror++;
         resolve(true);
-      }, param.proj.objs.Interval*13*2 + 1000);
+      }, param.proj.objs.Interval*13 + 1000);
 
-      sens.scanOff();
-//      sens.pblock=true;//---block pset method
+      await sensEv.scanOff(500); //---wait stopping stream with 500ms timeout
+      ros.log.info('Streaming stopped');
       await sens.cset(param.camps.objs); //---overwrites genpc camera params
-      await sleep(10);
-      setTimeout(function(){
-        sens.pblock=false;//---release pset method
-        sens.pset({ 'Go': 2 }); //---projector starts after 100ms
-      },100);
-      let imgs=await Promise.all([image_L.store(13,100),image_R.store(13,100)]);//---after 100msec, try to store 13 images
+      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+      let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "storage" mode
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = imgs[0];
@@ -153,15 +187,17 @@ setImmediate(async function() {
         res.message = 'genpc failed';
         res.success = false;
       }
-      let ts=Math.floor(gpres.pc_cnt*0.001)+1;
-      setTimeout(function(){ sens.scanOn();},ts);//---after "ts" msec, back to live mode
-      param.camlv.push(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
+      let tp=Math.floor(gpres.pc_cnt*0.001)+1;
+      setTimeout(function(){ //---after "tp" msec, back to live mode
+        sensEv.scanOn();
+        image_L.thru();
+        image_R.thru();
+      },tp);
+      param.camlv.raise(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
       image_L.view(vue_N);
       image_R.view(vue_N);
-      image_L.cancel(ts);//---after "ts" msec, back to thru mode
-      image_R.cancel(ts);
       if(gpres.pc_cnt<psthres) pserror=-101;
-      ros.log.info('Time to publish pc '+ts+' ms, errors:'+pserror);
+      ros.log.info('Time to publish pc '+tp+' ms, errors:'+pserror);
       resolve(true);
     });
   }
@@ -223,12 +259,6 @@ setImmediate(async function() {
     case 'thres':
       pserror=0;
       psthres=Number(cmds[0]);
-      return Promise.resolve(true);
-    case 'cstop':
-      sens.scanOff();
-      return Promise.resolve(true);
-    case 'cstart':
-      sens.scanOn();
       return Promise.resolve(true);
     }
   });
