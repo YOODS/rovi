@@ -87,16 +87,16 @@ setImmediate(async function() {
     for(let n in param) param[n].reset();
   });
   sensEv.on('left', async function(img) {
-    sensEv.reqL_--;
-    if(sensEv.reqL_<=0){
+    if(sensEv.reqL_>0) sensEv.reqL_--;
+    if(sensEv.reqL_==0){
       sensEv.emit('syncL');
       sensEv.reqL_=0;
     }
     image_L.emit(img);
   });
   sensEv.on('right', async function(img) {
-    sensEv.reqR_--;
-    if(sensEv.reqR_<=0){
+    if(sensEv.reqR_>0) sensEv.reqR_--;
+    if(sensEv.reqR_==0){
       sensEv.emit('syncR');
       sensEv.reqR_=0;
     }
