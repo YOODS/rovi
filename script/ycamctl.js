@@ -19,6 +19,7 @@ const EventEmitter = require('events').EventEmitter;
 const jsyaml = require('js-yaml');
 const ImageSwitcher = require('./image_switcher.js');
 const Notifier = require('./notifier.js');
+const SensControl = require('./sens_ctrl.js');
 
 function sleep(msec){return new Promise(function(resolve){setTimeout(function(){resolve(true);},msec);});}
 
@@ -61,90 +62,33 @@ setImmediate(async function() {
     break;
 
   }
-  sensEv.pstat_=false;
-  sensEv.reqL_=0;
-  sensEv.reqR_=0;
+  sensEv=SensControl.assign(sensEv);
   sensEv.on('stat', function(s) {
     let f = new std_msgs.Bool();
     f.data = s;
     pub_stat.publish(f);
-    if (sensEv.pstat_ != s) {
-      ros.log.warn('YCAM stat becomes ' + s);
-    }
-    sensEv.pstat_ = s;
   });
   sensEv.on('wake', async function() {
     console.log('ycam wake');
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
     param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
-    setTimeout(sensEv.scanOn,3000);
     ros.log.warn('NOW ALL READY');
   });
   sensEv.on('shutdown', async function() {
     console.log('ycam down');
-    sensEv.scanOff();
     for(let n in param) param[n].reset();
   });
   sensEv.on('left', async function(img) {
-    if(sensEv.reqL_>0) sensEv.reqL_--;
-    if(sensEv.reqL_==0){
-      sensEv.emit('syncL');
-      sensEv.reqL_=0;
-    }
     image_L.emit(img);
   });
   sensEv.on('right', async function(img) {
-    if(sensEv.reqR_>0) sensEv.reqR_--;
-    if(sensEv.reqR_==0){
-      sensEv.emit('syncR');
-      sensEv.reqR_=0;
-    }
     image_R.emit(img);
   });
-  sensEv.syncL=async function(tmo){
-    return new Promise(function(resolve){
-      setTimeout(function(){  sensEv.reqL_=0; resolve(true);},tmo);
-      sensEv.once('syncL',function(){ resolve(true);});
-    });
-  }
-  sensEv.syncR=async function(tmo){
-    return new Promise(function(resolve){
-      setTimeout(function(){ sensEv.reqR_=0; resolve(true);},tmo);
-      sensEv.once('syncR',function(){ resolve(true);});
-    });
-  }
-  sensEv.scanID=null;
-  sensEv.scanOn=function(){
-    if(sensEv.scanID!=null) return;
+  sensEv.on('trigger', async function() {
     param.proj.raise({Go:-1});
-    sensEv.reqL_++;
-    sensEv.reqR_++;
-    sensEv.scanID=setTimeout(function(){
-      sensEv.scanID=null;
-      sensEv.scanOn();
-    },Math.floor(1000/param.camlv.objs.AcquisitionFrameRate));
-  }
-  sensEv.scanOff=function(tmo){
-    if(sensEv.scanID!=null) clearTimeout(sensEv.scanID);
-    sensEv.scanID=null;
-    if(sensEv.reqL_>0 && sensEv.reqR_>0){
-ros.log.info('Stop streaming both');
-      return Promise.all([sensEv.syncL(tmo),sensEv.syncR(tmo)]);
-    }
-    else if(sensEv.reqL_>0){
-ros.log.info('Stop streaming left');
-      return sensEv.syncL(tmo);
-    }
-    else if(sensEv.reqR_>0){
-ros.log.info('Stop streaming right');
-      return sensEv.syncR(tmo);
-    }
-    else{
-ros.log.info('Stop streaming neither');
-      return Promise.resolve(true);
-    }
-  }
+    sensEv.fps=param.camlv.objs.AcquisitionFrameRate;
+  });
 
 // ---------Definition of services
   let pserror=0,psthres=0;
@@ -164,7 +108,10 @@ ros.log.info('Stop streaming neither');
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;
-        pserror++;
+        pserror--;
+        for(let i=0;i<image_L.capt.length;i++){
+          console.log(('00'+i.toString(10)).substr(-2)+' '+image_L.capt[i].header.stamp.nsecs/1000000);
+        }
         resolve(true);
       }, param.proj.objs.Interval*13 + 1000);
 
@@ -259,6 +206,7 @@ ros.log.info('Stop streaming neither');
     case 'thres':
       pserror=0;
       psthres=Number(cmds[0]);
+      sensEv.reqL_=sensEv.reqR_=0;
       return Promise.resolve(true);
     }
   });
