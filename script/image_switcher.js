@@ -54,7 +54,6 @@ class ImageSwitcher {
     return new Promise(function(resolve){
       who.hook.on('store', async function(img){
         let icnt=who.capt.length;
-        console.log(who.ns+':'+icnt);
         who.capt.push(img);
         icnt++;
         if(icnt==count){

@@ -26,6 +26,7 @@ live:
     Gain: 100
 camera:
   AcquisitionFrameRate: 10
+  TriggerMode: On
   Height: 480
   Width: 1280
   shmem: 614400
