@@ -9,10 +9,10 @@ exports.assign=function(sens){
   sens.reqL_=0;
   sens.reqR_=0;
   sens.on('wake', async function(){
-    setTimeout(sens.scanOn,3000);
+    setTimeout(sens.scanStart,3000);
   });
   sens.on('shutdown', async function() {
-    sens.scanOff();
+    sens.scanStop();
   });
   sens.on('left', async function(img) {
     if(sens.reqL_>0) sens.reqL_--;
@@ -40,20 +40,24 @@ exports.assign=function(sens){
       sens.once('syncR',function(){ resolve(true);});
     });
   }
-  sens.scanID=null;
-  sens.scanOn=function(){
-    if(sens.scanID!=null) return;
+  sens.scanID_=null;
+  sens.scanStart=function(){
+    sens.reqL_=sens.reqR_=0;
+    sens.scanDo_();
+  }
+  sens.scanDo_=function(){
+    if(sens.scanID_!=null) return;
     sens.emit('trigger');
     sens.reqL_++;
     sens.reqR_++;
-    sens.scanID=setTimeout(function(){
-      sens.scanID=null;
-      sens.scanOn();
+    sens.scanID_=setTimeout(function(){
+      sens.scanID_=null;
+      sens.scanDo_();
     },Math.floor(1000/sens.fps));
   }
-  sens.scanOff=function(tmo){
-    if(sens.scanID!=null) clearTimeout(sens.scanID);
-    sens.scanID=null;
+  sens.scanStop=function(tmo){
+    if(sens.scanID_!=null) clearTimeout(sens.scanID_);
+    sens.scanID_=null;
     if(sens.reqL_>0 && sens.reqR_>0){
 ros.log.info('Stop streaming both');
       return Promise.all([sens.syncL(tmo),sens.syncR(tmo)]);
