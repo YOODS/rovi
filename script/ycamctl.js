@@ -100,25 +100,29 @@ setImmediate(async function() {
       return true;
     }
     return new Promise(async (resolve) => {
-      let wdt = setTimeout(async function() { //---start watch dog
+      await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
+      ros.log.info('Streaming stopped');
+      await sens.cset(param.camps.objs); //---overwrites genpc camera params
+      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+      let wdt=setTimeout(async function() { //---start watch dog
         image_L.thru();
         image_R.thru();
-        sensEv.scanOn();
+        sensEv.scanStart();
         const errmsg = 'pshift_genpc timed out AAA';
         ros.log.error(errmsg);
         res.success = false;
         res.message = errmsg;
         pserror--;
-        for(let i=0;i<image_L.capt.length;i++){
-          console.log(('00'+i.toString(10)).substr(-2)+' '+image_L.capt[i].header.stamp.nsecs/1000000);
-        }
         resolve(true);
       }, param.proj.objs.Interval*13 + 1000);
-
-      await sensEv.scanOff(500); //---wait stopping stream with 500ms timeout
-      ros.log.info('Streaming stopped');
-      await sens.cset(param.camps.objs); //---overwrites genpc camera params
-      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+//for monitoring
+      let icnt=0;
+      image_L.hook.on('store',function(img){
+        let ts=img.header.stamp;
+        console.log(('00'+icnt.toString(10)).substr(-2)+' '+(ts.nsecs*1e-9+ts.secs));
+        icnt++;
+      });
+//
       let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "storage" mode
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
@@ -136,7 +140,7 @@ setImmediate(async function() {
       }
       let tp=Math.floor(gpres.pc_cnt*0.001)+1;
       setTimeout(function(){ //---after "tp" msec, back to live mode
-        sensEv.scanOn();
+        sensEv.scanStart();
         image_L.thru();
         image_R.thru();
       },tp);

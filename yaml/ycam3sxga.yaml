@@ -4,8 +4,8 @@ pshift_genpc:
     Gain: 50
   projector:
     ExposureTime: 10
-    Intencity: 30
-    Interval: 70
+    Intencity: 120
+    Interval: 50
   calc:
     search_div: 2
     bw_diff: 7
