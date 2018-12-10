@@ -1,0 +1,8 @@
+pshift_genpc:
+  camera:
+    ExposureTime: 8400
+    Gain: 50
+  projector:
+    ExposureTime: 10
+    Intencity: 120
+    Interval: 50

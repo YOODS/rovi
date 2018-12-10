@@ -1,0 +1,4 @@
+live:
+  camera:
+    ExposureTime: 20000
+    Gain: 100

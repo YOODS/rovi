@@ -1,11 +1,4 @@
 pshift_genpc:
-  camera:
-    ExposureTime: 8400
-    Gain: 50
-  projector:
-    ExposureTime: 10
-    Intencity: 100
-    Interval: 40
   calc:
     search_div: 2
     bw_diff: 7
@@ -21,9 +14,7 @@ pshift_genpc:
 live:
   camera:
     AcquisitionFrameRate: 10
-    ExposureTime: 20000 # 5000 for rcalib
     GainAnalog: 0
-    Gain: 100
 camera:
   AcquisitionFrameRate: 10
   TriggerMode: On
