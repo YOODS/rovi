@@ -1,0 +1,27 @@
+{
+    "dumpYaml": "yaml/ycam3vga_pshift_ld.yaml",
+    "title": "位相シフト",
+    "params": [
+        {
+            "paramDisp": "カメラ露光時間",
+            "paramName": "pshift_genpc/camera/ExposureTime"
+        },
+        {
+            "paramDisp": "カメラゲイン",
+            "paramName": "pshift_genpc/camera/Gain"
+        },
+        {
+            "paramDisp": "プロジェクター露光時間",
+            "paramName": "pshift_genpc/projector/ExposureTime"
+        },
+        {
+            "paramDisp": "プロジェクター発光強度",
+            "paramName": "pshift_genpc/projector/Intencity"
+        },
+        {
+            "paramDisp": "プロジェクター発光間隔",
+            "paramName": "pshift_genpc/projector/Interval"
+        }
+    ],
+    "getInterval": 3
+}

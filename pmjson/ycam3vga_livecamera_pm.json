@@ -1,0 +1,15 @@
+{
+    "dumpYaml": "yaml/ycam3vga_livecamera_ld.yaml",
+    "title": "カメラ（ライブ）",
+    "params": [
+        {
+            "paramDisp": "露光時間",
+            "paramName": "live/camera/ExposureTime"
+        },
+        {
+            "paramDisp": "ゲイン",
+            "paramName": "live/camera/Gain"
+        }
+    ],
+    "getInterval": 3
+}
