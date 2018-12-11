@@ -1,4 +1,4 @@
 <launch>
   <env name="PMCLIENT_PKG_PATH" value="$(find rovi)" />
-  <node ns="rovi" name="ycam3vga_livecamera_pm" pkg="rqt_param_manager" type="rqt_param_manager" args="_conffile:=$(find rovi)/pmjson/ycam3vga_livecamera_pm.json" />
+  <node ns="rovi" name="ycam3vga_livecamera_pm" pkg="rqt_param_manager" type="rqt_param_manager" args="conffile:=$(find rovi)/pmjson/ycam3vga_livecamera_pm.json" />
 </launch>
