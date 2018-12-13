@@ -1,4 +1,11 @@
 pshift_genpc:
+  camera:
+    ExposureTime: 8400
+    Gain: 50
+  projector:
+    ExposureTime: 10
+    Intencity: 120
+    Interval: 50
   calc:
     search_div: 2
     bw_diff: 7
@@ -15,6 +22,8 @@ live:
   camera:
     AcquisitionFrameRate: 10
     GainAnalog: 0
+    ExposureTime: 20000
+    Gain: 100
 camera:
   AcquisitionFrameRate: 10
   TriggerMode: On
