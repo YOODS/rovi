@@ -55,6 +55,7 @@ roslaunch rovi ycam3vga.launch
 
 ### MatrielブランチBug情報  
 matrielブランチに以下のBugが発見されました。RamielではFix済み。
+
 |File|Bugs|
 |:----|:----|
 |genpc_node.cpp|メモリーリーク|
