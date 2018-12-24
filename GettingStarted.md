@@ -246,6 +246,8 @@ npm install js-yaml
 
 ## 3. RoVI本体のROSパッケージのインストール
 ~~~
+npm install shm-typed-array
+
 【TODO: この段落はROSコアパッケージのimage_pipelineへのPull Requestが通るまでの一時的な対処】
 cd ~/catkin_ws/src
 git clone https://github.com/YOODS/image_pipeline
@@ -265,12 +267,15 @@ cd ~/catkin_ws/src
 git clone https://github.com/YOODS/camera_aravis
 (このgit cloneのURIに注意。RoVIでは、YOODSで一部改変したcamera_aravisドライバを使用する)
 
+【npm install shm-typed-arrayで以下は不要になった】
+=======================================
 cd ~/catkin_ws/src/rovi/shm-typed-array
 npm install nan
 npm install node-cleanup
 sudo npm install -g node-gyp
 node-gyp configure
 node-gyp build
+=======================================
 
 cd ~/catkin_ws/src/rovi
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz

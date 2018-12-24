@@ -52,3 +52,11 @@ roslaunch rovi ycam3sxga.launch
 roslaunch rovi ycam3vga.launch
 ~~~
 
+
+### MatrielブランチBug情報  
+matrielブランチに以下のBugが発見されました。RamielではFix済み。
+
+|File|Bugs|
+|:----|:----|
+|genpc_node.cpp|メモリーリーク|
+|ycam3.js|ProjectorのIntencity設定コマンドのHEXフォーマット不良|

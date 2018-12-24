@@ -6,8 +6,7 @@ const EventEmitter = require('events').EventEmitter;
 
 exports.assign=function(sens){
   sens.fps=1;
-  sens.reqL_=0;
-  sens.reqR_=0;
+  sens.reqL_=sens.reqR_=0;
   sens.on('wake', async function(){
     setTimeout(sens.scanStart,3000);
   });
@@ -16,17 +15,11 @@ exports.assign=function(sens){
   });
   sens.on('left', async function(img) {
     if(sens.reqL_>0) sens.reqL_--;
-    if(sens.reqL_==0){
-      sens.emit('syncL');
-      sens.reqL_=0;
-    }
+    if(sens.reqL_==0) sens.emit('syncL');
   });
   sens.on('right', async function(img) {
     if(sens.reqR_>0) sens.reqR_--;
-    if(sens.reqR_==0){
-      sens.emit('syncR');
-      sens.reqR_=0;
-    }
+    if(sens.reqR_==0) sens.emit('syncR');
   });
   sens.syncL=async function(tmo){
     return new Promise(function(resolve){
