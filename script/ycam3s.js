@@ -28,7 +28,8 @@ const reg_table = {
   'GainAnalog': 0x00101008,
   'Gain': 0x0010100C,
   'TriggerMode': 0x00101010,
-  'SerialPort': 0x00300004
+  'SerialPort': 0x00300004,
+  'SoftwareTriggerRate': 0
 }
 
 const val_table = {
@@ -61,13 +62,15 @@ var ycam = {
       let val = obj[key];
       if (reg_table.hasOwnProperty(key)) {
         greq.address = reg_table[key];
-        greq.data = typeof(val) == 'string' ? val_table[val] : val;
-        try {
-          await run_c.reg_write.call(greq);
-        }
-        catch(err) {
-          ros.log.error('YCAM3 cset write ' + err);
-          ret = 'YCAM not ready';
+        if(greq.address!=0){
+          greq.data = typeof(val) == 'string' ? val_table[val] : val;
+          try {
+            await run_c.reg_write.call(greq);
+          }
+          catch(err) {
+            ros.log.error('YCAM3 cset write ' + err);
+            ret = 'YCAM not ready';
+          }
         }
       }
       else if (typeof(val) == 'string') {

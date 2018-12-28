@@ -38,7 +38,7 @@ setImmediate(async function() {
   let param={
     camps: new Notifier(rosNode,NSpsgenpc + '/camera'),//Genpc mode camera params
     camlv: new Notifier(rosNode,NSlive + '/camera'),  //Live mode camera params
-    proj: new Notifier(rosNode,NSpsgenpc + '/projector') //projector params
+    proj: new Notifier(rosNode,NSpsgenpc + '/projector') //Genpc projector params
   };
   param.camlv.on('change',async function(key,val){
     let obj={};
@@ -87,7 +87,7 @@ setImmediate(async function() {
   });
   sensEv.on('trigger', async function() {
     param.proj.raise({Go:-1});
-    sensEv.fps=param.camlv.objs.AcquisitionFrameRate;
+    sensEv.fps=param.camlv.objs.SoftwareTriggerRate;
   });
 
 // ---------Definition of services
@@ -119,11 +119,12 @@ setImmediate(async function() {
       let icnt=0;
       image_L.hook.on('store',function(img){
         let ts=img.header.stamp;
-        console.log(('00'+icnt.toString(10)).substr(-2)+' '+(ts.nsecs*1e-9+ts.secs));
+        ros.log.info(('00'+icnt.toString(10)).substr(-2)+' '+(ts.nsecs*1e-9+ts.secs));
         icnt++;
       });
 //
-      let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "storage" mode
+      ros.log.info('Ready to store');
+      let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = imgs[0];
