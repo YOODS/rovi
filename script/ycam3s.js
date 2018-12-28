@@ -66,10 +66,19 @@ var ycam = {
           greq.data = typeof(val) == 'string' ? val_table[val] : val;
           try {
             await run_c.reg_write.call(greq);
+            ros.log.info('regWrt/'+key+'/'+greq.address.toString(16)+'/'+greq.data);
           }
           catch(err) {
             ros.log.error('YCAM3 cset write ' + err);
-            ret = 'YCAM not ready';
+            ret = 'YCAM write reg failed';
+          }
+          try {
+            let gres=await run_c.reg_read.call(greq);
+            ros.log.info('regRd/'+gres.data);
+          }
+          catch(err) {
+            ros.log.error('YCAM3 cset read ' + err);
+            ret = 'YCAM read reg failed';
           }
         }
       }
