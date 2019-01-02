@@ -1,7 +1,7 @@
 pshift_genpc:
   camera:
     ExposureTime: 8400
-    Gain: 50
+    Gain: 0
   projector:
     ExposureTime: 10
     Intencity: 120
@@ -21,9 +21,9 @@ pshift_genpc:
 live:
   camera:
     AcquisitionFrameRate: 60
-    GainAnalog: 0
-    ExposureTime: 20000
-    Gain: 100
+    GainAnalog: 3
+    ExposureTime: 30000
+    Gain: 50
     SoftwareTriggerRate: 10
 camera:
   AcquisitionFrameRate: 60
