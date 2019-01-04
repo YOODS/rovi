@@ -127,18 +127,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
     pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
     pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
     pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
-    if (n < 20 || (N - 20) < n)
-    {
-      ROS_INFO("n=%d x,y,z=%f,%f,%f r,g,b=%f,%f,%f",
-        n,
-        pts.points[n].x,
-        pts.points[n].y,
-        pts.points[n].z,
-        pts.channels[0].values[n],
-        pts.channels[1].values[n],
-        pts.channels[2].values[n]
-      );
-    }
   }
 
   ROS_INFO("before outPLY");
