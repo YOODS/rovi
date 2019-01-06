@@ -63,13 +63,8 @@ setImmediate(async function() {
 
   }
   sensEv=SensControl.assign(sensEv);
-  sensEv.on('stat', function(s) {
-    let f = new std_msgs.Bool();
-    f.data = s;
-    pub_stat.publish(f);
-  });
   sensEv.on('wake', async function() {
-    console.log('ycam wake');
+    ros.log.info('ycam wake');
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
     param.proj.raise({Mode:1});//--- let 13 pattern mode
@@ -77,7 +72,7 @@ setImmediate(async function() {
     ros.log.warn('NOW ALL READY');
   });
   sensEv.on('shutdown', async function() {
-    console.log('ycam down');
+    ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
   });
   sensEv.on('left', async function(img,ts) {
@@ -114,7 +109,6 @@ setImmediate(async function() {
       await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
       ros.log.info('Streaming stopped');
       await sens.cset(param.camps.objs); //---overwrites genpc camera params
-      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
       let wdt=setTimeout(async function() { //---start watch dog
         ps2live(1000);
         const errmsg = 'pshift_genpc timed out AAA';
@@ -133,6 +127,8 @@ setImmediate(async function() {
       });
 //
       ros.log.info('Ready to store');
+      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+      await sleep(100);
       let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
@@ -161,9 +157,17 @@ setImmediate(async function() {
   }
   const svc_do = rosNode.advertiseService(NSpsgenpc, std_srvs.Trigger, psgenpc);
   const sub_do = rosNode.subscribe(NSX1, std_msgs.Bool,async function(){
+    if (!sens.normal) return;
     let req=new std_srvs.Trigger.Request();
     let res=new std_srvs.Trigger.Response();
     await psgenpc(req,res);
+  });
+  const svc_reset = rosNode.advertiseService(NSycamctrl + '/reset', std_srvs.Trigger, function(req,res){
+    param.proj.raise({Reset:1});
+    pserror=0;
+    res.message = '';
+    res.success = true;
+    return true;
   });
   const svc_parse = rosNode.advertiseService(NSycamctrl + '/parse', rovi_srvs.Dialog, async (req, res) => {
     let cmd = req.hello;
@@ -182,20 +186,10 @@ setImmediate(async function() {
     if (cmds.length > 1) cmd = cmds.shift();
     switch (cmd) {
     case 'cset':
-      if (!sens.normal) {
-        res.answer = 'YCAM not ready';
-      }
-      else {
-        res.answer = await sens.cset(obj);
-      }
+      res.answer = await sens.cset(obj);
       return Promise.resolve(true);
     case 'pset':
-      if (!sens.normal) {
-        res.answer = 'YCAM not ready';
-      }
-      else {
-        res.answer = await sens.pset(obj);
-      }
+      res.answer = await sens.pset(obj);
       return Promise.resolve(true);
     case 'stat': //---sensor(maybe YCAM) status query
       return new Promise((resolve) => {
@@ -217,7 +211,6 @@ setImmediate(async function() {
     case 'thres':
       pserror=0;
       psthres=Number(cmds[0]);
-      sensEv.reqL_=sensEv.reqR_=0;
       return Promise.resolve(true);
     }
   });

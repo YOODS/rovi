@@ -105,7 +105,6 @@ class Notifier extends EventEmitter{
   reset(){
     this.stop();
     this.hashes={};
-    this.objs={};
   }
   diff(obj){
     let c={};

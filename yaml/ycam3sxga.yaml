@@ -20,7 +20,7 @@ pshift_genpc:
     ls_points: 3
 live:
   camera:
-    AcquisitionFrameRate: 60
+    AcquisitionFrameRate: 28
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
