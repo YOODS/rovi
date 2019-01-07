@@ -25,7 +25,7 @@ PS_PARAMS param =
   .brightness = BRIGHTNESS,
   .darkness = DARKNESS,
   .step_diff = STEP_DIFF,
-  .reject_diff = REJECT_DIFF,
+  .max_step = MAX_STEP,
   .max_ph_diff = MAX_PH_DIFF,
   .max_parallax = MAX_PARALLAX,
   .min_parallax = MIN_PARALLAX,
@@ -40,7 +40,7 @@ int reload(){
   nh->getParam("pshift_genpc/calc/brightness", param.brightness);
   nh->getParam("pshift_genpc/calc/darkness", param.darkness);
   nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
-  nh->getParam("pshift_genpc/calc/reject_diff", param.reject_diff);
+  nh->getParam("pshift_genpc/calc/max_step", param.max_step);
   nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
   nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
   nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
