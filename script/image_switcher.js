@@ -31,7 +31,7 @@ class ImageSwitcher {
     this.hook = new EventEmitter();
     this.capt = [];
   }
-  async emit(img){
+  async emit(img,ts){
     switch(this.pstat){
     case 0:
       this.raw.publish(img);
@@ -41,7 +41,7 @@ class ImageSwitcher {
       this.rect.publish(res.img);
       break;
     case 2:
-      this.hook.emit('store',img);
+      this.hook.emit('store',img,ts);
       break;
     }
   }
@@ -65,7 +65,7 @@ class ImageSwitcher {
             who.capt[i]=res.img;
           }
           who.rect.publish(who.capt[1]);
-          setTimeout(function(){ if(who.pstat==3) who.thru();},1000);
+//          setTimeout(function(){ if(who.pstat==3) who.thru();},1000);
           resolve(who.capt);
         }
       });

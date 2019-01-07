@@ -29,6 +29,8 @@ setImmediate(async function() {
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
+  const pub_errlog = rosNode.advertise(NSycamctrl + '/errlog', std_msgs.Bool);
+  let errlog='';
   let vue_N = 0;
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
@@ -63,27 +65,28 @@ setImmediate(async function() {
 
   }
   sensEv=SensControl.assign(sensEv);
-  sensEv.on('stat', function(s) {
-    let f = new std_msgs.Bool();
-    f.data = s;
-    pub_stat.publish(f);
-  });
   sensEv.on('wake', async function() {
-    console.log('ycam wake');
+    ros.log.info('ycam wake');
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
-    param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
+    param.proj.raise({Mode:1});//--- let 13 pattern mode
+//    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY');
   });
+  sensEv.on('stat', function(f){
+    let m=new std_msgs.Bool();
+    m.data=f;
+    pub_stat.publish(m);
+  });
   sensEv.on('shutdown', async function() {
-    console.log('ycam down');
+    ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
   });
-  sensEv.on('left', async function(img) {
-    image_L.emit(img);
+  sensEv.on('left', async function(img,ts) {
+    image_L.emit(img,ts);
   });
-  sensEv.on('right', async function(img) {
-    image_R.emit(img);
+  sensEv.on('right', async function(img,ts) {
+    image_R.emit(img,ts);
   });
   sensEv.on('trigger', async function() {
     param.proj.raise({Go:-1});
@@ -92,6 +95,15 @@ setImmediate(async function() {
 
 // ---------Definition of services
   let pserror=0,psthres=0;
+  let ps2live = function(tp){ //---after "tp" msec, back to live mode
+    setTimeout(function(){
+      sensEv.scanStart();
+      image_L.thru();
+      image_R.thru();
+    },tp);
+    param.camlv.raise(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
+//    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
+  }
   let psgenpc = function(req,res){
     if(pserror<0) return false;
     if (!sens.normal) {
@@ -100,14 +112,12 @@ setImmediate(async function() {
       return true;
     }
     return new Promise(async (resolve) => {
+//      param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
       await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
       ros.log.info('Streaming stopped');
       await sens.cset(param.camps.objs); //---overwrites genpc camera params
-      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
       let wdt=setTimeout(async function() { //---start watch dog
-        image_L.thru();
-        image_R.thru();
-        sensEv.scanStart();
+        ps2live(1000);
         const errmsg = 'pshift_genpc timed out AAA';
         ros.log.error(errmsg);
         res.success = false;
@@ -117,13 +127,15 @@ setImmediate(async function() {
       }, param.proj.objs.Interval*13 + 1000);
 //for monitoring
       let icnt=0;
-      image_L.hook.on('store',function(img){
-        let ts=img.header.stamp;
-        ros.log.info(('00'+icnt.toString(10)).substr(-2)+' '+(ts.nsecs*1e-9+ts.secs));
+      image_L.hook.on('store',function(img,t2){
+        let t1=img.header.stamp;
+        ros.log.info(('00'+icnt.toString(10)).substr(-2)+' '+(t1.nsecs*1e-9+t1.secs)+' '+(t2.nsecs*1e-9+t2.secs));
         icnt++;
       });
 //
       ros.log.info('Ready to store');
+      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+      await sleep(100);
       let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
@@ -131,7 +143,9 @@ setImmediate(async function() {
       gpreq.imgR = imgs[1];
       let gpres;
       try {
+        ros.log.info("call genpc");
         gpres = await genpc.call(gpreq);
+        ros.log.info("ret genpc");
         res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
         res.success = true;
       }
@@ -140,12 +154,7 @@ setImmediate(async function() {
         res.success = false;
       }
       let tp=Math.floor(gpres.pc_cnt*0.001)+1;
-      setTimeout(function(){ //---after "tp" msec, back to live mode
-        sensEv.scanStart();
-        image_L.thru();
-        image_R.thru();
-      },tp);
-      param.camlv.raise(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
+      ps2live(tp);
       image_L.view(vue_N);
       image_R.view(vue_N);
       if(gpres.pc_cnt<psthres) pserror=-101;
@@ -155,9 +164,17 @@ setImmediate(async function() {
   }
   const svc_do = rosNode.advertiseService(NSpsgenpc, std_srvs.Trigger, psgenpc);
   const sub_do = rosNode.subscribe(NSX1, std_msgs.Bool,async function(){
+    if (!sens.normal) return;
     let req=new std_srvs.Trigger.Request();
     let res=new std_srvs.Trigger.Response();
     await psgenpc(req,res);
+  });
+  const svc_reset = rosNode.advertiseService(NSycamctrl + '/reset', std_srvs.Trigger, function(req,res){
+    param.proj.raise({Reset:1});
+    pserror=0;
+    res.message = '';
+    res.success = true;
+    return true;
   });
   const svc_parse = rosNode.advertiseService(NSycamctrl + '/parse', rovi_srvs.Dialog, async (req, res) => {
     let cmd = req.hello;
@@ -176,20 +193,10 @@ setImmediate(async function() {
     if (cmds.length > 1) cmd = cmds.shift();
     switch (cmd) {
     case 'cset':
-      if (!sens.normal) {
-        res.answer = 'YCAM not ready';
-      }
-      else {
-        res.answer = await sens.cset(obj);
-      }
+      res.answer = await sens.cset(obj);
       return Promise.resolve(true);
     case 'pset':
-      if (!sens.normal) {
-        res.answer = 'YCAM not ready';
-      }
-      else {
-        res.answer = await sens.pset(obj);
-      }
+      res.answer = await sens.pset(obj);
       return Promise.resolve(true);
     case 'stat': //---sensor(maybe YCAM) status query
       return new Promise((resolve) => {
@@ -211,7 +218,6 @@ setImmediate(async function() {
     case 'thres':
       pserror=0;
       psthres=Number(cmds[0]);
-      sensEv.reqL_=sensEv.reqR_=0;
       return Promise.resolve(true);
     }
   });

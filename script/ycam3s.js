@@ -20,6 +20,8 @@ let shmkey=0;
 let run_c;  // should be rosrun.js camnode
 let rosNode;
 
+function sleep(msec){return new Promise(function(resolve){setTimeout(function(){resolve(true);},msec);});}
+
 const reg_table = {
   'AcquisitionStart': 0x00100018,
   'AcquisitionStop': 0x0010001c,
@@ -38,23 +40,8 @@ const val_table = {
 }
 
 var ycam = {
-  isliveon: async function() {
-    let ison = false;
-    let greq = new gev_srvs.GevRegs.Request();
-    greq.address = reg_table['TriggerMode'];
-    try {
-      gres = await run_c.reg_read.call(greq);
-      if (gres.data === 0) {
-        ison = true;
-      }
-    }
-    catch(err) {
-      let warnmsg = 'YCAM3 isliveon TriggerMode read ' + err;
-      ros.log.warn(warnmsg);
-    }
-    return ison;
-  },
   cset: async function(obj) {
+    if(!ycam.cstat) return 'ycam3s not ready';
     let ret = 'OK';
     let greq = new gev_srvs.GevRegs.Request();
     let dreq = new dyn_srvs.Reconfigure.Request();
@@ -66,19 +53,10 @@ var ycam = {
           greq.data = typeof(val) == 'string' ? val_table[val] : val;
           try {
             await run_c.reg_write.call(greq);
-            ros.log.info('regWrt/'+key+'/'+greq.address.toString(16)+'/'+greq.data);
           }
           catch(err) {
             ros.log.error('YCAM3 cset write ' + err);
             ret = 'YCAM write reg failed';
-          }
-          try {
-            let gres=await run_c.reg_read.call(greq);
-            ros.log.info('regRd/'+gres.data);
-          }
-          catch(err) {
-            ros.log.error('YCAM3 cset read ' + err);
-            ret = 'YCAM read reg failed';
           }
         }
       }
@@ -100,6 +78,8 @@ var ycam = {
     }
     return ret;
   },
+  pstat:false,
+  cstat:false,
   pregbuf: '',
   pregwrt: async function() {
     let success = true;
@@ -108,67 +88,72 @@ var ycam = {
       greq.address = reg_table['SerialPort'];
       let lsb = ycam.pregbuf.charCodeAt(0);
       greq.data = (~lsb << 16) | lsb;
-      await run_c.reg_write.call(greq);
-
-      ycam.pregbuf = ycam.pregbuf.slice(1);
+      try {
+        await run_c.reg_write.call(greq);
+        ycam.pregbuf = ycam.pregbuf.slice(1);
+      }
+      catch(err) {
+        ros.log.error('YCAM3 pregwrt "'+lsb+'" '+err);
+        ycam.pstat=false;
+        ycam.pregbuf='';
+        Notifier.emit('shutdown','call regw');
+        return;
+      }
       await ycam.pregwrt();
     }
   },
   pset: async function(obj) {
+    if(!ycam.cstat) return 'ycam3s not ready';
     let ret = 'OK';
     let str = '';
     for (let key in obj) {
       switch (key) {
       case 'ExposureTime':
-        str += 'x' + obj[key] + '\n';
-        break;
-      case 'Interval':
-        str += 'o' + obj[key] + '\n';
-        break;
+          if(ycam.pstat) str += 'x' + obj[key] + '\n';
+          break;
+        case 'Interval':
+          if(ycam.pstat) str += 'o' + obj[key] + '\n';
+          break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
         ix=('00'+ix.toString(16).toUpperCase()).substr(-2);
-        str += 'i' + ix + ix + ix + '\n';
+        if(ycam.pstat) str += 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
-        str += 'o' + obj[key] + '\n';
+        if(ycam.pstat) str += 'o' + obj[key] + '\n';
         break;
       case 'Inv':
-        str += 'b' + obj[key] + '\n';
+        if(ycam.pstat) str += 'b' + obj[key] + '\n';
         break;
       case 'Mode':
-        str += 'z' + obj[key] + '\n';
+        if(ycam.pstat) str += 'z' + obj[key] + '\n';
         break;
+      case 'Reset':
+        if(!ycam.pstat) Notifier.emit('wake');
       case 'Init':
-        str += '\n';
+        ycam.pstat=true;
+        ycam.pregbuf='';
+        str += '!\n';
         break;
       }
     }
-    const bs=this.pregbuf.length;
-//    ros.log.info('YCAM3 pset '+bs+' + '+str);
-    this.pregbuf += str;
+    const bs=ycam.pregbuf.length;
+    ycam.pregbuf += str;
     if(bs>0) return ret;
-    try {
-      await this.pregwrt();
-    }
-    catch(err) {
-      ros.log.error('YCAM3 pset ' + err);
-      ret = 'YCAM not ready';
-      this.pregbuf = '';
-    }
+    ycam.pregwrt();
     return ret;
   },
   normal: false,
   stat: function() {
-    return { 'cam': run_c.running };
+    return { 'camera': ycam.cstat, 'projector': ycam.pstat};
   },
   scan: function() {
     let s;
     try {
-      s = this.stat();
+      s = ycam.stat();
     }
     catch(err) {
-      Notifier.emit('stat', this.normal = false);
+      Notifier.emit('stat', ycam.normal = false);
       setTimeout(function() {ycam.scan();}, 1000);
       return;
     }
@@ -188,13 +173,15 @@ var ycam = {
         ros.log.error('Failure in openCamera');
         process.exit(101);
       }
-      who.pset({Init:0});
+      who.pset({Init:1});
       Notifier.emit('wake');
+      ycam.cstat=ycam.pstat=true;
     });
 
     run_c.on('stop', async function() {
-      Notifier.emit('shutdown');
+      Notifier.emit('shutdown','camera stopped');
       ros.log.warn('YCAM3 Stopped');
+      ycam.cstat=ycam.pstat=false;
       rosNode.unsubscribe(ns + '/camera/image_raw');
     });
 
@@ -235,8 +222,9 @@ async function openCamera(rosrun, ns) {
       image_r.data.subarray(t).set(src.data.subarray(s, s + w));
       s += w;
     }
-    Notifier.emit('left', image_l);
-    Notifier.emit('right', image_r);
+    let ts=ros.Time.now();
+    Notifier.emit('left', image_l,ts);
+    Notifier.emit('right', image_r,ts);
   });
   return new Promise(async function(resolve) {
     let regw = rosNode.serviceClient(ns + '/camera/regw', gev_srvs.GevRegs, { persist: true });
