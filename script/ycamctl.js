@@ -29,6 +29,8 @@ setImmediate(async function() {
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
+  const pub_errlog = rosNode.advertise(NSycamctrl + '/errlog', std_msgs.Bool);
+  let errlog='';
   let vue_N = 0;
   const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
@@ -70,6 +72,11 @@ setImmediate(async function() {
     param.proj.raise({Mode:1});//--- let 13 pattern mode
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY');
+  });
+  sensEv.on('stat', function(f){
+    let m=new std_msgs.Bool();
+    m.data=f;
+    pub_stat.publish(m);
   });
   sensEv.on('shutdown', async function() {
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
