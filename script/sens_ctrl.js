@@ -40,9 +40,11 @@ exports.assign=function(sens){
   }
   sens.scanDo_=function(){
     if(sens.scanID_!=null) return;
-    sens.emit('trigger');
-    sens.reqL_++;
-    sens.reqR_++;
+    if(sens.device.pstat){
+      sens.emit('trigger');
+      sens.reqL_++;
+      sens.reqR_++;
+    }
     sens.scanID_=setTimeout(function(){
       sens.scanID_=null;
       sens.scanDo_();

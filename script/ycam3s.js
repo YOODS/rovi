@@ -90,16 +90,19 @@ var ycam = {
       greq.data = (~lsb << 16) | lsb;
       try {
         await run_c.reg_write.call(greq);
-        ycam.pregbuf = ycam.pregbuf.slice(1);
+        ycam.pstat=true;
+        ycam.pregbuf=ycam.pregbuf.slice(1);
+        setImmediate(function(){ ycam.pregwrt();});
       }
       catch(err) {
         ros.log.error('YCAM3 pregwrt "'+lsb+'" '+err);
         ycam.pstat=false;
-        ycam.pregbuf='';
-        Notifier.emit('shutdown','call regw');
-        return;
+        setTimeout(function(){
+          if(!ycam.cstat) return;
+          ros.log.error('YCAM3 pregwrt retry');
+          ycam.pregwrt();
+        },100);
       }
-      await ycam.pregwrt();
     }
   },
   pset: async function(obj) {
@@ -109,43 +112,41 @@ var ycam = {
     for (let key in obj) {
       switch (key) {
       case 'ExposureTime':
-          if(ycam.pstat) str += 'x' + obj[key] + '\n';
+          str += 'x' + obj[key] + '\n';
           break;
         case 'Interval':
-          if(ycam.pstat) str += 'o' + obj[key] + '\n';
+          str += 'o' + obj[key] + '\n';
           break;
       case 'Intencity':
         let ix = obj[key] < 256 ? obj[key] : 255;
         ix=('00'+ix.toString(16).toUpperCase()).substr(-2);
-        if(ycam.pstat) str += 'i' + ix + ix + ix + '\n';
+        str += 'i' + ix + ix + ix + '\n';
         break;
       case 'Go':
-        if(ycam.pstat) str += 'o' + obj[key] + '\n';
+        str += 'o' + obj[key] + '\n';
         break;
       case 'Inv':
-        if(ycam.pstat) str += 'b' + obj[key] + '\n';
+        str += 'b' + obj[key] + '\n';
         break;
       case 'Mode':
-        if(ycam.pstat) str += 'z' + obj[key] + '\n';
+        str += 'z' + obj[key] + '\n';
         break;
       case 'Reset':
-        if(!ycam.pstat) Notifier.emit('wake');
       case 'Init':
-        ycam.pstat=true;
         ycam.pregbuf='';
-        str += '!\n';
+        str = '#\n';
         break;
       }
     }
     const bs=ycam.pregbuf.length;
     ycam.pregbuf += str;
-    if(bs>0) return ret;
+    if(bs>0 || !ycam.pstat) return ret;
     ycam.pregwrt();
     return ret;
   },
   normal: false,
   stat: function() {
-    return { 'camera': ycam.cstat, 'projector': ycam.pstat};
+    return {'camera':ycam.cstat};
   },
   scan: function() {
     let s;
@@ -176,16 +177,19 @@ var ycam = {
       who.pset({Init:1});
       Notifier.emit('wake');
       ycam.cstat=ycam.pstat=true;
+      ycam.pregbuf='';
     });
 
     run_c.on('stop', async function() {
       Notifier.emit('shutdown','camera stopped');
       ros.log.warn('YCAM3 Stopped');
       ycam.cstat=ycam.pstat=false;
+      ycam.pregbuf='';
       rosNode.unsubscribe(ns + '/camera/image_raw');
     });
 
     this.scan();
+    Notifier.device=ycam;
     return Notifier;
   }
 }
