@@ -7,11 +7,20 @@ export ROS_HOSTNAME=localhost
 export ROS_MASTER_URI=http://localhost:11311
 export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
 
+res=$1
+if [ "$res" = "" ]
+then
+  res=sxga
+fi
 roscd rovi
-#ROS_NAMESPACE=/rovi rosparam load yaml/ycam3vga_livecamera_ld.yaml
-#ROS_NAMESPACE=/rovi rosparam load yaml/ycam3vga_pshift_ld.yaml
-ROS_NAMESPACE=/rovi rosparam load yaml/ycam3vga.yaml
-script/gvloadVGA.js
+ROS_NAMESPACE=/rovi rosparam load yaml/ycam3$res.yaml
+IPADDS=$(ROS_NAMESPACE=/rovi rosparam get camera/address)
+
+while ! script/gvload.js $res $IPADDS
+do
+  echo '--------'
+done
+
 roslaunch launch/ycam3s.launch
 pkill camnode
 echo -n 'y' | rosnode cleanup

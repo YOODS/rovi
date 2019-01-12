@@ -15,7 +15,6 @@ const rovi_srvs = ros.require('rovi').srv;
 const execSync = require('child_process').execSync;
 
 const shm=require('shm-typed-array');
-let shmkey=0;
 
 let run_c;  // should be rosrun.js camnode
 let rosNode;
@@ -164,11 +163,12 @@ var ycam = {
     Notifier.emit('stat', this.normal = f);
     setTimeout(function() {ycam.scan();}, 1000);
   },
-  open: function(nh, ns) {
+  open: async function(nh, ns) {
     const who=this;
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
-    run_c = Rosrun.run('camera_aravis camnode', ns);
+    const camid=await rosNode.getParam(ns+'/camera/ID');
+    run_c = Rosrun.run('camera_aravis camnode '+camid, ns);
     run_c.on('start', async function() {
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');
@@ -195,6 +195,8 @@ var ycam = {
 }
 
 async function openCamera(rosrun, ns) {
+  let shmptr;
+  let shmkey=0;
   let sub = rosNode.subscribe(ns + '/camera/image_raw', sensor_msgs.Image, (src) => {
     const buffer=Buffer.from(src.data);
     const nkey=buffer.readUInt32LE(0);
