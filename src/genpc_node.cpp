@@ -29,7 +29,7 @@ PS_PARAMS param =
   .max_ph_diff = MAX_PH_DIFF,
   .max_parallax = MAX_PARALLAX,
   .min_parallax = MIN_PARALLAX,
-  .rdup_cnt = RIGHT_DUP_N,
+  .right_dup_cnt = RIGHT_DUP_N,
   .ls_points = LS_POINTS,
   .evec_error = EVEC_ERROR,
 };
@@ -44,7 +44,7 @@ int reload(){
   nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
   nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
   nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
-  nh->getParam("pshift_genpc/calc/rdup_cnt", param.rdup_cnt);
+  nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
   nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
 
   nh->getParam("genpc/Q", vecQ); 

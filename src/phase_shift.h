@@ -65,7 +65,7 @@ struct PS_PARAMS {
 	double max_ph_diff;
 	double max_parallax;
 	double min_parallax;
-	int rdup_cnt;
+	int right_dup_cnt;
 	int ls_points;
 	double evec_error;
 };

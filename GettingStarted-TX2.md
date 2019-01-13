@@ -334,7 +334,7 @@ rosservice call /rovi/pshift_genpc
 rosparam get /rovi/pshift_genpc/
 
 calc: {brightness: 256, bw_diff: 7, darkness: 5, ls_points: 3, max_parallax: 400,
-max_ph_diff: 3.0, min_parallax: -300, rdup_cnt: 5, reject_diff: 1.5, search_div: 2,
+max_ph_diff: 3.0, min_parallax: -300, right_cnt: 5, reject_diff: 1.5, search_div: 2,
 step_diff: 1.2}
 camera: {ExposureTime: 8400, Gain: 50}
 projector: {ExposureTime: 10, Intencity: 100, Interval: 100}
