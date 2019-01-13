@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 
-const NSycamctrl = '/rovi/ycam_ctrl';
-const NSpsgenpc = '/rovi/pshift_genpc';
-const NSX1 = '/rovi/X1';
-const NSgenpc = '/rovi/genpc';
-const NScamL = '/rovi/left';
-const NScamR = '/rovi/right';
-const NSlive = '/rovi/live';
-const NSrovi = '/rovi';
+const NSrovi = process.env.ROS_NAMESPACE;
+const NSycamctrl = NSrovi+'/ycam_ctrl';
+const NSps = NSrovi+'/pshift_genpc';
+const NSX1 = NSrovi+'/X1';
+const NSgenpc = NSrovi+'/genpc';
+const NScamL = NSrovi+'/left';
+const NScamR = NSrovi+'/right';
+const NSlive = NSrovi+'/live';
 const ros = require('rosnodejs');
 const sensor_msgs = ros.require('sensor_msgs').msg;
 const sensName = process.argv.length < 3 ? 'ycam1s' : process.argv[2];
@@ -32,15 +32,15 @@ setImmediate(async function() {
   const pub_errlog = rosNode.advertise(NSycamctrl + '/errlog', std_msgs.Bool);
   let errlog='';
   let vue_N = 0;
-  const genpc = rosNode.serviceClient(NSrovi + '/genpc', rovi_srvs.GenPC, { persist: true });
+  const genpc = rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
     return;
   }
   let param={
-    camps: new Notifier(rosNode,NSpsgenpc + '/camera'),//Genpc mode camera params
+    camps: new Notifier(rosNode,NSps + '/camera'),//Genpc mode camera params
     camlv: new Notifier(rosNode,NSlive + '/camera'),  //Live mode camera params
-    proj: new Notifier(rosNode,NSpsgenpc + '/projector') //Genpc projector params
+    proj: new Notifier(rosNode,NSps + '/projector') //Genpc projector params
   };
   param.camlv.on('change',async function(key,val){
     let obj={};
@@ -162,7 +162,7 @@ setImmediate(async function() {
       resolve(true);
     });
   }
-  const svc_do = rosNode.advertiseService(NSpsgenpc, std_srvs.Trigger, psgenpc);
+  const svc_do = rosNode.advertiseService(NSps, std_srvs.Trigger, psgenpc);
   const sub_do = rosNode.subscribe(NSX1, std_msgs.Bool,async function(){
     if (!sens.normal) return;
     let req=new std_srvs.Trigger.Request();

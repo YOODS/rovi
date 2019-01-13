@@ -1,27 +1,33 @@
 const execSync = require('child_process').execSync;
 
-let resolution='640x480';
-let NS='';
+let resolution='vga';
 let tab='';
 let aopt='';
 let adds=null;
+let arver=6;
 
 exports.dump=function(){
   if(arguments.length>0) resolution=arguments[0];
-  if(arguments.length>1) NS=arguments[1];
-/*  if(arguments.length>2){
-      adds=arguments[2];
+  if(arguments.length>1){
+      adds=arguments[1];
       aopt='--address='+adds;
-    }*/
-  if(NS.length>0){
-    tab='  ';
-    NS=NS+': \n';
   }
-  const xmlstr = execSync('arv-tool-0.4 '+aopt+' genicam | tail -n +2').toString();
+  let xmlstr;
+  try{
+    xmlstr=execSync('arv-tool-0.6 '+aopt+' genicam | tail -n +2').toString();
+  }
+  catch(err){
+    arver=4;
+    xmlstr=execSync('arv-tool-0.4 genicam | tail -n +2').toString();
+  }
+  if(xmlstr.length==0){
+    return {id:'No camera found'};
+  }
+
   let lines = xmlstr.split(/\n/);
   const yoods = '==YOODS==';
-  let vga_yamlstr = NS;
-  let sxga_yamlstr = NS;
+  let vga_yamlstr = '';
+  let sxga_yamlstr = '';
   let curkey = '';
 
   for (let li = 0; li < lines.length; li++) {
@@ -61,6 +67,16 @@ exports.dump=function(){
   else if (resolution == 'sxga') {
     yamlstr = sxga_yamlstr;
   }
-  const IDstr = execSync('arv-tool-0.4').toString().trim();
-  return {id:IDstr,yaml:yamlstr};
+  if(arver==6){
+    let IDstr = execSync('arv-tool-0.6').toString().trim();
+    IDstr=IDstr.replace(/\(.*\)/,'');
+    return {id:IDstr,yaml:yamlstr};
+  }
+  else if(arver==4){
+    let IDstr = execSync('arv-tool-0.4').toString().trim();
+    return {id:IDstr,yaml:yamlstr};
+  }
+  else{
+    return {id:'No aravis tools'};
+  }
 }

@@ -7,14 +7,16 @@ export ROS_HOSTNAME=localhost
 export ROS_MASTER_URI=http://localhost:11311
 export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
 
+export ROS_NAMESPACE=/rovi
+
 res=$1
 if [ "$res" = "" ]
 then
   res=sxga
 fi
 roscd rovi
-ROS_NAMESPACE=/rovi rosparam load yaml/ycam3$res.yaml
-IPADDS=$(ROS_NAMESPACE=/rovi rosparam get camera/address)
+rosparam load yaml/ycam3$res.yaml
+IPADDS=$(rosparam get camera/address)
 
 while ! script/gvload.js $res $IPADDS
 do
