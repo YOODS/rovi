@@ -1,11 +1,7 @@
 #!/bin/bash
 
-export NODE_PATH=/usr/lib/node_modules
 source /opt/ros/kinetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
-export ROS_HOSTNAME=localhost
-export ROS_MASTER_URI=http://localhost:11311
-export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
 
 export ROS_NAMESPACE=/rovi
 
@@ -18,10 +14,19 @@ roscd rovi
 rosparam load yaml/ycam3$res.yaml
 IPADDS=$(rosparam get camera/address)
 
-while ! script/gvload.js $res $IPADDS
+while :
 do
-  echo '--------'
+  guid=$(script/gvgetid.js $IPADDS)
+  if [ "$guid" != "" ]
+  then
+    break
+  fi
+  echo 'ycam3loader::No device'
 done
+
+echo "[ycam3loader]" $guid $IPADDS
+rosparam set camera/guid "$guid"
+script/gvload.js $res "$guid"
 
 roslaunch launch/ycam3s.launch
 pkill camnode

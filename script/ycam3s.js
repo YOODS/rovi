@@ -167,8 +167,7 @@ var ycam = {
     const who=this;
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
-    const camid=await rosNode.getParam(ns+'/camera/ID');
-    run_c = Rosrun.run('camera_aravis camnode '+camid, ns);
+    run_c = Rosrun.run('camera_aravis camnode', ns);
     run_c.on('start', async function() {
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');

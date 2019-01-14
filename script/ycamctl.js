@@ -54,15 +54,14 @@ setImmediate(async function() {
   });
 
   let sensEv;
-  switch (sensName) {
+  switch(sensName){
   case 'ycam3':
   case 'ycam3s':
     sensEv = await sens.open(rosNode, NSrovi);
     break;
   case 'ycam1s':
-    sensEv = await sens.open(rosNode,NScamL,image_L.ID,NScamR,image_R.ID, param.proj.objs.Url, param.proj.objs.Port);
+    sensEv = await sens.open(rosNode,NScamL, NScamR, param.proj.objs.Url, param.proj.objs.Port);
     break;
-
   }
   sensEv=SensControl.assign(sensEv);
   sensEv.on('wake', async function() {

@@ -21,12 +21,6 @@ class ImageSwitcher {
         ros.log.error('remap service not available');
         return;
       }
-      try {
-        who.param = await node.getParam(ns + '/camera');
-      }
-      catch(err) {
-        ros.log.warn('getParam ' + err);
-      }
     });
     this.hook = new EventEmitter();
     this.capt = [];
@@ -75,7 +69,6 @@ class ImageSwitcher {
     this.hook.removeAllListeners();
     this.pstat=0;
   }
-  get ID() {return this.param.ID;}
   view(n) {
     if (n < this.capt.length) {
       this.vue.publish(this.capt[n]);
