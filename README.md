@@ -1,4 +1,13 @@
-# RoVI/Ramiel edition
+# RoVI
+
+RoVIは3Dビジョンセンサーを組み込んだロボットのアプリケーションを開発するための、ソフトウェア群を提供します。
+
+## Structure
+下図にRoVIのソフトウェア構成を示します。I/O,Base,Utilityをプラットフォーム層として、これを利用し用途に合わせてApplicationを開発します。基本的な機能はプラットフォーム層を利用できるので、アプリケーションの開発L/Tが短縮出来ます。Applicationの実装例として、MTM(Master Teaching Method)パッケージも公開しています(https://github.YOODS/MTM)。
+<img src="img/fig1.png" width="500px" >
+
+   
+## Ramiel edition release note
 
  Ramiel editionの目標はRoVIの
 - 信頼性
