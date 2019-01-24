@@ -24,11 +24,11 @@ PS_PARAMS param =
   .brightness = BRIGHTNESS,
   .darkness = DARKNESS,
   .step_diff = STEP_DIFF,
-  .reject_diff = REJECT_DIFF,
+  .max_step = MAX_STEP,
   .max_ph_diff = MAX_PH_DIFF,
   .max_parallax = MAX_PARALLAX,
   .min_parallax = MIN_PARALLAX,
-  .rdup_cnt = RIGHT_DUP_N,
+  .right_dup_cnt = RIGHT_DUP_N,
   .ls_points = LS_POINTS,
   .evec_error = EVEC_ERROR,
 };
@@ -43,26 +43,12 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   nh->getParam("pshift_genpc/calc/brightness", param.brightness);
   nh->getParam("pshift_genpc/calc/darkness", param.darkness);
   nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
-  nh->getParam("pshift_genpc/calc/reject_diff", param.reject_diff);
+  nh->getParam("pshift_genpc/calc/max_step", param.max_step);
   nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
   nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
   nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
-  nh->getParam("pshift_genpc/calc/rdup_cnt", param.rdup_cnt);
+  nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
   nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
-
-/*
-  ROS_ERROR("reload param.search_div=%d", param.search_div);
-  ROS_ERROR("reload param.bw_diff=%d", param.bw_diff);
-  ROS_ERROR("reload param.brightness=%d", param.brightness);
-  ROS_ERROR("reload param.darkness=%d", param.darkness);
-  ROS_ERROR("reload param.step_diff=%f", param.step_diff);
-  ROS_ERROR("reload param.reject_diff=%f", param.reject_diff);
-  ROS_ERROR("reload param.max_ph_diff=%f", param.max_ph_diff);
-  ROS_ERROR("reload param.max_parallax=%f", param.max_parallax);
-  ROS_ERROR("reload param.min_parallax=%f", param.min_parallax);
-  ROS_ERROR("reload param.rdup_cnt=%d", param.rdup_cnt);
-  ROS_ERROR("reload param.ls_points=%d", param.ls_points);
-*/
 
   nh->getParam("genpc/Q", vecQ); 
   if (vecQ.size() != 16)
@@ -73,36 +59,32 @@ bool reload(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 
   if (res.message.size() > 0) // Error happened
   {
-    isready = false;
     return true;
   }
 
   res.success = true;
   res.message = "genpc calc param ready";
   ROS_INFO("genpc:reload ok");
-  isready = true;
   return true;
 }
 
-bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
-{
+bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
 
   if (!isready) {
-    ROS_ERROR("genpc calc param is not ready");
-    return false;
+    int width = req.imgL[0].width;
+    int height = req.imgL[0].height;
+    ROS_INFO("genpc img w, h: %d %d", width, height);
+    ps_init(width, height);
+    ROS_INFO("ps_init done");
+    isready=true;
   }
-
-  int width = req.imgL[0].width;
-  int height = req.imgL[0].height;
-
-  ROS_INFO("genpc img w, h: %d %d", width, height);
-
-  ps_init(width, height);
-  ROS_INFO("ps_init done");
-
+  {
+    std_srvs::Trigger::Request req;
+    std_srvs::Trigger::Response res;
+    reload(req,res);
+  }
   ps_setparams(param);
-  ROS_INFO("ps_setparams done");
 
   // read Phase Shift data images. (13 left images and 13 right images)
   try
@@ -112,13 +94,15 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
       cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(0, j, img);
       cv::imwrite(cv::format("/tmp/capt%02d_0.pgm", j), img);
-    }
-    for (int j = 0; j < 13; j++)
-    {
-      cv::Mat img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
+      img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(1, j, img);
       cv::imwrite(cv::format("/tmp/capt%02d_1.pgm", j), img);
     }
+    FILE *f=fopen("/tmp/captseq.log","w");
+    for(int j=0;j<13;j++){
+      fprintf(f,"(%d) %d %d\n",j,req.imgL[j].header.seq,req.imgR[j].header.seq);
+    }
+    fclose(f);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -159,18 +143,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
     pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
     pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
     pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
-    if (n < 20 || (N - 20) < n)
-    {
-      ROS_INFO("n=%d x,y,z=%f,%f,%f r,g,b=%f,%f,%f",
-        n,
-        pts.points[n].x,
-        pts.points[n].y,
-        pts.points[n].z,
-        pts.channels[0].values[n],
-        pts.channels[1].values[n],
-        pts.channels[2].values[n]
-      );
-    }
   }
 
   ROS_INFO("before outPLY");
@@ -180,12 +152,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 
   pub1->publish(pts);
   pub3->publish(buf);
-
-  sensor_msgs::PointCloud2 pts2;
-  sensor_msgs::convertPointCloudToPointCloud2(pts, pts2);
-//  ROS_INFO("genpc::do %d %d %d\n", pts2.width, pts2.height, pts2.point_step);
-  pts2.row_step = pts2.width * pts2.point_step;
-  pub2->publish(pts2);
 
   res.pc_cnt = N;
 

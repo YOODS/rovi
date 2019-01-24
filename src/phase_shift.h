@@ -37,23 +37,23 @@ enum {
 	NG_SPECKLE,
 	NG_MAX_PH_DIFF,
 	NG_PARALLAX,
-	NG_SIMPINC,
+	NG_MAX_STEP,
 	NG_NAN,
 	NG_GENPC,
 };
 
-#define PH_SEARCH_DIV   4			//視差階層探索
-#define BW_DIFF			12			//暗くて精度の出ない点しきい値[輝度]
-#define BRIGHTNESS		256			//ハレーション気味で精度の出ない点しきい値[輝度]
-#define DARKNESS		15			//ハレーション気味で精度の出ない点しきい値[輝度]
-#define STEP_DIFF		1.2			//位相連結時のずれ修正値(phase)[rad]
-#define MAX_PH_DIFF		M_PI_2		//視差計算時の左右カメラの最大位相差(これを越す位相差はNG)[rad[
-#define MAX_PARALLAX	400			//最大視差[pixel]
-#define MIN_PARALLAX	-300		//最小視差[pixel]
-#define RIGHT_DUP_N		2			//視差計算時の同一右ポイントが何回指定できるか
-#define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
-#define EVEC_ERROR		2.0e-13		//視線ベクトルを用いて点群生成する際の視線誤差閾値
-#define REJECT_DIFF		5.0			//位相画像微分処理によるノイズ除去閾値
+#define PH_SEARCH_DIV   4
+#define BW_DIFF			12
+#define BRIGHTNESS		256
+#define DARKNESS		15
+#define STEP_DIFF		1.2
+#define MAX_PH_DIFF		M_PI_2
+#define MAX_PARALLAX	400
+#define MIN_PARALLAX	-300
+#define RIGHT_DUP_N		2
+#define LS_POINTS		3
+#define EVEC_ERROR		2.0e-13
+#define MAX_STEP		1.0	
 
 struct PS_PARAMS {
 	int search_div;
@@ -61,11 +61,11 @@ struct PS_PARAMS {
 	int brightness;
 	int darkness;
 	double step_diff;
-	double reject_diff;
+	double max_step;
 	double max_ph_diff;
 	double max_parallax;
 	double min_parallax;
-	int rdup_cnt;
+	int right_dup_cnt;
 	int ls_points;
 	double evec_error;
 };
@@ -82,7 +82,6 @@ public:
 private:
 	PS_PARAMS param;
 	Eigen::MatrixXp _bw[CAMN][2];
-	Eigen::MatrixXd _bg;
 	Eigen::MatrixXp _threshold;
 	Eigen::MatrixXp _bin[CAMN][7];
 	Eigen::MatrixXd _ph[CAMN][4];

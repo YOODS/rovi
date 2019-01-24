@@ -231,10 +231,16 @@ setImmediate(async function() {
     let np = await rosNode.getParam(NSpsgenpc + '/projector');
     if (paramTimer != null) {
       try {
-        await sens.cset(paramDiff(param_V, nv));
-        param_V = nv;
-        await sens.pset(paramDiff(param_P, np));
-        param_P = np;
+        let diff=paramDiff(param_V, nv);
+        if(Object.keys(diff).length>0){
+          await sens.cset(diff);
+          param_V = nv;
+        }
+        diff=paramDiff(param_P, np);
+        if(Object.keys(diff).length>0){
+          await sens.pset(diff);
+          param_P = np;
+        }
       }
       catch(err) {
         ros.log.warn('Exception in paramReload:' + err);
