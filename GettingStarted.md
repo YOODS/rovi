@@ -183,11 +183,10 @@ rqtから*/rovi/X1*で右クリックし**public once**を選ぶと撮像する
 ## To publish
 <table>
 <tr><th>Name<th>Type<th>Description
-<tr><td>/rovi/X1<td>Bool<td>撮像トリガ
-<tr><td>/rovi/left/image_raw<td>Image<td>左カメラraw画像
-<tr><td>/rovi/left/image_rect<td>Image<td>左カメラrectify画像
 <tr><td>/rovi/ps_floats<td>Numpy<td>3DデータNumpy形式
 <tr><td>/rovi/ps_pc<td>PointCloud<td>3DデータPointCloud形式
+<tr><td>/rovi/left/image_raw<td>Image<td>左カメラraw画像
+<tr><td>/rovi/left/image_rect<td>Image<td>左カメラrectify画像
 <tr><td>/rovi/right/image_raw<td>Image<td>右カメラraw画像
 <tr><td>/rovi/right/image_rect<td>Image<td>右カメラrectify画像
 <tr><td>/rovi/ycam_ctrl/errlog<td>Strinfg<td>Errorログ
@@ -195,6 +194,11 @@ rqtから*/rovi/X1*で右クリックし**public once**を選ぶと撮像する
 </table>
 
 ## To subscribe
+<table>
+<tr><th>Name<th>Type<th>Description
+<tr><td>/rovi/X1<td>Bool<td>撮像トリガ
+</table>
+
 # Parameters
 パラメータファイルはyaml/以下
 <table>
