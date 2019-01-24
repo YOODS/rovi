@@ -40,10 +40,10 @@ public:
 
 	/**
 	 * 初期化を行います. scan()を呼び出す前に必ず一度は呼び出してください.
-	 * @return なし
+	 * @return 初期化に成功した場合はtrue, 失敗した場合はfalse.
 	 * @param setting_filename 設定ファイル名. 指定がなければデフォルト値を使用
 	 */
-	void init(const char *setting_filename = 0);
+	bool init(const char *setting_filename = 0);
 
 	/**
 	 * 設定をファイルに出力します.
@@ -140,8 +140,6 @@ private:
 	cv::Point mrkid_minimum;	///< マーカーインデックスの最小値
 	cv::Point mrkid_maximum;	///< マーカーインデックスの最大値
 
-	cv::Point2f origin;			///< マーカ原点の画像内位置
-
 	cv::Vec2f x_axis_vector;	///< マーカによって構築されるX軸ベクトル(単位ベクトル)
 	float x_axis_norm;			///< X軸ベクトルのノルム
 
@@ -149,6 +147,8 @@ private:
 	float y_axis_norm;			///< Y軸ベクトルのノルム
 
 	cv::Mat *dispimg;		///< デバッグ用画像バッファ
+
+	std::vector<std::vector<int>> connection;
 
 private:
 	/**
@@ -172,33 +172,36 @@ private:
 	 */
 	void calc_circle_limit(size_t &radius, size_t &length, const size_t image_size, const size_t n_circles, const float rate);
 
-
 	/**
-	 * 取得された輪郭線から楕円以外を取り除きます.
-	 * @return 楕円半径の中央値を返します(水平、垂直込みの). 処理が失敗した場合は0を返します.
-	 * @param contours 輪郭線集合
-	 * @param centers 輪郭線の重心座標
-	 */
-	float remove_not_elliptical_contour(std::vector< std::vector<cv::Point> > &contours, std::vector<cv::Point2f> &centers);
-
-
-	/**
-	 * 輪郭線集合を近いもの同士でまとめてグループ分けし、最大の要素を持つグループの輪郭線のみを残して他を消去します.
+	 * 取得された輪郭線から楕円だけを取り出します.
 	 * @return なし
 	 * @param contours 輪郭線集合
-	 * @param centers 輪郭線の重心
-	 * @param threshold 重心間距離の閾値
+	 * @param center 楕円の重心座標
+	 * @param radius 楕円のサイズ
+	 * @param eangle 楕円の回転角度
 	 */
-	void leave_largest_group(std::vector< std::vector<cv::Point> > &contours, std::vector<cv::Point2f> &centers, float threshold);
+	void get_ellipse(std::vector< std::vector<cv::Point> > &contours,
+		std::vector<cv::Point2f> &center, std::vector<cv::Size> &radius);
+
+	/**
+	* 楕円集合を近いもの同士でまとめてグループ分けし、最大の要素を持つグループの楕円のみを残して他を消去します.
+	* @return なし
+	* @param centers 輪郭線の重心
+	* @param threshold 重心間距離の閾値
+	*/
+	void leave_largest_group(std::vector< std::vector<cv::Point> > &contours,
+		std::vector<cv::Point2f> &center, std::vector<cv::Size> &radius);
 
 
 	/**
 	 * キャリブボードの座標系(基準マーカーによって決定される)を計算します.
-	 * @return 処理に成功した場合はtrue, 失敗した場合は false.
+	 * @return 処理に成功した場合は原点マーカの番号, 失敗した場合は -1.
 	 * @param centers 輪郭線の重心点集合
 	 * @param contours 輪郭線集合
 	 */
-	bool calc_board_coordinate(std::vector<cv::Point2f> &centers, std::vector< std::vector<cv::Point> > &contours);
+	int calc_board_coordinate(std::vector<cv::Point2f> &center, std::vector<cv::Size> &radius, std::vector< std::vector<cv::Point> > &contours);
+
+	void find_connection(std::vector<cv::Point2f> &center, std::vector<cv::Size> &radius);
 
 	/**
 	 * 与えられた輪郭線が、指定条件を満足する場合に、その輪郭線を削除する
@@ -225,38 +228,14 @@ private:
 		return (cnt.size() > max_length) ? true : false;
 	}
 
-	/**
-	 * 指定された方向でcurに最も近い点を探します.
-	 * @return 見つかった点のcentersにおける添字. 見つからない場合は-1.
-	 * @param vec 探す方向
-	 * @param thr 点間距離の許容誤差
-	 * @param cur この点に最も近い点を探す
-	 * @param centers 点候補バッファ
-	 */
-	int find_nearest_in_direction(cv::Vec2f vec, const float thr, cv::Point2f cur, std::vector<cv::Point2f> &centers);
-
-	/**
-	 */
-	cv::Point2f checkin(const int index, std::vector<cv::Point2f>& centers, cv::Point mpos, std::vector<cv::Point2f>& imgpoints);
-
-
-	/**
-	 * X軸方向に沿ってマーカを探します.
-	 * @return 正の方向に探索未完了0x01, 負の方向に探索未完了0x10(これらが合わさったフラグ値が返る).両方とも探索完了ならば0
-	 * @param mpos 探索開始マーカ位置(マーカ原点座標系)
-	 * @param bpos 探索開始マーカ位置(画像座標系)
-	 * @param centers 輪郭線重心集合
-	 * @param imgpoints マーカの画像座標格納用バッファ
-	 */
-	int x_direction_scan(cv::Point mpos, cv::Point2f bpos, std::vector<cv::Point2f> &centers, std::vector<cv::Point2f> &imgpoints);
-
 
 	/**
 	 * 検出されたマーカの位置を描画します.
 	 * @return なし
-	 * @param mrk マーカ位置(マーカ原点座標系)
-	 * @param cen 検出されたマーカの画像上での位置
+	 * @param imgpoints マーカ位置
 	 */
-	void draw_marker_position(cv::Point &mrk, cv::Point2f &cen);
+	void draw_marker_position(std::vector<cv::Point2f> &imgpoints);
+
+	void draw_marker_position_line(std::vector<cv::Point2f> &imgpoints, const int j);
 };
 
