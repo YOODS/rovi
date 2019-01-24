@@ -1,20 +1,41 @@
 #pragma once
 
 #include <opencv2/opencv.hpp>
-#include "ParaConfigure.h"
 
 
-class CalibBoard : public ParaConfigure {
+class iFileStorage_error : public std::runtime_error {
+public:
+	iFileStorage_error(const std::string &what_arg) : std::runtime_error(what_arg) {}
+	iFileStorage_error(const char *what_arg) : std::runtime_error(what_arg) {}
+};
+
+
+
+
+class CalibBoard {
 public:
 	CalibBoard() {
-		para["do_qualize_hist"] = 0;// ヒストグラム均一化を行う(1), 行わない(0)
-		para["do_smoothing"] = 1;	// スムージングを行う(1), 行わない(0)
-		para["bin_type"] = 1;		// 二値化タイプ(0: 通常二値化, 1: 判別分析二値化, 2: 適応二値化)
-		para["bin_param0"] = 0;		// 二値化閾値0(bin_type==0の場合閾値, bin_type==2の場合ブロックサイズ, その他の場合は使用しない)
-		para["bin_param1"] = 0;		// 二値化閾値1(bin_type==2の場合平均値からのオフセット値, その他の場合は使われない)
+		// gamma補正値		
+		para["gamma_correction"] = 1.0;
+
+		// ヒストグラム均一化を行う(1), 行わない(0)
+		para["do_equalize_hist"] = 0;
+
+		// スムージングを行う(1), 行わない(0)		
+		para["do_smoothing"] = 1;
+
+		// 二値化タイプ(0: 通常二値化, 1: 判別分析二値化, 2: 適応二値化)		
+		para["bin_type"] = 1;
+
+        // 二値化閾値0(bin_type==0の場合閾値, bin_type==2の場合ブロックサイズ, その他の場合は使用しない)		
+		para["bin_param0"] = 0;
+
+		// 二値化閾値1(bin_type==2の場合平均値からのオフセット値, その他の場合は使われない)		
+		para["bin_param1"] = 0;
 	}
 
 	virtual ~CalibBoard() {	}
+
 
 
 protected:
@@ -30,20 +51,22 @@ protected:
 		cv::FileStorage fs(std::string(setting_filename), cv::FileStorage::READ);
 		if (!fs.isOpened()) 
 		{
-#ifdef _DEBUG
-			std::cerr << setting_filename << ": file not found\n";
-#endif
-			return;
+			throw iFileStorage_error(setting_filename);
 		}
-
-		fs["do_qualize_hist"] >> para["do_qualize_hist"];
+		
+		fs["gamma_correction"] >> para["gamma_correction"];
+		fs["do_equalize_hist"] >> para["do_equalize_hist"];
 		fs["do_smoothing"] >> para["do_smoothing"];
 		fs["bin_type"] >> para["bin_type"];
 		fs["bin_param0"] >> para["bin_param0"];
 		fs["bin_param1"] >> para["bin_param1"];
+
+		// ガンマテーブル初期化
+		gamma_init(para["gamma_correction"]);
 		fs.release();
 	}
 
+	
 	/**
 	 * キャリブレーションボードから特徴点を抽出するための前処理を実行する
 	 * @return 前処理後の画像
@@ -51,22 +74,30 @@ protected:
 	 */
 	cv::Mat preprocess(cv::Mat &source) 
 	{
+		cv::Mat target = source.clone();
+
 		// ノイズ除去
 		if (para["do_smoothing"] != 0) 
 		{
 			cv::Mat tmpim = source.clone();
-			cv::medianBlur(tmpim, source, 3);
+			cv::medianBlur(tmpim, target, 3);
 		}
 
+		// gamma補正
+		if (para["gamma_correction"] != 1.0) {
+			cv::Mat tmpim = source.clone();
+			gamma_correction(tmpim, target);
+		}
+				
 		// ヒストグラム均一化
 		if (para["do_equalize_hist"] != 0) 
 		{
-			cv::Mat tmpim = source.clone();
-			cv::equalizeHist(tmpim, source);
+			cv::Mat tmpim = target.clone();
+			cv::equalizeHist(tmpim, target);
 		}
 
 		// 二値化
-		return binarize(source);
+		return binarize(target);
 	}
 
 	/**
@@ -104,11 +135,24 @@ private:
 			cv::threshold(image, retim, 0, 255, cv::THRESH_OTSU);
 			break;
 		case 2:	// 適応二値化
-			cv::adaptiveThreshold(image, retim, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY, (int) para["bin_param0"], para["bin_param1"]);
+			cv::adaptiveThreshold(image, retim, 255.0, cv::ADAPTIVE_THRESH_MEAN_C, cv::THRESH_BINARY,
+								  (int) para["bin_param0"], para["bin_param1"]);
 			break;
 		default:
 			break;
 		}
 		return retim;
 	}
+
+
+	void gamma_init(const double gamma, const int range = 256);
+	void gamma_correction(cv::Mat &source, cv::Mat &destim);
+	
+public:
+	std::map<std::string, double> para;
+	std::vector<int> gamma_table;
 };
+
+
+
+std::ostream& operator<<(std::ostream &os, const CalibBoard& obj);
