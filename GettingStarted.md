@@ -106,6 +106,17 @@ catkin_make
 ## RoVIのインストール
 
 ### Eigen
+~~~
+cd ~/catkin_ws/src/rovi
+wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
+tar xvzf 3.3.4.tar.gz
+mkdir include
+mv eigen-eigen-5a0156e40feb/Eigen/ include
+rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
+
+cd ~/catkin_ws
+catkin_make
+~~~
 
 ### Nodejs (ver9)
 ~~~
@@ -137,17 +148,6 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-cd ~/catkin_ws/src/rovi
-wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
-tar xvzf 3.3.4.tar.gz
-mkdir include
-mv eigen-eigen-5a0156e40feb/Eigen/ include
-rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
-
-cd ~/catkin_ws
-catkin_make
-~~~
-
 ### Python
 必要なパッケージ
 <table>
@@ -155,7 +155,6 @@ catkin_make
 <tr><td>Scipy<td>pip install scipy --user
 <tr><td>Open3D<td>pip install python-open3d --user
 </table>
-
 
 ------
 
