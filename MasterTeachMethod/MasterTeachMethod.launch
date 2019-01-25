@@ -1,0 +1,26 @@
+<launch>
+  <env name="ROVI_PATH" value="$(find rovi)" />
+  <rosparam command="load" ns="/" file="$(find rovi)/MasterTeachMethod/param.yaml" />
+
+  <node ns="/robot" pkg="tf" type="static_transform_publisher" name="camera_to_world" args="-0.4 0.3 0.30 -1.57 0 3.14 camera world 10" />
+  <node ns="/model/found" pkg="rovi" type="floats2pc" name="floats2pc" args="/world" />
+  <node ns="/model/cannotpick" pkg="rovi" type="floats2pc" name="floats2pc" args="/world" />
+  <node ns="/model/picking" pkg="rovi" type="floats2pc" name="floats2pc" args="/world" />
+
+  <node ns="/scene" pkg="rovi" type="floats2pc" name="floats2pc" args="/hand" />
+  <node ns="/model" pkg="rovi" type="floats2pc" name="floats2pc" args="/hand" />
+
+  <node pkg="rovi" type="MasterTeachMethod_solver.py" name="solver" output="screen" />
+  <!-- Mitsubishi -->
+  <node pkg="rovi" type="MasterTeachMethod_socket.js" name="socket" args="cba" output="screen" />
+  <!-- Funac -->
+  <!--
+  <node pkg="rovi" type="MasterTeachMethod_socket.js" name="socket" args="abc" output="screen" />
+  -->
+  <node pkg="rovi" type="MasterTeachMethod_ui.py" name="ui" />
+  <node pkg="rqt_gui" type="rqt_gui" name="rqt" args="--perspective-file $(find rovi)/MasterTeachMethod/Default.perspective"/>
+
+  <node pkg="rovi" type="MasterTeachMethod_socket_log.js" name="socket_log" output="screen" />
+</launch>
+
+
