@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <opencv2/opencv.hpp>
 
 
@@ -110,7 +111,8 @@ protected:
 		cv::FileStorage fs(std::string(setting_filename), cv::FileStorage::WRITE);
 		if (fs.isOpened())
 		{
-			fs << "do_qualize_hist" << ((int) para["do_qualize_hist"]);
+			fs << "do_equalize_hist" << ((int) para["do_equalize_hist"]);
+			fs << "gamma_correction" << ((int) para["gamma_correction"]);
 			fs << "do_smoothing" << ((int) para["do_smoothing"]);
 			fs << "bin_type" << ((int) para["bin_type"]);
 			fs << "bin_param0" << ((int) para["bin_param0"]);
