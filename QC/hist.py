@@ -11,7 +11,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge, CvBridgeError
 
 Roi=[0,0,100,100]
-Range=10000
+Range=30000
 Font=1
 
 def cb_image(rosimg):
@@ -42,8 +42,8 @@ def cb_image(rosimg):
   imgh=np.zeros((256,256,3), np.uint8)
   cv2.polylines(imgh,[polt],False,(0,255,255))
   iave=int(np.sum(hist*bins[:256])/(imXe-imXo)/(imYe-imYo))
-  bmax=np.max(hist[:128])
-  wmax=np.max(hist[128:256])
+  bmax=np.max(hist[1:iave])
+  wmax=np.max(hist[iave:256])
   bidx=np.where(hist==bmax)[0]
   widx=np.where(hist==wmax)[0]
   font = cv2.FONT_HERSHEY_PLAIN

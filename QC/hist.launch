@@ -1,5 +1,5 @@
 <launch>
-  <rosparam command="load" file="param.yaml" />
+  <rosparam command="load" file="hist.yaml" />
   <node ns="v1" pkg="image_view" type="image_view" name="image_view" args="image:=/rovi/left/hist/image" />
   <node ns="v2" pkg="image_view" type="image_view" name="image_view" args="image:=/rovi/left/hist/plot" />
   <node ns="v3" pkg="image_view" type="image_view" name="image_view" args="image:=/rovi/right/hist/image" />
