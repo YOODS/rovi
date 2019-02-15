@@ -111,7 +111,20 @@ catkin_make
 
 ## RoVIのインストール
 
-### Eigen
+### RoVIソースのチェックアウト 
+~~~
+cd ~/catkin_ws/src
+git clone --depth 1 https://github.com/YOODS/rovi.git
+~~~
+ramielブランチを確認
+~~~
+roscd rovi
+git branch
+~~~
+次に必要なソフトウェアをインストールします。
+
+### Eigenのインストール
+
 ~~~
 cd ~/catkin_ws/src/rovi
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
@@ -124,7 +137,7 @@ cd ~/catkin_ws
 catkin_make
 ~~~
 
-### Nodejs
+### Nodejsとパッケージのインストール
 
 Ver8以上が必要です。インストールされていないときは以下にてインストールします (Ver9)。 
 ~~~
@@ -132,6 +145,7 @@ cd ~
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
+
 - Nodejsパッケージのインストール  
 必要なパッケージ
 <table>
@@ -156,7 +170,7 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### Python
+### Pythonパッケージのインストール
 必要なパッケージ
 <table>
 <tr><td>パッケージ名<td>インストール方法
@@ -164,18 +178,8 @@ cp -a ~/rosnodejs/src/ dist
 <tr><td>Open3D<td>pip install python-open3d --user
 </table>
 
-### RoVIのソースビルド  
-ソースをチェックアウト
-~~~
-cd ~/catkin_ws/src
-git clone https://github.com/YOODS/rovi.git
-~~~
-ramielブランチを確認
-~~~
-roscd rovi
-git branch
-~~~
-つづいてビルド
+### ビルド
+
 ~~~
 cd ~/catkin_ws
 catkin_make
