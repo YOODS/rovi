@@ -16,6 +16,8 @@ YCAM3Dの制御ソフトウェア**RoVI**の環境構築から実行までの手
 - LinuxMint 18.x
 ## ROS
 - Kinetic
+## Nodejs
+- Ver8以上
 
 # 3.設定
 
@@ -122,7 +124,9 @@ cd ~/catkin_ws
 catkin_make
 ~~~
 
-### Nodejs (ver9)
+### Nodejs
+
+Ver8以上が必要です。インストールされていないときは以下にてインストールします (Ver9)。 
 ~~~
 cd ~
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
@@ -159,6 +163,23 @@ cp -a ~/rosnodejs/src/ dist
 <tr><td>Scipy<td>pip install scipy --user
 <tr><td>Open3D<td>pip install python-open3d --user
 </table>
+
+### RoVIのソースビルド  
+ソースをチェックアウト
+~~~
+cd ~/catkin_ws/src
+git clone https://github.com/YOODS/rovi.git
+~~~
+ramielブランチを確認
+~~~
+roscd rovi
+git branch
+~~~
+つづいてビルド
+~~~
+cd ~/catkin_ws
+catkin_make
+~~~
 
 ------
 
