@@ -16,24 +16,30 @@ YCAM3Dの制御ソフトウェア**RoVI**の環境構築から実行までの手
 - LinuxMint 18.x
 ## ROS
 - Kinetic
+## Nodejs
+- Ver8以上
 
 # 3.設定
 
 ## GigEインターフェース設定
 - アドレス設定  
-YCAM3Dの出荷時IPアドレスは*192.168.xxx.xxx*となっています。PC側のインタフェースもそれに合わせます。例えば*192.168.10.100*だと以下のよう。
+YCAM3Dの出荷時IPアドレスは*192.168.222.10*となっています。PC側のインタフェースもそれに合わせます。例えばPC側を*192.168.222.100*とした時の主な設定は以下のようになります。
+
 <table>
-<tr><td>アドレス<td>ネットマスク<td>ゲートウェイ
-<tr><td>192.168.10.100<td>24<td>
+<tr><th>項目<td>値<td>備考
+<tr>><td>アドレス<td>192.168.222.100
+<tr>><td>ネットマスク<td>24
+<tr>><td>ゲートウェイ<td><td>設定不要
+<tr>><td>MTU<td>9000<td>Jumboパケット対応のため
 </table>
-- MTU  
-Jumboパケット対応のため*9000*に設定します。
+
 - 確認  
 YCAM3Dを接続し、PCからYCAM3DのIPアドレスへpingが通ることを確認します。
+
 ~~~
-ping 192.168.10.10
+ping 192.168.222.10
 ~~~
-- バッファ等設定  
+- 通信バッファ等設定  
 /etc/sysctl.confに以下を追加します。
 ~~~
 net.ipv4.tcp_tw_recycle = 1
@@ -59,7 +65,7 @@ sudo apt-get install libgstreamer*-dev
 ~~~
 - ソースをダウンロード
 ~~~
-wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.4/aravis-0.6.0.tar.xz
+wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.0.tar.xz
 ~~~
 - ビルド
 ~~~
@@ -76,13 +82,13 @@ arv-tool-0.6
 ~~~
 正常では、以下のようにデバイスのIDが表示されればOKです。
 ~~~
-YOODS Co,LTD.-YCAM3D-III- (192.168.1.250)
+YOODS Co,LTD.-YCAM3D-III- (192.168.222.10)
 ~~~
 以下のエラーになるとき
 ~~~
 arv-tool-0.6: error while loading shared libraries: libaravis-0.6.so.0: cannot open shared object file: No such file or direcory
 ~~~
-/etc/ld.confに
+/etc/ld.so.confに
 ~~~
 /usr/local/lib
 ~~~
@@ -105,7 +111,20 @@ catkin_make
 
 ## RoVIのインストール
 
-### Eigen
+### RoVIソースのチェックアウト 
+~~~
+cd ~/catkin_ws/src
+git clone --depth 1 https://github.com/YOODS/rovi.git
+~~~
+ramielブランチを確認
+~~~
+roscd rovi
+git branch
+~~~
+次に必要なソフトウェアをインストールします。
+
+### Eigenのインストール
+
 ~~~
 cd ~/catkin_ws/src/rovi
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
@@ -118,12 +137,15 @@ cd ~/catkin_ws
 catkin_make
 ~~~
 
-### Nodejs (ver9)
+### Nodejsとパッケージのインストール
+
+Ver8以上が必要です。インストールされていないときは以下にてインストールします (Ver9)。 
 ~~~
 cd ~
 curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
 sudo apt-get install nodejs
 ~~~
+
 - Nodejsパッケージのインストール  
 必要なパッケージ
 <table>
@@ -148,13 +170,20 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 ~~~
 
-### Python
+### Pythonパッケージのインストール
 必要なパッケージ
 <table>
 <tr><td>パッケージ名<td>インストール方法
 <tr><td>Scipy<td>pip install scipy --user
 <tr><td>Open3D<td>pip install python-open3d --user
 </table>
+
+### ビルド
+
+~~~
+cd ~/catkin_ws
+catkin_make
+~~~
 
 ------
 
