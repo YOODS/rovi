@@ -54,7 +54,7 @@ var ycam = {
             await run_c.reg_write.call(greq);
           }
           catch(err) {
-            ros.log.error('YCAM3 cset write ' + err);
+            ros.log.error('YCAM3 cset write '+err+' at '+key);
             ret = 'YCAM write reg failed';
           }
         }

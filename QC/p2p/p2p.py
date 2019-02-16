@@ -7,13 +7,27 @@ import rospy
 from rospy.numpy_msg import numpy_msg
 from rovi.msg import Floats
 from scipy import optimize
+from sensor_msgs.msg import PointCloud
+from geometry_msgs.msg import Point32
 
-Radius=10
+Radius=5
 
 def np2F(d):  #numpy to Floats
   f=Floats()
   f.data=np.ravel(d)
   return f
+
+def np2PC(d):  #numpy to PointCloud
+  pc=PointCloud()
+  pc.header.frame_id='camera'
+  f=np.ravel(d)
+  for e in f.reshape((-1,3)):
+    p=Point32()
+    p.x=e[0]
+    p.y=e[1]
+    p.z=e[2]
+    pc.points.append(p)
+  return pc
 
 def pickPoints(points,center,radius):
   return points[np.where(np.linalg.norm(points-center,axis=1)<radius)]
@@ -32,6 +46,14 @@ def getPlane(pnt):
   nabc=np.linalg.norm(result[0][:3])
   plane=result[0]/nabc
   return plane
+
+def getH(pl,p1):
+  t=(np.inner(pl[:3],p1)+pl[3])/np.inner(pl[:3],pl[:3])
+  return p1-t*pl[:3]
+
+def getDist(pl,pnt):
+  dm=np.sqrt(np.inner(pl[:3],pl[:3]))
+  return np.dot(pl,np.vstack((pnt.T,np.ones(len(pnt)))))/dm
 
 def To3d(uv0,uv1,P0,P1):
   uvs=np.asarray([uv0,uv1])
@@ -52,18 +74,36 @@ def To3d(uv0,uv1,P0,P1):
 
 def cb_ps(msg): #callback of ps_floats
   Pc=np.reshape(msg.data,(-1,3))
-  cn0=To3d(PosL[0],PosR[0],PLmat,PRmat)
-  cn1=To3d(PosL[1],PosR[1],PLmat,PRmat)
+  try:
+    cn0=To3d(PosL[0],PosR[0],PLmat,PRmat)
+    cn1=To3d(PosL[1],PosR[1],PLmat,PRmat)
+  except NameError:
+    cn0=np.asarray([0.0,0.0,0.0])
+    cn1=np.asarray([0.0,0.0,40.0])
+#  print "Marker=",cn0,cn1
+  pb_red.publish(np2PC(cn0.reshape((-1,3))))
+  pb_blue.publish(np2PC(cn1.reshape((-1,3))))
   pnt0=pickPoints(Pc,cn0,Radius)
   pnt1=pickPoints(Pc,cn1,Radius)
-  print "Marker0=",cn0
-  print "Marker1=",cn1
-  print len(pnt0),len(pnt1)
   if len(pnt0)>100 and len(pnt1)>100:
-    pl0=getPlane(pnt0-cn0)
-    pl1=getPlane(pnt1-cn0)
-    print pl0[3]-pl1[3]
-
+#    print len(pnt0),len(pnt1)
+    pl0=getPlane(pnt0)
+    d0=getDist(pl0,pnt0)
+    sg0=np.std(d0)
+    pnt0=pnt0[np.where(np.abs(d0)<sg0)]
+    pl1=getPlane(pnt1)
+    d1=getDist(pl1,pnt1)
+    sg1=np.std(d1)
+    pnt1=pnt1[np.where(np.abs(d1)<sg1)]
+    pl0=getPlane(pnt0)
+    pl1=getPlane(pnt1)
+    h0=getH(pl0,cn0)
+    pl01=getPlane(pnt1-h0)
+    h1=getH(pl1,cn1)
+    pl10=getPlane(pnt0-h1)
+    print len(pnt0),sg0,pl01[3],len(pnt1),sg1,pl10[3]
+  else:
+    print "Too few point"
 
 def cb_posl(msg):
   global PosL
@@ -76,6 +116,8 @@ def cb_posr(msg):
 ###############################################################
 rospy.init_node('p2p',anonymous=True)
 pb_dist=rospy.Publisher("/p2p/dist",numpy_msg(Floats),queue_size=1)
+pb_red=rospy.Publisher("/p2p/red",PointCloud,queue_size=1)
+pb_blue=rospy.Publisher("/p2p/blue",PointCloud,queue_size=1)
 
 rospy.Subscriber("/rovi/ps_floats",numpy_msg(Floats),cb_ps)
 rospy.Subscriber("/rovi/left/marker/pos",numpy_msg(Floats),cb_posl)
@@ -84,6 +126,8 @@ rospy.Subscriber("/rovi/right/marker/pos",numpy_msg(Floats),cb_posr)
 Qmat=np.asarray(rospy.get_param('/rovi/genpc/Q')).reshape((4,4))
 PLmat=np.asarray(rospy.get_param('/rovi/left/remap/P')).reshape((3,4))
 PRmat=np.asarray(rospy.get_param('/rovi/right/remap/P')).reshape((3,4))
+
+print "[Points] [Sigma] [Distance_to_Plane_1] [Points] [Sigma] [Distance_to_Plane_0]"
 
 
 try:

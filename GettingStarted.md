@@ -175,7 +175,7 @@ cp -a ~/rosnodejs/src/ dist
 <table>
 <tr><td>パッケージ名<td>インストール方法
 <tr><td>Scipy<td>pip install scipy --user
-<tr><td>Open3D<td>pip install python-open3d --user
+<tr><td>Open3D<td>pip install open3d-python --user
 </table>
 
 ### ビルド
@@ -189,23 +189,34 @@ catkin_make
 
 # RoVIの実行手順
 
-## Launch
+## 起動
 1.3M pixelモード
 ~~~
-roslaunch rovi ycam3sxga
+roslaunch rovi ycam3sxga.launch
 ~~~
 VGAモード
 ~~~
-roslaunch rovi ycam3vga
+roslaunch rovi ycam3vga.launch
 ~~~
 
-## Test
+## テスト
 Rvizなど一式起動します
 ~~~
 roscd rovi/QC
 roslaunch perf3D.launch
 ~~~
-rqtから*/rovi/X1*で右クリックし**public once**を選ぶと撮像する
+撮像は、サービスコール
+~~~
+rosservice call /rovi/pshift_genpc
+~~~
+またはトピックに発行
+~~~
+rostopic pub -1 /rovi/X1 std_msgs/Bool True
+~~~
+にて行います。
+
+
+rqtから*/rovi/X1*で右クリックし**publish once**を選んでもよい
 
 ------
 # Topics

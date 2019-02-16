@@ -50,27 +50,25 @@ def cb_image(rosimg):
   if len(c2)==2:
     e0=cv2.fitEllipse(c2[0])
     e1=cv2.fitEllipse(c2[1])
-    cen0=np.asarray(e0[0])+np.asarray(e0[1])/2
-    cen1=np.asarray(e1[0])+np.asarray(e1[1])/2
-    d=cen1-cen0
+    d=np.array(e1[0])-np.array(e0[0])
     if np.abs(d[0])>np.abs(d[1]):
       if d[0]>0:
-        cen=np.vstack((cen0,cen1))
+        cen=np.vstack((e0[0],e1[0]))
         cv2.ellipse(imgc,e0,(255,0,0),4)
-        cv2.ellipse(imgc,e1,(0,0,255),4)
+        cv2.ellipse(imgc,e1,(0,170,255),4)
       else:
-        cen=np.vstack((cen1,cen0))
+        cen=np.vstack((e1[0],e0[0]))
         cv2.ellipse(imgc,e1,(255,0,0),4)
-        cv2.ellipse(imgc,e0,(0,0,255),4)
+        cv2.ellipse(imgc,e0,(0,170,255),4)
     else:
       if d[1]>0:
-        cen=np.vstack((cen0,cen1))
+        cen=np.vstack((e0[0],e1[0]))
         cv2.ellipse(imgc,e0,(255,0,0),4)
-        cv2.ellipse(imgc,e1,(0,0,255),4)
+        cv2.ellipse(imgc,e1,(0,170,255),4)
       else:
-        cen=np.vstack((cen1,cen0))
+        cen=np.vstack((e1[0],e0[0]))
         cv2.ellipse(imgc,e1,(255,0,0),4)
-        cv2.ellipse(imgc,e0,(0,0,255),4)
+        cv2.ellipse(imgc,e0,(0,170,255),4)
     pb_mk.publish(np2F(cen))
   pb_im.publish(bridge.cv2_to_imgmsg(imgc,"rgb8"))
   sb_im=rospy.Subscriber('image_rect',Image,cb_image)    
