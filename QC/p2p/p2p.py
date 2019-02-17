@@ -11,7 +11,7 @@ from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
 
 Radius=5
-Goal=0.05
+Goal=0.02
 
 def np2F(d):  #numpy to Floats
   f=Floats()
@@ -94,13 +94,13 @@ def cb_ps(msg): #callback of ps_floats
       d0=getDist(pl0,pnt0)
       s0=np.std(d0)
       if s0<Goal: break
-      pnt0=pnt0[np.where(np.abs(d0)<3*s0)]
+      pnt0=pnt0[np.where(np.abs(d0)<2*s0)]
     for cnt in range(10):
       pl1=getPlane(pnt1)
       d1=getDist(pl1,pnt1)
       s1=np.std(d1)
       if s1<Goal: break
-      pnt1=pnt1[np.where(np.abs(d1)<3*s1)]
+      pnt1=pnt1[np.where(np.abs(d1)<2*s1)]
     h0=getH(pl0,cn0)
     pl01=getPlane(pnt1-h0)
     h1=getH(pl1,cn1)
