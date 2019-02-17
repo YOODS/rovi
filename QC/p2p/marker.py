@@ -13,7 +13,7 @@ from rovi.msg import Floats
 
 MaxPI=4.5
 MaxSide=3
-MinApex=70
+MinApex=50
 
 def np2F(d):  #numpy to Floats
   f=Floats()
@@ -21,7 +21,8 @@ def np2F(d):  #numpy to Floats
   return f
 
 def pickCircles(contours):
-  c1=[]
+  cs=[]
+  ps=[]
   for c in contours:
     M=cv2.moments(c)
     alen=cv2.arcLength(c,True)
@@ -29,9 +30,12 @@ def pickCircles(contours):
     if len(c)>MinApex and area>0.0:
       pi=alen**2/4/area
       if pi<MaxPI and alen/len(c)<MaxSide:
-        c1.append(c)
-        print "pick",len(c),pi
-  return c1
+        cs.append(c)
+        ps.append(pi)
+  if len(cs)>=2:
+    idx=np.asarray(ps).argsort()
+    return [cs[i] for i in idx]
+  else: return cs
 
 def cb_image(rosimg):
   global sb_im
@@ -47,7 +51,7 @@ def cb_image(rosimg):
   imgc=cv2.cvtColor(img0,cv2.COLOR_GRAY2BGR)
   c2=pickCircles(cont1)
 #  cv2.drawContours(imgc,cont1,-1,(255,0,0),2)
-  if len(c2)==2:
+  if len(c2)>=2:
     e0=cv2.fitEllipse(c2[0])
     e1=cv2.fitEllipse(c2[1])
     d=np.array(e1[0])-np.array(e0[0])

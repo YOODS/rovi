@@ -11,6 +11,7 @@ from sensor_msgs.msg import PointCloud
 from geometry_msgs.msg import Point32
 
 Radius=5
+Goal=0.05
 
 def np2F(d):  #numpy to Floats
   f=Floats()
@@ -73,6 +74,7 @@ def To3d(uv0,uv1,P0,P1):
   return np.ravel(WP)
 
 def cb_ps(msg): #callback of ps_floats
+  global Result
   Pc=np.reshape(msg.data,(-1,3))
   try:
     cn0=To3d(PosL[0],PosR[0],PLmat,PRmat)
@@ -85,23 +87,34 @@ def cb_ps(msg): #callback of ps_floats
   pb_blue.publish(np2PC(cn1.reshape((-1,3))))
   pnt0=pickPoints(Pc,cn0,Radius)
   pnt1=pickPoints(Pc,cn1,Radius)
+#  print len(pnt0),len(pnt1)
   if len(pnt0)>100 and len(pnt1)>100:
-#    print len(pnt0),len(pnt1)
-    pl0=getPlane(pnt0)
-    d0=getDist(pl0,pnt0)
-    sg0=np.std(d0)
-    pnt0=pnt0[np.where(np.abs(d0)<sg0)]
-    pl1=getPlane(pnt1)
-    d1=getDist(pl1,pnt1)
-    sg1=np.std(d1)
-    pnt1=pnt1[np.where(np.abs(d1)<sg1)]
-    pl0=getPlane(pnt0)
-    pl1=getPlane(pnt1)
+    for cnt in range(10):
+      pl0=getPlane(pnt0)
+      d0=getDist(pl0,pnt0)
+      s0=np.std(d0)
+      if s0<Goal: break
+      pnt0=pnt0[np.where(np.abs(d0)<3*s0)]
+    for cnt in range(10):
+      pl1=getPlane(pnt1)
+      d1=getDist(pl1,pnt1)
+      s1=np.std(d1)
+      if s1<Goal: break
+      pnt1=pnt1[np.where(np.abs(d1)<3*s1)]
     h0=getH(pl0,cn0)
     pl01=getPlane(pnt1-h0)
     h1=getH(pl1,cn1)
     pl10=getPlane(pnt0-h1)
-    print len(pnt0),sg0,pl01[3],len(pnt1),sg1,pl10[3]
+    d01=np.abs(pl01[3])
+    d10=np.abs(pl10[3])
+    dmean=(d01+d10)/2
+    deg=np.arcsin(np.linalg.norm(np.cross(pl0[:3],pl1[:3])))*180/np.pi
+    res=np.array([len(pnt0),s0,d01,len(pnt1),s1,d10,dmean,deg])
+    Result=np.vstack((Result,res))
+    if len(Result)>10: Result=Result[1:]
+    print "[points] [sigma] [distance_0_1] [points] [sigma] [distance_1_0] [mean diatance] [angle_bw_planes]"
+    for col in Result:
+      print int(col[0]),('%.4f'%col[1]),('%.4f'%col[2]),int(col[3]),('%.4f'%col[4]),('%.4f'%col[5]),('%.4f'%col[6]),('%.4f'%col[7])
   else:
     print "Too few point"
 
@@ -127,8 +140,7 @@ Qmat=np.asarray(rospy.get_param('/rovi/genpc/Q')).reshape((4,4))
 PLmat=np.asarray(rospy.get_param('/rovi/left/remap/P')).reshape((3,4))
 PRmat=np.asarray(rospy.get_param('/rovi/right/remap/P')).reshape((3,4))
 
-print "[Points] [Sigma] [Distance_to_Plane_1] [Points] [Sigma] [Distance_to_Plane_0]"
-
+Result=np.array([],dtype=float).reshape((-1,8))
 
 try:
   rospy.spin()
