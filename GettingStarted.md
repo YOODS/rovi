@@ -149,12 +149,20 @@ sudo apt-get install nodejs
 - Nodejsパッケージのインストール  
 必要なパッケージ
 <table>
-<tr><td>パッケージ名<td>インストール方法<td>備考
-<tr><td>rosnodejs<td>npm install rosnodejs<td>インストール後、追加の処理があります
-<tr><td>js-yaml<td>npm install js-yaml
-<tr><td>mathjs<td>npm install mathjs
-<tr><td>shm-typed-array<td>npm install shm-typed-array
+<tr><td>パッケージ名<td>備考
+<tr><td>rosnodejs<td>インストール後、追加の処理があります
+<tr><td>js-yaml<td>
+<tr><td>mathjs<td>
+<tr><td>shm-typed-array<td>
 </table>
+
+インストール
+~~~
+npm install rosnodejs
+npm install js-yaml
+npm install mathjs
+npm install shm-typed-array
+~~~
 
 - rosnodejsインストール後の追加の処理  
 *上記でインストールされるrosnodejsは、
@@ -173,10 +181,16 @@ cp -a ~/rosnodejs/src/ dist
 ### Pythonパッケージのインストール
 必要なパッケージ
 <table>
-<tr><td>パッケージ名<td>インストール方法
-<tr><td>Scipy<td>pip install scipy --user
-<tr><td>Open3D<td>pip install open3d-python --user
+<tr><td>パッケージ名<td>備考
+<tr><td>Scipy<td>
+<tr><td>Open3D<td>
 </table>
+
+インストール
+~~~
+pip install scipy --user
+pip install open3d-python --user
+~~~
 
 ### ビルド
 
@@ -189,7 +203,17 @@ catkin_make
 
 # RoVIの実行手順
 
-## 起動
+## 起動  
+！ROSのソースディレクトリが **~/catkin_ws/** 以外のときは、以下のrovi/launch/ycam3loader.shの4行目を変更します。
+~~~
+#!/bin/bash
+
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+
+export ROS_NAMESPACE=/rovi
+~~~
+
 1.3M pixelモード
 ~~~
 roslaunch rovi ycam3sxga.launch
