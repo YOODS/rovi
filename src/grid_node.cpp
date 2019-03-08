@@ -29,13 +29,16 @@ void solve(sensor_msgs::Image src){
   }
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
-  int cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
-  sensor_msgs::Image img;
-  cv_ptr1->image=mat;
-  cv_ptr1->encoding="bgr8";
-  cv_ptr1->toImageMsg(img);
-  pub1->publish(img);
-  if(cbres){
+  
+  try {
+    int cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
+    sensor_msgs::Image img;
+    cv_ptr1->image=mat;
+    cv_ptr1->encoding="bgr8";
+    cv_ptr1->toImageMsg(img);
+    pub1->publish(img);
+  }
+  catch(char *str) {
     ROS_WARN("CircleCalibBoard::scan:failed:");
     pub4->publish(done);
     return;
