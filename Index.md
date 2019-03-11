@@ -6,7 +6,7 @@
 <tr><td rowspan="3">rovi<td>ycam3sxga<br>ycam3vga<td>バックエンド<td>YCAM-III撮像制御<td>nodejs<td>完了
 <tr><td>p2p<td>ツール<td>カメラ検査(平行面距離)<td>python<td>完了
 <tr><td>cropper<td>フロントエンド<td>撮像条件設定・クロップ領域設定<td><td>製作中
-<tr><td rowspan="2">rovi-alib<td>r-calib<td>ツール<td>ロボットキャリブレーション<td>python<td>整理中
+<tr><td rowspan="2">rovi-calib<td>r-calib<td>ツール<td>ロボットキャリブレーション<td>python<td>整理中
 <tr><td>c-calib<td>ツール<td>カメラキャリブレーション<td>python<td>製作(移植)予定
 <tr><td rowspan="4">rovi-I<td>f-socket<td rowspan="4">インタフェース(産ロボ)<td>Fanuc用<td rowspan="4">nodejs<td>完了
 <tr><td>m-socket<td>Mitsubishi用<td>完了
