@@ -5,7 +5,7 @@
 <tr><th>パッケージ<th>名称<th>分類<th>機能<td>Lang<th>状況
 <tr><td rowspan="3">rovi<td>ycam3sxga<br>ycam3vga<td>バックエンド<td>YCAM-III撮像制御<td>nodejs<td>完了
 <tr><td>p2p<td>ツール<td>カメラ検査(平行面距離)<td>python<td>完了
-<tr><td>cropper<td>フロントエンド<td>撮像条件設定・クロップ領域設定<td><td>製作中
+<tr><td>cropper<td>バックエンド<td>クロッピング<br>点群合成<br>ダウンサンプリング<td>python<td>製作中
 <tr><td rowspan="2">rovi-calib<td>r-calib<td>ツール<td>ロボットキャリブレーション<td>python<td>整理中
 <tr><td>c-calib<td>ツール<td>カメラキャリブレーション<td>python<td>製作(移植)予定
 <tr><td rowspan="4">rovi-I<td>f-socket<td rowspan="4">インタフェース(産ロボ)<td>Fanuc用<td rowspan="4">nodejs<td>完了
@@ -13,7 +13,7 @@
 <tr><td>n-socket<td>Nachi用<td>製作予定
 <tr><td>y-socket<td>Yasukawa用<td>製作予定
 <tr><td>rovi-finder<td>finder<td>バックエンド<td>ワーク認識・測位<br>オフライン共用(plyファイル入力)<td>python<td>整理中
-<tr><td rowspan="2">master-teach<td>UI<td>フロントエンド<td>rovi-finder用フロントエンド<td>python<td>製作中
+<tr><td rowspan="2">master-teach<td><td>アプリケーション<td>パーツピッキングアプリレシピ設定・管理<td>python<td>製作中
 <tr><td>??<td>オフラインツール<td>PLY編集・レシピ編集<td>??<td>製作予定
 </table>
 
@@ -41,7 +41,8 @@
 <tr><td>WPC(TMCカスタム)<td>??<td>精密ICP<td>python<td>ndarray<td>tf<td>???
 </table>
 
-<hr>  
+<hr>
+
 # Windows Tool
 <table>
 <tr><th>名称<th>機能<th>Lang<th>状況
