@@ -33,8 +33,8 @@
 <tr><th>パッケージ<th>名称<th>機能<th>Lang<th>入力<th>出力<th>状況
 <tr><td rowspan="2">yds3d.so<td>-<td>位相シフト<td rowspan="2">C++<td>-<td>-<td>完了
 <tr><td>-<td>○列(キャリブ板)認識・測位<td>-<td>-<td>完了
-<tr><td rowspan="2">rovi<td>gvload.js<td>カメラパラメータ読出<td>nodejs<td>GVCP<td>Param<td>製作済
-<tr><td>notifier.js<td>パラメータ変更通知<td>nodejs<td>Param<td>Event<td>製作済
+<tr><td rowspan="2">rovi<td>gvload.js<td>カメラパラメータ読出<td>nodejs<td>GVCP<td>Param<td>完了
+<tr><td>notifier.js<td>パラメータ変更通知<td>nodejs<td>Param<td>Event<td>完了
 <tr><td rowspan="3">rovi-finder<td>??<td>点群プリプロセス<td>python<td>ndarray<td>ndarray<td>???
 <tr><td>ppf<td>特徴点抽出<td>python<td>ndarray<td>ndarray<td>???
 <tr><td>icp<td>測位<td>python<td>ndarray<td>tf<td>???
@@ -45,5 +45,6 @@
 # Windows Tool
 <table>
 <tr><th>名称<th>機能<th>Lang<th>状況
-<tr><td>test_ycam<td>カメラキャリブレーション<td>C++<td>製作済
+<tr><td>test_ycam<td>カメラ制御・キャリブレーション<td>C++<td>完了
+<tr><td>y-finder<td>ワーク認識<td>C++<td>完了
 </table>
