@@ -37,6 +37,16 @@ void solve(sensor_msgs::Image src){
     cv_ptr1->encoding="bgr8";
     cv_ptr1->toImageMsg(img);
     pub1->publish(img);
+
+    // 2019.03.12 Nomura start
+    // 異常終了対応
+    if(cbres){
+      ROS_WARN("CircleCalibBoard::scan:failed:");
+      pub4->publish(done);
+      return;
+    }
+    // 2019.03.12 Nomura end
+
   }
   catch(char *str) {
     ROS_WARN("CircleCalibBoard::scan:failed:");
