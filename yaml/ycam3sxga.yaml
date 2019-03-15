@@ -14,6 +14,7 @@ pshift_genpc:
     step_diff: 1.2
     max_step: 1.0
     max_ph_diff: 5.0
+    max_tex_diff: 80
     max_parallax: 300
     min_parallax: -200
     right_dup_cnt: 3
