@@ -50,7 +50,7 @@ enum {
 #define DARKNESS		15			//ハレーション気味で精度の出ない点しきい値[輝度]
 #define STEP_DIFF		1.2			//位相連結時のずれ修正値(phase)[rad]
 #define MAX_PH_DIFF		M_PI_2		//視差計算時の左右カメラの最大位相差(これを越す位相差はNG)[rad[
-#define MAX_TEX_DIFF	20			//位相一致ピクセルの輝度差最大値[輝度]
+#define MAX_TEX_DIFF	0.7			//位相一致ピクセルの輝度差最大値[輝度]
 #define MAX_PARALLAX	400			//最大視差[pixel]
 #define MIN_PARALLAX	-300		//最小視差[pixel]
 #define RIGHT_DUP_N		2			//視差計算時の同一右ポイントが何回指定できるか
@@ -66,7 +66,7 @@ struct PS_PARAMS {
 	double step_diff;
 	double max_step;
 	double max_ph_diff;
-	int max_tex_diff;
+	double max_tex_diff;
 	double max_parallax;
 	double min_parallax;
 	int right_dup_cnt;
