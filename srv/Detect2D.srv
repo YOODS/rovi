@@ -1,4 +1,0 @@
-sensor_msgs/Image img
----
-geometry_msgs/Point[] scene
-geometry_msgs/Point[] model

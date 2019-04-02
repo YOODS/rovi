@@ -1,5 +1,0 @@
-<launch>
-  <env name="ROVI_PATH" value="$(find rovi)" />
-  <node pkg="rovi" type="wrs2018_solver.py" name="solver" output="screen" />
-  <node pkg="rovi" type="wrs2018_socket.js" name="socket" output="screen" />
-</launch>

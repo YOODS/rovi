@@ -3,7 +3,6 @@
 const NSrovi = process.env.ROS_NAMESPACE;
 const NSycamctrl = NSrovi+'/ycam_ctrl';
 const NSps = NSrovi+'/pshift_genpc';
-const NSX1 = NSrovi+'/X1';
 const NSgenpc = NSrovi+'/genpc';
 const NScamL = NSrovi+'/left';
 const NScamR = NSrovi+'/right';
@@ -15,6 +14,7 @@ const sens = require('./' + sensName + '.js')
 const std_msgs = ros.require('std_msgs').msg;
 const std_srvs = ros.require('std_srvs').srv;
 const rovi_srvs = ros.require('rovi').srv;
+const rovi_msgs = ros.require('rovi').msg;
 const EventEmitter = require('events').EventEmitter;
 const jsyaml = require('js-yaml');
 const ImageSwitcher = require('./image_switcher.js');
@@ -23,16 +23,28 @@ const SensControl = require('./sens_ctrl.js');
 
 function sleep(msec){return new Promise(function(resolve){setTimeout(function(){resolve(true);},msec);});}
 
-
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
-  const pub_stat = rosNode.advertise(NSycamctrl + '/stat', std_msgs.Bool);
-  const pub_errlog = rosNode.advertise(NSycamctrl + '/errlog', std_msgs.Bool);
-  let errlog='';
-  let vue_N = 0;
-  const genpc = rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
+  const pub_stat = rosNode.advertise(NSrovi + '/stat', std_msgs.Bool);
+  const pub_error = rosNode.advertise(NSrovi + '/error', std_msgs.String);
+  const pub_errlog = rosNode.advertise(NSrovi + '/errlog', rovi_msgs.StringArray);
+  const errlog=new rovi_msgs.StringArray();
+  const errormsg=function(msg){
+    if(msg.length==0){
+      if(errlog.data.length>0) pub_errlog.publish(errlog);
+      return;
+    }
+    let err=new std_msgs.String();
+    err.data=msg;
+    pub_error.publish(err);
+    errlog.data.unshift(msg);
+    pub_errlog.publish(errlog);
+    ros.log.info('Error:'+err);
+  }
+  const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
+  const genpc=rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
     return;
@@ -76,10 +88,12 @@ setImmediate(async function() {
     let m=new std_msgs.Bool();
     m.data=f;
     pub_stat.publish(m);
+    errormsg('');
   });
   sensEv.on('shutdown', async function() {
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
+    errormsg('YCAM disconected');
   });
   sensEv.on('left', async function(img,ts) {
     image_L.emit(img,ts);
@@ -93,7 +107,7 @@ setImmediate(async function() {
   });
 
 // ---------Definition of services
-  let pserror=0,psthres=0;
+  let psthres=100;
   let ps2live = function(tp){ //---after "tp" msec, back to live mode
     setTimeout(function(){
       sensEv.scanStart();
@@ -104,7 +118,6 @@ setImmediate(async function() {
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
   }
   let psgenpc = function(req,res){
-    if(pserror<0) return false;
     if (!sens.normal) {
       ros.log.warn(res.message = 'YCAM not ready');
       res.success = false;
@@ -117,11 +130,11 @@ setImmediate(async function() {
       await sens.cset(param.camps.objs); //---overwrites genpc camera params
       let wdt=setTimeout(async function() { //---start watch dog
         ps2live(1000);
-        const errmsg = 'pshift_genpc timed out AAA';
+        const errmsg = 'pshift_genpc timed out';
         ros.log.error(errmsg);
+        errormsg(errmsg);
         res.success = false;
         res.message = errmsg;
-        pserror--;
         resolve(true);
       }, param.proj.objs.Interval*13 + 1000);
 //for monitoring
@@ -152,72 +165,27 @@ setImmediate(async function() {
         res.message = 'genpc failed';
         res.success = false;
       }
+      let pcount=new std_msgs.Int32();
+      pcount.data=gpres.pc_cnt;
+      pub_pcount.publish(pcount);
       let tp=Math.floor(gpres.pc_cnt*0.001)+1;
       ps2live(tp);
-      image_L.view(vue_N);
-      image_R.view(vue_N);
-      if(gpres.pc_cnt<psthres) pserror=-101;
-      ros.log.info('Time to publish pc '+tp+' ms, errors:'+pserror);
+      if(gpres.pc_cnt<psthres) errormsg('Points count '+gpres.pc_cnt+' too few');
+      ros.log.info('Time to publish pc '+tp+' ms');
       resolve(true);
     });
   }
   const svc_do = rosNode.advertiseService(NSps, std_srvs.Trigger, psgenpc);
-  const sub_do = rosNode.subscribe(NSX1, std_msgs.Bool,async function(){
-    if (!sens.normal) return;
+  const sub_do = rosNode.subscribe(NSrovi+'/X1',std_msgs.Bool,async function(){
+    if (!sens.normal){
+      errormsg('Request cancelled due to YCAM status');
+      return;
+    }
     let req=new std_srvs.Trigger.Request();
     let res=new std_srvs.Trigger.Response();
     await psgenpc(req,res);
   });
-  const svc_reset = rosNode.advertiseService(NSycamctrl + '/reset', std_srvs.Trigger, function(req,res){
+  const svc_reset = rosNode.subscribe(NSrovi+'/reset',std_msgs.Bool,async function(){
     param.proj.raise({Reset:1});
-    pserror=0;
-    res.message = '';
-    res.success = true;
-    return true;
-  });
-  const svc_parse = rosNode.advertiseService(NSycamctrl + '/parse', rovi_srvs.Dialog, async (req, res) => {
-    let cmd = req.hello;
-    let lbk = cmd.indexOf('{');
-    let obj = {};
-    if (lbk > 0) {
-      cmd = req.hello.substring(0, lbk).trim();
-      try {
-        obj = JSON.parse(req.hello.substring(lbk));
-      }
-      catch(err) {
-        // ignore
-      }
-    }
-    let cmds = cmd.split(' ');
-    if (cmds.length > 1) cmd = cmds.shift();
-    switch (cmd) {
-    case 'cset':
-      res.answer = await sens.cset(obj);
-      return Promise.resolve(true);
-    case 'pset':
-      res.answer = await sens.pset(obj);
-      return Promise.resolve(true);
-    case 'stat': //---sensor(maybe YCAM) status query
-      return new Promise((resolve) => {
-        res.answer = JSON.stringify(sens.stat());
-        resolve(true);
-      });
-    case 'view':
-      return new Promise((resolve) => {
-        try {
-          vue_N = Number(cmds[0]);
-        }
-        catch(err) {
-          vue_N = 0;
-        }
-        image_L.view(vue_N);
-        image_R.view(vue_N);
-        resolve(true);
-      });
-    case 'thres':
-      pserror=0;
-      psthres=Number(cmds[0]);
-      return Promise.resolve(true);
-    }
   });
 });

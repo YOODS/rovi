@@ -1,5 +1,0 @@
-sensor_msgs/Image img
----
-geometry_msgs/Point[] grid
-sensor_msgs/Image img
-geometry_msgs/Pose pose

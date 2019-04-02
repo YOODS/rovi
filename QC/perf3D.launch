@@ -1,6 +1,0 @@
-<launch>
-  <node pkg="rovi" type="perf3D.py" name="perf3D" output="screen" />
-  <node ns="/scene" pkg="rovi" type="floats2pc" name="floats2pc" args="/camera" />
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find rovi)/QC/perf3D.rviz" />
-  <node pkg="rqt_gui" type="rqt_gui" name="rqt" args="--perspective-file $(find rovi)/QC/perf3D.perspective"/>
-</launch>

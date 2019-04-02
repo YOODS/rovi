@@ -1,8 +1,0 @@
-<launch>
-  <rosparam command="load" file="param.yaml" />
-  <node pkg="rovi" type="grid_node" name="grid_node" args="/rovi/left/remap/Kn" output="screen" />
-  <node pkg="visp_hand2eye_calibration" type="visp_hand2eye_calibration_calibrator" name="calibrator" />
-  <node ns="/rcalib" pkg="image_view" type="image_view" name="image_view" args="image:=/gridboard/image_out" />
-  <node pkg="rovi" type="rcalib_solver.py" name="solver" output="screen" />
-  <node pkg="rovi" type="rcalib_socket.js" name="socket" />
-</launch>

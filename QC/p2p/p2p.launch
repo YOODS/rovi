@@ -1,7 +1,0 @@
-<launch>
-  <node pkg="rviz" type="rviz" name="rviz" args="-d $(find rovi)/QC/p2p/p2p.rviz" />
-  <node ns="/rovi/left" pkg="rovi" type="marker.py" name="marker" output="screen" />
-  <node ns="/rovi/right" pkg="rovi" type="marker.py" name="marker" />
-  <node pkg="rovi" type="p2pp.py" name="p2p" output="screen" />
-</launch>
-

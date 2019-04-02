@@ -1,3 +1,0 @@
-<launch>
-  <node pkg="rovi" type="r_coord_publisher.js" name="r_coord_publisher" output="screen" />
-</launch>
