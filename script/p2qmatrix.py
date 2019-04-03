@@ -11,7 +11,7 @@ P2=rospy.get_param('/rovi/right/remap/P')
 Q=np.zeros(16)
 Q[0]=Q[5]=1
 Q[3]=-P1[2] #-cx1
-Q[7]=-P1[2] #-cy1
+Q[7]=-P1[6] #-cy1
 Q[11]=P1[0] #f
 Tx=P2[3]/P1[0]
 Q[14]=-1/Tx
