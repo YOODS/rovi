@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=RoVI(SXGA)
+Comment=
+Exec=rovirun.sh roslaunch rovi ycam3sxga.launch
+Icon=
+Terminal=true
+StartupNotify=false

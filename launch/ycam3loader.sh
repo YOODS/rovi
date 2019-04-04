@@ -1,7 +1,9 @@
 #!/bin/bash
 
 source /opt/ros/kinetic/setup.bash
-source ~/catkin_ws/devel/setup.bash
+cd ~/*/src/rovi
+cd ../../
+source devel/setup.bash
 
 export ROS_NAMESPACE=/rovi
 
@@ -21,12 +23,14 @@ do
   then
     break
   fi
+  sleep 2
   echo 'ycam3loader::No device'
 done
 
 echo "[ycam3loader]" $guid $IPADDS
 rosparam set camera/guid "$guid"
 script/gvload.js $res "$guid"
+script/p2qmatrix.py
 
 roslaunch launch/ycam3s.launch
 pkill camnode
