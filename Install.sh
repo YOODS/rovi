@@ -1,10 +1,15 @@
 #!/bin/bash
 
+source /opt/ros/kinetic/setup.bash
+cd ~/*/src/rovi
+cd ../../
+source devel/setup.bash
+
 #installing aravis library
 cd ~
 wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.0.tar.xz
 tar xvf aravis-0.6.0.tar.xz
-cd aravis-0.6
+cd aravis-0.6.0
 ./configure
 make
 sudo make install
@@ -42,7 +47,7 @@ pip install open3d-python --user
 #coping files
 roscd rovi
 sudo cp launch/rovirun.sh /usr/local/bin
-cp script/tflib ../../devel/lib/python2*/dist-packages
+cp script/tflib.py ../../devel/lib/python2*/dist-packages
 
 #build
 roscd rovi
