@@ -102,7 +102,8 @@ setImmediate(async function() {
     image_R.emit(img,ts);
   });
   sensEv.on('trigger', async function() {
-    param.proj.raise({Go:-1});
+    if(param.proj.objs.Mode==1) param.proj.raise({Go:-1});
+    else param.proj.raise({Go:1});
     sensEv.fps=param.camlv.objs.SoftwareTriggerRate;
   });
 
