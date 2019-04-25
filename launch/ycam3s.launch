@@ -1,4 +1,5 @@
 <launch>
+  <rosparam command="load" file="$(find rovi)/yaml/param.yaml" />
   <node ns="/rovi/left" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi/right" name="remap_node" pkg="rovi" type="remap_node" />
   <node ns="/rovi" name="genpc_node" pkg="rovi" type="genpc_node" output="screen" />
