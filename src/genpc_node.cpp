@@ -27,6 +27,7 @@ PS_PARAMS param =
   .step_diff = STEP_DIFF,
   .max_step = MAX_STEP,
   .max_ph_diff = MAX_PH_DIFF,
+  .max_tex_diff = MAX_TEX_DIFF,
   .max_parallax = MAX_PARALLAX,
   .min_parallax = MIN_PARALLAX,
   .right_dup_cnt = RIGHT_DUP_N,
@@ -42,6 +43,7 @@ int reload(){
   nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
   nh->getParam("pshift_genpc/calc/max_step", param.max_step);
   nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
+  nh->getParam("pshift_genpc/calc/max_tex_diff", param.max_tex_diff);
   nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
   nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
   nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
