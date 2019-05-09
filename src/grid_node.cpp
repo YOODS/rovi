@@ -29,9 +29,10 @@ void solve(sensor_msgs::Image src){
   }
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
-  
+
+  ROS_WARN("CircleCalibBoard::scan");
   try {
-    int cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
+    auto cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
     sensor_msgs::Image img;
     cv_ptr1->image=mat;
     cv_ptr1->encoding="bgr8";
@@ -44,8 +45,8 @@ void solve(sensor_msgs::Image src){
       return;
     }
   }
-  catch(char *str) {
-    ROS_WARN("CircleCalibBoard::scan:failed:");
+  catch(...) {
+    ROS_WARN("CircleCalibBoard::scan exception");
     pub4->publish(done);
     return;
   }
@@ -79,7 +80,13 @@ void solve(sensor_msgs::Image src){
   cv::Mat rvec(3, 1, cv::DataType<double>::type);
   cv::Mat tvec(3, 1, cv::DataType<double>::type);
   cv::OutputArray oRvec(rvec), oTvec(tvec);
-  cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
+  ROS_WARN("Try solvePnP %d %d\n",model.size(),scene.size());
+  if(N>10){
+    cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
+  }
+  else{
+    ROS_WARN("Too few recognized markers");
+  }
   float rx = rvec.at<double>(0, 0);
   float ry = rvec.at<double>(1, 0);
   float rz = rvec.at<double>(2, 0);
@@ -119,7 +126,7 @@ void solve(sensor_msgs::Image src){
       errY=floor(v);
     }
   }
-  errAve/=N;
+  if(N>0) errAve/=N;
   if(errAve<torelance){
     pub2->publish(tf);
     done.data=true;
