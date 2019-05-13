@@ -12,6 +12,7 @@ class ImageSwitcher {
     this.ns = ns;
     this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
     this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
+    this.rect0 = node.advertise(ns + '/image_rect0', sensor_msgs.Image);
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
@@ -25,14 +26,15 @@ class ImageSwitcher {
     this.hook = new EventEmitter();
     this.capt = [];
   }
-  async emit(img,ts){
+  async emit(img,ts,lit){
     switch(this.pstat){
     case 0:
       this.raw.publish(img);
       let req=new rovi_srvs.ImageFilter.Request();
       req.img=img;
       let res=await this.remap.call(req);
-      this.rect.publish(res.img);
+      if(lit) this.rect.publish(res.img);
+      else this.rect0.publish(res.img);
       break;
     case 2:
       this.hook.emit('store',img,ts);
@@ -58,6 +60,7 @@ class ImageSwitcher {
             let res=await who.remap.call(req);
             who.capt[i]=res.img;
           }
+          who.rect0.publish(who.capt[0]);
           who.rect.publish(who.capt[1]);
 //          setTimeout(function(){ if(who.pstat==3) who.thru();},1000);
           resolve(who.capt);

@@ -83,6 +83,7 @@ setImmediate(async function() {
     param.proj.raise({Mode:1});//--- let 13 pattern mode
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY');
+    sensEv.lit=false;
   });
   sensEv.on('stat', function(f){
     let m=new std_msgs.Bool();
@@ -96,14 +97,21 @@ setImmediate(async function() {
     errormsg('YCAM disconected');
   });
   sensEv.on('left', async function(img,ts) {
-    image_L.emit(img,ts);
+    image_L.emit(img,ts,sensEv.lit);
   });
   sensEv.on('right', async function(img,ts) {
-    image_R.emit(img,ts);
+    image_R.emit(img,ts,sensEv.lit);
   });
   sensEv.on('trigger', async function() {
-    if(param.proj.objs.Mode==1) param.proj.raise({Go:-1});
-    else param.proj.raise({Go:1});
+    if(param.proj.objs.Mode==1){
+      sensEv.lit=true;
+      param.proj.raise({Go:-1});
+    }
+    else{
+      sensEv.lit=!sensEv.lit;
+      if(sensEv.lit) param.proj.raise({Go:1});
+      else param.proj.raise({Go:-1});
+    }
     sensEv.fps=param.camlv.objs.SoftwareTriggerRate;
   });
 
