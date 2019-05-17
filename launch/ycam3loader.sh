@@ -12,6 +12,12 @@ if [ "$res" = "" ]
 then
   res=sxga
 fi
+unit=$2
+if [ "$unit" = "" ]
+then
+  unit=m
+fi
+
 roscd rovi
 rosparam load yaml/ycam3$res.yaml
 IPADDS=$(rosparam get camera/address)
@@ -30,7 +36,7 @@ done
 echo "[ycam3loader]" $guid $IPADDS
 rosparam set camera/guid "$guid"
 script/gvload.js $res "$guid"
-script/p2qmatrix.py
+script/p2qmatrix.py $unit
 
 roslaunch launch/ycam3s.launch
 pkill camnode
