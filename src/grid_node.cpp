@@ -44,7 +44,7 @@ void solve(sensor_msgs::Image src){
       return;
     }
   }
-  catch(char *str) {
+  catch(...){
     ROS_WARN("CircleCalibBoard::scan:failed:");
     pub4->publish(done);
     return;
