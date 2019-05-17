@@ -15,12 +15,12 @@ rospy.init_node('p2qmatrix',anonymous=True)
 P1=rospy.get_param('/rovi/left/remap/P')
 P2=rospy.get_param('/rovi/right/remap/P')
 if unit is "m":
-  if P2[3]>1:
+  if np.abs(P2[3])>1:
     P2[3]=P2[3]*0.001
     P2[7]=P2[7]*0.001
     P2[11]=P2[11]*0.001
 else:
-  if P2[3]<1:
+  if np.abs(P2[3])<1:
     P2[3]=P2[3]*1000
     P2[7]=P2[7]*1000
     P2[11]=P2[11]*1000
