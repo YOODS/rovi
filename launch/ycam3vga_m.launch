@@ -1,0 +1,3 @@
+<launch>
+  <node name="ycam3vga" pkg="rovi" type="ycam3loader.sh" args="vga m"  output="screen" />
+</launch>
