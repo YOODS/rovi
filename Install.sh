@@ -13,14 +13,20 @@ cd aravis-0.6.0
 ./configure
 make
 sudo make install
+if ! grep /usr/local/lib /etc/ld.so.conf
+then
+    echo >>/etc/ld.so.conf
+    echo /usr/local/lib >>/etc/ld.so.conf
+    sudo ldconfig
+fi
 
 #installing ros::camera_aravis
-roscd rovi
+cd ~/*/src/rovi
 cd ../
 git clone https://github.com/YOODS/camera_aravis.git
 
 #installing Eigen
-roscd rovi
+cd ~/*/src/rovi
 wget http://bitbucket.org/eigen/eigen/get/3.3.4.tar.gz
 tar xvzf 3.3.4.tar.gz
 mkdir include
@@ -41,15 +47,21 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 
 #installing python package
+pip install pip==9.0.3
 pip install scipy --user
+pip install wheel
+pip install ipython==5.7 --user
+pip install ipykernel==4.10 --user
 pip install open3d-python --user
 
 #coping files
-roscd rovi
+cd ~/*/src/rovi
 sudo cp launch/rovirun.sh /usr/local/bin
 cp script/tflib.py ../../devel/lib/python2*/dist-packages
 
 #build
-roscd rovi
+cd ~/*/src/rovi
 cd ../../
 catkin_make
+
+
