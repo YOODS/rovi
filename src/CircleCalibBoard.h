@@ -1,23 +1,45 @@
 #pragma once
 #include <opencv2/opencv.hpp>
 #include <vector>
+#include <stdexcept>
 #include "CalibBoard.h"
-#include "ParaConfigure.h"
 
 
+
+//
+// 例外一覧
+//
+class CircleCalibBoardError : public std::runtime_error {
+public:
+	CircleCalibBoardError(const std::string &what_arg) : std::runtime_error(what_arg) {}
+	CircleCalibBoardError(const char *what_arg) : std::runtime_error(what_arg) {}	
+};
+
+
+// 画像サイズが変わったので、続けて処理ができない
+class CircleCalibBoardError_ImageSizeChange : public CircleCalibBoardError {
+public:
+	CircleCalibBoardError_ImageSizeChange() : CircleCalibBoardError("input image size changed") {}
+};
+
+
+// 輪郭線が必要な数分なくて、マーカ検出までできない
+class CircleCalibBoardError_FewContours : public CircleCalibBoardError {
+public:
+	CircleCalibBoardError_FewContours(const int n, const char *f)
+		: CircleCalibBoardError("too few contours"), n_contour(n), at(f) {}
+public:
+	int n_contour;
+	std::string at;
+};
+   
+
+
+// 円マーカ検出器
 class CircleCalibBoard : public CalibBoard {
 public:
-	enum Status {
-		Success = 0,
-		MemAlloc,			///< メモリの確保に失敗した
-		ImageSizeChange,	///< 画像サイズが変わった
-		TooFewContours,		///< 輪郭線の数が少なすぎる
-		BaseMarkerNotFound,	///< 基準マーカーが見つからない
-		InvalidPosition,	///< 見つかったマーカーの位置が不正(正しく読み取られなかった)
-	};
-
-
-	CircleCalibBoard() : CalibBoard(), image_h_size(0), image_v_size(0) {
+	CircleCalibBoard(float _debug_show_scale=0.0f)
+		: CalibBoard(), image_h_size(0), image_v_size(0), debug_show_scale(_debug_show_scale) {
 		para["n_circles_x"] = 13;		///< X軸方向の円の数
 		para["n_circles_y"] = 19;		///< Y軸方向の円の数
 		para["origin_x"] = 6;			///< 原点位置のX成分(X軸プラス方向から0スタートで数えた番号)
@@ -40,10 +62,9 @@ public:
 
 	/**
 	 * 初期化を行います. scan()を呼び出す前に必ず一度は呼び出してください.
-	 * @return 初期化に成功した場合はtrue, 失敗した場合はfalse.
 	 * @param setting_filename 設定ファイル名. 指定がなければデフォルト値を使用
 	 */
-	bool init(const char *setting_filename = 0);
+	void init(const char *setting_filename = 0);
 
 	/**
 	 * 設定をファイルに出力します.
@@ -58,7 +79,7 @@ public:
 	 * @param imgpoints 画像座標値画像(para["n_circles_x"] × para["n_circles_y"])
 	 * @param dispimg デバッグ用結果表示画像
 	 */
-	int scan(cv::Mat &image, std::vector<cv::Point2f> &imgpoints, cv::Mat *_dispimg = 0);
+	void scan(cv::Mat &image, std::vector<cv::Point2f> &imgpoints, cv::Mat *_dispimg = 0);
 
 
 	/**
@@ -140,6 +161,8 @@ private:
 	cv::Point mrkid_minimum;	///< マーカーインデックスの最小値
 	cv::Point mrkid_maximum;	///< マーカーインデックスの最大値
 
+	cv::Point2f origin;			///< マーカ原点の画像内位置
+
 	cv::Vec2f x_axis_vector;	///< マーカによって構築されるX軸ベクトル(単位ベクトル)
 	float x_axis_norm;			///< X軸ベクトルのノルム
 
@@ -148,8 +171,12 @@ private:
 
 	cv::Mat *dispimg;		///< デバッグ用画像バッファ
 
-	std::vector<std::vector<int>> connection;
+	/// 処理の段階ごとに表示する途中結果画像の、原画像に対するスケール
+	/// 0.0の場合、waitKeyを行わない(dispimgが0で無い場合のみ有効)
+	float debug_show_scale;
 
+	std::vector<std::vector<int>> connection;
+	
 private:
 	/**
 	 * マーカー検出のための制限値を画像サイズから計算する
@@ -157,7 +184,7 @@ private:
 	 * @param image_h_size 画像横幅
 	 * @param image_v_size 画像縦幅
 	 */
-	bool set_limit(const size_t image_h_size, const size_t image_v_size);
+	void set_limit(const size_t image_h_size, const size_t image_v_size);
 
 
 	/**
@@ -195,7 +222,7 @@ private:
 
 	/**
 	 * キャリブボードの座標系(基準マーカーによって決定される)を計算します.
-	 * @return 処理に成功した場合は原点マーカの番号, 失敗した場合は -1.
+	 * @return 処理に成功した場合はtrue, 失敗した場合は false.
 	 * @param centers 輪郭線の重心点集合
 	 * @param contours 輪郭線集合
 	 */
@@ -203,6 +230,7 @@ private:
 
 	void find_connection(std::vector<cv::Point2f> &center, std::vector<cv::Size> &radius);
 
+	
 	/**
 	 * 与えられた輪郭線が、指定条件を満足する場合に、その輪郭線を削除する
 	 * @return 残った輪郭線の数
@@ -228,7 +256,6 @@ private:
 		return (cnt.size() > max_length) ? true : false;
 	}
 
-
 	/**
 	 * 検出されたマーカの位置を描画します.
 	 * @return なし
@@ -236,6 +263,13 @@ private:
 	 */
 	void draw_marker_position(std::vector<cv::Point2f> &imgpoints);
 
+	
+	/**
+	 * 指定されたインデックスの点の間に黒マーカが存在するかどうかをチェックします.
+	 */
+	bool is_there_blackpt(size_t i0, size_t i1, std::vector<cv::Point2f> &centers, std::vector<size_t> &blackm);
+
+	
 	void draw_marker_position_line(std::vector<cv::Point2f> &imgpoints, const int j);
 };
 

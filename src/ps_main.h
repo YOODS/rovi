@@ -35,8 +35,8 @@ extern StereoCamera stcam;
  * dirname: キャリブデータ格納ディレクトリ
  */
 enum { CAM_COORD, BD_COORD};
-extern void ps_init(int w,int h,PS_PARAMS& p,int coord,const char *dirname);
-extern void ps_init(int w,int h);
+extern bool ps_init(int w,int h,PS_PARAMS& p,int coord,const char *dirname);
+extern bool ps_init(int w,int h);
 
 /*
  * 位相シフトパラメータを更新する
