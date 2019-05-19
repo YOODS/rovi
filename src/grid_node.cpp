@@ -7,6 +7,7 @@
 #include "rovi/ImageFilter.h"
 #include "rovi/Floats.h"
 #include "CircleCalibBoard.h"
+#include <stdlib.h>
 
 CircleCalibBoard cboard;
 ros::NodeHandle *nh;
@@ -30,22 +31,17 @@ void solve(sensor_msgs::Image src){
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
 
-  ROS_WARN("CircleCalibBoard::scan");
+  ROS_INFO("Try CircleCalibBoard::scan");
   try {
-    auto cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
+    cboard.scan(cv_ptr1->image, imagePoints, &mat);
     sensor_msgs::Image img;
     cv_ptr1->image=mat;
     cv_ptr1->encoding="bgr8";
     cv_ptr1->toImageMsg(img);
     pub1->publish(img);
-
-    if(cbres){
-      ROS_WARN("CircleCalibBoard::scan:failed:");
-      pub4->publish(done);
-      return;
-    }
   }
   catch(...) {
+    pub1->publish(src);
     ROS_WARN("CircleCalibBoard::scan exception");
     pub4->publish(done);
     return;
@@ -80,7 +76,7 @@ void solve(sensor_msgs::Image src){
   cv::Mat rvec(3, 1, cv::DataType<double>::type);
   cv::Mat tvec(3, 1, cv::DataType<double>::type);
   cv::OutputArray oRvec(rvec), oTvec(tvec);
-  ROS_WARN("Try solvePnP %d %d\n",model.size(),scene.size());
+  ROS_INFO("Try solvePnP %d %d\n",model.size(),scene.size());
   if(N>10){
     cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
   }
@@ -142,6 +138,7 @@ void solve(sensor_msgs::Image src){
 
 void reload(std_msgs::Bool e)
 {
+  ROS_INFO("grid_node LD_PATH=%s",getenv("LD_LIBRARY_PATH"));
   for (std::map<std::string, double>::iterator itr = cboard.para.begin(); itr != cboard.para.end(); ++itr)
   {
     std::string pname("gridboard/");
@@ -149,6 +146,10 @@ void reload(std_msgs::Bool e)
     if (nh->hasParam(pname))
     {
       nh->getParam(pname, itr->second);
+      ROS_INFO("grid_node::param overriden %s %f",itr->first.c_str(),itr->second);
+    }
+    else{
+      ROS_WARN("grid_node::param default %s %f",itr->first.c_str(),itr->second);
     }
   }
   cboard.init();
