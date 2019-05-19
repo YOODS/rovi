@@ -39,8 +39,6 @@ void solve(sensor_msgs::Image src){
     cv_ptr1->encoding="bgr8";
     cv_ptr1->toImageMsg(img);
     pub1->publish(img);
-
-    printf("###found\n");
   }
   catch(...) {
     pub1->publish(src);
