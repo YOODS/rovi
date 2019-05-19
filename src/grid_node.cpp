@@ -7,12 +7,13 @@
 #include "rovi/ImageFilter.h"
 #include "rovi/Floats.h"
 #include "CircleCalibBoard.h"
+#include <stdlib.h>
 
 CircleCalibBoard cboard;
 ros::NodeHandle *nh;
 std::string paramK("gridboard/K");
 static std::vector<double> kvec;
-static ros::Publisher *pub1, *pub2, *pub3, *pub4;
+static ros::Publisher *pub1, *pub2, *pub3, *pub4, *pub5;
 static double torelance=1.0;
 
 void solve(sensor_msgs::Image src){
@@ -29,23 +30,21 @@ void solve(sensor_msgs::Image src){
   }
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
-  
+
+  ROS_INFO("Try CircleCalibBoard::scan");
   try {
-    int cbres=cboard.scan(cv_ptr1->image, imagePoints, &mat);
+    cboard.scan(cv_ptr1->image, imagePoints, &mat);
     sensor_msgs::Image img;
     cv_ptr1->image=mat;
     cv_ptr1->encoding="bgr8";
     cv_ptr1->toImageMsg(img);
     pub1->publish(img);
 
-    if(cbres){
-      ROS_WARN("CircleCalibBoard::scan:failed:");
-      pub4->publish(done);
-      return;
-    }
+    printf("###found\n");
   }
-  catch(...){
-    ROS_WARN("CircleCalibBoard::scan:failed:");
+  catch(...) {
+    pub1->publish(src);
+    ROS_WARN("CircleCalibBoard::scan exception");
     pub4->publish(done);
     return;
   }
@@ -79,7 +78,13 @@ void solve(sensor_msgs::Image src){
   cv::Mat rvec(3, 1, cv::DataType<double>::type);
   cv::Mat tvec(3, 1, cv::DataType<double>::type);
   cv::OutputArray oRvec(rvec), oTvec(tvec);
-  cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
+  ROS_INFO("Try solvePnP %d %d\n",model.size(),scene.size());
+  if(N>10){
+    cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
+  }
+  else{
+    ROS_WARN("Too few recognized markers");
+  }
   float rx = rvec.at<double>(0, 0);
   float ry = rvec.at<double>(1, 0);
   float rz = rvec.at<double>(2, 0);
@@ -119,17 +124,23 @@ void solve(sensor_msgs::Image src){
       errY=floor(v);
     }
   }
-  errAve/=N;
+  if(N>0) errAve/=N;
   if(errAve<torelance){
     pub2->publish(tf);
     done.data=true;
   }
   pub4->publish(done);
   ROS_WARN("Ave %f  Max.err %f(%d,%d)",errAve,errMax,errX,errY);
+  rovi::Floats stats;
+  stats.data.resize(2);
+  stats.data[0]=errAve;
+  stats.data[1]=errMax;
+  pub5->publish(stats);
 }
 
 void reload(std_msgs::Bool e)
 {
+  ROS_INFO("grid_node LD_PATH=%s",getenv("LD_LIBRARY_PATH"));
   for (std::map<std::string, double>::iterator itr = cboard.para.begin(); itr != cboard.para.end(); ++itr)
   {
     std::string pname("gridboard/");
@@ -137,6 +148,10 @@ void reload(std_msgs::Bool e)
     if (nh->hasParam(pname))
     {
       nh->getParam(pname, itr->second);
+      ROS_INFO("grid_node::param overriden %s %f",itr->first.c_str(),itr->second);
+    }
+    else{
+      ROS_WARN("grid_node::param default %s %f",itr->first.c_str(),itr->second);
     }
   }
   cboard.init();
@@ -176,6 +191,8 @@ int main(int argc, char **argv)
   pub3 = &p3;
   ros::Publisher p4 = n.advertise<std_msgs::Bool>("gridboard/done", 1);
   pub4 = &p4;
+  ros::Publisher p5 = n.advertise<rovi::Floats>("gridboard/stats", 1);
+  pub5 = &p5;
   ros::spin();
   return 0;
 }
