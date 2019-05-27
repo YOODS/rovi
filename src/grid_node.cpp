@@ -4,6 +4,8 @@
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point.h>
 #include <geometry_msgs/Transform.h>
+#include <tf2_ros/transform_broadcaster.h>
+#include <geometry_msgs/TransformStamped.h>
 #include "rovi/ImageFilter.h"
 #include "rovi/Floats.h"
 #include "CircleCalibBoard.h"
@@ -15,6 +17,7 @@ std::string paramK("gridboard/K");
 static std::vector<double> kvec;
 static ros::Publisher *pub1, *pub2, *pub3, *pub4, *pub5;
 static double torelance=1.0;
+static tf2_ros::TransformBroadcaster *broadcaster;
 
 void solve(sensor_msgs::Image src){
   std_msgs::Bool done;
@@ -31,7 +34,6 @@ void solve(sensor_msgs::Image src){
   std::vector<cv::Point2f> imagePoints;
   cv::Mat mat;
 
-  ROS_INFO("Try CircleCalibBoard::scan");
   try {
     cboard.scan(cv_ptr1->image, imagePoints, &mat);
     sensor_msgs::Image img;
@@ -76,7 +78,6 @@ void solve(sensor_msgs::Image src){
   cv::Mat rvec(3, 1, cv::DataType<double>::type);
   cv::Mat tvec(3, 1, cv::DataType<double>::type);
   cv::OutputArray oRvec(rvec), oTvec(tvec);
-  ROS_INFO("Try solvePnP %d %d\n",model.size(),scene.size());
   if(N>10){
     cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
   }
@@ -126,6 +127,12 @@ void solve(sensor_msgs::Image src){
   if(errAve<torelance){
     pub2->publish(tf);
     done.data=true;
+    geometry_msgs::TransformStamped transformStamped;
+    transformStamped.header.stamp = ros::Time::now();
+    transformStamped.header.frame_id = "camera";
+    transformStamped.child_frame_id = "gridboard";
+    transformStamped.transform=tf;
+    broadcaster->sendTransform(transformStamped);
   }
   pub4->publish(done);
   ROS_WARN("Ave %f  Max.err %f(%d,%d)",errAve,errMax,errX,errY);
@@ -165,6 +172,23 @@ void reload(std_msgs::Bool e)
   ROS_WARN("grid::param::reload %f",torelance);
 }
 
+void tf_test(std_msgs::Bool e)
+{
+  ROS_WARN("gridboard send tf");
+  geometry_msgs::TransformStamped transformStamped;
+  transformStamped.header.stamp = ros::Time::now();
+  transformStamped.header.frame_id = "camera";
+  transformStamped.child_frame_id = "gridboard";
+  transformStamped.transform.translation.x=0;
+  transformStamped.transform.translation.y=0;
+  transformStamped.transform.translation.z=0;
+  transformStamped.transform.rotation.x=0;
+  transformStamped.transform.rotation.y=0;
+  transformStamped.transform.rotation.z=0;
+  transformStamped.transform.rotation.w=1;
+  broadcaster->sendTransform(transformStamped);
+}
+
 int main(int argc, char **argv)
 {
   if (argc >= 2)
@@ -177,8 +201,11 @@ int main(int argc, char **argv)
   nh = &n;
   cboard.para["bin_type"] = 1;
 
+  broadcaster=new tf2_ros::TransformBroadcaster;
+
   ros::Subscriber s1=n.subscribe("gridboard/image_in", 1, solve);
-  ros::Subscriber s2=n.subscribe("gridboard/X0", 1, reload);
+  ros::Subscriber s2=n.subscribe("gridboard/reload", 1, reload);
+  ros::Subscriber s3=n.subscribe("gridboard/test", 1, tf_test);
   std_msgs::Bool msg;
   reload(msg);
   ros::Publisher p1 = n.advertise<sensor_msgs::Image>("gridboard/image_out", 1);
@@ -191,6 +218,7 @@ int main(int argc, char **argv)
   pub4 = &p4;
   ros::Publisher p5 = n.advertise<rovi::Floats>("gridboard/stats", 1);
   pub5 = &p5;
+
   ros::spin();
   return 0;
 }

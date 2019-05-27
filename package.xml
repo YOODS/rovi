@@ -40,6 +40,7 @@
   <depend>sensor_msgs</depend>
   <depend>stereo_msgs</depend>
   <depend>cv_bridge</depend>
+  <depend>tf2_ros</depend>
   <depend>image_geometry</depend>
   <depend>libopencv-dev</depend>
 
