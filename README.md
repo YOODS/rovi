@@ -9,12 +9,55 @@ RoVIは3Dビジョンセンサーを組み込んだロボットのアプリケ�
 ## このRepositoryについて  
 このRepositoryはYOODS社が提供するYCAM3Dを制御するソフトウェアです。
 
-## インストール方法  
-ROSのソースディレクトリ(~/catkin_ws/srcなど)にて
+## ツール・ライブラリの追加  
+以下のソフトウェアが未だインストールされていなければ追加します。
+### ビルド環境
+  - g++
+  - git
+  - automake
+  - intltool
+  - libgsreamer*-dev
+~~~
+sudo apt install g++ git automake intltool libgstreamer*-dev
+~~~
+
+### Nodejs  
+Node8以上。以下はNode9のインストール方法です。
+~~~
+cd ~
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get install nodejs
+~~~
+
+### Pythonパッケージャ  
+pipがなければまずpipをインストール
+~~~
+sudo apt install python-pip python-dev
+~~~
+pipのversionは9.0.1以上が必要になる。低い場合はアップデートする。
+~~~
+pip install pip==9.0.3 --user
+~~~
+
+### ROSアカウントの初期設定  
+.bashrcの最後に以下を入れる(Linux環境。Winは違うかも・・・)
+~~~
+source /opt/ros/kinetic/setup.bash
+source ~/catkin_ws/devel/setup.bash
+export ROS_HOSTNAME=localhost
+export ROS_MASTER_URI=http://localhost:11311
+export NODE_PATH=/usr/lib/node_modules
+export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
+~~~
+反映させるため、一旦ターミナルを閉じ、新しいターミナルを開く。
+
+## RoVIのインストール  
+
+ROSのソースディレクトリ(~/catkin_ws/srcなど)に、israfelブランチをcheckoutします。
 ~~~
 git clone -b israfel --depth 1 https://github.com/YOODS/rovi.git
 ~~~
-GetingStarted.mdに記載のとおりです。この記載内容をInstall.shにて一括処理することも可能です。
+GetingStarted.mdに記載のとおりです。この記載内容をInstall.shにて一括処理することも可能です(歓迎スクリプトの間違い指摘)。
 ~~~
 cd rovi
 ./Install.sh
