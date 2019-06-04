@@ -1,5 +1,6 @@
 #include <ros/ros.h>
 #include <std_msgs/Bool.h>
+#include <std_msgs/Float32.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/Point.h>
@@ -136,10 +137,8 @@ void solve(sensor_msgs::Image src){
   }
   pub4->publish(done);
   ROS_WARN("Ave %f  Max.err %f(%d,%d)",errAve,errMax,errX,errY);
-  rovi::Floats stats;
-  stats.data.resize(2);
-  stats.data[0]=errAve;
-  stats.data[1]=errMax;
+  std_msgs::Float32 stats;
+  stats.data=errAve;
   pub5->publish(stats);
 }
 
@@ -216,7 +215,7 @@ int main(int argc, char **argv)
   pub3 = &p3;
   ros::Publisher p4 = n.advertise<std_msgs::Bool>("gridboard/done", 1);
   pub4 = &p4;
-  ros::Publisher p5 = n.advertise<rovi::Floats>("gridboard/stats", 1);
+  ros::Publisher p5 = n.advertise<std_msgs::Float32>("gridboard/stats", 1);
   pub5 = &p5;
 
   ros::spin();

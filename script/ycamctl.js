@@ -29,18 +29,10 @@ setImmediate(async function() {
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSrovi + '/stat', std_msgs.Bool);
   const pub_error = rosNode.advertise(NSrovi + '/error', std_msgs.String);
-  const pub_errlog = rosNode.advertise(NSrovi + '/errlog', rovi_msgs.StringArray);
-  const errlog=new rovi_msgs.StringArray();
   const errormsg=function(msg){
-    if(msg.length==0){
-      if(errlog.data.length>0) pub_errlog.publish(errlog);
-      return;
-    }
     let err=new std_msgs.String();
     err.data=msg;
     pub_error.publish(err);
-    errlog.data.unshift(msg);
-    pub_errlog.publish(errlog);
     ros.log.info('Error:'+err);
   }
   const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
@@ -83,13 +75,13 @@ setImmediate(async function() {
     param.proj.raise({Mode:1});//--- let 13 pattern mode
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY');
+    errormsg('YCAM ready');
     sensEv.lit=false;
   });
   sensEv.on('stat', function(f){
     let m=new std_msgs.Bool();
     m.data=f;
     pub_stat.publish(m);
-    errormsg('');
   });
   sensEv.on('shutdown', async function() {
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
