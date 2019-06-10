@@ -17,6 +17,17 @@ def dict2tf(d):
   tf.rotation.w=d['rotation']['w']
   return tf
 
+def tf2dict(tf):
+  d={'translation':{'x':0,'y':0,'x':0},'rotation':{'x':0,'y':0,'x':0,'w':0}}
+  d['translation']['x']=tf.translation.x
+  d['translation']['y']=tf.translation.y
+  d['translation']['z']=tf.translation.z
+  d['rotation']['x']=tf.rotation.x
+  d['rotation']['y']=tf.rotation.y
+  d['rotation']['z']=tf.rotation.z
+  d['rotation']['w']=tf.rotation.w
+  return d
+
 def toRT(tf):
   x=tf.rotation.x
   y=tf.rotation.y

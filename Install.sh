@@ -50,13 +50,14 @@ mv eigen-eigen-5a0156e40feb/Eigen/ include
 rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
 
 #installing nodejs packages
+cd ~/
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
 
 #patching rosnodejs
-cd ~
+cd ~/
 git clone https://github.com/RethinkRobotics-opensource/rosnodejs
 cd ~/node_modules/rosnodejs
 rm -rf dist
