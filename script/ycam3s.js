@@ -49,7 +49,11 @@ var ycam = {
       if (reg_table.hasOwnProperty(key)) {
         greq.address = reg_table[key];
         if(greq.address!=0){
-          greq.data = typeof(val) == 'string' ? val_table[val] : val;
+          if(typeof(val)=='string'){
+            if(val_table.hasOwnProperty(val)) greq.data=val_table[val];
+            else greq.data=Number(val);
+          }
+          else greq.data=val;
           try {
             await run_c.reg_write.call(greq);
           }

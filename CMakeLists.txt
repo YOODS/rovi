@@ -29,7 +29,7 @@ add_message_files(
   StringArray.msg
 )
 
-catkin_python_setup()
+#catkin_python_setup()
 
 generate_messages(
   DEPENDENCIES

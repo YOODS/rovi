@@ -50,14 +50,13 @@ mv eigen-eigen-5a0156e40feb/Eigen/ include
 rm -rf eigen-eigen-5a0156e40feb/ 3.3.4.tar.gz
 
 #installing nodejs packages
-cd ~/
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
 
 #patching rosnodejs
-cd ~/
+cd ~
 git clone https://github.com/RethinkRobotics-opensource/rosnodejs
 cd ~/node_modules/rosnodejs
 rm -rf dist
@@ -71,15 +70,10 @@ pip install ipython==5.7 --user
 pip install ipykernel==4.10 --user
 pip install open3d-python --user
 
-#coping files
-cd ~/*/src/rovi
-sudo cp launch/rovirun.sh /usr/local/bin
-cp script/tflib.py ../../devel/lib/python2*/dist-packages
-
-#checkout rovi_cropper
+#checkout rovi_utils
 cd ~/*/src/rovi
 cd ..
-git clone https://github.com/YOODS/rovi_cropper.git
+git clone https://github.com/YOODS/rovi_utils.git
 
 #checkout rqt_param
 cd ~/*/src/rovi
@@ -91,4 +85,9 @@ cd ~/*/src/rovi
 cd ../../
 catkin_make
 
+#install files
+cd ~/*/src/rovi
+sudo cp launch/rovirun.sh /usr/local/bin
+cd ~/*/src/rovi_utils
+cp lib/python2.7/*.py ../../devel/lib/python2.7/dist-packages
 
