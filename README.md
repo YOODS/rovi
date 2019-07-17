@@ -74,14 +74,14 @@ roslaunch rovi ycam3sxga.launch
 ~~~
 roslaunch rovi ycam3vga.launch
 ~~~
-長さの単位をmmとする場合は以下のlaunchを使います。
+長さの単位をmとする場合は以下のlaunchを使います。
 
-3. SXGAモード(mm単位)  
+3. SXGAモード(m単位)  
 ~~~
 roslaunch rovi ycam3sxga_mm.launch
 ~~~
 
-4. VGAモード(mm単位)  
+4. VGAモード(m単位)  
 ~~~
 roslaunch rovi ycam3vga_mm.launch
 ~~~
