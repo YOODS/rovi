@@ -1,0 +1,24 @@
+- tar:
+    local-name: aravis
+    uri: http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.0.tar.xz
+    version: aravis-0.6.0
+- git:
+    local-name: camera_aravis
+    uri: http://github.com/YOODS/camera_aravis.git
+    version: master
+- git:
+    local-name: rosnodejs
+    uri: https://github.com/RethinkRobotics-opensource/rosnodejs
+    version: kinetic-devel
+- git:
+    local-name: rovi
+    uri: http://github.com/YOODS/rovi.git
+    version: israfel
+- git:
+    local-name: rovi_utils
+    uri: http://github.com/YOODS/rovi_utils.git
+    version: master
+- git:
+    local-name: rqt_param_manager
+    uri: https://github.com/YOODS/rqt_param_manager.git
+    version: devel
