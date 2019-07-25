@@ -43,6 +43,7 @@
   <depend>tf2_ros</depend>
   <depend>image_geometry</depend>
   <depend>libopencv-dev</depend>
+  <depend>eigen</depend>
 
   <!-- The export tag contains other, unspecified, tags -->
   <export>
