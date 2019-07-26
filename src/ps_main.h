@@ -77,6 +77,9 @@ extern int genPC(Eigen::MatrixXd &diff,Eigen::MatrixXp &texture,Eigen::MatrixXp 
  */
 #define WO_TEXTURE     0x00000001
 #define RANGE_GRID     0x00000002
+#define R_TEXTURE      0x00000004
+#define G_TEXTURE      0x00000008
+#define B_TEXTURE      0x0000000C
 
 extern void outPLY(const char *fname,int flags =0);
 
