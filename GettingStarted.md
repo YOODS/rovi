@@ -194,7 +194,7 @@ cp -a ~/rosnodejs/src/ dist
 インストール
 ~~~
 sudo apt install python-pip
-install scipy --user
+pip install scipy --user
 pip install open3d-python --user
 ~~~
 
