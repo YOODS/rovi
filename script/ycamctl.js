@@ -111,7 +111,7 @@ setImmediate(async function() {
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
   }
   let psgenpc = function(req,res){
-    if(pserror<0) return false;
+//    if(pserror<0) return false;
     if (!sens.normal) {
       ros.log.warn(res.message = 'YCAM not ready');
       res.success = false;
