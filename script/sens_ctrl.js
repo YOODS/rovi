@@ -7,9 +7,6 @@ const EventEmitter = require('events').EventEmitter;
 exports.assign=function(sens){
   sens.fps=1;
   sens.reqL_=sens.reqR_=0;
-  sens.on('wake', async function(){
-    setTimeout(sens.scanStart,3000);
-  });
   sens.on('shutdown', async function() {
     sens.scanStop();
   });
@@ -23,36 +20,41 @@ exports.assign=function(sens){
   });
   sens.syncL=async function(tmo){
     return new Promise(function(resolve){
-      setTimeout(function(){  sens.reqL_=0; resolve(true);},tmo);
+      setTimeout(function(){  sens.reqL_=0; sens.removeAllListeners('syncL'); resolve(true);},tmo);
       sens.once('syncL',function(){ resolve(true);});
     });
   }
   sens.syncR=async function(tmo){
     return new Promise(function(resolve){
-      setTimeout(function(){ sens.reqR_=0; resolve(true);},tmo);
+      setTimeout(function(){ sens.reqR_=0; sens.removeAllListeners('syncR'); resolve(true);},tmo);
       sens.once('syncR',function(){ resolve(true);});
     });
   }
-  sens.scanID_=null;
+  sens.streaming=null;
   sens.scanStart=function(){
     sens.reqL_=sens.reqR_=0;
     sens.scanDo_();
   }
   sens.scanDo_=function(){
-    if(sens.scanID_!=null) return;
+    if(sens.streaming!=null) return;
+    if(sens.reqL_>2 || sens.reqR_>2){
+      sens.emit('timeout');
+      sens.streaming=null;
+      return;
+    }
     if(sens.device.pstat){
       sens.emit('trigger');
       sens.reqL_++;
       sens.reqR_++;
     }
-    sens.scanID_=setTimeout(function(){
-      sens.scanID_=null;
+    sens.streaming=setTimeout(function(){
+      sens.streaming=null;
       sens.scanDo_();
     },Math.floor(1000/sens.fps));
   }
   sens.scanStop=function(tmo){
-    if(sens.scanID_!=null) clearTimeout(sens.scanID_);
-    sens.scanID_=null;
+    if(sens.streaming!=null) clearTimeout(sens.streaming);
+    sens.streaming=null;
     if(sens.reqL_>0 && sens.reqR_>0){
 ros.log.info('Stop streaming both');
       return Promise.all([sens.syncL(tmo),sens.syncR(tmo)]);

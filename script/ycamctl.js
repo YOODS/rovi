@@ -68,15 +68,20 @@ setImmediate(async function() {
     break;
   }
   sensEv=SensControl.assign(sensEv);
+  sensEv.wakeup_timer=null;
   sensEv.on('wake', async function() {
     ros.log.info('ycam wake');
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
     param.proj.raise({Mode:1});//--- let 13 pattern mode
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
-    ros.log.warn('NOW ALL READY');
+    ros.log.warn('NOW ALL READY ');
     errormsg('YCAM ready');
     sensEv.lit=false;
+    sensEv.wakeup_timer=setTimeout(function(){
+      sensEv.scanStart();
+      sensEv.wakeup_timer=null;
+    },3000);
   });
   sensEv.on('stat', function(f){
     let m=new std_msgs.Bool();
@@ -106,6 +111,10 @@ setImmediate(async function() {
     }
     sensEv.fps=param.camlv.objs.SoftwareTriggerRate;
   });
+  sensEv.on('timeout', async function() {
+    ros.log.error('Image streaming timeout');
+    sens.kill();
+  });
 
 // ---------Definition of services
   let psthres=100;
@@ -123,6 +132,10 @@ setImmediate(async function() {
       ros.log.warn(res.message = 'YCAM not ready');
       res.success = false;
       return true;
+    }
+    if(sensEv.wakeup_timer!=null){
+      clearTimeout(sensEv.wakeup_timer);
+      sensEv.wakeup_timer=null;
     }
     return new Promise(async (resolve) => {
 //      param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
