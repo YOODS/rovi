@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   image_geometry
 )
 find_package(OpenCV REQUIRED)
+find_package(Eigen3 REQUIRED)
 
 add_service_files(
   FILES
@@ -54,6 +55,7 @@ include_directories(
   include
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${EIGEN3_INCLUDE_DIRS}
 )
 
 link_directories(

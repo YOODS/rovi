@@ -124,12 +124,7 @@ catkin_make
 ### RoVIソースのチェックアウト 
 ~~~
 cd ~/catkin_ws/src
-git clone --depth 1 https://github.com/YOODS/rovi.git
-~~~
-ramielブランチを確認
-~~~
-roscd rovi
-git branch
+git clone -b israfel https://github.com/YOODS/rovi.git
 ~~~
 次に必要なソフトウェアをインストールします。
 
@@ -198,6 +193,8 @@ cp -a ~/rosnodejs/src/ dist
 
 インストール
 ~~~
+sudo apt install python-pip
+pip install pip==9.0.3 --user
 pip install scipy --user
 pip install open3d-python --user
 ~~~

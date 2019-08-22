@@ -32,9 +32,9 @@ enum {
 enum {
 	NGPT=200,
 	NG_BRIGHTNESS,
-	NG_MARGIN,
+	NG_CODE,
 	NG_PHASE,
-	NG_SPECKLE,
+	NG_NOMATCH,
 	NG_MAX_PH_DIFF,
 	NG_MAX_TEX_DIFF,
 	NG_MAX_CD_DIFF,
@@ -57,6 +57,7 @@ enum {
 #define LS_POINTS		3			//視差を求める際の最小二乗近似点数[points]
 #define EVEC_ERROR		2.0e-13		//視線ベクトルを用いて点群生成する際の視線誤差閾値
 #define MAX_STEP		1.0			//視差画像において隣り合うピクセル間視差の最大値
+#define CHECKBLOCK_SIZE	8			//コードノイズ除去判定用ウインドウサイズ
 
 struct PS_PARAMS {
 	int search_div;
@@ -92,11 +93,10 @@ private:
 	Eigen::MatrixXp code[CAMN];
 	Eigen::MatrixXd phase[CAMN];
 	Eigen::Matrix4d Q;
-	int *_LLimits, *_RLimits;
 	void subtract_bg(Eigen::MatrixXp &tg,Eigen::MatrixXp &bg);
 	void subtract_bg(Eigen::MatrixXd &tg,Eigen::MatrixXd &bg);
 protected:
-	void check_brightness(int cam);
+	void check_code7(int cam);
 	void mk_code7(int cam);
 	void mk_phase(int cam);
 	void unwrap(int cam);
