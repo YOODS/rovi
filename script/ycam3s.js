@@ -196,7 +196,7 @@ var ycam = {
     return Notifier;
   },
   kill: function(){
-    Rosrun.kill();
+    if(run_c.running!=null) run_c.running.kill();
   }
 }
 
