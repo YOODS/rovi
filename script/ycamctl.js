@@ -33,7 +33,7 @@ setImmediate(async function() {
     let err=new std_msgs.String();
     err.data=msg;
     pub_error.publish(err);
-    ros.log.info('Error:'+err);
+    ros.log.info('Error:'+err.data);
   }
   const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
   const genpc=rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
