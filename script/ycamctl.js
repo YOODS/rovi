@@ -113,6 +113,7 @@ setImmediate(async function() {
   });
   sensEv.on('timeout', async function() {
     ros.log.error('Image streaming timeout');
+    errormsg('Image streaming timeout');
     sens.kill();
   });
 

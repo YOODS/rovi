@@ -159,6 +159,7 @@ sudo apt-get install nodejs
 <tr><td>js-yaml<td>
 <tr><td>mathjs<td>
 <tr><td>shm-typed-array<td>
+<tr><td>terminate<td>
 </table>
 
 インストール
@@ -167,6 +168,7 @@ npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
+npm install terminate
 ~~~
 
 - rosnodejsインストール後の追加の処理  

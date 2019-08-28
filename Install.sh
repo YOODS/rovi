@@ -54,6 +54,7 @@ npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
+npm install terminate --save
 
 #patching rosnodejs
 cd ~

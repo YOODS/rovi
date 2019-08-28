@@ -7,7 +7,7 @@ popen.run=function(node, ns, eo) {
   ev.running=null;
   let env=process.env;
   env=Object.assign(env, { ROS_NAMESPACE: ns });
-  let proc=popen.exec('rosrun ' + node, { env: process.env });
+  let proc=popen.exec('rosrun ' + node, { env:process.env, detached: true });
   ev.running = proc;
   let arg=node.split(' ');
   arg.push('');
