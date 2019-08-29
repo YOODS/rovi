@@ -6,7 +6,10 @@ const EventEmitter = require('events').EventEmitter;
 
 exports.assign=function(sens){
   sens.fps=1;
-  sens.reqL_=sens.reqR_=0;
+  sens.reqL_=0;
+  sens.reqR_=0;
+  sens.toutL_=0;
+  sens.toutR_=0;
   sens.on('shutdown', async function() {
     sens.scanStop();
   });
@@ -37,7 +40,11 @@ exports.assign=function(sens){
   }
   sens.scanDo_=function(){
     if(sens.streaming!=null) return;
-    if(sens.reqL_>2 || sens.reqR_>2){
+    if(sens.reqL_>2) sens.toutL_++;
+    else sens.toutL_=0;
+    if(sens.reqR_>2) sens.toutR_++;
+    else sens.toutR_=0;
+    if(sens.toutL_>2 || sens.toutR_>2){
       sens.emit('timeout');
       sens.streaming=null;
       return;

@@ -2,6 +2,7 @@ const Net = require('net');
 const EventEmitter = require('events').EventEmitter;
 const Rosrun = require('./rosrun.js');
 const Notifier = new EventEmitter;
+const terminate=require('terminate');
 
 const ros = require('rosnodejs');
 const sensor_msgs = ros.require('sensor_msgs').msg;
@@ -196,7 +197,12 @@ var ycam = {
     return Notifier;
   },
   kill: function(){
-    if(run_c.running!=null) run_c.running.kill();
+console.log("kkill"+run_c.running);
+    if(run_c.running!=null){// process.kill(-run_c.running.pid);
+      terminate(run_c.running.pid,function(err){
+        console.log('terminate '+err);
+      });
+    }
   }
 }
 
