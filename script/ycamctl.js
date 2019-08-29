@@ -28,7 +28,7 @@ setImmediate(async function() {
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
   const pub_stat = rosNode.advertise(NSrovi + '/stat', std_msgs.Bool);
-  const pub_error = rosNode.advertise(NSrovi + '/error', std_msgs.String);
+  const pub_error = rosNode.advertise('/error', std_msgs.String);
   const errormsg=function(msg){
     let err=new std_msgs.String();
     err.data=msg;
@@ -162,7 +162,18 @@ setImmediate(async function() {
       ros.log.info('Ready to store');
       setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
       await sleep(100);
-      let imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
+      let imgs;
+      try{
+        imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
+      }
+      catch(err){
+        ps2live(1000);
+        ros.log.error(err);
+        errormsg(err);
+        res.success = false;
+        res.message = err;
+        resolve(true);
+      }     
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
       gpreq.imgL = imgs[0];
