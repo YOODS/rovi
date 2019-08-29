@@ -129,8 +129,13 @@ setImmediate(async function() {
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
   }
   let psgenpc = function(req,res){
-    if (!sens.normal) {
-      ros.log.warn(res.message = 'YCAM not ready');
+    if(!sens.normal){
+      ros.log.warn(res.message='YCAM not ready');
+      res.success = false;
+      return true;
+    }
+    if(image_L.pstat!=0||image_R.pstat!=0){
+      ros.log.warn(res.message='Image_Switcher busy');
       res.success = false;
       return true;
     }
@@ -168,12 +173,14 @@ setImmediate(async function() {
         imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
       }
       catch(err){
+        const msg="image_switcher::store called while pstat not 0";
         ps2live(1000);
-        ros.log.error(err);
-        errormsg(err);
+        ros.log.error(msg);
+        errormsg(msg);
         res.success = false;
-        res.message = err;
+        res.message = msg;
         resolve(true);
+        return;
       }     
       clearTimeout(wdt);
       let gpreq = new rovi_srvs.GenPC.Request();
