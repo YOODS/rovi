@@ -58,6 +58,8 @@ int reload(){
   return 0;
 }
 
+struct XYZW{ float x,y,z,w;};
+bool operator<(const XYZW& left, const XYZW& right){ return left.w < right.w;}
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
 
@@ -72,7 +74,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   reload();
   ps_setparams(param);
 
-  // read Phase Shift data images. (13 left images and 13 right images)
+//read Phase Shift data images. (13 left images and 13 right images)
   try
   {
     for (int j = 0; j < 13; j++)
@@ -95,8 +97,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
     ROS_ERROR("genpc:cv_bridge:exception: %s", e.what());
     return false;
   }
-
-  // do calc
+//Do calc
   ROS_INFO("before ps_exec");
   Eigen::MatrixXd &diff = ps_exec();
   Eigen::Matrix4d Q;
@@ -104,12 +105,18 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   memcpy(Q.data(), vecQ.data(), sizeof(double) * 4 * 4);
   ROS_INFO("before genPC");
   int N = genPC(diff, ps.texture, ps.mask[0], ps.pt, Q);
-  ROS_INFO("genPC returned N=%d", N);
-
-  // output point clouds
+//output point clouds
   sensor_msgs::PointCloud pts;
   pts.header.stamp = ros::Time::now();
   pts.header.frame_id = "/camera";
+  if(N==0){
+    pub1->publish(pts);
+    rovi::Floats buf;
+    pub3->publish(buf);
+    res.pc_cnt = N;
+    ROS_INFO("genpc point count 0");
+    return true;
+  }
   pts.points.resize(N);
   pts.channels.resize(3);
   pts.channels[0].name = "r";
@@ -118,17 +125,40 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   pts.channels[1].values.resize(N);
   pts.channels[2].name = "b";
   pts.channels[2].values.resize(N);
-  rovi::Floats buf;
-  buf.data.resize(3*N);
-  for (int n = 0; n < N; n++)
-  {
-    int n3=3*n;
-    buf.data[n3++]=pts.points[n].x = _pcd[n].coord[0];
-    buf.data[n3++]=pts.points[n].y = _pcd[n].coord[1];
-    buf.data[n3]=pts.points[n].z = _pcd[n].coord[2];
+//building point cloud, getting center of points, and getting norm from the center
+  double X0=0,Y0=0,Z0=0;  
+  for (int n = 0; n < N; n++){
+    X0+=pts.points[n].x = _pcd[n].coord[0];
+    Y0+=pts.points[n].y = _pcd[n].coord[1];
+    Z0+=pts.points[n].z = _pcd[n].coord[2];
     pts.channels[0].values[n] = _pcd[n].col[0] / 255.0;
     pts.channels[1].values[n] = _pcd[n].col[1] / 255.0;
     pts.channels[2].values[n] = _pcd[n].col[2] / 255.0;
+  }
+  X0/=N; Y0/=N; Z0/=N;
+//  X0=Y0=Z0=0;
+//getting norm from the center and sort by it
+  std::vector<XYZW> norm;
+  norm.resize(N);
+  for (int n = 0; n < N; n++){
+    float dx=(norm[n].x=pts.points[n].x)-X0;
+    float dy=(norm[n].y=pts.points[n].y)-Y0;
+    float dz=(norm[n].z=pts.points[n].z)-Z0;
+//  norm[n].w=sqrt(dx*dx+dy*dy+dz*dz);
+    norm[n].w=sqrt(dx*dx+dy*dy);
+  }
+  std::sort(norm.begin(),norm.end());
+//Quantize points count for Numpy array
+  rovi::Floats buf;
+  double gamma=1.2;
+  double kn=floor((log10(N)-1)/log10(gamma));
+  int Qn=N<10? N:floor(10*pow(gamma,kn));
+  buf.data.resize(3*Qn);
+  for (int n = 0; n < Qn; n++){
+    int n3=3*n;
+    buf.data[n3++]=norm[n].x;
+    buf.data[n3++]=norm[n].y;
+    buf.data[n3]=norm[n].z;
   }
 
   ROS_INFO("before outPLY");
@@ -140,8 +170,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   pub3->publish(buf);
 
   res.pc_cnt = N;
-
-  ROS_INFO("now return");
+  ROS_INFO("genPC point counts %d / %d",N,Qn);
   return true;
 }
 
