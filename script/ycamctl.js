@@ -27,6 +27,7 @@ setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
   const image_L = new ImageSwitcher(rosNode, NScamL);
   const image_R = new ImageSwitcher(rosNode, NScamR);
+//---------publisher and subscriber 1/2
   const pub_stat = rosNode.advertise(NSrovi + '/stat', std_msgs.Bool);
   const pub_error = rosNode.advertise('/error', std_msgs.String);
   const errormsg=function(msg){
@@ -36,6 +37,7 @@ setImmediate(async function() {
     ros.log.info('Error:'+err.data);
   }
   const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
+  const pub_Y1=rosNode.advertise(NSrovi+'/Y1',std_msgs.Bool);
   const genpc=rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
@@ -117,16 +119,16 @@ setImmediate(async function() {
     sens.kill();
   });
 
-// ---------Definition of services
-  let psthres=100;
+//---------Definition of services
+  let pslock=false;
   let ps2live = function(tp){ //---after "tp" msec, back to live mode
     setTimeout(function(){
       sensEv.scanStart();
       image_L.thru();
       image_R.thru();
+      pslock=false;
     },tp);
     param.camlv.raise(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
-//    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
   }
   let psgenpc = function(req,res){
     if(!sens.normal){
@@ -134,8 +136,8 @@ setImmediate(async function() {
       res.success = false;
       return true;
     }
-    if(image_L.pstat!=0||image_R.pstat!=0){
-      ros.log.warn(res.message='Image_Switcher busy');
+    if(pslock){
+      ros.log.warn(res.message='genpc busy');
       res.success = false;
       return true;
     }
@@ -144,7 +146,7 @@ setImmediate(async function() {
       sensEv.wakeup_timer=null;
     }
     return new Promise(async (resolve) => {
-//      param.proj.raise({Mode:1});//--- let projector pattern to be phase shift
+      pslock=true;
       await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
       ros.log.info('Streaming stopped');
       await sens.cset(param.camps.objs); //---overwrites genpc camera params
@@ -155,6 +157,7 @@ setImmediate(async function() {
         errormsg(errmsg);
         res.success = false;
         res.message = errmsg;
+        pub_Y1.publish(new std_msgs.Bool());
         resolve(true);
       }, param.proj.objs.Interval*13 + 1000);
 //for monitoring
@@ -173,13 +176,14 @@ setImmediate(async function() {
         imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
       }
       catch(err){
-        const msg="image_switcher::store called while pstat not 0";
+        const msg="image_switcher::exception";
         ps2live(1000);
         ros.log.error(msg);
         errormsg(msg);
         res.success = false;
         res.message = msg;
         resolve(true);
+        pub_Y1.publish(new std_msgs.Bool());
         return;
       }     
       clearTimeout(wdt);
@@ -201,22 +205,30 @@ setImmediate(async function() {
       let pcount=new std_msgs.Int32();
       pcount.data=gpres.pc_cnt;
       pub_pcount.publish(pcount);
-      let tp=Math.floor(gpres.pc_cnt*0.001)+1;
+      let tp=Math.floor(gpres.pc_cnt*0.0001)+10;
       ps2live(tp);
-      if(gpres.pc_cnt<psthres) errormsg('Points count '+gpres.pc_cnt+' too few');
       ros.log.info('Time to publish pc '+tp+' ms');
+      let finish=new std_msgs.Bool();
+      finish.data=res.success;
+      pub_Y1.publish(finish);
       resolve(true);
     });
   }
-  const svc_do = rosNode.advertiseService(NSps, std_srvs.Trigger, psgenpc);
-  const sub_do = rosNode.subscribe(NSrovi+'/X1',std_msgs.Bool,async function(){
+
+//---------publisher and subscriber 2/2
+  const svc_X1=rosNode.advertiseService(NSps, std_srvs.Trigger, psgenpc);
+  const sub_X1=rosNode.subscribe(NSrovi+'/X1',std_msgs.Bool,async function(){
     if (!sens.normal){
       errormsg('Request cancelled due to YCAM status');
+      pub_Y1.publish(new std_msgs.Bool());
       return;
     }
     let req=new std_srvs.Trigger.Request();
     let res=new std_srvs.Trigger.Response();
-    await psgenpc(req,res);
+    let ret=psgenpc(req,res);
+    if(typeof(ret)=='boolean'){ //request refused
+      pub_Y1.publish(new std_msgs.Bool());
+    }
   });
   const svc_reset = rosNode.subscribe(NSrovi+'/reset',std_msgs.Bool,async function(){
     param.proj.raise({Reset:1});
