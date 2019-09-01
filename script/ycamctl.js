@@ -22,6 +22,13 @@ const Notifier = require('./notifier.js');
 const SensControl = require('./sens_ctrl.js');
 
 function sleep(msec){return new Promise(function(resolve){setTimeout(function(){resolve(true);},msec);});}
+function add_sendmsg(pub){
+  pub.sendmsg=function(s){
+    let m=new std_msgs.String();
+    m.data=s;
+    pub.publish(m);
+  }
+}
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
@@ -30,12 +37,9 @@ setImmediate(async function() {
 //---------publisher and subscriber 1/2
   const pub_stat = rosNode.advertise(NSrovi + '/stat', std_msgs.Bool);
   const pub_error = rosNode.advertise('/error', std_msgs.String);
-  const errormsg=function(msg){
-    let err=new std_msgs.String();
-    err.data=msg;
-    pub_error.publish(err);
-    ros.log.info('Error:'+err.data);
-  }
+  add_sendmsg(pub_error);
+  const pub_info = rosNode.advertise('/message', std_msgs.String);
+  add_sendmsg(pub_info);
   const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
   const pub_Y1=rosNode.advertise(NSrovi+'/Y1',std_msgs.Bool);
   const genpc=rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
@@ -78,7 +82,7 @@ setImmediate(async function() {
     param.proj.raise({Mode:1});//--- let 13 pattern mode
 //    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY ');
-    errormsg('YCAM ready');
+    pub_info.sendmsg('YCAM ready');
     sensEv.lit=false;
     sensEv.wakeup_timer=setTimeout(function(){
       sensEv.scanStart();
@@ -93,7 +97,7 @@ setImmediate(async function() {
   sensEv.on('shutdown', async function() {
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
-    errormsg('YCAM disconected');
+    pub_error.sendmsg('YCAM disconected');
   });
   sensEv.on('left', async function(img,ts) {
     image_L.emit(img,ts,sensEv.lit);
@@ -115,7 +119,7 @@ setImmediate(async function() {
   });
   sensEv.on('timeout', async function() {
     ros.log.error('Image streaming timeout');
-    errormsg('Image streaming timeout');
+    pub_error.sendmsg('Image streaming timeout');
     sens.kill();
   });
 
@@ -153,8 +157,7 @@ setImmediate(async function() {
       let wdt=setTimeout(async function() { //---start watch dog
         ps2live(1000);
         const errmsg = 'pshift_genpc timed out';
-        ros.log.error(errmsg);
-        errormsg(errmsg);
+        pub_error.sendmsg(errmsg);
         res.success = false;
         res.message = errmsg;
         pub_Y1.publish(new std_msgs.Bool());
@@ -179,7 +182,7 @@ setImmediate(async function() {
         const msg="image_switcher::exception";
         ps2live(1000);
         ros.log.error(msg);
-        errormsg(msg);
+        pub_error.sendmsg(msg);
         res.success = false;
         res.message = msg;
         resolve(true);
@@ -219,16 +222,16 @@ setImmediate(async function() {
   const svc_X1=rosNode.advertiseService(NSps, std_srvs.Trigger, psgenpc);
   const sub_X1=rosNode.subscribe(NSrovi+'/X1',std_msgs.Bool,async function(){
     if (!sens.normal){
-      errormsg('Request cancelled due to YCAM status');
+      pub_error.sendmsg('request cancelled due to YCAM status');
       pub_Y1.publish(new std_msgs.Bool());
       return;
     }
     let req=new std_srvs.Trigger.Request();
     let res=new std_srvs.Trigger.Response();
     let ret=psgenpc(req,res);
-    if(typeof(ret)=='boolean'){ //request refused
-      pub_Y1.publish(new std_msgs.Bool());
-    }
+//  if(typeof(ret)=='boolean'){ //request refused
+//    pub_Y1.publish(new std_msgs.Bool());
+//  }
   });
   const svc_reset = rosNode.subscribe(NSrovi+'/reset',std_msgs.Bool,async function(){
     param.proj.raise({Reset:1});

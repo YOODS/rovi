@@ -5,6 +5,7 @@
 #include <sensor_msgs/point_cloud_conversion.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
+#include <sensor_msgs/Image.h>
 #include "rovi/Floats.h"
 #include "rovi/GenPC.h"
 #include "ps_main.h"
@@ -13,7 +14,7 @@
 bool isready = false;
 
 ros::NodeHandle *nh;
-ros::Publisher *pub1, *pub3;
+ros::Publisher *pub1,*pub3,*pub4;
 
 std::vector<double> vecQ;
 
@@ -35,6 +36,9 @@ PS_PARAMS param =
   .evec_error = EVEC_ERROR,
 };
 
+std::vector<double> cam_K;
+int cam_width,cam_height;
+
 int reload(){
   nh->getParam("pshift_genpc/calc/search_div", param.search_div);
   nh->getParam("pshift_genpc/calc/bw_diff", param.bw_diff);
@@ -54,10 +58,40 @@ int reload(){
     ROS_ERROR("Param Q NG");
     return -1;
   }
+  nh->getParam("left/remap/K", cam_K);
+  if (cam_K.size() != 9){
+    ROS_ERROR("Param K NG");
+    return -1;
+  }
+  nh->getParam("left/remap/width", cam_width);
+  nh->getParam("left/remap/height", cam_height);
+
   ROS_INFO("genpc:reload ok");
   return 0;
 }
+sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
+  float centre_x=cam_K[2];
+  float centre_y=cam_K[5];
+  float focal_x=cam_K[0];
+  float focal_y=cam_K[4];
+  cv::Mat cv_image = cv::Mat(cam_height, cam_width, CV_32FC1,cv::Scalar(std::numeric_limits<float>::max()));
+  for (int i=0; i<ps.size();i++){
+    float z = ps[i].z;
+    float u = ps[i].x * focal_x / z;
+    float v = ps[i].y * focal_y / z;
+    int pixel_pos_x = (int)(u + centre_x);
+    int pixel_pos_y = (int)(v + centre_y);
+    if (pixel_pos_x > (cam_width-1)) pixel_pos_x = cam_width -1;
+    else if (pixel_pos_x < 0) pixel_pos_x = 0;
+    if (pixel_pos_y > (cam_height-1)) pixel_pos_y = cam_height-1;
+    else if (pixel_pos_y < 0) pixel_pos_y = 0;
+    cv_image.at<float>(pixel_pos_y,pixel_pos_x) = z;
+  }
+//  cv_image.convertTo(cv_image,CV_16UC1);
+//  cv_image.convertTo(cv_image,CV_32FC1);
 
+  return cv_bridge::CvImage(std_msgs::Header(), "32FC1", cv_image).toImageMsg();
+}
 struct XYZW{ float x,y,z,w;};
 bool operator<(const XYZW& left, const XYZW& right){ return left.w < right.w;}
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
@@ -168,6 +202,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
 
   pub1->publish(pts);
   pub3->publish(buf);
+  pub4->publish(to_depth(pts.points));
 
   res.pc_cnt = N;
   ROS_INFO("genPC point counts %d / %d",N,Qn);
@@ -185,6 +220,8 @@ int main(int argc, char **argv){
   pub1 = &p1;
   ros::Publisher p3 = n.advertise<rovi::Floats>("ps_floats", 1);
   pub3 = &p3;
+  ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);
+  pub4 = &p4;
   ros::spin();
   return 0;
 }
