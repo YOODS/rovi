@@ -176,7 +176,8 @@ var ycam = {
     run_c.on('start', async function() {
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');
-        process.exit(101);
+        who.kill();
+        return;
       }
       who.pset({Init:1});
       Notifier.emit('wake');
@@ -190,17 +191,15 @@ var ycam = {
       ros.log.warn('YCAM3 Stopped');
       ycam.cstat=ycam.pstat=false;
       ycam.pregbuf='';
-      rosNode.unsubscribe(ns + '/camera/image_raw');
     });
     this.scan();
     Notifier.device=ycam;
     return Notifier;
   },
   kill: function(){
-console.log("kkill"+run_c.running);
     if(run_c.running!=null){// process.kill(-run_c.running.pid);
       terminate(run_c.running.pid,function(err){
-        console.log('terminate '+err);
+        console.log('nodejs::terminate::error:'+err);
       });
     }
   }
@@ -209,47 +208,50 @@ console.log("kkill"+run_c.running);
 async function openCamera(rosrun, ns) {
   let shmptr;
   let shmkey=0;
-  let sub = rosNode.subscribe(ns + '/camera/image_raw', sensor_msgs.Image, (src) => {
-    const buffer=Buffer.from(src.data);
-    const nkey=buffer.readUInt32LE(0);
+  if(!rosrun.hasOwnProperty('subscribe_')){
+    rosrun.subscribe_= rosNode.subscribe(ns + '/camera/image_raw', sensor_msgs.Image, (src) => {
+      const buffer=Buffer.from(src.data);
+      const nkey=buffer.readUInt32LE(0);
 //    ros.log.info("shmkey="+Number(nkey).toString(16));
-    if(nkey!=shmkey){
-      try{
-        if(shmkey!=0) shm.detach(shmkey);
-        shmptr=shm.get(shmkey=nkey,'Uint8Array');
+      if(nkey!=shmkey){
+        try{
+          if(shmkey!=0) shm.detach(shmkey);
+          shmptr=shm.get(shmkey=nkey,'Uint8Array');
+        }
+        catch(err){
+          console.log('get:'+err);
+        }
       }
-      catch(err){
-        console.log('get:'+err);
+      src.data = new Uint8Array(src.height*src.step);
+      src.data.set(shmptr);
+      let image_l = new sensor_msgs.Image();
+      let image_r = new sensor_msgs.Image();
+      const h = image_l.height = image_r.height = src.height;
+      const w = image_l.step = image_r.step = src.step / 2;
+      image_l.header = image_r.header = src.header;
+      image_l.width = image_r.width = src.width / 2;
+      image_l.encoding = image_r.encoding = src.encoding;
+      let sz = image_l.step * image_l.height;
+      image_l.data = new Uint8Array(sz);
+      image_r.data = new Uint8Array(sz);
+      for (let i = 0, s = 0, t = 0; i < h; i++, t += w) {
+        image_l.data.subarray(t).set(src.data.subarray(s, s + w));
+        s += w;
+        image_r.data.subarray(t).set(src.data.subarray(s, s + w));
+        s += w;
       }
-    }
-    src.data = new Uint8Array(src.height*src.step);
-    src.data.set(shmptr);
-    let image_l = new sensor_msgs.Image();
-    let image_r = new sensor_msgs.Image();
-    const h = image_l.height = image_r.height = src.height;
-    const w = image_l.step = image_r.step = src.step / 2;
-    image_l.header = image_r.header = src.header;
-    image_l.width = image_r.width = src.width / 2;
-    image_l.encoding = image_r.encoding = src.encoding;
-    let sz = image_l.step * image_l.height;
-    image_l.data = new Uint8Array(sz);
-    image_r.data = new Uint8Array(sz);
-    for (let i = 0, s = 0, t = 0; i < h; i++, t += w) {
-      image_l.data.subarray(t).set(src.data.subarray(s, s + w));
-      s += w;
-      image_r.data.subarray(t).set(src.data.subarray(s, s + w));
-      s += w;
-    }
-    let ts=ros.Time.now();
-    Notifier.emit('left', image_l,ts);
-    Notifier.emit('right', image_r,ts);
-  });
+      let ts=ros.Time.now();
+      Notifier.emit('left', image_l,ts);
+      Notifier.emit('right', image_r,ts);
+    });
+  }
   return new Promise(async function(resolve) {
     let regw = rosNode.serviceClient(ns + '/camera/regw', gev_srvs.GevRegs, { persist: true });
     if (await rosNode.waitForService(regw.getService(), 2000)) {
       rosrun.reg_write = regw;
     }
     else {
+      rosrun.reg_write = null;
       ros.log.error(ns + '/"regw" not available');
       resolve(false);
     }
@@ -258,6 +260,7 @@ async function openCamera(rosrun, ns) {
       rosrun.reg_read = regr;
     }
     else {
+      rosrun.reg_read = null;
       ros.log.error(ns + '/"regr" not available');
       resolve(false);
     }

@@ -1,5 +1,7 @@
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
+#include <std_msgs/String.h>
+#include <geometry_msgs/Point32.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
@@ -11,16 +13,18 @@
 #include "ps_main.h"
 #include <stdio.h>
 
+//#define PLYDUMP
+
 bool isready = false;
 
 ros::NodeHandle *nh;
-ros::Publisher *pub1,*pub3,*pub4;
+ros::Publisher *pub1,*pub2,*pub3,*pub4;
 
 std::vector<double> vecQ;
-
-// Phase Shift method calc parameters
-PS_PARAMS param =
-{
+std::vector<double> cam_K;
+int cam_width,cam_height;
+std::string file_dump("/tmp");
+PS_PARAMS param = {
   .search_div = PH_SEARCH_DIV,
   .bw_diff = BW_DIFF,
   .brightness = BRIGHTNESS,
@@ -35,9 +39,6 @@ PS_PARAMS param =
   .ls_points = LS_POINTS,
   .evec_error = EVEC_ERROR,
 };
-
-std::vector<double> cam_K;
-int cam_width,cam_height;
 
 int reload(){
   nh->getParam("pshift_genpc/calc/search_div", param.search_div);
@@ -65,10 +66,17 @@ int reload(){
   }
   nh->getParam("left/remap/width", cam_width);
   nh->getParam("left/remap/height", cam_height);
+  if(nh->hasParam("genpc/dump")) nh->getParam("genpc/dump",file_dump);
+  else file_dump="";
+  if (vecQ.size() != 16){
+    ROS_ERROR("Param Q NG");
+    return -1;
+  }
 
   ROS_INFO("genpc:reload ok");
   return 0;
 }
+
 sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
   float centre_x=cam_K[2];
   float centre_y=cam_K[5];
@@ -87,13 +95,42 @@ sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
     else if (pixel_pos_y < 0) pixel_pos_y = 0;
     cv_image.at<float>(pixel_pos_y,pixel_pos_x) = z;
   }
-//  cv_image.convertTo(cv_image,CV_16UC1);
-//  cv_image.convertTo(cv_image,CV_32FC1);
-
   return cv_bridge::CvImage(std_msgs::Header(), "32FC1", cv_image).toImageMsg();
 }
+
 struct XYZW{ float x,y,z,w;};
 bool operator<(const XYZW& left, const XYZW& right){ return left.w < right.w;}
+
+union PACK{ float d[3]; char a[12];};
+std::string base64encode(const std::vector<geometry_msgs::Point32> data) {
+  static const char sEncodingTable[] = {
+    'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H',
+    'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P',
+    'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X',
+    'Y', 'Z', 'a', 'b', 'c', 'd', 'e', 'f',
+    'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+    'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+    'w', 'x', 'y', 'z', '0', '1', '2', '3',
+    '4', '5', '6', '7', '8', '9', '+', '/'
+  };
+  size_t in_len=data.size();
+  size_t out_len=sizeof(float)*3*in_len*4/3;
+  std::string ret(out_len,'\x0');
+  PACK u;
+  for(int i=0,j=0;i<in_len;i++){
+    u.d[0]=data[i].x;
+    u.d[1]=data[i].y;
+    u.d[2]=data[i].z;
+    for(int k=0;k<12;k+=3){
+      ret[j++]=sEncodingTable[(u.a[k]>>2)&0x3F];
+      ret[j++]=sEncodingTable[((u.a[k]&0x3)<<4) | ((int)(u.a[k+1]&0xF0)>>4)];
+      ret[j++]=sEncodingTable[((u.a[k+1]&0xF)<<2) | ((int)(u.a[k+2]&0xC0)>>6)];
+      ret[j++]=sEncodingTable[u.a[k+2]&0x3F];
+    }
+  }
+  return ret;
+}
+
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
 
@@ -115,16 +152,18 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
     {
       cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(0, j, img);
-      cv::imwrite(cv::format("/tmp/capt%02d_0.pgm", j), img);
+      if(file_dump.size()>0) cv::imwrite(cv::format((file_dump+"/capt%02d_0.pgm").c_str(), j), img);
       img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
       ps_setpict(1, j, img);
-      cv::imwrite(cv::format("/tmp/capt%02d_1.pgm", j), img);
+      if(file_dump.size()>0) cv::imwrite(cv::format((file_dump+"/capt%02d_1.pgm").c_str(), j), img);
     }
-    FILE *f=fopen("/tmp/captseq.log","w");
-    for(int j=0;j<13;j++){
-      fprintf(f,"(%d) %d %d\n",j,req.imgL[j].header.seq,req.imgR[j].header.seq);
+    if(file_dump.size()>0){
+      FILE *f=fopen((file_dump+"/captseq.log").c_str(),"w");
+      for(int j=0;j<13;j++){
+        fprintf(f,"(%d) %d %d\n",j,req.imgL[j].header.seq,req.imgR[j].header.seq);
+      }
+      fclose(f);
     }
-    fclose(f);
   }
   catch (cv_bridge::Exception& e)
   {
@@ -145,6 +184,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
   pts.header.frame_id = "/camera";
   if(N==0){
     pub1->publish(pts);
+    std_msgs::String b64;
+    pub2->publish(b64);
     rovi::Floats buf;
     pub3->publish(buf);
     res.pc_cnt = N;
@@ -194,13 +235,16 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res){
     buf.data[n3++]=norm[n].y;
     buf.data[n3]=norm[n].z;
   }
-
-  ROS_INFO("before outPLY");
-  outPLY("/tmp/test.ply");
-  outPLY("/tmp/testRG.ply", RANGE_GRID);
-  ROS_INFO("after  outPLY");
-
+  if(file_dump.size()>0){
+    ROS_INFO("before outPLY");
+    outPLY((file_dump+"/test.ply").c_str());
+    outPLY((file_dump+"/testRG.ply").c_str(), RANGE_GRID);
+    ROS_INFO("after  outPLY");
+  }
   pub1->publish(pts);
+  std_msgs::String b64;
+  b64.data=base64encode(pts.points);
+  pub2->publish(b64);
   pub3->publish(buf);
   pub4->publish(to_depth(pts.points));
 
@@ -218,6 +262,8 @@ int main(int argc, char **argv){
   ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
   ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
   pub1 = &p1;
+  ros::Publisher p2 = n.advertise<std_msgs::String>("ps_base64", 1);
+  pub2 = &p2;
   ros::Publisher p3 = n.advertise<rovi::Floats>("ps_floats", 1);
   pub3 = &p3;
   ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);

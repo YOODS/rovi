@@ -47,6 +47,7 @@ setImmediate(async function() {
     ros.log.error('genpc service not available');
     return;
   }
+  const param_camnode=await rosNode.getParam(NSrovi + '/camera');
   let param={
     camps: new Notifier(rosNode,NSps + '/camera'),//Genpc mode camera params
     camlv: new Notifier(rosNode,NSlive + '/camera'),  //Live mode camera params
@@ -80,7 +81,6 @@ setImmediate(async function() {
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
     param.proj.raise({Mode:1});//--- let 13 pattern mode
-//    param.proj.raise({Mode:2});//--- let projector pattern to max brightness
     ros.log.warn('NOW ALL READY ');
     pub_info.sendmsg('YCAM ready');
     sensEv.lit=false;
@@ -97,6 +97,7 @@ setImmediate(async function() {
   sensEv.on('shutdown', async function() {
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
+    rosNode.setParam(NSrovi+'/camera',param_camnode);
     pub_error.sendmsg('YCAM disconected');
   });
   sensEv.on('left', async function(img,ts) {
