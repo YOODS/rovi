@@ -2,16 +2,17 @@ const EventEmitter = require('events').EventEmitter;
 
 let popen = require('child_process');
 
-popen.run = function(node, ns, eo) {
-  let ev = arguments.length < 3 ? new EventEmitter():eo;
-  ev.running = false;
-  let env = process.env;
-  env = Object.assign(env, { ROS_NAMESPACE: ns });
-  let proc = popen.exec('rosrun ' + node, { env: process.env });
+popen.run=function(node, ns, eo) {
+  let ev=arguments.length < 3 ? new EventEmitter():eo;
+  ev.running=null;
+  let env=process.env;
+  env=Object.assign(env, { ROS_NAMESPACE: ns });
+  let proc=popen.exec('rosrun ' + node, { env:process.env, detached: true });
+  ev.running = proc;
   let arg=node.split(' ');
   arg.push('');
-  let stm = setTimeout(function() {
-    ev.running = true;
+  let stm=setTimeout(function() {
+    stm=null;
     ev.emit('start'); // rosrun success
   }, 5000);
   proc.stdout.on('data', function(data) {
@@ -24,13 +25,9 @@ popen.run = function(node, ns, eo) {
   });
   proc.on('close', function(code) {
     console.log('rosrun closed:' + code);
-    if (ev.running) {
-      ev.running = false;
-      ev.emit('stop');
-    }
-    else {
-      clearTimeout(stm);
-    }
+    if (stm==null) ev.emit('stop');
+    else clearTimeout(stm);
+    ev.running = null;
     setTimeout(function() {
       popen.run(node, ns, ev);
     }, 3000);

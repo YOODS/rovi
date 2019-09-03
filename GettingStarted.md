@@ -124,12 +124,7 @@ catkin_make
 ### RoVIソースのチェックアウト 
 ~~~
 cd ~/catkin_ws/src
-git clone --depth 1 https://github.com/YOODS/rovi.git
-~~~
-ramielブランチを確認
-~~~
-roscd rovi
-git branch
+git clone -b israfel https://github.com/YOODS/rovi.git
 ~~~
 次に必要なソフトウェアをインストールします。
 
@@ -164,6 +159,7 @@ sudo apt-get install nodejs
 <tr><td>js-yaml<td>
 <tr><td>mathjs<td>
 <tr><td>shm-typed-array<td>
+<tr><td>terminate<td>
 </table>
 
 インストール
@@ -172,6 +168,7 @@ npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
+npm install terminate
 ~~~
 
 - rosnodejsインストール後の追加の処理  
@@ -198,6 +195,8 @@ cp -a ~/rosnodejs/src/ dist
 
 インストール
 ~~~
+sudo apt install python-pip
+pip install pip==9.0.3 --user
 pip install scipy --user
 pip install open3d-python --user
 ~~~

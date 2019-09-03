@@ -2,6 +2,7 @@ const Net = require('net');
 const EventEmitter = require('events').EventEmitter;
 const Rosrun = require('./rosrun.js');
 const Notifier = new EventEmitter;
+const terminate=require('terminate');
 
 const ros = require('rosnodejs');
 const sensor_msgs = ros.require('sensor_msgs').msg;
@@ -171,7 +172,7 @@ var ycam = {
     const who=this;
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
-    run_c = Rosrun.run('camera_aravis camnode', ns);
+    run_c = Rosrun.run('camera_aravis camnode', ns);  //Rosrun:childprocess
     run_c.on('start', async function() {
       if (!await openCamera(run_c, ns)) {
         ros.log.error('Failure in openCamera');
@@ -179,10 +180,11 @@ var ycam = {
       }
       who.pset({Init:1});
       Notifier.emit('wake');
-      ycam.cstat=ycam.pstat=true;
-      ycam.pregbuf='';
+      setTimeout(function(){
+        ycam.cstat=ycam.pstat=true;
+        ycam.pregbuf='';
+      },1000);
     });
-
     run_c.on('stop', async function() {
       Notifier.emit('shutdown','camera stopped');
       ros.log.warn('YCAM3 Stopped');
@@ -190,10 +192,17 @@ var ycam = {
       ycam.pregbuf='';
       rosNode.unsubscribe(ns + '/camera/image_raw');
     });
-
     this.scan();
     Notifier.device=ycam;
     return Notifier;
+  },
+  kill: function(){
+console.log("kkill"+run_c.running);
+    if(run_c.running!=null){// process.kill(-run_c.running.pid);
+      terminate(run_c.running.pid,function(err){
+        console.log('terminate '+err);
+      });
+    }
   }
 }
 
