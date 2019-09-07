@@ -1,0 +1,16 @@
+title X1 transaction
+
+App->YCam control: X1
+YCam control->+Streaming control:stop
+App->YCam control: X1
+note right of Streaming control: retrieving triggers or timeout
+Streaming control->-Image switcher:
+note right of Image switcher: capturing 13 images
+Image switcher->YCam control:timeout
+YCam control->App:Y1
+Image switcher->+genpc:
+YCam control->Streaming control:start
+genpc->YCam control:result
+YCam control->App:Y1
+genpc->-App:pointcloud
+YCam control->Streaming control:start
