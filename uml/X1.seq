@@ -5,15 +5,13 @@ YCam control->+Streaming control:stop
 App->YCam control: X1
 note right of Streaming control: retrieving images\nwith timeout
 Streaming control->-Image switcher:
-alt failed to take 13 images
-Image switcher->YCam control:timeout
-YCam control->App:Y1
-YCam control->Streaming control:start
-else
+alt 13 images taken
 Image switcher->YCam control:images[]
 YCam control->+genpc:call
-genpc-->YCam control:
-YCam control->App:Y1
-genpc->-App:pointcloud
-YCam control->Streaming control:start
+genpc->App:pointcloud
+genpc-->-YCam control:
+else
+Image switcher->YCam control:timeout
 end
+YCam control->App:Y1
+YCam control->Streaming control:start
