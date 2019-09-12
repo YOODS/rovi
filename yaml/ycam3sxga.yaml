@@ -12,7 +12,7 @@ pshift_genpc:
     brightness: 255
     darkness: 8
     step_diff: 1.2
-    max_step: 50.0
+    max_step: .0
     max_ph_diff: 5.0
     max_tex_diff: 1.0
     max_parallax: 300
