@@ -20,6 +20,8 @@ net.core.netdev_budget = 600
 fi
 
 #installing aravis library
+sudo apt-get install automake intltool
+sudo apt-get install libgstreamer*-dev
 cd ~
 wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.0.tar.xz
 tar xvf aravis-0.6.0.tar.xz
@@ -43,7 +45,10 @@ git clone https://github.com/YOODS/camera_aravis.git
 #installing Eigen
 sudo apt-get install libeigen3-dev
 
-#installing nodejs packages
+#installing nodejs and packages
+cd ~
+curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+sudo apt-get install nodejs
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
@@ -71,7 +76,7 @@ git clone https://github.com/YOODS/rovi_utils.git
 
 #checkout rqt_param
 cd $CATKIN_WS/src
-git clone -b devel https://github.com/YOODS/rtk_tools.git
+git clone https://github.com/YOODS/rtk_tools.git
 pip install python-tk
 pip install tkfilebrowser --user
 
