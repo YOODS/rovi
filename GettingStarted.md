@@ -14,6 +14,9 @@ YCAM3Dの制御ソフトウェア**RoVI**の環境構築から実行までの手
 ## OS
 - Ubuntu 16.xx
 - LinuxMint 18.x
+  - /etc/apt/sources.list.d/ros-latest.listにubuntuのコードを書かないとエラーになることに注意(以下のxenialの部分)
+    deb http://packages.ros.org/ros/ubuntu xenial main
+
 ## ROS
 - Kinetic
 ## Nodejs
