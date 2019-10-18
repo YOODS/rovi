@@ -1,0 +1,20 @@
+@startuml
+:aravis started<
+:streaming started<
+if (request) then (Node)
+fork
+:Gige disconnected<
+fork again
+:streaming timeout<
+:kill camera_aravis;
+end fork
+:re:start camera aravis;
+stop
+else (Capture)
+fork
+:ps image timeout<
+end fork
+:start streaming;
+detach
+endif
+@enduml
