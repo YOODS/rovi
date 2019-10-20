@@ -180,8 +180,8 @@ var ycam = {
         return;
       }
       who.pset({Init:1});
-      Notifier.emit('wake');
       setTimeout(function(){
+        Notifier.emit('wake');
         ycam.cstat=ycam.pstat=true;
         ycam.pregbuf='';
       },1000);
