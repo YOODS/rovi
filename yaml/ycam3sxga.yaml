@@ -21,13 +21,12 @@ pshift_genpc:
     ls_points: 3
 live:
   camera:
-    AcquisitionFrameRate: 28
+    AcquisitionFrameRate: 20
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
     SoftwareTriggerRate: 10
 camera:
-  AcquisitionFrameRate: 60
   TriggerMode: On
   MTU: 9000
   Height: 1024

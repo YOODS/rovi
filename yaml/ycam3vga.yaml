@@ -5,7 +5,7 @@ pshift_genpc:
   projector:
     ExposureTime: 20
     Intencity: 120
-    Interval: 30
+    Interval: 33
   calc:
     search_div: 4
     bw_diff: 16
@@ -21,14 +21,14 @@ pshift_genpc:
     ls_points: 3
 live:
   camera:
-    AcquisitionFrameRate: 60
+    AcquisitionFrameRate: 30
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
     SoftwareTriggerRate: 10
 camera:
-  AcquisitionFrameRate: 60
   TriggerMode: On
+  MTU: 9000
   Height: 480
   Width: 1280
   shmem: 614400

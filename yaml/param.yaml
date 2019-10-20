@@ -9,24 +9,3 @@ pshift_genpc:
   projector:
     ExposureTime: 20
     Intencity: 120
-calibration:
-  bTc:
-    translation:
-      x: 0
-      y: 0
-      z: 0
-    rotation:
-      x: 0
-      y: 0
-      z: 0
-      w: 1
-  mTc:
-    translation:
-      x: 0
-      y: 0
-      z: 0
-    rotation:
-      x: 0
-      y: 0
-      z: 0
-      w: 1
