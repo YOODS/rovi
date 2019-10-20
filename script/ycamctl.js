@@ -79,8 +79,10 @@ setImmediate(async function() {
   sensEv.on('wake', async function() {
     ros.log.info('ycam wake');
     for(let n in param) await param[n].start();
-    param.camlv.raise({TriggerMode:'On'});
-    param.proj.raise({Mode:1});//--- let 13 pattern mode
+    param.camlv.objs.TriggerMode='On';
+    param.camlv.raise();
+    param.proj.objs.Mode=1;//--- let 13 pattern mode
+    param.proj.raise();
     ros.log.warn('NOW ALL READY ');
     pub_info.sendmsg('YCAM ready');
     sensEv.lit=false;
@@ -121,7 +123,8 @@ setImmediate(async function() {
   sensEv.on('timeout', async function() {
     ros.log.error('Image streaming timeout');
     pub_error.sendmsg('Image streaming timeout');
-    sens.kill();
+//    sens.kill();
+    setTimeout(sensEv.scanStart,1000);
   });
 
 //---------Definition of services

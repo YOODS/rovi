@@ -37,6 +37,8 @@ class Notifier extends EventEmitter{
   }
   raise(param,diff,cb){
     switch(arguments.length){
+    case 0:
+      param=Object.assign({},this.objs);
     case 1:
       diff=false;
     case 2:
