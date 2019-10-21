@@ -77,11 +77,9 @@ setImmediate(async function() {
   sensEv=SensControl.assign(sensEv);
   sensEv.wakeup_timer=null;
   sensEv.on('wake', async function() {
-    param.camlv.objs.TriggerMode='On';
-    param.proj.objs.Mode=1;//--- let 13 pattern mode
     for(let n in param) await param[n].start();
-    param.camlv.raise();
-    param.proj.raise();
+    param.camlv.raise({TriggerMode:'On'});
+    param.proj.raise({Mode:1});//--- let 13 pattern mode
     ros.log.warn('NOW ALL READY ');
     pub_info.sendmsg('YCAM ready');
     sensEv.lit=false;
