@@ -68,7 +68,7 @@ setImmediate(async function() {
   switch(sensName){
   case 'ycam3':
   case 'ycam3s':
-    sensEv = await sens.open(rosNode, NSrovi);
+    sensEv = await sens.open(rosNode, NSrovi, param_camnode);
     break;
   case 'ycam1s':
     sensEv = await sens.open(rosNode,NScamL, NScamR, param.proj.objs.Url, param.proj.objs.Port);
@@ -120,7 +120,7 @@ setImmediate(async function() {
   sensEv.on('timeout', async function() {
     ros.log.error('Image streaming timeout');
     pub_error.sendmsg('Image streaming timeout');
-//    sens.kill();
+    sens.reset();
     setTimeout(sensEv.scanStart,1000);
   });
 
@@ -162,6 +162,7 @@ setImmediate(async function() {
         res.success = false;
         res.message = errmsg;
         pub_Y1.publish(new std_msgs.Bool());
+        param.proj.raise({Mode:1});//---reload 13 pattern
         resolve(true);
       }, param.proj.objs.Interval*13 + 1000);
 //for monitoring
@@ -235,6 +236,6 @@ setImmediate(async function() {
 //  }
   });
   const svc_reset = rosNode.subscribe(NSrovi+'/reset',std_msgs.Bool,async function(){
-    param.proj.raise({Reset:1});
+    sens.reset();
   });
 });

@@ -1,4 +1,5 @@
 const Net = require('net');
+const dgram = require('dgram');
 const EventEmitter = require('events').EventEmitter;
 const Rosrun = require('./rosrun.js');
 const Notifier = new EventEmitter;
@@ -40,6 +41,7 @@ const val_table = {
 }
 
 var ycam = {
+  param: null,
   cset: async function(obj) {
     if(!ycam.cstat) return 'ycam3s not ready';
     let ret = 'OK';
@@ -168,10 +170,11 @@ var ycam = {
     Notifier.emit('stat', this.normal = f);
     setTimeout(function() {ycam.scan();}, 1000);
   },
-  open: async function(nh, ns) {
+  open: async function(nh, ns, prm) {
     const who=this;
     ros.log.warn('YCAM3 Opening...');
     rosNode = nh;
+    this.param=prm;
     run_c = Rosrun.run('camera_aravis camnode', ns);  //Rosrun:childprocess
     run_c.on('start', async function() {
       if (!await openCamera(run_c, ns)) {
@@ -202,6 +205,17 @@ var ycam = {
         console.log('nodejs::terminate::error:'+err);
       });
     }
+  },
+  reset: function(){
+    this.pset({'Reset':1});
+    let sock=dgram.createSocket('udp4');
+    let cmd=new Uint8Array([0xD7,0x00,0x40,0x00]);
+    console.log("address "+this.param.address+" "+cmd.length);
+	  sock.send(cmd,0,cmd.length,port,this.param.address,function(err,bytes){
+   		console.log('dgram send '+bytes);
+  		if(err) console.log('UDP error ');
+	  	else sock.close();
+  	});
   }
 }
 

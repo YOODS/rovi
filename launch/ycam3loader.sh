@@ -24,7 +24,10 @@ IPADDS=$(rosparam get camera/address)
 
 while :
 do
-  guid=$(script/gvgetid.js $IPADDS)
+  id_adds=$(script/gvgetid.js $IPADDS)
+  adds=${id_adds#*@@@}
+  rosparam set camera/address $adds
+  guid=${id_adds%@@@*}
   if [ "$guid" != "" ]
   then
     break

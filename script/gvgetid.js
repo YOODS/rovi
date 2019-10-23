@@ -27,7 +27,12 @@ if(arver==6){
      if(s.indexOf(adds)>0) id=s;
     });
   }
-  if(id!=null) console.log(id.replace(/\(.*\)/,'').trim());
+  if(id!=null){
+    adds=id.replace(/.*\(/,'');
+    adds=adds.replace(/\).*/,'').trim();
+    id=id.replace(/\(.*\)/,'').trim()
+    console.log(id+'@@@'+adds);
+  }
   else console.log('');
 }
 else if(arver==4){
