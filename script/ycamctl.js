@@ -61,9 +61,15 @@ setImmediate(async function() {
   param.proj.on('change',async function(key,val){
     let obj={};
     obj[key]=val;
+    if(key=='Mode'){
+      if(sensEv.streaming){
+        await sensEv.scanStop(1000);
+        sensEv.lit=false;
+        setTimeout(sensEv.scanStart,1000);
+      }
+    }
     await sens.pset(obj);
   });
-
   let sensEv;
   switch(sensName){
   case 'ycam3':
@@ -93,16 +99,16 @@ setImmediate(async function() {
     m.data=f;
     pub_stat.publish(m);
   });
-  sensEv.on('shutdown', async function() {
+  sensEv.on('shutdown', async function(){
     ros.log.info('ycam down '+sens.cstat+' '+sens.pstat);
     for(let n in param) param[n].reset();
     rosNode.setParam(NSrovi+'/camera',param_camnode);
     pub_error.sendmsg('YCAM disconected');
   });
-  sensEv.on('left', async function(img,ts) {
+  sensEv.on('left', async function(img,ts){
     image_L.emit(img,ts,sensEv.lit);
   });
-  sensEv.on('right', async function(img,ts) {
+  sensEv.on('right', async function(img,ts){
     image_R.emit(img,ts,sensEv.lit);
   });
   sensEv.on('trigger', async function() {
@@ -120,8 +126,7 @@ setImmediate(async function() {
   sensEv.on('timeout', async function() {
     ros.log.error('Image streaming timeout');
     pub_error.sendmsg('Image streaming timeout');
-    sens.reset();
-    setTimeout(sensEv.scanStart,1000);
+    sens.kill();
   });
 
 //---------Definition of services
@@ -236,6 +241,6 @@ setImmediate(async function() {
 //  }
   });
   const svc_reset = rosNode.subscribe(NSrovi+'/reset',std_msgs.Bool,async function(){
-    sens.reset();
+    await sens.reset();
   });
 });

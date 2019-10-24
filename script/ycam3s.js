@@ -194,6 +194,21 @@ var ycam = {
       ros.log.warn('YCAM3 Stopped');
       ycam.cstat=ycam.pstat=false;
       ycam.pregbuf='';
+      run_c.emit('restart');
+    });
+    run_c.on('restart',async function(){
+      let done=await ycam.reset();
+      console.log('ycam3-restart-client '+done);
+      if(done){
+        setTimeout(function(){
+          run_c.emit('rerun');
+        },3000);
+      }
+      else{
+        setTimeout(function(){
+          run_c.emit('restart');
+        },1000);
+      }
     });
     this.scan();
     Notifier.device=ycam;
@@ -201,21 +216,42 @@ var ycam = {
   },
   kill: function(){
     if(run_c.running!=null){// process.kill(-run_c.running.pid);
+      ycam.cstat=ycam.pstat=false;
       terminate(run_c.running.pid,function(err){
         console.log('nodejs::terminate::error:'+err);
       });
     }
   },
-  reset: function(){
-    this.pset({'Reset':1});
+  reset: async function(){
+    let who=this;
     let sock=dgram.createSocket('udp4');
+    let port=0xF000;
     let cmd=new Uint8Array([0xD7,0x00,0x40,0x00]);
-    console.log("address "+this.param.address+" "+cmd.length);
-	  sock.send(cmd,0,cmd.length,port,this.param.address,function(err,bytes){
-   		console.log('dgram send '+bytes);
-  		if(err) console.log('UDP error ');
-	  	else sock.close();
-  	});
+    let ok=new Uint8Array([0xD7,0x01,0x41,0x00]);
+    this.pset({'Reset':1});
+    return new Promise(function(resolve){
+  	  sock.send(cmd,0,cmd.length,port,who.param.address,function(err,bytes){
+    		if(err){
+          console.log('ycam3-restart::send error');
+          resolve(false);
+        }
+	    	else{
+          const wdt=setTimeout(function(){
+            sock.close();
+            console.log('ycam3-restart::no reply');
+            resolve(false);
+          },1000);
+          sock.on('message',function(message,remote){
+            let reply=new Uint8Array(message.buffer,0,4).toString();
+            sock.close();
+            clearTimeout(wdt);
+            let f=reply==ok.toString();
+            console.log('ycam3-restart::reply='+reply+'/'+f);
+            resolve(f);
+          });
+        }
+    	});
+    });
   }
 }
 
