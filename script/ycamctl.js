@@ -65,7 +65,7 @@ setImmediate(async function() {
       if(sensEv.streaming){
         await sensEv.scanStop(1000);
         sensEv.lit=false;
-        setTimeout(sensEv.scanStart,1000);
+        sensEv.scanStart(1000);
       }
     }
     await sens.pset(obj);
@@ -81,7 +81,6 @@ setImmediate(async function() {
     break;
   }
   sensEv=SensControl.assign(sensEv);
-  sensEv.wakeup_timer=null;
   sensEv.on('wake', async function() {
     for(let n in param) await param[n].start();
     param.camlv.raise({TriggerMode:'On'});
@@ -89,10 +88,7 @@ setImmediate(async function() {
     ros.log.warn('NOW ALL READY ');
     pub_info.sendmsg('YCAM ready');
     sensEv.lit=false;
-    sensEv.wakeup_timer=setTimeout(function(){
-      sensEv.scanStart();
-      sensEv.wakeup_timer=null;
-    },3000);
+    sensEv.scanStart(3000);
   });
   sensEv.on('stat', function(f){
     let m=new std_msgs.Bool();
@@ -130,7 +126,9 @@ setImmediate(async function() {
   });
 
 //---------Definition of services
-  let pslock=false;
+  let pslock=true;
+  sensEv.on('trigger',function(){ pslock=false; });
+  sensEv.on('shutdown',function(){ pslock=true; });
   let ps2live = function(tp){ //---after "tp" msec, back to live mode
     setTimeout(function(){
       sensEv.scanStart();
@@ -150,10 +148,6 @@ setImmediate(async function() {
       ros.log.warn(res.message='genpc busy');
       res.success = false;
       return true;
-    }
-    if(sensEv.wakeup_timer!=null){
-      clearTimeout(sensEv.wakeup_timer);
-      sensEv.wakeup_timer=null;
     }
     return new Promise(async (resolve) => {
       pslock=true;

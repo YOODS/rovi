@@ -187,7 +187,7 @@ var ycam = {
         Notifier.emit('wake');
         ycam.cstat=ycam.pstat=true;
         ycam.pregbuf='';
-      },1000);
+      },3000);
     });
     run_c.on('stop', async function() {
       Notifier.emit('shutdown','camera stopped');

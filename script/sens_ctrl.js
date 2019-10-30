@@ -34,9 +34,16 @@ exports.assign=function(sens){
     });
   }
   sens.streaming=null;
-  sens.scanStart=function(){
-    sens.reqL_=sens.reqR_=0;
-    sens.scanDo_();
+  sens.streamingQ_=null;
+  sens.scanStart=function(tmd){
+    if(sens.streaming!=null) return;
+    if(sens.streamingQ_!=null) clearTimeout(sens.streamingQ_);
+    let tm=arguments.length==0? 1:tmd;
+    sens.streamingQ_=setTimeout(function(){
+      sens.reqL_=sens.reqR_=0;
+      sens.streamingQ_=null;
+      sens.scanDo_();
+    },tm);
   }
   sens.scanDo_=function(){
     if(sens.streaming!=null) return;
@@ -60,6 +67,10 @@ exports.assign=function(sens){
     },Math.floor(1000/sens.fps));
   }
   sens.scanStop=function(tmo){
+    if(sens.streamingQ_!=null){
+      clearTimeout(sens.streamingQ_);
+      return Promise.resolve(true);
+    }
     if(sens.streaming!=null) clearTimeout(sens.streaming);
     sens.streaming=null;
     if(sens.reqL_>0 && sens.reqR_>0){
