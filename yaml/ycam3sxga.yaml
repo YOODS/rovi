@@ -7,7 +7,6 @@ pshift_genpc:
     Intencity: 120
     Interval: 60
   calc:
-    search_div: 4
     bw_diff: 16
     brightness: 255
     darkness: 8
