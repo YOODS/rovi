@@ -13,6 +13,7 @@ class ImageSwitcher {
     this.raw = node.advertise(ns + '/image_raw', sensor_msgs.Image);
     this.rect = node.advertise(ns + '/image_rect', sensor_msgs.Image);
     this.rect0 = node.advertise(ns + '/image_rect0', sensor_msgs.Image);
+    this.rect1 = node.advertise(ns + '/image_rect1', sensor_msgs.Image);
     this.vue = node.advertise(ns + '/view', sensor_msgs.Image);
     this.info = node.advertise(ns + '/camera_info', sensor_msgs.CameraInfo);
     this.remap = node.serviceClient(ns + '/remap', rovi_srvs.ImageFilter, { persist: true });
@@ -61,8 +62,8 @@ class ImageSwitcher {
             who.capt[i]=res.img;
           }
           who.rect0.publish(who.capt[0]);
+          who.rect1.publish(who.capt[1]);
           who.rect.publish(who.capt[1]);
-//          setTimeout(function(){ if(who.pstat==3) who.thru();},1000);
           resolve(who.capt);
         }
       });
