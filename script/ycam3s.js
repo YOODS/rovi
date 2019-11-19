@@ -187,7 +187,7 @@ var ycam = {
         Notifier.emit('wake');
         ycam.cstat=ycam.pstat=true;
         ycam.pregbuf='';
-      },3000);
+      },1000);
     });
     run_c.on('stop', async function() {
       Notifier.emit('shutdown','camera stopped');
@@ -297,7 +297,7 @@ async function openCamera(rosrun, ns) {
   }
   return new Promise(async function(resolve) {
     let regw = rosNode.serviceClient(ns + '/camera/regw', gev_srvs.GevRegs, { persist: true });
-    if (await rosNode.waitForService(regw.getService(), 2000)) {
+    if (await rosNode.waitForService(regw.getService(), 5000)) {
       rosrun.reg_write = regw;
     }
     else {
@@ -306,7 +306,7 @@ async function openCamera(rosrun, ns) {
       resolve(false);
     }
     let regr = rosNode.serviceClient(ns + '/camera/regr', gev_srvs.GevRegs, { persist: true });
-    if (await rosNode.waitForService(regr.getService(), 2000)) {
+    if (await rosNode.waitForService(regr.getService(), 1000)) {
       rosrun.reg_read = regr;
     }
     else {
@@ -315,7 +315,7 @@ async function openCamera(rosrun, ns) {
       resolve(false);
     }
     let cset = rosNode.serviceClient(ns + '/camera/set_parameters', dyn_srvs.Reconfigure, { persist: true });
-    if (await rosNode.waitForService(cset.getService(), 2000)) {
+    if (await rosNode.waitForService(cset.getService(), 1000)) {
       rosrun.dynparam_set = cset;
     }
     else {

@@ -30,7 +30,7 @@ std::string file_dump("/tmp");
 
 PSFTParameter param;
 iPointCloudGenerator *pcgenerator = 0;
-
+static int depth_magnifier=1000;
 
 int reload()
 {
@@ -45,6 +45,7 @@ int reload()
 	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
 	nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
 	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
+	nh->getParam("pshift_genpc/calc/depth_magnifier", depth_magnifier);
 
 	nh->getParam("genpc/Q", vecQ); 
 	if (vecQ.size() != 16){
@@ -69,28 +70,40 @@ int reload()
 	return 0;
 }
 
-sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps)
-{
-	float centre_x=cam_K[2];
-	float centre_y=cam_K[5];
-	float focal_x=cam_K[0];
-	float focal_y=cam_K[4];
-	cv::Mat cv_image = cv::Mat(cam_height, cam_width, CV_32FC1,cv::Scalar(std::numeric_limits<float>::max()));
-	for (int i=0; i<ps.size();i++){
-		float z = ps[i].z;
-		float u = ps[i].x * focal_x / z;
-		float v = ps[i].y * focal_y / z;
-		int pixel_pos_x = (int)(u + centre_x);
-		int pixel_pos_y = (int)(v + centre_y);
-		if (pixel_pos_x > (cam_width-1)) pixel_pos_x = cam_width -1;
-		else if (pixel_pos_x < 0) pixel_pos_x = 0;
-		if (pixel_pos_y > (cam_height-1)) pixel_pos_y = cam_height-1;
-		else if (pixel_pos_y < 0) pixel_pos_y = 0;
-		cv_image.at<float>(pixel_pos_y,pixel_pos_x) = z;
-	}
-	return cv_bridge::CvImage(std_msgs::Header(), "32FC1", cv_image).toImageMsg();
+sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
+  float centre_x=cam_K[2];
+  float centre_y=cam_K[5];
+  float focal_x=cam_K[0];
+  float focal_y=cam_K[4];
+  cv::Mat cv_image= depth_magnifier==0? cv::Mat(cam_height,cam_width,CV_32FC1,cv::Scalar(std::numeric_limits<float>::max())):cv::Mat(cam_height,cam_width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
+  for (int i=0; i<ps.size();i++){
+    float z = ps[i].z;
+    float u = ps[i].x * focal_x / z;
+    float v = ps[i].y * focal_y / z;
+    int pixel_pos_x = std::round(u + centre_x);
+    int pixel_pos_y = std::round(v + centre_y);
+    for(int j=-1;j<=1;j++){
+      for(int k=-1;k<=1;k++){
+        int px=pixel_pos_x+j;
+        int py=pixel_pos_y+k;
+        if(px>=cam_width) continue;
+        if(px<0) continue;
+        if(py>=cam_height) continue;
+        if(py<0) continue;
+        if(rand()&1) continue;
+        if(depth_magnifier==0){
+          cv_image.at<float>(py,px) = z;
+        }
+        else{
+          float zm=z*depth_magnifier;
+          if(zm>std::numeric_limits<unsigned short>::max()) zm=std::numeric_limits<unsigned short>::max();
+          cv_image.at<unsigned short>(py,px) = std::round(zm);
+        }
+      }
+    }
+  }
+  return cv_bridge::CvImage(std_msgs::Header(),depth_magnifier==0? "32FC1":"16UC1", cv_image).toImageMsg();
 }
-
 
 struct XYZW{ float x,y,z,w;};
 bool operator<(const XYZW& left, const XYZW& right){ return left.w < right.w;}

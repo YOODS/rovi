@@ -158,6 +158,8 @@ roslaunch rovi ycam3vga_mm.launch
 |GettingStarted.md|インストール手順についての記載|
 |GettingStarted-TX2.md|Jetson-TX2用インストール手順|
 |AppDesign.md|roviを利用したアプリケーションの設計について|
+|CameraDriver.md|カメラドライバーインタフェースについて|
+
 
 ## 動作確認済み環境  
 |OS|Desktop|ROS|STATUS|
