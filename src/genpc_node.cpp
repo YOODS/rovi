@@ -31,6 +31,7 @@ std::string file_dump("/tmp");
 PSFTParameter param;
 iPointCloudGenerator *pcgenerator = 0;
 static int depth_magnifier=1000;
+static int depth_origin=400;
 
 int reload()
 {
@@ -46,6 +47,7 @@ int reload()
 	nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
 	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
 	nh->getParam("pshift_genpc/calc/depth_magnifier", depth_magnifier);
+	nh->getParam("pshift_genpc/calc/depth_origin", depth_origin);
 
 	nh->getParam("genpc/Q", vecQ); 
 	if (vecQ.size() != 16){
@@ -75,7 +77,7 @@ sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
   float centre_y=cam_K[5];
   float focal_x=cam_K[0];
   float focal_y=cam_K[4];
-  cv::Mat cv_image= depth_magnifier==0? cv::Mat(cam_height,cam_width,CV_32FC1,cv::Scalar(std::numeric_limits<float>::max())):cv::Mat(cam_height,cam_width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
+  cv::Mat cv_image=cv::Mat(cam_height,cam_width,CV_8UC1,cv::Scalar(std::numeric_limits<unsigned char>::max()));
   for (int i=0; i<ps.size();i++){
     float z = ps[i].z;
     float u = ps[i].x * focal_x / z;
@@ -91,18 +93,14 @@ sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
         if(py>=cam_height) continue;
         if(py<0) continue;
         if(rand()&1) continue;
-        if(depth_magnifier==0){
-          cv_image.at<float>(py,px) = z;
-        }
-        else{
-          float zm=z*depth_magnifier;
-          if(zm>std::numeric_limits<unsigned short>::max()) zm=std::numeric_limits<unsigned short>::max();
-          cv_image.at<unsigned short>(py,px) = std::round(zm);
-        }
+        float zm=z*depth_magnifier-depth_origin;
+        if(zm>std::numeric_limits<unsigned char>::max()) zm=std::numeric_limits<unsigned char>::max();
+        else if(zm<0) zm=0;
+        cv_image.at<unsigned char>(py,px) = std::round(zm);
       }
     }
   }
-  return cv_bridge::CvImage(std_msgs::Header(),depth_magnifier==0? "32FC1":"16UC1", cv_image).toImageMsg();
+  return cv_bridge::CvImage(std_msgs::Header(),"mono8",cv_image).toImageMsg();
 }
 
 struct XYZW{ float x,y,z,w;};
