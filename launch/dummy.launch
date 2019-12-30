@@ -1,0 +1,7 @@
+<launch>
+  <node pkg="rovi_utils" type="filer.py" name="" args="
+    wd:=$(find rovi_utils)/data/test.ply
+    ~out/floats:=/rovi/ps_floats
+    ~load:=/rovi/X1"
+  />
+</launch>
