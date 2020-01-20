@@ -210,7 +210,7 @@ setImmediate(async function() {
       pcount.data=gpres.pc_cnt;
       pub_pcount.publish(pcount);
       let tp=Math.floor(gpres.pc_cnt*0.0001)+10;
-      ps2live(tp);
+      ps2live(1000);
       ros.log.info('Time to publish pc '+tp+' ms');
       let finish=new std_msgs.Bool();
       finish.data=res.success;
