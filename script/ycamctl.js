@@ -61,7 +61,8 @@ setImmediate(async function() {
   param.proj.on('change',async function(key,val){
     let obj={};
     obj[key]=val;
-    if(key=='Mode'){
+//    if(key=='Mode'){
+    if(key!='Go'){
       if(sensEv.streaming){
         await sensEv.scanStop(1000);
         sensEv.lit=false;

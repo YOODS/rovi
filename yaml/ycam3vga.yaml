@@ -5,7 +5,7 @@ pshift_genpc:
   projector:
     ExposureTime: 20
     Intencity: 120
-    Interval: 33
+    Interval: 40
   calc:
     bw_diff: 16
     brightness: 255

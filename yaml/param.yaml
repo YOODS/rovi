@@ -9,3 +9,5 @@ pshift_genpc:
   projector:
     ExposureTime: 20
     Intencity: 120
+genpc:
+  dump: "/tmp"
