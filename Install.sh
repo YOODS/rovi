@@ -72,7 +72,7 @@ pip install open3d-python --user
 
 #checkout rovi_utils
 cd $CATKIN_WS/src
-git clone https://github.com/YOODS/rovi_utils.git
+git clone -b devel https://github.com/YOODS/rovi_utils.git
 
 #checkout rqt_param
 cd $CATKIN_WS/src
