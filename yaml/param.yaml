@@ -1,13 +1,2 @@
-live:
-  camera:
-    ExposureTime: 30000
-    Gain: 50
-pshift_genpc:
-  camera:
-    ExposureTime: 8400
-    Gain: 0
-  projector:
-    ExposureTime: 20
-    Intencity: 120
 genpc:
   dump: "/tmp"
