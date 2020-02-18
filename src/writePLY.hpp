@@ -13,5 +13,6 @@
  * @param [in] width レンジグリッドデータの横幅
  * @param [in] height レンジグリッドデータの縦幅
  */
-bool writePLY(const std::string filename, const PointCloudElement *cloud, const int n_point,
+bool writePLY(const std::string filename,
+	const PointCloudElement *cloud, const int n_point,
 	const unsigned int *rgrid = 0, const int width = 0, const int height = 0);
