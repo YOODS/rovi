@@ -1,5 +1,17 @@
 #pragma once
 
+#ifdef _WINDOWS
+#ifdef _WINDLL
+#define EXPORT_PCGEN __declspec(dllexport)
+#else
+#define EXPORT_PCGEN __declspec(dllimport)
+#endif
+#else
+#define EXPORT_PCGEN
+#endif
+
+#include <string>
+
 /**
  * 点型
  */
@@ -25,12 +37,30 @@ public:
 	virtual bool init(const int w, const int h) = 0;
 
 	/**
-	 * 3D座標値計算に必要なカメラパラメータを指定されたディレクトリから読み取ります.
+	 * ステレオ平行化済カメラパラメータファイルから三次元座標計算に必要なカメラパラメータを読み込みます.
 	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
-	 * @param [in] dirname カメラパラメータが格納されているディレクトリ名
-	 * @warning こちらを呼び出した場合は、setpictで与えられた画像は未平行化画像として、内部で平行化が行われます.
+	 * @param [in] stereo_filename stereo_param.yaml(xml)ファイル名
+	 * @param [in] rmap0_filename 左カメラ用レクティファイマップファイル名
+	 * @param [in] rmap1_filename 右カメラ用レクティファイマップファイル名
 	 */
-	virtual bool set_camera_params(const char *dirname) = 0;
+	virtual bool set_camera_params_stereo(const std::string stereo_filename, const std::string rmap0_filename, const std::string rmap1_filename) = 0;
+
+	/**
+	 * ステレオ平行化済カメラパラメータファイルから三次元座標計算に必要なカメラパラメータを読み込みます.
+	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	 * @param [in] hmat0_filename 左カメラ用Hmat
+	 * @param [in] hmat1_filename 右カメラ用Hmat
+	 * @param [in] rect_filename rect.param
+	 */
+	virtual bool set_camera_params_hmat(const std::string hmat0_filename, const std::string hmat1_filename, const std::string rect_filename) = 0;
+
+	/**
+	 * 未平行化の二つのステレオカメラから三次元座標計算に必要なカメラパラメータを読み込みます.
+	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	 * @param [in] cam0_filename 左カメラのカメラパラメータファイル
+	 * @param [in] cam1_filename 右カメラのカメラパラメータファイル
+	 */
+	virtual bool set_camera_params_campara(const std::string cam0_filename, const std::string cam1_filename) = 0;
 
 	/**
 	 * 3D座標値計算に必要な透視変換行列(4x4)をセットします.
@@ -39,6 +69,13 @@ public:
 	 * @warning こちらを呼び出した場合は、setpictで与えられた画像は平行化済画像として、そのまま処理対象画像として扱います.
 	 */
 	virtual bool set_camera_params(const double *QBuff) = 0;
+
+	/**
+	 * 三次元点の座標変換行列をセットします.
+	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	 * @param [in] filename 4x4の剛体変換行列が格納されているファイル名(OpenCVのMat形式)
+	 */
+	virtual bool convert_coordinate(const std::string filename) = 0;
 
 	/**
 	 * 点群生成に必要なパラメータをセットします.
@@ -58,7 +95,7 @@ public:
 	virtual void rectify(unsigned char *grayim, const int cols, const int rows, const size_t step, const int cam) = 0;
 
 	/**
-	 * 処理対象画像を生成器に渡します.
+	 * 処理対象画像を点群生成器に渡します.
 	 * @return なし.
 	 * @param [in] grayim 画像バッファ左上端アドレス
 	 * @param [in] step 画像バッファの水平方向のバイト数
@@ -66,6 +103,16 @@ public:
 	 * @param [in] idx 画像番号(位相シフトの場合必ず必要)
 	 */
 	virtual void setpict(unsigned char *grayim, const size_t step, const int cam, const int idx = 0) = 0;
+
+	/**
+	 * 指定されたファイルから処理対象画像を読み込んで、点群生成器に渡します.
+	 * @return 読み込み(＆点群生成器にセット)が成功した場合はtrue, 失敗した場合はfalse.
+	 * @param [in] filename 画像ファイル名
+	 * @param [in] do_rect レクティファイを実行する(true)か否(false)か
+	 * @param [in] cam セットするカメラ番号(0: 左カメラ, 1: 右カメラ, 2: 両カメラ(但しこれは連結画像のみ正常に動作する)
+	 * @param [in] idx 画像番号(位相シフトの場合必ず必要)
+	 */
+	virtual bool loadpict(std::string filename, const bool do_rect, const int cam, const int idx = 0) = 0;
 
 	/**
 	 * 視差を計算します.
@@ -99,6 +146,14 @@ public:
 	 * @warning サイズは画像サイズと同じです.
 	 */
 	virtual const unsigned int *get_rangegrid() const = 0;
+
+	/**
+	 * PLYファイル形式で生成された点群を保存します.
+	 * @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	 * @param [in] filename 保存先ファイル名
+	 * @param [in] add_range_grid レンジグリッドデータを付加して保存するか否か
+	 */
+	virtual bool savePLY(const std::string filename, const bool add_range_grid = true) = 0;
 };
 
 
@@ -107,4 +162,6 @@ public:
  * @return 点群生成器インスタンスへのポインタ
  * @param [in] method 点群生成手法(0: 位相シフト, 1: SGBM)
  */
-iPointCloudGenerator* createPointCloudGenerator(const int method = 0);
+extern "C" EXPORT_PCGEN iPointCloudGenerator* createPointCloudGenerator(const int method = 0);
+
+typedef iPointCloudGenerator *(*pCreatePointCloudGenerator)(const int method);

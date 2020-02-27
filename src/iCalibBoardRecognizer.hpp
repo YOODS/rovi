@@ -1,4 +1,4 @@
-﻿/*
+/*
  * @file iCalibBoardRecognizer.hpp
  * @breif キャリブボード認識器のインターフェース 
  * @date 2019/09/21
@@ -17,6 +17,7 @@
 #endif	// _USE_MATH_DEFINES
 
 #include <opencv2/opencv.hpp>
+#include <map>
 
 /* 必要なパラメータとそのデフォルト値 */
 
@@ -41,7 +42,7 @@ struct PreProcParams {
 		gamma_correction(1.0)
 	{}
 
-	/// パラメータリストから値を設定する
+	/// パラメータ辞書から値をセットする.キーの名前はメンバ変数と同じ
 	void set(std::map<std::string, double> &params);
 };
 
@@ -59,10 +60,10 @@ public:
 	double debug_show_scale;	///< デバッグ画像を表示するときに何倍で表示するか(0.0にしておくと表示しない)
 
 	// 画像のサイズが分かれば、大体決めることができるパラメータ
-	double max_radius;	///< 近似楕円の長半径の上限値
+	double max_radius;	///< 近似楕円の長半径の上限値(必ず零以上の値)
 
 	// 画像の状態によって決まるパラメータ.(丸の大きさによって変わる)
-	double min_radius;	///< 近似楕円の短半径の下限値
+	double min_radius;	///< 近似楕円の短半径の下限値(必ず零以上の値)
 
 public:
 	/**
@@ -90,8 +91,8 @@ public:
 		image_height = h;
 	}
 
-	/// パラメータリストから値を設定する
-	void set(std::map<std::string, double> &params);	
+	/// パラメータ辞書から値をセットする.キーの名前はメンバ変数と同じ
+	void set(std::map<std::string, double> &params);
 };
 
 /// キャリブボードのパラメータ
@@ -103,7 +104,7 @@ struct CalibBoardParams {
 	int origin_x;	///< X軸の＋方向から原点までのマーカ数(0スタートで数える)
 	int origin_y;	///< Y軸の＋方向から原点までのマーカ数(0スタートで数える)
 
-	double distance_between_circles;	///< 重心間距離の円の直径に対する比率
+	double distance_between_circles;	///< 重心間距離の円の直径に対する比率(小数点第一位まで有効)
 
 	// コンストラクタ. デフォルト値を設定
 	CalibBoardParams() :
@@ -111,8 +112,8 @@ struct CalibBoardParams {
 		distance_between_circles(1.2)
 	{}
 
-	/// パラメータリストから値を設定する
-	void set(std::map<std::string, double> &params);	
+	/// パラメータ辞書から値をセットする.キーの名前はメンバ変数と同じ
+	void set(std::map<std::string, double> &paramlist);
 };
 
 
@@ -173,7 +174,7 @@ public:
 	 * @param [in] n インデックス
 	 */
 	virtual cv::Point3f get_3d_position(const int n) const = 0;
-	
+		
 	/**
 	 * 画像上でのマーカ位置が取得出来ている点だけを取り出して、imgPointsに保存する。同じ順序になるよう
 	 * にobjPointsにその三次元位置を格納する.

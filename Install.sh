@@ -23,9 +23,9 @@ fi
 sudo apt-get install automake intltool
 sudo apt-get install libgstreamer*-dev
 cd ~
-wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.0.tar.xz
-tar xvf aravis-0.6.0.tar.xz
-cd aravis-0.6.0
+wget http://ftp.gnome.org/pub/GNOME/sources/aravis/0.6/aravis-0.6.4.tar.xz
+tar xvf aravis-0.6.4.tar.xz
+cd aravis-0.6.4
 ./configure
 make
 sudo make install
@@ -72,7 +72,7 @@ pip install open3d-python --user
 
 #checkout rovi_utils
 cd $CATKIN_WS/src
-git clone https://github.com/YOODS/rovi_utils.git
+git clone -b devel https://github.com/YOODS/rovi_utils.git
 
 #checkout rqt_param
 cd $CATKIN_WS/src
