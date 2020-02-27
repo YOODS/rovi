@@ -201,27 +201,30 @@ public:
 		std::vector<cv::Point2f> &imgPointsL,
 		std::vector<cv::Point2f> &imgPointsR,
 		std::vector<cv::Point3f> &objPoints) = 0;
-
+	
 	/**
 	 * マーカ識別結果画像をファイルに保存します.
 	 * @return なし
 	 * @parma [in] filename 保存先ファイル名
+	 * @param [in] ret iCalibBoardRecognizer::recognize()の戻り値
 	 */
-	virtual void save_result_image(std::string filename) = 0;
+	virtual void save_result_image(std::string filename, const int ret = 0) = 0;
 
 
 	/**
 	 * マーカ識別結果画像をコピーします.
 	 * @return なし
 	 * @param [in] image コピー先画像
+	 * @param [in] ret iCalibBoardRecognizer::recognize()の戻り値
 	 */
-	virtual void copy_result_image(cv::Mat &image) = 0;
+	virtual void copy_result_image(cv::Mat &image, const int ret = 0) = 0;
 	
 	/**
 	 * マーカ識別結果画像を画面に表示します.
 	 * @return なし
+	 * @param [in] ret iCalibBoardRecognizer::recognize()の戻り値
 	 */
-	virtual void show_result_image() = 0;
+	virtual void show_result_image(const int ret) = 0;
 };
 
 

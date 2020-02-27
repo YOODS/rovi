@@ -39,9 +39,16 @@ void solve(sensor_msgs::Image src)
 	
 	std::vector<cv::Point2f> imagePoints;
 	int stat = cboard->recognize(cv_ptr1->image, imagePoints);
+
+	cv::Mat mat(cv_ptr1->image.size(), CV_8UC3);  
+	sensor_msgs::Image img;
+	cboard->copy_result_image(mat);
+	cv_ptr1->image=mat;
+	cv_ptr1->encoding="bgr8";
+	cv_ptr1->toImageMsg(img);
+	pub1->publish(img);
 	
 	if (stat != 0) {
-		pub1->publish(src);
 		switch (stat) {
 		case 1:
 			ROS_WARN("CalibBoard::scan imagesize changed"); break;
@@ -54,13 +61,6 @@ void solve(sensor_msgs::Image src)
 		return;	  
 	}
 
-	cv::Mat mat(cv_ptr1->image.size(), CV_8UC3);  
-	sensor_msgs::Image img;
-	cboard->copy_result_image(mat);
-	cv_ptr1->image=mat;
-	cv_ptr1->encoding="bgr8";
-	cv_ptr1->toImageMsg(img);
-	pub1->publish(img);
     	
 	
 	rovi::Floats buf;
