@@ -38,10 +38,10 @@ int reload()
 	nh->getParam("pshift_genpc/calc/bw_diff", param.bw_diff);
 	nh->getParam("pshift_genpc/calc/brightness", param.brightness);
 	nh->getParam("pshift_genpc/calc/darkness", param.darkness);
-	nh->getParam("pshift_genpc/calc/phase_wd_min", param.phase_wd_min);
-	nh->getParam("pshift_genpc/calc/phase_wd_thr", param.phase_wd_thr);
-	nh->getParam("pshift_genpc/calc/gcode_variation", param.gcode_variation);
+	nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
+	nh->getParam("pshift_genpc/calc/max_step", param.max_step);
 	nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
+	nh->getParam("pshift_genpc/calc/max_tex_diff", param.max_tex_diff);
 	nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
 	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
 	nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);

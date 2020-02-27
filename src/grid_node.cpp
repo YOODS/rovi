@@ -40,13 +40,15 @@ void solve(sensor_msgs::Image src)
 	std::vector<cv::Point2f> imagePoints;
 	int stat = cboard->recognize(cv_ptr1->image, imagePoints);
 
+	// Successでなくても結果画像が出て来るようになったので状態に拘わらず表示
 	cv::Mat mat(cv_ptr1->image.size(), CV_8UC3);  
 	sensor_msgs::Image img;
-	cboard->copy_result_image(mat);
+	cboard->copy_result_image(mat,stat);
 	cv_ptr1->image=mat;
 	cv_ptr1->encoding="bgr8";
 	cv_ptr1->toImageMsg(img);
 	pub1->publish(img);
+
 	
 	if (stat != 0) {
 		switch (stat) {
@@ -60,7 +62,6 @@ void solve(sensor_msgs::Image src)
 		pub4->publish(done);
 		return;	  
 	}
-
     	
 	
 	rovi::Floats buf;
