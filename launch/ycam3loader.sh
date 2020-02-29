@@ -26,11 +26,14 @@ while :
 do
   id_adds=$(script/gvgetid.js $IPADDS)
   adds=${id_adds#*@@@}
-  rosparam set camera/address $adds
-  guid=${id_adds%@@@*}
-  if [ "$guid" != "" ]
+  if [ "$adds" != "" ]
   then
-    break
+    rosparam set camera/address $adds
+    guid=${id_adds%@@@*}
+    if [ "$guid" != "" ]
+    then
+      break
+    fi
   fi
   sleep 2
   echo 'ycam3loader::No device'

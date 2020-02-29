@@ -93,7 +93,10 @@ var ycam = {
       let greq = new gev_srvs.GevRegs.Request();
       greq.address = reg_table['SerialPort'];
       let lsb = ycam.pregbuf.charCodeAt(0);
-      greq.data = (~lsb << 16) | lsb;
+      const buffer = new ArrayBuffer(4);
+      const view = new DataView(buffer);
+      view.setUint32(0,(~lsb<<16)|lsb);
+      greq.data = view.getUint32(0);
       try {
         await run_c.reg_write.call(greq);
         ycam.pstat=true;
