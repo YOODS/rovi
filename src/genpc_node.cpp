@@ -243,7 +243,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	// Quantize points count for Numpy array
 	rovi::Floats buf;
-	double gamma=1.2;
+	double gamma=1.1;
 	double kn=floor((log10(N)-1)/log10(gamma));
 	int Qn=N<10? N:floor(10*pow(gamma,kn));
 	buf.data.resize(3*Qn);

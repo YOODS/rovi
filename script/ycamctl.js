@@ -137,7 +137,7 @@ setImmediate(async function() {
       image_R.thru();
       pslock=false;
     },tp);
-    param.camlv.raise(param.camlv.diff(param.camps.objs));//---restore overwritten camera params
+    param.camlv.raise(param.camps.diff(param.camlv.objs));//---restore overwritten camera params
   }
   let psgenpc = function(req,res){
     if(!sens.normal){
@@ -154,7 +154,10 @@ setImmediate(async function() {
       pslock=true;
       await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
       ros.log.info('Streaming stopped');
-      await sens.cset(param.camps.objs); //---overwrites genpc camera params
+      await sens.cset(param.camlv.diff(await param.camps.param())); //---overwrites genpc camera params
+      let dpj=param.proj.diff(await param.proj.param());
+      ros.log.info("Proj param "+JSON.stringify(dpj));
+      await sens.pset(dpj); //---overwrites genpc projector params
       let wdt=setTimeout(async function() { //---start watch dog
         ps2live(1000);
         const errmsg = 'pshift_genpc timed out';
@@ -164,7 +167,7 @@ setImmediate(async function() {
         pub_Y1.publish(new std_msgs.Bool());
         param.proj.raise({Mode:1});//---reload 13 pattern
         resolve(true);
-      }, param.proj.objs.Interval*13 + 1000);
+      }, param.proj.objs.Interval*13 + 2000);
 //for monitoring
       let icnt=0;
       image_L.hook.on('store',function(img,t2){
