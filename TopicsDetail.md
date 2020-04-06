@@ -33,7 +33,7 @@ ps_floatsをbase64エンコードした文字列に出力します。こちら�
   :
 ~~~
 6. /rovi/image_depth : sensor_msgs/Image  
-撮像リクエスト(/rovi/X1)にて取得したデプス画像(mono16)を出力します。画素値は1/256mm単位の16ビットで深度を表しています。０はパラメータの/rovi/pshift_genpc/depth_baseにてmm単位で与えられた値を基準とします。これはカメラ座標のZ軸の値です。
+撮像リクエスト(/rovi/X1)にて取得したデプス画像(mono16)を出力します。画素値は1/256mm単位の16ビットで深度を表しています。深度０はパラメータの */rovi/pshift_genpc/calc/depth_base* で与えられた、カメラ座標のZ軸値(mm単位)を基準とします。
 7. /rovi/left/image_raw : sensor_msgs/Image  
 2D画像は撮像リクエストとは無関係に、常時ストリーミングされます。このトピックは左カメラraw画像(mono8)をストリーミング出力します。
 8. /rovi/left/image_rect : sensor_msgs/Image  
