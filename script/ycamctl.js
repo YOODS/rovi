@@ -203,7 +203,7 @@ setImmediate(async function() {
         ros.log.info("call genpc");
         gpres = await genpc.call(gpreq);
         ros.log.info("ret genpc");
-        res.message = imgs[0].length + ' images scan compelete. Generated PointCloud Count=' + gpres.pc_cnt;
+        res.message = imgs[0].length + ' images scan complete. Generated PointCloud Count=' + gpres.pc_cnt;
         res.success = true;
       }
       catch(err) {
