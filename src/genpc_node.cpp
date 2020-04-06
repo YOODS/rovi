@@ -30,8 +30,8 @@ std::string file_dump("/tmp");
 
 PSFTParameter param;
 iPointCloudGenerator *pcgenerator = 0;
-static int depth_magnifier=1000;
-static int depth_origin=400;
+static int depth_base=400;
+static int depth_unit=1;
 
 int reload()
 {
@@ -46,8 +46,8 @@ int reload()
 	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
 	nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
 	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
-	nh->getParam("pshift_genpc/calc/depth_magnifier", depth_magnifier);
-	nh->getParam("pshift_genpc/calc/depth_origin", depth_origin);
+	nh->getParam("pshift_genpc/calc/depth_base", depth_base);
+	nh->getParam("pshift_genpc/calc/depth_unit", depth_unit);
 
 	nh->getParam("genpc/Q", vecQ); 
 	if (vecQ.size() != 16){
@@ -72,35 +72,20 @@ int reload()
 	return 0;
 }
 
-sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps){
-  float centre_x=cam_K[2];
-  float centre_y=cam_K[5];
-  float focal_x=cam_K[0];
-  float focal_y=cam_K[4];
-  cv::Mat cv_image=cv::Mat(cam_height,cam_width,CV_8UC1,cv::Scalar(std::numeric_limits<unsigned char>::max()));
-  for (int i=0; i<ps.size();i++){
-    float z = ps[i].z;
-    float u = ps[i].x * focal_x / z;
-    float v = ps[i].y * focal_y / z;
-    int pixel_pos_x = std::round(u + centre_x);
-    int pixel_pos_y = std::round(v + centre_y);
-    for(int j=-1;j<=1;j++){
-      for(int k=-1;k<=1;k++){
-        int px=pixel_pos_x+j;
-        int py=pixel_pos_y+k;
-        if(px>=cam_width) continue;
-        if(px<0) continue;
-        if(py>=cam_height) continue;
-        if(py<0) continue;
-        if(rand()&1) continue;
-        float zm=z*depth_magnifier-depth_origin;
-        if(zm>std::numeric_limits<unsigned char>::max()) zm=std::numeric_limits<unsigned char>::max();
-        else if(zm<0) zm=0;
-        cv_image.at<unsigned char>(py,px) = std::round(zm);
-      }
-    }
-  }
-  return cv_bridge::CvImage(std_msgs::Header(),"mono8",cv_image).toImageMsg();
+sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps,const unsigned int *grid){
+	long base=depth_base*256;
+  cv::Mat depthim=cv::Mat(cam_height,cam_width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
+	int n = 0;
+	for (int j = 0; j < cam_height; j++) {
+		unsigned short *dP = depthim.ptr<unsigned short>(j);
+		for (int i = 0; i < cam_width; i++, n++) {
+			if (grid[n] == ((unsigned int)-1)) continue;
+			long d = std::round((depth_unit*ps[grid[n]].z - depth_base)*256);
+      if(d<0) dP[i] = 0;
+      else if(d<65536L) dP[i]=d;
+		}
+	}
+  return cv_bridge::CvImage(std_msgs::Header(),"mono16",depthim).toImageMsg();
 }
 
 struct XYZW{ float x,y,z,w;};
@@ -153,7 +138,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	reload();
 	pcgenerator->setparams(&param);
 	pcgenerator->set_camera_params(&vecQ[0]);
-
 
 	// read phase shift data images. (13 left images and 13 right images)
 	try {
@@ -211,7 +195,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	pts.channels[1].values.resize(N);
 	pts.channels[2].name = "b";
 	pts.channels[2].values.resize(N);
-
 	
 	// building point cloud, getting center of points, and getting norm from the center
 	double X0=0,Y0=0,Z0=0;
@@ -226,7 +209,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		pts.channels[2].values[n] = pcdP[n].col[2] / 255.0;
 	}
 	X0/=N; Y0/=N; Z0/=N;
-
+  //convert to depth image
+  sensor_msgs::ImagePtr depthimg=to_depth(pts.points,pcgenerator->get_rangegrid());
 	
 	// getting norm from the center and sort by it
 	std::vector<XYZW> norm;
@@ -239,7 +223,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		norm[n].w = sqrt(dx*dx + dy*dy);
 	}
 	std::sort(norm.begin(), norm.end());
-
 	
 	// Quantize points count for Numpy array
 	rovi::Floats buf;
@@ -260,19 +243,17 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ROS_INFO("after  outPLY");
 	}
 
-	
 	pub1->publish(pts);
 	std_msgs::String b64;
 	b64.data=base64encode(pts.points);
 	pub2->publish(b64);
 	pub3->publish(buf);
-	pub4->publish(to_depth(pts.points));
+	pub4->publish(depthimg);
 
 	res.pc_cnt = N;
 	ROS_INFO("genPC point counts %d / %d", N, Qn);
 	return true;
 }
-
 
 int main(int argc, char **argv)
 {
