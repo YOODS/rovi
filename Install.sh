@@ -47,13 +47,14 @@ sudo apt-get install libeigen3-dev
 
 #installing nodejs and packages
 cd ~
-curl -sL https://deb.nodesource.com/setup_9.x | sudo -E bash -
+curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 sudo apt-get install nodejs
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
 npm install shm-typed-array
 npm install terminate --save
+npm install ping
 
 #patching rosnodejs
 cd ~
