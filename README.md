@@ -136,18 +136,6 @@ roslaunch rovi ycam3vga_mm.launch
 <tr><td>/rovi/live/camera/Gain<td>カメラゲイン<td>int<td>50
 <tr><td>/rovi/live/camera/GainAnalog<td>アナログゲイン<td>int<td>3
 <tr><td>/rovi/live/camera/SoftwareTriggerRate<td>ストリーミング時フレームレート<br>int<td>4
-<tr><td>/rovi/pshift_genpc/calc/bw_diff<td><td>int
-<tr><td>/rovi/pshift_genpc/calc/brightness<td><td>int
-<tr><td>/rovi/pshift_genpc/calc/darkness<td><td>int
-<tr><td>/rovi/pshift_genpc/calc/step_diff<td><td>float
-<tr><td>/rovi/pshift_genpc/calc/max_step<td><td>float
-<tr><td>/rovi/pshift_genpc/calc/max_ph_diff<td><td>float
-<tr><td>/rovi/pshift_genpc/calc/max_tex_diff<td><td>float
-<tr><td>/rovi/pshift_genpc/calc/min_parallax<td><td>float
-<tr><td>/rovi/pshift_genpc/calc/right_dup_cnt<td><td>int
-<tr><td>/rovi/pshift_genpc/calc/ls_points<td><td>int
-<tr><td>/rovi/pshift_genpc/calc/depth_unit<td>デプス画像の1ビットと実距離の比<td>int<td>1
-<tr><td>/rovi/pshift_genpc/calc/depth_base<td>デプス画像の0に相当する実距離<td>int<td>400
 <tr><td>/rovi/pshift_genpc/camera/ExposureTime<td>位相シフト時露光時間(&micro;s)<td>int<td>8400
 <tr><td>/rovi/pshift_genpc/camera/Gain<td>位相シフト時カメラゲイン<td>int<td>0
 <tr><td>/rovi/pshift_genpc/projector/ExposureTime<td>発光時間(ms)<td>int<td>20
@@ -162,6 +150,18 @@ roslaunch rovi ycam3vga_mm.launch
 <tr><td>/rovi/right/remap/R<td>右カメラRマトリクス<td>float[9]
 <tr><td>/rovi/right/remap/height<td>イメージの高さ<td>int
 <tr><td>/rovi/right/remap/width<td>イメージの幅<td>int
+<tr><td>/rovi/genpc/calc/bw_diff<td><td>int
+<tr><td>/rovi/genpc/calc/brightness<td><td>int
+<tr><td>/rovi/genpc/calc/darkness<td><td>int
+<tr><td>/rovi/genpc/calc/step_diff<td><td>float
+<tr><td>/rovi/genpc/calc/max_step<td><td>float
+<tr><td>/rovi/genpc/calc/max_ph_diff<td><td>float
+<tr><td>/rovi/genpc/calc/max_tex_diff<td><td>float
+<tr><td>/rovi/genpc/calc/min_parallax<td><td>float
+<tr><td>/rovi/genpc/calc/right_dup_cnt<td><td>int
+<tr><td>/rovi/genpc/calc/ls_points<td><td>int
+<tr><td>/rovi/genpc/calc/depth_unit<td>デプス画像の1ビットと実距離の比<td>int<td>1
+<tr><td>/rovi/genpc/calc/depth_base<td>デプス画像の0に相当する実距離<td>int<td>400
 </table>
 
 ## ドキュメントリスト  
