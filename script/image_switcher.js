@@ -63,28 +63,34 @@ class ImageSwitcher {
             let res=await who.remap.call(req);
             who.capt[i]=res.img;
           }
-          let tmp =who.capt[0];
-          who.pimgF=img;
-          let buf=new sensor_msgs.Image();
-          buf.header=img.header;
-          buf.height=img.height;
-          buf.width=img.width;
-          buf.encoding=img.encoding;
-          buf.is_bigendian=img.is_bigendian;
-          buf.step=img.step;
-          buf.data=Array(img.data.length);
-          let d=who.capt[1].data-who.capt[0].data;
-          for (var i=0; i<who.capt[1].data.length; i++) {
-            let d=who.capt[1].data[i]-who.capt[0].data[i];
-            if (d<1) { buf.data[i]=0 }
-            else if (d>255) { buf.data[i]=255 }
-            else { buf.data[i]=d };
+          if(count>1){
+            let tmp =who.capt[0];
+            who.pimgF=img;
+            let buf=new sensor_msgs.Image();
+            buf.header=img.header;
+            buf.height=img.height;
+            buf.width=img.width;
+            buf.encoding=img.encoding;
+            buf.is_bigendian=img.is_bigendian;
+            buf.step=img.step;
+            buf.data=Array(img.data.length);
+            let d=who.capt[1].data-who.capt[0].data;
+            for (var i=0; i<who.capt[1].data.length; i++) {
+              let d=who.capt[1].data[i]-who.capt[0].data[i];
+              if (d<1) { buf.data[i]=0 }
+              else if (d>255) { buf.data[i]=255 }
+              else { buf.data[i]=d };
+            }
+            who.rect0.publish(who.capt[0]);
+            who.rect1.publish(who.capt[1]);
+            who.rect.publish(who.capt[1]);
+            who.diff.publish(buf);
+            resolve(who.capt);
           }
-          who.rect0.publish(who.capt[0]);
-          who.rect1.publish(who.capt[1]);
-          who.rect.publish(who.capt[1]);
-          who.diff.publish(buf);
-          resolve(who.capt);
+          else{
+            who.rect1.publish(who.capt[0]);
+            resolve(who.capt);
+          }
         }
       });
     });

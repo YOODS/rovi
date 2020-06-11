@@ -138,7 +138,11 @@ var ycam = {
         str += 'b' + obj[key] + '\n';
         break;
       case 'Mode':
-        str += 'z' + obj[key] + '\n';
+        let pmod=obj[key];
+        if(pmod==4) pmod=2;
+        ros.log.info("PMOD "+pmod);
+        str += 'z' + pmod + '\n';
+//        str += 'z' + obj[key] + '\n';
         break;
       case 'Reset':
       case 'Init':

@@ -109,14 +109,18 @@ setImmediate(async function() {
     image_R.emit(img,ts,sensEv.lit);
   });
   sensEv.on('trigger', async function() {
-    if(param.proj.objs.Mode==1){
+    switch(param.proj.objs.Mode){
+    case 1:
+    case 4:
       sensEv.lit=true;
       param.proj.raise({Go:-1});
-    }
-    else{
+      break;
+    case 2:
+    case 3:
       sensEv.lit=!sensEv.lit;
       if(sensEv.lit) param.proj.raise({Go:1});
       else param.proj.raise({Go:-1});
+      break;
     }
     sensEv.fps=param.camlv.objs.SoftwareTriggerRate;
   });
@@ -150,6 +154,11 @@ setImmediate(async function() {
       res.success = false;
       return true;
     }
+    if(param.proj.objs.Mode!=1 && param.proj.objs.Mode!=4){
+      ros.log.warn(res.message='genpc Mode illegal');
+      res.success = false;
+      return true;
+    }
     return new Promise(async (resolve) => {
       pslock=true;
       await sensEv.scanStop(1000); //---wait stopping stream with 1000ms timeout
@@ -176,50 +185,71 @@ setImmediate(async function() {
         icnt++;
       });
 //
-      ros.log.info('Ready to store');
-      setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
-      await sleep(100);
-      let imgs;
-      try{
-        imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
-      }
-      catch(err){
-        const msg="image_switcher::exception";
+      if(param.proj.objs.Mode==1){
+        ros.log.info('Ready to store');
+        setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
+        await sleep(100);
+        let imgs;
+        try{
+          imgs=await Promise.all([image_L.store(13),image_R.store(13)]); //---switch to "store" mode
+        }
+        catch(err){
+          const msg="image_switcher::exception";
+          ps2live(1000);
+          ros.log.error(msg);
+          pub_error.sendmsg(msg);
+          res.success = false;
+          res.message = msg;
+          resolve(true);
+          pub_Y1.publish(new std_msgs.Bool());
+          return;
+        }     
+        clearTimeout(wdt);
+        let gpreq = new rovi_srvs.GenPC.Request();
+        gpreq.imgL = imgs[0];
+        gpreq.imgR = imgs[1];
+        let gpres;
+        try {
+          ros.log.info("call genpc");
+          gpres = await genpc.call(gpreq);
+          ros.log.info("ret genpc");
+          res.message = imgs[0].length + ' images scan complete. Generated PointCloud Count=' + gpres.pc_cnt;
+          res.success = true;
+        }
+        catch(err) {
+          res.message = 'genpc failed';
+          res.success = false;
+        }
+        let pcount=new std_msgs.Int32();
+        pcount.data=gpres.pc_cnt;
+        pub_pcount.publish(pcount);
+        let tp=Math.floor(gpres.pc_cnt*0.0001)+10;
         ps2live(1000);
-        ros.log.error(msg);
-        pub_error.sendmsg(msg);
-        res.success = false;
-        res.message = msg;
+        ros.log.info('Time to publish pc '+tp+' ms');
+        let finish=new std_msgs.Bool();
+        finish.data=res.success;
+        pub_Y1.publish(finish);
         resolve(true);
-        pub_Y1.publish(new std_msgs.Bool());
-        return;
-      }     
-      clearTimeout(wdt);
-      let gpreq = new rovi_srvs.GenPC.Request();
-      gpreq.imgL = imgs[0];
-      gpreq.imgR = imgs[1];
-      let gpres;
-      try {
-        ros.log.info("call genpc");
-        gpres = await genpc.call(gpreq);
-        ros.log.info("ret genpc");
-        res.message = imgs[0].length + ' images scan complete. Generated PointCloud Count=' + gpres.pc_cnt;
-        res.success = true;
       }
-      catch(err) {
-        res.message = 'genpc failed';
-        res.success = false;
+      else if(param.proj.objs.Mode==4){
+        setImmediate(function(){ sens.pset({ 'Go': 1 });});
+        let imgs;
+        try{
+          imgs=await Promise.all([image_L.store(1),image_R.store(1)]);
+        }
+        catch(err){
+          ps2live(1000);
+          resolve(true);
+          pub_Y1.publish(new std_msgs.Bool());
+          return;
+        }
+        clearTimeout(wdt);
+        ps2live(100);
+        let f=new std_msgs.Bool();
+        f.data=true;
+        pub_Y1.publish(f);
+        resolve(true);
       }
-      let pcount=new std_msgs.Int32();
-      pcount.data=gpres.pc_cnt;
-      pub_pcount.publish(pcount);
-      let tp=Math.floor(gpres.pc_cnt*0.0001)+10;
-      ps2live(1000);
-      ros.log.info('Time to publish pc '+tp+' ms');
-      let finish=new std_msgs.Bool();
-      finish.data=res.success;
-      pub_Y1.publish(finish);
-      resolve(true);
     });
   }
 

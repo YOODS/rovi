@@ -24,7 +24,7 @@ live:
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
-    SoftwareTriggerRate: 10
+    SoftwareTriggerRate: 4
 camera:
   TriggerMode: On
   MTU: 9000
