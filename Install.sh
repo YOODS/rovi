@@ -64,8 +64,9 @@ rm -rf dist
 cp -a ~/rosnodejs/src/ dist
 
 #installing python package
+sudo apt install python-pip
 pip install pip==9.0.3
-pip install numpy==1.15.0
+pip install numpy==1.15.0 --user
 pip install scipy --user
 pip install wheel --user
 pip install ipython==5.7 --user
