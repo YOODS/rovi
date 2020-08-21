@@ -150,9 +150,9 @@ roslaunch rovi ycam3vga_mm.launch
 <tr><td>/rovi/right/remap/R<td>右カメラRマトリクス<td>float[9]
 <tr><td>/rovi/right/remap/height<td>イメージの高さ<td>int
 <tr><td>/rovi/right/remap/width<td>イメージの幅<td>int
-<tr><td>/rovi/genpc/calc/bw_diff<td><td>int
-<tr><td>/rovi/genpc/calc/brightness<td><td>int
-<tr><td>/rovi/genpc/calc/darkness<td><td>int
+<tr><td>/rovi/genpc/calc/bw_diff<td>白/黒画像の最小差<td>int
+<tr><td>/rovi/genpc/calc/brightness<td>ハレーション閾値<td>int
+<tr><td>/rovi/genpc/calc/darkness<td>点群を出力しない黒の閾値<td>int
 <tr><td>/rovi/genpc/calc/step_diff<td><td>float
 <tr><td>/rovi/genpc/calc/max_step<td><td>float
 <tr><td>/rovi/genpc/calc/max_ph_diff<td><td>float
