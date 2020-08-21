@@ -4,8 +4,11 @@ RoVIは3Dビジョンセンサーを組み込んだロボットのアプリケ�
 ## 構成
 下図にRoVIのソフトウェア構成を示します。コア部(I/O,Base)とUtilityをプラットフォーム層として、これを利用し用途に合わせてApplicationを開発します。基本的な機能はプラットフォーム層を利用できるので、アプリケーションの開発L/Tが短縮出来ます。  
 またApplication実装例として、MTM(Master Teaching Method)パッケージも公開予定です(https://github.com/YOODS/MTM)。
+<!--
+comment out 2020/08/21 image file is not found.
 <img src="img/fig1.png" width="500px" >
-   
+-->
+
 ## このRepositoryについて  
 このRepositoryはYOODS社が提供するYCAM3Dを制御するソフトウェアです。
 
@@ -126,7 +129,7 @@ roslaunch rovi ycam3vga_mm.launch
 <tr><td>/rovi/genpc/Q<td>Qマトリクス<td>float[16]<td>
 <tr><td>/rovi/left/remap/D<td>左カメラDマトリクス<td>float[5]<td>
 <tr><td>/rovi/left/remap/K<td>左カメラKマトリクス<td>float[9]<td>
-<tr><td>/rovi/left/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[9]
+<tr><td>/rovi/left/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[9]<td>
 <tr><td>/rovi/left/remap/P<td>左カメラPマトリクス<td>float[12]<td>
 <tr><td>/rovi/left/remap/R<td>左カメラRマトリクス<td>float[9]<td>
 <tr><td>/rovi/left/remap/height<td>イメージの高さ<td>int<td>
