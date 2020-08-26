@@ -64,6 +64,10 @@ link_directories(
 
 add_definitions("-std=c++11")
 
+#2020/08/25 add by hato ---------- start ----------
+add_definitions("-DYAML_PARAM")
+#2020/08/25 add by hato ----------  end  ----------
+
 #add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/rovi.cpp
 #	src/libs/CircleCalibBoard.cpp
@@ -75,8 +79,12 @@ add_executable(remap_node src/remap_node.cpp)
 target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
-add_executable(genpc_node src/genpc_node.cpp)
-target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+#2020/08/24 modified by hato ----------------- start ------------------
+#add_executable(genpc_node src/genpc_node.cpp)
+add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp)
+#target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d yaml-cpp ${OpenCV_LIBRARIES})
+#2020/08/24 modified by hato -----------------  end ------------------
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)

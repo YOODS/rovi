@@ -1,18 +1,24 @@
 #pragma once
 
+#include <map>
+
+#ifdef YAML_PARAM
+#include <yaml-cpp/yaml.h>
+#endif
+
 /**
- * SGBMãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+ * SGBMƒpƒ‰ƒ[ƒ^
  */
 struct SGBMParameter {
-	int min_disparity;		///< å–ã‚Šå¾—ã‚‹æœ€å°ã®è¦–å·®å€¤
-	int num_disparities;	///< è¦–å·®ã®ç·æ•°(å¿…ãš16ã®å€æ•°)
-	int blockSize;			///< ãƒãƒƒãƒãƒ³ã‚°ã•ã‚Œã‚‹ãƒ–ãƒ­ãƒƒã‚¯ã®ã‚µã‚¤ã‚º(å¿…ãšå¥‡æ•°)
-	int disp12MaxDiff;		///< è¦–å·®ãƒã‚§ãƒƒã‚¯ã«ãŠã‘ã‚‹è¨±å®¹ã•ã‚Œã‚‹æœ€å¤§ã®å·®.ãƒã‚§ãƒƒã‚¯ã‚’è¡Œã‚ãªã„å ´åˆã¯0ä»¥ä¸‹ã®å€¤ã¨ã™ã‚‹.
-	int preFilterCap;		///< äº‹å‰ãƒ•ã‚£ãƒ«ã‚¿ã«ãŠã„ã¦ç”»åƒãƒ”ã‚¯ã‚»ãƒ«ã‚’åˆ‡ã‚Šæ¨ã¦ã‚‹é–¾å€¤(xå¾®åˆ†å€¤ã®ç¯„å›²)
-	int uniquenessRatio;	///< æœ€é©è§£ã¯äºŒç•ªç›®ã®è§£ã«å¯¾ã—ã¦ã€ã“ã“ã§æŒ‡å®šã—ãŸå€¤ã‚ˆã‚Šã‚‚ã‚³ã‚¹ãƒˆé–¢æ•°å€¤ãŒè‰¯ããªã‘ã‚Œã°ãªã‚‰ãªã„
-	int speckleWindowSize;	///< ãƒã‚¤ã‚ºã‚¹ãƒšãƒƒã‚¯ãƒ«ã‚„ç„¡åŠ¹ãªãƒ”ã‚¯ã‚»ãƒ«ãŒè€ƒæ…®ã•ã‚ŒãŸæ»‘ã‚‰ã‹ãªè¦–å·®é ˜åŸŸã®æœ€å¤§ã‚µã‚¤ã‚º.0ã«ã™ã‚‹ã¨ã‚¹ãƒšãƒƒã‚¯ãƒ«ãƒ•ã‚£ãƒ«ã‚¿ãŒç„¡åŠ¹ã«ãªã‚‹
-	int speckleRange;		///< ãã‚Œãã‚Œã®é€£çµæˆåˆ†ã«ãŠã‘ã‚‹æœ€å¤§è¦–å·®(1or2ãŒé©åˆ‡ãªå€¤)
-	int mode;	///< SGBMã®ãƒ¢ãƒ¼ãƒ‰(0: MODE_SGBM, 1: MODE_HH, 2: MODE_SGBM_3WAY, 3: MODE_HH4. 1ã«ã™ã‚‹ã¨å®Œå…¨ãª2ãƒ‘ã‚¹å‹•çš„è¨ˆç”»æ³•ã«ã¦æ¢ç´¢ã‚’è¡Œã†.ãŒã€ç”»åƒã‚µã‚¤ã‚ºxè¦–å·®æ•°åˆ†ã®ãƒ¡ãƒ¢ãƒªãŒå¿…è¦ãªã®ã§æ³¨æ„)
+	int min_disparity;		///< æ‚è“¾‚éÅ¬‚Ì‹·’l
+	int num_disparities;	///< ‹·‚Ì‘”(•K‚¸16‚Ì”{”)
+	int blockSize;			///< ƒ}ƒbƒ`ƒ“ƒO‚³‚ê‚éƒuƒƒbƒN‚ÌƒTƒCƒY(•K‚¸Šï”)
+	int disp12MaxDiff;		///< ‹·ƒ`ƒFƒbƒN‚É‚¨‚¯‚é‹–—e‚³‚ê‚éÅ‘å‚Ì·.ƒ`ƒFƒbƒN‚ğs‚í‚È‚¢ê‡‚Í0ˆÈ‰º‚Ì’l‚Æ‚·‚é.
+	int preFilterCap;		///< –‘OƒtƒBƒ‹ƒ^‚É‚¨‚¢‚Ä‰æ‘œƒsƒNƒZƒ‹‚ğØ‚èÌ‚Ä‚éè‡’l(x”÷•ª’l‚Ì”ÍˆÍ)
+	int uniquenessRatio;	///< Å“K‰ğ‚Í“ñ”Ô–Ú‚Ì‰ğ‚É‘Î‚µ‚ÄA‚±‚±‚Åw’è‚µ‚½’l‚æ‚è‚àƒRƒXƒgŠÖ”’l‚ª—Ç‚­‚È‚¯‚ê‚Î‚È‚ç‚È‚¢(ƒp[ƒZƒ“ƒg’PˆÊ)
+	int speckleWindowSize;	///< ƒmƒCƒYƒXƒyƒbƒNƒ‹‚â–³Œø‚ÈƒsƒNƒZƒ‹‚ªl—¶‚³‚ê‚½ŠŠ‚ç‚©‚È‹·—Ìˆæ‚ÌÅ‘åƒTƒCƒY.0‚É‚·‚é‚ÆƒXƒyƒbƒNƒ‹ƒtƒBƒ‹ƒ^‚ª–³Œø‚É‚È‚é
+	int speckleRange;		///< ‚»‚ê‚¼‚ê‚Ì˜AŒ‹¬•ª‚É‚¨‚¯‚éÅ‘å‹·(1or2‚ª“KØ‚È’l)
+	int mode;	///< SGBM‚Ìƒ‚[ƒh(0: MODE_SGBM, 1: MODE_HH, 2: MODE_SGBM_3WAY, 3: MODE_HH4. 1‚É‚·‚é‚ÆŠ®‘S‚È2ƒpƒX“®“IŒv‰æ–@‚É‚Ä’Tõ‚ğs‚¤.‚ªA‰æ‘œƒTƒCƒYx‹·”•ª‚Ìƒƒ‚ƒŠ‚ª•K—v‚È‚Ì‚Å’ˆÓ)
 
 	SGBMParameter(const int channels = 1) :
 		min_disparity(0),
@@ -51,22 +57,60 @@ struct SGBMParameter {
 	}
 
 	/**
-	 * SGBM ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ P1 ã®å€¤ã‚’è¿”ã™.
-	 * @return P1ã®å€¤
-	 * @param [in] SGBMå¯¾è±¡ã®ç”»åƒã®ãƒãƒ£ãƒ³ãƒãƒ«æ•°
+	 * SGBM ‚Ìƒpƒ‰ƒ[ƒ^ P1 ‚Ì’l‚ğ•Ô‚·.
+	 * @return P1‚Ì’l
+	 * @param [in] SGBM‘ÎÛ‚Ì‰æ‘œ‚Ìƒ`ƒƒƒ“ƒlƒ‹”
 	 */
 	int getP1(const int channels = 1) {
-		// è¦–å·®ã®æ»‘ã‚‰ã‹ã•ã‚’åˆ¶å¾¡ã™ã‚‹ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿(éš£ã‚Šåˆã†ãƒ”ã‚¯ã‚»ãƒ«é–“ã§è¦–å·®ãŒÂ±1ã§å¤‰åŒ–ã—ãŸå ´åˆã®ãƒšãƒŠãƒ«ãƒ†ã‚£)
+		// ‹·‚ÌŠŠ‚ç‚©‚³‚ğ§Œä‚·‚éƒpƒ‰ƒ[ƒ^(—×‚è‡‚¤ƒsƒNƒZƒ‹ŠÔ‚Å‹·‚ª}1‚Å•Ï‰»‚µ‚½ê‡‚Ìƒyƒiƒ‹ƒeƒB)
 		return 8 * this->blockSize * this->blockSize * channels;
 	}
 
 	/**
-	 * SGBM ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ P2 ã®å€¤ã‚’è¿”ã™.
-	 * @return P2ã®å€¤
-	 * @param [in] SGBMå¯¾è±¡ã®ç”»åƒã®ãƒãƒ£ãƒ³ãƒãƒ«æ•°
+	 * SGBM ‚Ìƒpƒ‰ƒ[ƒ^ P2 ‚Ì’l‚ğ•Ô‚·.
+	 * @return P2‚Ì’l
+	 * @param [in] SGBM‘ÎÛ‚Ì‰æ‘œ‚Ìƒ`ƒƒƒ“ƒlƒ‹”
 	 */
 	int getP2(const int channels = 1) {
-		// è¦–å·®ã®æ»‘ã‚‰ã‹ã•ã‚’åˆ¶å¾¡ã™ã‚‹ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿(éš£ã‚Šåˆã†ãƒ”ã‚¯ã‚»ãƒ«é–“ã§è¦–å·®ãŒ1ã‚ˆã‚Šã‚‚å¤§ããå¤‰åŒ–ã—ãŸå ´åˆã®ãƒšãƒŠãƒ«ãƒ†ã‚£
+		// ‹·‚ÌŠŠ‚ç‚©‚³‚ğ§Œä‚·‚éƒpƒ‰ƒ[ƒ^(—×‚è‡‚¤ƒsƒNƒZƒ‹ŠÔ‚Å‹·‚ª1‚æ‚è‚à‘å‚«‚­•Ï‰»‚µ‚½ê‡‚Ìƒyƒiƒ‹ƒeƒB
 		return 32 * this->blockSize * this->blockSize * channels;
+	}
+
+	void set(std::map<std::string, double> &params) {
+		if (params.count("min_disparity")) this->min_disparity = (int)params["min_disparity"];
+		if (params.count("num_disparities")) this->num_disparities = (int)params["num_disparities"];
+		if (params.count("blockSize")) this->blockSize = (int)params["blockSize"];
+		if (params.count("disp12MaxDiff")) this->disp12MaxDiff = (int)params["disp12MaxDiff"];
+		if (params.count("preFilterCap")) this->preFilterCap = (int)params["preFilterCap"];
+		if (params.count("uniquenessRatio")) this->uniquenessRatio = (int)params["uniquenessRatio"];
+		if (params.count("speckleWindowSize")) this->speckleWindowSize = (int)params["speckleWindowSize"];
+		if (params.count("speckleRange")) this->speckleRange = (int)params["speckleRange"];
+		if (params.count("mode")) this->mode = (int)params["mode"];
+	}
+
+#ifdef YAML_PARAM
+	void set(const YAML::Node &params) {
+		this->min_disparity = params["min_disparity"].as<int>();
+		this->num_disparities = params["num_disparities"].as<int>();
+		this->blockSize = params["blockSize"].as<int>();
+		this->disp12MaxDiff = params["disp12MaxDiff"].as<int>();
+		this->preFilterCap = params["preFilterCap"].as<int>();
+		this->uniquenessRatio = params["uniquenessRatio"].as<int>();
+		this->speckleWindowSize = (int)params["speckleWindowSize"].as<int>();
+		this->speckleRange = (int)params["speckleRange"].as<int>();
+		this->mode = (int)params["mode"].as<int>();
+	}	
+#endif
+
+	/**
+	 * ƒpƒ‰ƒ[ƒ^‚ªƒAƒ‹ƒSƒŠƒYƒ€‚Ì‹–—e”ÍˆÍ‚Éû‚Ü‚Á‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğƒ`ƒFƒbƒN‚·‚é.
+	 * @return –â‘è‚È‚¯‚ê‚Îtrue, –â‘è‚ ‚ê‚Îfalse.
+	 */
+	bool check(void) const {
+		if (num_disparities % 16 != 0) return false;
+		if (blockSize % 2 != 1) return false;
+		if (uniquenessRatio < 0 || uniquenessRatio > 100) return false;
+		if (mode < 0 || mode > 3) return false;
+		return true;
 	}
 };
