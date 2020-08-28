@@ -43,6 +43,7 @@ echo "[ycam3loader]" $guid $IPADDS
 rosparam set camera/guid "$guid"
 script/gvload.js $res "$guid"
 script/p2qmatrix.py $unit
+script/cam_prm_reader.py "$guid" $res
 
 roslaunch launch/ycam3s.launch
 pkill camnode

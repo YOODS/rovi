@@ -17,8 +17,6 @@
 #include "YPCGeneratorUnix.hpp"
 //#include "writePLY.hpp"
 
-#define PHSFT_200615
-
 //#define PLYDUMP
 #define LOG_HEADER "genpc: "
 
@@ -30,7 +28,6 @@ int cur_cam_height = -1;
 const PcGenMode PC_GEN_MODE = PCGEN_GRAYPS4;
 //const bool IS_INTERPO = false;
 bool is_interpo=false;
-const char* file_ext = ".pgm";//‚¢‚ç‚È‚¢
 std::string file_dump("/tmp/");
 bool isready = false;
 
@@ -395,12 +392,12 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			
 			sensor_msgs::ImagePtr depthimg;
 			if(pcdata_ros.valid()){
-				ROS_INFO(LOG_HEADER"depthmap image carete start.");
+				ROS_INFO(LOG_HEADER"depthmap image create start.");
 				
 				const auto depthimg_start = std::chrono::high_resolution_clock::now() ;
 				depthimg= pcdata_ros.make_depth_image();
 				const auto depthimg_duration = std::chrono::high_resolution_clock::now() - depthimg_start;
-				ROS_INFO(LOG_HEADER"depthmap image carete finished. proc_tm=%d ms",
+				ROS_INFO(LOG_HEADER"depthmap image create finished. proc_tm=%d ms",
 				(int)std::chrono::duration_cast<std::chrono::milliseconds>(depthimg_duration).count());
 			}
 			
@@ -471,15 +468,10 @@ int main(int argc, char **argv)
 	ros::NodeHandle n;
 	nh = &n;
 	
-#ifdef PHSFT_200615
 	if( ! pcgen.create_pcgen(PC_GEN_MODE) ){
 		ROS_ERROR(LOG_HEADER"point cloud generator create failed.");
 		return 2;
 	}
-#else
-	if(load_phase_shift_params()<0) return 1;
-	pcgenerator = createPointCloudGenerator();
-#endif
   
 	ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
 	ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
@@ -491,10 +483,6 @@ int main(int argc, char **argv)
 	ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub4 = &p4;
 	ros::spin();
-	
-#ifndef PHSFT_200615
-	pcgenerator->destroy();
-#endif
 	
 	return 0;
 }

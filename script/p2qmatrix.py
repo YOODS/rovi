@@ -34,5 +34,5 @@ Tx=P2[3]/P1[0]
 Q[14]=-1/Tx
 Q[15]=(P1[2]-P2[2])/Tx #(cx1-cx2)/Tx
 Q=Q.tolist()
-print type(Q)
+#print type(Q)
 rospy.set_param('/rovi/genpc/Q',Q)
