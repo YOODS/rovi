@@ -1,4 +1,5 @@
 <launch>
+  <rosparam command="load" ns="rovi" file="$(find rovi)/yaml/ycam3vga.yaml" />
   <node pkg="rovi_utils" type="filer.py" name="" args="
     wd:=$(find rovi_utils)/data/test.ply
     ~out/floats:=/rovi/ps_floats
