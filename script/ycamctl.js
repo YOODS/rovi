@@ -54,9 +54,18 @@ setImmediate(async function() {
     proj: new Notifier(rosNode,NSps + '/projector') //Genpc projector params
   };
   param.camlv.on('change',async function(key,val){
-    let obj={};
-    obj[key]=val;
-    await sens.cset(obj);
+    if(param.proj.objs.Mode==1){
+      let obj={};
+      obj[key]=val;
+      await sens.cset(obj);
+    }
+  });
+  param.camps.on('change',async function(key,val){
+    if(param.proj.objs.Mode==2){
+      let obj={};
+      obj[key]=val;
+      await sens.cset(obj);
+    }
   });
   param.proj.on('change',async function(key,val){
     let obj={};
@@ -117,7 +126,8 @@ setImmediate(async function() {
       break;
     case 2:
     case 3:
-      sensEv.lit=!sensEv.lit;
+//      sensEv.lit=!sensEv.lit;
+      sensEv.lit=true;
       if(sensEv.lit) param.proj.raise({Go:1});
       else param.proj.raise({Go:-1});
       break;

@@ -18,13 +18,26 @@ pshift_genpc:
     min_parallax: -200
     right_dup_cnt: 3
     ls_points: 3
+  paramset:
+    camera:
+      ExposureTime: [8400,8400,8400,16800,16800]
+      Gain: [0,0,0,0,0]
+    projector:
+      Intencity: [40,120,255,100,255]
+      Interval: [60,60,60,60,60]
+
 live:
   camera:
     AcquisitionFrameRate: 20
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
-    SoftwareTriggerRate: 4
+    SoftwareTriggerRate: 2
+  paramset:
+    camera:
+      ExposureTime: [3000,5000,10000,20000,30000]
+      Gain: [0,0,0,0,63]
+
 camera:
   TriggerMode: On
   MTU: 9000
