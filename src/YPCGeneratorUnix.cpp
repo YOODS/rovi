@@ -12,9 +12,19 @@
 #include <sys/stat.h>
 //2020/08/26 modified by hato ----------  end  ----------
 
+
+//2020/08/31 modified by hato ---------- start ----------
+//#define DETAIL_DEBUG_LOG
+//2020/08/31 modified by hato ----------  end  ----------
+
+
 bool YPCGeneratorUnix::create_pcgen(const PcGenMode pcgen_mode_)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cout << "YPCGeneratorUnix::create_pcgen() " << pcgen_mode_ << std::endl;
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	if (this->pcgen) this->pcgen->destroy();
 	this->pcgen_mode = pcgen_mode_;	
 	this->pcgen = CreatePointCloudGenerator(pcgen_mode_);
@@ -28,7 +38,11 @@ bool YPCGeneratorUnix::create_pcgen(const PcGenMode pcgen_mode_)
 
 bool YPCGeneratorUnix::init(const char* cfgpath)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cout << "YPCGeneratorUnix::init()\n";
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	if (!this->pcgen) {
 		std::cerr << "no point cloud generator\n";
 		return false;
@@ -46,9 +60,13 @@ bool YPCGeneratorUnix::init(const char* cfgpath)
 		std::cerr << "load parameter failure\n";
 		return false;
 	}
-
+	
 	// 読み込んだパラメータを表示
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << params << std::endl;
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	
 	// 共通パラメータ設定
 	if (params["image_width"]) set_camera_cols(params["image_width"].as<int>());
@@ -76,18 +94,24 @@ bool YPCGeneratorUnix::init(const char* cfgpath)
 //2020/08/26 modified by hato ---------- start ----------
 
 bool YPCGeneratorUnix::init(std::map<std::string,double> &params){
+	
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cout << "YPCGeneratorUnix::init()\n";
+#endif
+	//2020/08/31 modified by hato ----------  ebd  ----------
 	if (!this->pcgen) {
 		std::cerr << "no point cloud generator\n";
 		return false;
 	}
-	
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	// 読み込んだパラメータを表示
-	//std::cerr << params << std::endl;
 	for (std::map<std::string, double>::const_iterator i = params.begin(); i != params.end(); ++i) {
         std::cout << i->first << " => " << i->second << std::endl;
     }
-	
+#endif
+	//2020/08/31 modified by hato ----------  ebd  ----------
 	
 	// 共通パラメータ設定
 	if ( params.count("image_width") ) set_camera_cols(params.at("image_width"));
@@ -250,8 +274,12 @@ int YPCGeneratorUnix::generate_pointcloud(std::vector<unsigned char*>& buffers, 
 
 bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 {
-	std::cerr << "YPCGeneratorUnix::_init_SGBM()\n";
 	
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
+	std::cerr << "YPCGeneratorUnix::_init_SGBM()\n";
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	SGBMParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
@@ -261,6 +289,9 @@ bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 	}
 
 	// 読み込んだパラメータを表示
+	
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tmin_disparity    : " << param.min_disparity << std::endl;
 	std::cerr << "\tnum_disparities  : " << param.num_disparities << std::endl;
 	std::cerr << "\tblockSize        : " << param.blockSize << std::endl;
@@ -270,12 +301,18 @@ bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 	std::cerr << "\tspeckleWindowSize: " << param.speckleWindowSize << std::endl;
 	std::cerr << "\tspeckleRange     : " << param.speckleRange << std::endl;
 	std::cerr << "\tmode             : " << param.mode << std::endl;
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_PSFT()\n";
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	
 	GPhaseDecodeParameter param;
 	param.set(p);
@@ -284,8 +321,9 @@ bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 		std::cerr << "params value failure\n";
 		return false;
 	}
-
 	// パラメータ表示
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -299,13 +337,17 @@ bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_MPSFT()\n";
-	
+#endif
 	MPhaseDecodeParameter param;
 	param.set(p);
 	
@@ -316,6 +358,8 @@ bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 	}
 	
 	// パラメータ表示
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -329,6 +373,8 @@ bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
+#endif
+	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
@@ -339,7 +385,11 @@ bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 
 bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_SGBM()\n";
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
 	
 	SGBMParameter param;
 	param.set(p);
@@ -348,7 +398,8 @@ bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 		std::cerr << "params value failure\n";
 		return false;
 	}
-
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	// 読み込んだパラメータを表示
 	std::cerr << "\tmin_disparity    : " << param.min_disparity << std::endl;
 	std::cerr << "\tnum_disparities  : " << param.num_disparities << std::endl;
@@ -359,13 +410,18 @@ bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 	std::cerr << "\tspeckleWindowSize: " << param.speckleWindowSize << std::endl;
 	std::cerr << "\tspeckleRange     : " << param.speckleRange << std::endl;
 	std::cerr << "\tmode             : " << param.mode << std::endl;
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_PSFT()\n";
-	
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
 	GPhaseDecodeParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
@@ -373,8 +429,9 @@ bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 		std::cerr << "params value failure\n";
 		return false;
 	}
-
 	// パラメータ表示
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -388,13 +445,19 @@ bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
+	
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 {
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_MPSFT()\n";
-	
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
 	MPhaseDecodeParameter param;
 	param.set(p);
 	
@@ -405,6 +468,8 @@ bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 	}
 	
 	// パラメータ表示
+	//2020/08/31 modified by hato ---------- start ----------
+#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -418,6 +483,8 @@ bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
+#endif
+//2020/08/25 modified by hato ----------  end  ----------
 	return true;
 }
 

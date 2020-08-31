@@ -20,7 +20,33 @@
 //#define PLYDUMP
 #define LOG_HEADER "genpc: "
 
+#define DURATION_TO_MS(duration) (int)std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
+#define ELAPSED_TM(start_tm)   (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_tm).count()
+
 namespace {
+
+struct CamCalibMat {
+	int rows=0;
+	int cols=0;
+	std::vector<double> values;
+	
+	bool validate()const {
+		if(rows < 0 || cols < 0 || values.empty()) return false;
+		return (rows * cols) == values.size();
+	}
+	
+	std::string to_string()const{		
+		std::ostringstream oss;
+		
+		oss << "rows=" << rows;
+		oss << " cols=" << cols;
+		
+		oss << " values=";
+		std::copy(values.begin(), values.end(),std::ostream_iterator<double>(oss, ", "));
+		
+		return oss.str();
+	}
+};
 	
 YPCGeneratorUnix pcgen;
 int cur_cam_width = -1;
@@ -91,6 +117,8 @@ std::string base64encode(const std::vector<geometry_msgs::Point32> data) {
 bool load_phase_shift_params()
 {
 	ROS_INFO(LOG_HEADER"phase shift parameter relod start.");
+	
+	const auto proc_start = std::chrono::high_resolution_clock::now() ;
 	std::map<std::string,double> params;
 	{
 		int prm_width=0;
@@ -171,25 +199,121 @@ bool load_phase_shift_params()
 		ROS_ERROR("Param Q NG");
 		return false;
 	}
+	const auto proc_duration = std::chrono::high_resolution_clock::now() - proc_start;
+	ROS_INFO(LOG_HEADER"phase shift parameter load finished. proc_tm=%d ms",DURATION_TO_MS(proc_duration));
 	
-	ROS_INFO(LOG_HEADER"phase shift parameter load finished.");
 	return true;
 }
 
 bool load_camera_calib_data(){
 	ROS_INFO(LOG_HEADER"camera calibration data load start.");
-	const auto calib_load_start = std::chrono::high_resolution_clock::now() ;
+	const auto proc_start = std::chrono::high_resolution_clock::now() ;
 	
 	bool ret=false;
+	
+	CamCalibMat Kl;
+	CamCalibMat Dl;
+	CamCalibMat Kr;
+	CamCalibMat Dr;
+	CamCalibMat R;
+	CamCalibMat T;
+	if( ! nh->getParam("/rovi/left/genpc/K_Cols",Kl.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Cols");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/K_Rows",Kl.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Rows");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/K",Kl.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K");
+		
+	}else if( ! Kl.validate() ){
+		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=left %s", Kl.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D_Cols",Dl.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Cols");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D_Rows",Dl.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Rows");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D",Dl.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D");
+		
+	}else if( ! Kl.validate() ){
+		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=left %s", Dl.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K_Cols",Kr.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K_Rows",Kr.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K",Kr.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K");
+		
+	}else if( ! Kr.validate() ){
+		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=right %s", Kr.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D_Cols",Dr.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D_Rows",Dr.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D",Dr.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D");
+		
+	}else if( ! Dr.validate() ){
+		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=right %s", Dr.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R_Cols",R.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R_Rows",R.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R",R.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R");
+		
+	}else if( ! R.validate() ){
+		ROS_ERROR(LOG_HEADER"R matrix is wrong. cam=right %s", R.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T_Cols",T.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T_Rows",T.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T",T.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T");
+		
+	}else if( ! T.validate() ){
+		ROS_ERROR(LOG_HEADER"T matix is wrong. %s", T.to_string().c_str());
+		
+	}
+	
+	ROS_INFO(LOG_HEADER"camera calib: <left>  K %s",Kl.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <left>  D %s",Dl.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <right> K %s",Kr.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <right> D %s",Dr.to_string().c_str());
+	
+	ROS_INFO(LOG_HEADER"camera calib:         R %s",R.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib:         T %s",T.to_string().c_str());
+	
+#if 0
 	//if ( ! pcgen.create_camera("/home/ros/YdsDec3D20200615/data/ps/calib")) {
 	if ( ! pcgen.create_camera("/tmp/")) {
+		ROS_ERROR(LOG_HEADER"stereo camera create failed.");
+		
+	}else{
+		ret=true;
+	}
+#endif
+	if( ! pcgen.create_camera_raw(Kl.values,Kr.values,Dl.values,Dr.values,R.values,T.values) ){
 		ROS_ERROR(LOG_HEADER"stereo camera create failed.");
 	}else{
 		ret=true;
 	}
-	const auto calib_load_duration = std::chrono::high_resolution_clock::now() - calib_load_start;
-	ROS_INFO(LOG_HEADER"camera calibration data load finished. proc_tm=%d ms",
-				(int)std::chrono::duration_cast<std::chrono::milliseconds>(calib_load_duration).count());	
+	ROS_INFO(LOG_HEADER"camera calibration data load finished. proc_tm=%d ms",ELAPSED_TM(proc_start));
 	
 	return ret;
 }
@@ -247,7 +371,10 @@ public:
 
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
-	ROS_INFO("genpc called: %d %d", (int)req.imgL.size(), (int)req.imgR.size());
+	
+	const auto node_start = std::chrono::high_resolution_clock::now() ;
+	ROS_INFO(LOG_HEADER"start: image_width=%d image_height=%d", (int)req.imgL.size(), (int)req.imgR.size());
+	
 	const int width  = req.imgL[0].width;
 	const int height = req.imgL[0].height;
 	
@@ -309,7 +436,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 #endif
 	
 	if( ! isready ){
-		ROS_ERROR(LOG_HEADER"camera calibration data load failed.");
+		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d",ELAPSED_TM(node_start));
 		pub1->publish(pts);
 		std_msgs::String b64;
 		pub2->publish(b64);
@@ -356,13 +483,9 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			const auto genpc_start = std::chrono::high_resolution_clock::now() ;
 			N = pcgen.generate_pointcloud(img_pointers,is_interpo,&pcdata_ros);
 			
-			const auto genpc_duration = std::chrono::high_resolution_clock::now() - genpc_start;
-			
-			ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d, ms genpc_tm=%d ms, total_tm=%d ms",
-				N,
-				(int)std::chrono::duration_cast<std::chrono::milliseconds>(pcgen.get_elapsed_disparity()).count(),
-				(int)std::chrono::duration_cast<std::chrono::milliseconds>(pcgen.get_elapsed_genpcloud()).count(),
-				(int)std::chrono::duration_cast<std::chrono::milliseconds>(genpc_duration).count());
+			ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d, ms genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
+				N, DURATION_TO_MS(pcgen.get_elapsed_disparity()), DURATION_TO_MS(pcgen.get_elapsed_genpcloud()),
+				ELAPSED_TM(genpc_start), ELAPSED_TM(node_start));
 	
 		}catch (cv_bridge::Exception& e)	{
 			ROS_ERROR("genpc:cv_bridge:exception: %s", e.what());
@@ -370,13 +493,15 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		
 
 		if( N == 0){
+			ROS_INFO("genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
+			
 			pub1->publish(pts);
 			std_msgs::String b64;
 			pub2->publish(b64);
 			rovi::Floats buf;
 			pub3->publish(buf);
 			res.pc_cnt = N;
-			ROS_INFO("genpc point count 0");
+			
 		}else{
 			pts.points.resize(N);
 			pts.channels.resize(3);
@@ -396,9 +521,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				
 				const auto depthimg_start = std::chrono::high_resolution_clock::now() ;
 				depthimg= pcdata_ros.make_depth_image();
-				const auto depthimg_duration = std::chrono::high_resolution_clock::now() - depthimg_start;
-				ROS_INFO(LOG_HEADER"depthmap image create finished. proc_tm=%d ms",
-				(int)std::chrono::duration_cast<std::chrono::milliseconds>(depthimg_duration).count());
+				ROS_INFO(LOG_HEADER"depthmap image create finished. proc_tm=%d ms",ELAPSED_TM(depthimg_start));
 			}
 			
 			// getting norm from the center and sort by it
@@ -426,15 +549,14 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				buf.data[n3  ] = norm[n].z;
 			}
 			
+			ROS_INFO(LOG_HEADER"point counts %d / %d. elapsed=%d ms", N, Qn, ELAPSED_TM(node_start));
 			pub1->publish(pts);
 			std_msgs::String b64;
 			b64.data=base64encode(pts.points);
 			pub2->publish(b64);
 			pub3->publish(buf);
 			pub4->publish(depthimg);
-
 			res.pc_cnt = N;
-			ROS_INFO(LOG_HEADER"point counts %d / %d", N, Qn);
 			
 			if( pcdata_ros.valid() &&  file_dump.size()>0) {
 				ROS_INFO(LOG_HEADER "ply file save start.");
@@ -444,11 +566,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				PLYSaver saver(file_dump + "/test.ply");
 				saver(pcdata_ros.image,pcdata_ros.step,pcdata_ros.width,pcdata_ros.height,pcdata_ros.points,pcdata_ros.n_valid);
 				
-				const auto ply_save_duration = std::chrono::high_resolution_clock::now() - ply_save_start;
-				
 				ROS_INFO(LOG_HEADER"ply file save finished. proc_tm=%d ms, result=%s, path=%s", 
-					(int)std::chrono::duration_cast<std::chrono::milliseconds>(ply_save_duration).count(),
-					saver.is_ok() ? "success" : "failure",saver.get_filename().c_str());
+					ELAPSED_TM(ply_save_start),saver.is_ok() ? "success" : "failure",saver.get_filename().c_str());
 				
 				//todo:************* pending *************
 				//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
@@ -456,7 +575,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			}
 		}
 	}
-	ROS_INFO(LOG_HEADER "node end.");
+	
+	ROS_INFO(LOG_HEADER "node end. elapsed=%d ms",ELAPSED_TM(node_start));
 	return true;
 }
 
