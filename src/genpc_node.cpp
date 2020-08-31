@@ -15,9 +15,7 @@
 
 #include "iPointCloudGenerator.hpp"
 #include "YPCGeneratorUnix.hpp"
-//#include "writePLY.hpp"
 
-//#define PLYDUMP
 #define LOG_HEADER "genpc: "
 
 #define DURATION_TO_MS(duration) (int)std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
@@ -148,8 +146,6 @@ bool load_phase_shift_params()
 	if( ! get_ps_params(nh,params,"pshift_genpc/calc/ls_points","ls_points")) { return -1; }
 	if( ! get_ps_params(nh,params,"pshift_genpc/calc/interpolation","interpolation")) { return -1; }
 	
-	//image_width: 1280
-    //image_height: 1024
 	params["image_width"]=cur_cam_width;
 	params["image_height"]=cur_cam_height;
 	
@@ -162,7 +158,6 @@ bool load_phase_shift_params()
 		is_interpo = ((int)params["interpolation"]) ;
 	}
 	
-	//if ( ! pcgen.init("/home/ros/YdsDec3D20200615/data/ps/phsft.yaml") ) {
 	if ( ! pcgen.init(params) ) {
 		ROS_ERROR(LOG_HEADER"phase shift parameter reload failed.");
 		return false;
@@ -170,12 +165,12 @@ bool load_phase_shift_params()
 
 	nh->getParam("genpc/Q", vecQ); 
 	if (vecQ.size() != 16){
-		ROS_ERROR("Param Q NG");
+		ROS_ERROR(LOG_HEADER"Param Q NG");
 		return false;
 	}
 	nh->getParam("left/remap/K", cam_K);
 	if (cam_K.size() != 9){
-		ROS_ERROR("Param K NG");
+		ROS_ERROR(LOG_HEADER"Param K NG");
 		return false;
 	}
 	
@@ -196,7 +191,7 @@ bool load_phase_shift_params()
 	if(nh->hasParam("genpc/dump")) nh->getParam("genpc/dump",file_dump);
 	else file_dump="";
 	if (vecQ.size() != 16){
-		ROS_ERROR("Param Q NG");
+		ROS_ERROR(LOG_HEADER"Param Q NG");
 		return false;
 	}
 	const auto proc_duration = std::chrono::high_resolution_clock::now() - proc_start;
@@ -299,15 +294,6 @@ bool load_camera_calib_data(){
 	ROS_INFO(LOG_HEADER"camera calib:         R %s",R.to_string().c_str());
 	ROS_INFO(LOG_HEADER"camera calib:         T %s",T.to_string().c_str());
 	
-#if 0
-	//if ( ! pcgen.create_camera("/home/ros/YdsDec3D20200615/data/ps/calib")) {
-	if ( ! pcgen.create_camera("/tmp/")) {
-		ROS_ERROR(LOG_HEADER"stereo camera create failed.");
-		
-	}else{
-		ret=true;
-	}
-#endif
 	if( ! pcgen.create_camera_raw(Kl.values,Kr.values,Dl.values,Dr.values,R.values,T.values) ){
 		ROS_ERROR(LOG_HEADER"stereo camera create failed.");
 	}else{
@@ -350,7 +336,7 @@ public:
 		this->n_valid=n_valid;
 	}
 	
-	sensor_msgs::ImagePtr make_depth_image(/*std::vector<geometry_msgs::Point32> ps,const unsigned int *grid*/){
+	sensor_msgs::ImagePtr make_depth_image(){
 		//fprintf(stderr,"width=%d height=%d\n",this->height,this->width);
 		long base=depth_base*256;
 		cv::Mat depthim=cv::Mat(this->height,this->width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
@@ -420,21 +406,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ROS_INFO(LOG_HEADER"camera calibration data loaded.");
 		isready=true;
 	}
-	
-#if 0
-	std::vector<std::string> filelist = pcgen.create_filelist("/home/ros/YdsDec3D20200615/data/ps/capt", file_ext);
-	if (filelist.size() == 0) {
-		ROS_ERROR(LOG_HEADER"point cloud generate failed.");
-		return EXIT_FAILURE;
-	}
-	
-	// 点群生成&PLYファイル出力
-	if ( ! pcgen.generate_pointcloud(filelist, "/tmp/out.ply" , IS_INTERPO) ) {
-		ROS_ERROR(LOG_HEADER"camera calibration data load failed.");
-		return EXIT_FAILURE;
-	}
-#endif
-	
 	if( ! isready ){
 		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d",ELAPSED_TM(node_start));
 		pub1->publish(pts);
@@ -488,12 +459,12 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				ELAPSED_TM(genpc_start), ELAPSED_TM(node_start));
 	
 		}catch (cv_bridge::Exception& e)	{
-			ROS_ERROR("genpc:cv_bridge:exception: %s", e.what());
+			ROS_ERROR(LOG_HEADER"genpc:cv_bridge:exception: %s", e.what());
 		}
 		
 
 		if( N == 0){
-			ROS_INFO("genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
+			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
 			
 			pub1->publish(pts);
 			std_msgs::String b64;
@@ -562,7 +533,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				ROS_INFO(LOG_HEADER "ply file save start.");
 				const auto ply_save_start = std::chrono::high_resolution_clock::now() ;
 				
-				//writePLY(file_dump + "/test.ply", pcdP, N);
 				PLYSaver saver(file_dump + "/test.ply");
 				saver(pcdata_ros.image,pcdata_ros.step,pcdata_ros.width,pcdata_ros.height,pcdata_ros.points,pcdata_ros.n_valid);
 				
