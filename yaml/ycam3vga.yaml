@@ -4,20 +4,20 @@ pshift_genpc:
     Gain: 0
   projector:
     ExposureTime: 20
-    Intencity: 120
-    Interval: 40
+    Intencity: 40
+    Interval: 60
   calc:
-    image_width: 1280
-    image_height: 1024
+    image_width: 640
+    image_height: 480
     method3d: 0
     camera_type: 2
     bw_diff: 16
     brightness: 256
-    darkness: 8
-    phase_wd_min: 10
+    darkness: 32
+    phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
-    max_ph_diff: 5.0
+    max_ph_diff: 1.0
     max_parallax: 300
     min_parallax: -200
     ls_points: 3
