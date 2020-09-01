@@ -485,6 +485,19 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			
 			// building point cloud, getting center of points, and getting norm from the center
 			double X0=0,Y0=0,Z0=0;
+		
+			const std::vector<PointCloudCallback::Point3d> &pcdP=pcdata_ros.points;
+
+			for (int n = 0; n < N; n++) {
+				X0 += (pts.points[n].x = pcdP[n].x);
+				Y0 += (pts.points[n].y = pcdP[n].y);
+				Z0 += (pts.points[n].z = pcdP[n].z);
+				//グレースケールしか対応していない
+				pts.channels[0].values[n] = (pcdata_ros.image[n]) / 255.0;
+				pts.channels[1].values[n] = (pcdata_ros.image[n]) / 255.0;
+				pts.channels[2].values[n] = (pcdata_ros.image[n]) / 255.0;
+			}
+			X0/=N; Y0/=N; Z0/=N;
 			
 			sensor_msgs::ImagePtr depthimg;
 			if(pcdata_ros.valid()){
