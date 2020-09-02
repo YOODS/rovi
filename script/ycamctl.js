@@ -70,12 +70,18 @@ setImmediate(async function() {
   param.proj.on('change',async function(key,val){
     let obj={};
     obj[key]=val;
-//    if(key=='Mode'){
     if(key!='Go'){
-      if(sensEv.streaming){
-        await sensEv.scanStop(1000);
-        sensEv.lit=false;
-        sensEv.scanStart(1000);
+      sensEv.scanDelay(3000);
+      if(key=='Mode'){
+        console.log("Mode change "+obj[key]);
+        if(obj[key]==1){
+          await sens.cset(param.camlv.objs);
+          console.log("Mode 1 "+JSON.stringify(param.camlv.objs));
+        }
+        else{
+          await sens.cset(param.camps.objs);
+          console.log("Mode 2 "+JSON.stringify(param.camps.objs));
+        }
       }
     }
     await sens.pset(obj);

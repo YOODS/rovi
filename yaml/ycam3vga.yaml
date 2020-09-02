@@ -4,8 +4,9 @@ pshift_genpc:
     Gain: 0
   projector:
     ExposureTime: 20
-    Intencity: 120
+    Intensity: 120
     Interval: 40
+    Mode: 1
   calc:
     bw_diff: 16
     brightness: 256
@@ -23,7 +24,7 @@ pshift_genpc:
       ExposureTime: [8400,8400,8400,16800,16800]
       Gain: [0,0,0,0,0]
     projector:
-      Intencity: [40,120,255,100,255]
+      Intensity: [40,120,255,100,255]
       Interval: [40,40,40,60,60]
 live:
   camera:
