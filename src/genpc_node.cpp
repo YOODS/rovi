@@ -45,7 +45,9 @@ struct CamCalibMat {
 		return oss.str();
 	}
 };
-	
+
+
+
 YPCGeneratorUnix pcgen;
 int cur_cam_width = -1;
 int cur_cam_height = -1;
@@ -67,6 +69,57 @@ std::vector<double> cam_K;
 int depth_base=400;
 int depth_unit=1;
 
+class RosPointCloudData : public PointCloudCallback{
+public:
+	unsigned char *image;
+	size_t step;
+	int width;
+	int height; 
+	std::vector<Point3d> points;
+	int n_valid;
+	
+	RosPointCloudData():image(nullptr),width(0),height(0),n_valid(0){
+	}
+	
+	bool valid()const{
+		return image;
+	}
+	
+	void operator()(
+		unsigned char *image, const size_t step,
+		const int width, const int height, 
+		std::vector<Point3d> &points, const int n_valid){
+		
+		ROS_INFO(LOG_HEADER"point cloud data generated. step=%d, width=%d, height=%d, points_size=%d, n_valid=%d",
+			(int)step,width,height,(int)points.size(),n_valid);
+		this->image=image;
+		this->step=step;
+		this->width=width;
+		this->height=height;
+		this->points=points;
+		this->n_valid=n_valid;
+	}
+	
+	sensor_msgs::ImagePtr make_depth_image(){
+		//fprintf(stderr,"width=%d height=%d\n",this->height,this->width);
+		long base=depth_base*256;
+		cv::Mat depthim=cv::Mat(this->height,this->width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
+		int n = 0;
+		for (int j = 0; j < this->height; j++) {
+			unsigned short *dP = depthim.ptr<unsigned short>(j);
+			for (int i = 0; i < this->width; i++, n++) {
+				if (std::isnan(this->points[n].x)) continue;
+				long d = std::round((depth_unit * this->points[n].z - depth_base)*256);
+				if(d<0) dP[i] = 0;
+				else if(d<65536L) dP[i]=d;
+			}
+		}
+		cv::imwrite("/tmp/depth.png",depthim);
+		return cv_bridge::CvImage(std_msgs::Header(),"mono16",depthim).toImageMsg();
+	}
+};
+
+RosPointCloudData pcdata_ros;
 
 bool get_ps_params(ros::NodeHandle *nh,std::map<std::string,double> &params,const std::string &src_key,const std::string &dst_key){
 	bool ret=false;
@@ -305,61 +358,14 @@ bool load_camera_calib_data(){
 }
 
 
-class RosPointCloudData : public PointCloudCallback{
-public:
-	unsigned char *image;
-	size_t step;
-	int width;
-	int height; 
-	std::vector<Point3d> points;
-	int n_valid;
-	
-	RosPointCloudData():image(nullptr),width(0),height(0),n_valid(0){
-	}
-	
-	bool valid()const{
-		return image;
-	}
-	
-	void operator()(
-		unsigned char *image, const size_t step,
-		const int width, const int height, 
-		std::vector<Point3d> &points, const int n_valid){
-		
-		ROS_INFO(LOG_HEADER"point cloud data generated. step=%d, width=%d, height=%d, points_size=%d, n_valid=%d",
-			(int)step,width,height,(int)points.size(),n_valid);
-		this->image=image;
-		this->step=step;
-		this->width=width;
-		this->height=height;
-		this->points=points;
-		this->n_valid=n_valid;
-	}
-	
-	sensor_msgs::ImagePtr make_depth_image(){
-		//fprintf(stderr,"width=%d height=%d\n",this->height,this->width);
-		long base=depth_base*256;
-		cv::Mat depthim=cv::Mat(this->height,this->width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
-		int n = 0;
-		for (int j = 0; j < this->height; j++) {
-			unsigned short *dP = depthim.ptr<unsigned short>(j);
-			for (int i = 0; i < this->width; i++, n++) {
-				if (std::isnan(this->points[n].x)) continue;
-				long d = std::round((depth_unit * this->points[n].z - depth_base)*256);
-				if(d<0) dP[i] = 0;
-				else if(d<65536L) dP[i]=d;
-			}
-		}
-		cv::imwrite("/tmp/depth.png",depthim);
-		return cv_bridge::CvImage(std_msgs::Header(),"mono16",depthim).toImageMsg();
-	}
-};
 
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
 	
 	const auto node_start = std::chrono::high_resolution_clock::now() ;
 	ROS_INFO(LOG_HEADER"start: image_width=%d image_height=%d", (int)req.imgL.size(), (int)req.imgR.size());
+	
+	pcdata_ros = RosPointCloudData();
 	
 	const int width  = req.imgL[0].width;
 	const int height = req.imgL[0].height;
@@ -420,7 +426,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		std::vector<unsigned char*> img_pointers;
 		int N = 0;
 		
-		RosPointCloudData pcdata_ros;
 		try {
 			for (int i = 0, n = 0; i < 13; i++, n += 2 ) {
 				cv::Mat img = cv_bridge::toCvCopy(req.imgL[i], sensor_msgs::image_encodings::MONO8)->image;
@@ -462,7 +467,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			ROS_ERROR(LOG_HEADER"genpc:cv_bridge:exception: %s", e.what());
 		}
 		
-
 		if( N == 0){
 			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
 			
@@ -487,15 +491,17 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			double X0=0,Y0=0,Z0=0;
 		
 			const std::vector<PointCloudCallback::Point3d> &pcdP=pcdata_ros.points;
-
-			for (int n = 0; n < N; n++) {
-				X0 += (pts.points[n].x = pcdP[n].x);
-				Y0 += (pts.points[n].y = pcdP[n].y);
-				Z0 += (pts.points[n].z = pcdP[n].z);
-				//グレースケールしか対応していない
-				pts.channels[0].values[n] = (pcdata_ros.image[n]) / 255.0;
-				pts.channels[1].values[n] = (pcdata_ros.image[n]) / 255.0;
-				pts.channels[2].values[n] = (pcdata_ros.image[n]) / 255.0;
+			for (int i = 0,n = 0 ; i < pcdata_ros.points.size(); i++) {
+				if( n  < N  && ! std::isnan(pcdP[i].x) ){
+					X0 += (pts.points[n].x = pcdP[i].x);
+					Y0 += (pts.points[n].y = pcdP[i].y);
+					Z0 += (pts.points[n].z = pcdP[i].z);
+					//グレースケールしか対応していない
+					pts.channels[0].values[n] = (pcdata_ros.image[i]) / 255.0;
+					pts.channels[1].values[n] = (pcdata_ros.image[i]) / 255.0;
+					pts.channels[2].values[n] = (pcdata_ros.image[i]) / 255.0;
+					n++;
+				}
 			}
 			X0/=N; Y0/=N; Z0/=N;
 			
