@@ -71,8 +71,8 @@ setImmediate(async function() {
     let obj={};
     obj[key]=val;
     if(key!='Go'){
-      sensEv.scanDelay(3000);
       if(key=='Mode'){
+        sensEv.scanDelay(3000);
         console.log("Mode change "+obj[key]);
         if(obj[key]==1){
           await sens.cset(param.camlv.objs);
