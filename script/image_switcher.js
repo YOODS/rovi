@@ -57,12 +57,6 @@ class ImageSwitcher {
         icnt++;
         if(icnt==count){
           who.pstat=3;
-          for(let i=0;i<count;i++){
-            let req=new rovi_srvs.ImageFilter.Request();
-            req.img=who.capt[i];
-            let res=await who.remap.call(req);
-            who.capt[i]=res.img;
-          }
           if(count>1){
             let tmp =who.capt[0];
             who.pimgF=img;

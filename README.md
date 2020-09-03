@@ -4,8 +4,11 @@ RoVIは3Dビジョンセンサーを組み込んだロボットのアプリケ�
 ## 構成
 下図にRoVIのソフトウェア構成を示します。コア部(I/O,Base)とUtilityをプラットフォーム層として、これを利用し用途に合わせてApplicationを開発します。基本的な機能はプラットフォーム層を利用できるので、アプリケーションの開発L/Tが短縮出来ます。  
 またApplication実装例として、MTM(Master Teaching Method)パッケージも公開予定です(https://github.com/YOODS/MTM)。
+<!--
+comment out 2020/08/21 image file is not found.
 <img src="img/fig1.png" width="500px" >
-   
+-->
+
 ## このRepositoryについて  
 このRepositoryはYOODS社が提供するYCAM3Dを制御するソフトウェアです。
 
@@ -122,46 +125,108 @@ roslaunch rovi ycam3vga_mm.launch
 #### List
 <table>
 <tr><th>Name<th>Description<td>Type<td>Range
-<tr><td>/rovi/camera/address<td>YCAMのIPアドレス
-<tr><td>/rovi/genpc/Q<td>Qマトリクス<td>float[16]
-<tr><td>/rovi/left/remap/D<td>左カメラDマトリクス<td>float[5]
-<tr><td>/rovi/left/remap/K<td>左カメラKマトリクス<td>float[9]
-<tr><td>/rovi/left/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[9]
-<tr><td>/rovi/left/remap/P<td>左カメラPマトリクス<td>float[12]
-<tr><td>/rovi/left/remap/R<td>左カメラRマトリクス<td>float[9]
-<tr><td>/rovi/left/remap/height<td>イメージの高さ<td>int
-<tr><td>/rovi/left/remap/width<td>イメージの幅<td>int
-<tr><td>/rovi/live/camera/AcquisitionFrameRate<td>フレームレート<td>int<td>28
-<tr><td>/rovi/live/camera/ExposureTime<td>露光時間(&micro;s)<td>int<td>5000
-<tr><td>/rovi/live/camera/Gain<td>カメラゲイン<td>int<td>50
-<tr><td>/rovi/live/camera/GainAnalog<td>アナログゲイン<td>int<td>3
-<tr><td>/rovi/live/camera/SoftwareTriggerRate<td>ストリーミング時フレームレート<br>int<td>4
-<tr><td>/rovi/pshift_genpc/camera/ExposureTime<td>位相シフト時露光時間(&micro;s)<td>int<td>8400
-<tr><td>/rovi/pshift_genpc/camera/Gain<td>位相シフト時カメラゲイン<td>int<td>0
-<tr><td>/rovi/pshift_genpc/projector/ExposureTime<td>発光時間(ms)<td>int<td>20
-<tr><td>/rovi/pshift_genpc/projector/Intencity<td>発光強度<td>byte<td>150
-<tr><td>/rovi/pshift_genpc/projector/Interval<td>S発光間隔(ms)<br>int<td>50
-<tr><td>/rovi/pshift_genpc/projector/Mode<td>プロジェクタモード(1:位相シフト、2:ストロボ,
-3:マーカ)<td>int<td>1
-<tr><td>/rovi/right/remap/D<td>右カメラDマトリクス<td>float[5]
-<tr><td>/rovi/right/remap/K<td>右カメラKマトリクス<td>float[9]
-<tr><td>/rovi/right/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[5]
-<tr><td>/rovi/right/remap/P<td>右カメラPマトリクス<td>float[12]
-<tr><td>/rovi/right/remap/R<td>右カメラRマトリクス<td>float[9]
-<tr><td>/rovi/right/remap/height<td>イメージの高さ<td>int
-<tr><td>/rovi/right/remap/width<td>イメージの幅<td>int
-<tr><td>/rovi/genpc/calc/bw_diff<td><td>int
-<tr><td>/rovi/genpc/calc/brightness<td><td>int
-<tr><td>/rovi/genpc/calc/darkness<td><td>int
-<tr><td>/rovi/genpc/calc/step_diff<td><td>float
-<tr><td>/rovi/genpc/calc/max_step<td><td>float
-<tr><td>/rovi/genpc/calc/max_ph_diff<td><td>float
-<tr><td>/rovi/genpc/calc/max_tex_diff<td><td>float
-<tr><td>/rovi/genpc/calc/min_parallax<td><td>float
-<tr><td>/rovi/genpc/calc/right_dup_cnt<td><td>int
-<tr><td>/rovi/genpc/calc/ls_points<td><td>int
-<tr><td>/rovi/genpc/calc/depth_unit<td>デプス画像の1ビットと実距離の比<td>int<td>1
-<tr><td>/rovi/genpc/calc/depth_base<td>デプス画像の0に相当する実距離<td>int<td>400
+<tr><td>/rovi/camera/Acquire<td><td><td>
+<tr><td>/rovi/camera/AcquisitionFrameRate<td><td><td>
+<tr><td>/rovi/camera/AcquisitionMode<td><td><td>
+<tr><td>/rovi/camera/ExposureAuto<td><td><td>
+<tr><td>/rovi/camera/ExposureTimeAbs<td>カメラ露光時間<td><td>
+<tr><td>/rovi/camera/FocusPos<td><td><td>
+<tr><td>/rovi/camera/Gain<td>カメラゲイン<td><td>
+<tr><td>/rovi/camera/GainAuto<td><td><td>
+<tr><td>/rovi/camera/Height<td>カメラ解像度(高さ)<td><td>
+<tr><td>/rovi/camera/ID<td><td><td>
+<tr><td>/rovi/camera/MTU<td><td><td>
+<tr><td>/rovi/camera/TriggerMode<td><td><td>
+<tr><td>/rovi/camera/TriggerSource<td><td><td>
+<tr><td>/rovi/camera/Width<td>カメラ解像度(高さ)<td><td>
+<tr><td>/rovi/camera/address<td>YCAMのIPアドレス<td>string<td>
+<tr><td>/rovi/camera/frame_id<td><td><td>
+<tr><td>/rovi/camera/guid<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressed/format<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressed/jpeg_quality<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressed/png_level<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressedDepth/depth_max<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressedDepth/depth_quantization<td><td><td>
+<tr><td>/rovi/camera/image_raw/compressedDepth/png_level<td><td><td>
+<tr><td>/rovi/camera/image_raw/theora/keyframe_frequency<td><td><td>
+<tr><td>/rovi/camera/image_raw/theora/optimize_for<td><td><td>
+<tr><td>/rovi/camera/image_raw/theora/quality<td><td><td>
+<tr><td>/rovi/camera/image_raw/theora/target_bitrate<td><td><td>
+<tr><td>/rovi/camera/major_version<td>YCAMのメジャーバージョン番号<td>int<td>
+<tr><td>/rovi/camera/minor_version<td>YCAMのマイナーバージョン番号<td>int<td>
+<tr><td>/rovi/camera/mtu<td><td><td>
+<tr><td>/rovi/camera/serial_no<td>YCAMのシリアル番号<td>string<td>
+<tr><td>/rovi/camera/shmem<td><td><td>
+<tr><td>/rovi/camera/softwaretriggerrate<td><td><td>
+<tr><td>/rovi/genpc/Q<td>Qマトリクス<td>float[16]<td>
+<tr><td>/rovi/genpc/dump<td>点群データ出力先<td>string<td>
+<tr><td>/rovi/left/genpc/D<td>左カメラキャリブレーション結果。Dマトリクス<td>float[5]<td>
+<tr><td>/rovi/left/genpc/D_Cols<td>左カメラキャリブレーション結果。Dマトリクス列数<td>int<td>
+<tr><td>/rovi/left/genpc/D_Rows<td>左カメラキャリブレーション結果。Dマトリクス行数<td>int<td>
+<tr><td>/rovi/left/genpc/Height<td>左カメラ解像度(高さ)<td>int<td>
+<tr><td>/rovi/left/genpc/K<td>左カメラキャリブレーション結果。Kマトリクス<td>float[9]<td>
+<tr><td>/rovi/left/genpc/K_Cols<td>左カメラキャリブレーション結果。Kマトリクス列数<td>int<td>
+<tr><td>/rovi/left/genpc/K_Rows<td>左カメラキャリブレーション結果。Kマトリクス行数<td>int<td>
+<tr><td>/rovi/left/genpc/R<td>左カメラキャリブレーション結果。Rマトリクス<td>float[9]<td>
+<tr><td>/rovi/left/genpc/R_Cols<td>左カメラキャリブレーション結果。R行列マトリクス列数<td>int<td>
+<tr><td>/rovi/left/genpc/R_Rows<td>左カメラキャリブレーション結果。R行列マトリクス行数<td>int<td>
+<tr><td>/rovi/left/genpc/T<td>左カメラキャリブレーション結果。Tマトリクス<td>float[9]<td>
+<tr><td>/rovi/left/genpc/T_Cols<td>左カメラキャリブレーション結果。Tマトリクス列数<td>int<td>
+<tr><td>/rovi/left/genpc/T_Rows<td>左カメラキャリブレーション結果。Tマトリクス行数<td>int<td>
+<tr><td>/rovi/left/genpc/Width<td>左カメラ解像度(幅)<td>int<td>
+<tr><td>/rovi/left/remap/D<td>左カメラDマトリクス<td>float[5]<td>
+<tr><td>/rovi/left/remap/K<td>左カメラKマトリクス<td>float[9]<td>
+<tr><td>/rovi/left/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[9]<td>
+<tr><td>/rovi/left/remap/P<td>左カメラPマトリクス<td>float[12]<td>
+<tr><td>/rovi/left/remap/R<td>マトリクス<td>float[9]<td>
+<tr><td>/rovi/left/remap/height<td>イメージの高さ<td>int<td>
+<tr><td>/rovi/left/remap/width<td>イメージの幅<td>int<td>
+<tr><td>/rovi/live/camera/AcquisitionFrameRate<td>フレームレート<td>int<td>
+<tr><td>/rovi/live/camera/ExposureTime<td>露光時間(&micro;s)<td>int<td>
+<tr><td>/rovi/live/camera/Gain<td>カメラゲイン<td>int<td>
+<tr><td>/rovi/live/camera/GainAnalog<td>アナログゲイン<td>int<td>
+<tr><td>/rovi/live/camera/SoftwareTriggerRate<td>ストリーミング時フレームレート<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/brightness<td>ハレーション閾値<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/bw_diff<td>白/黒画像の最小差<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/camera_type<td>カメラタイプ(0: stereo, 1: hmat, 2: cam_param)(但し、0は廃止)<td>int<td>0-2
+<tr><td>/rovi/pshift_genpc/calc/darkness<td>点群を出力しない黒の閾値<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/gcode_variation<td>一周期分の区間に含まれるグレイコードの種類数<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/image_height<td>イメージの高さ<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/image_width<td>イメージの幅<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/interpolation<td>補完機能有効=1,無効=0<td>int<td>0,1
+<tr><td>/rovi/pshift_genpc/calc/ls_points<td>視差計算時の最小二乗法サンプル数.3 or 5<td>int<td>3,5
+<tr><td>/rovi/pshift_genpc/calc/max_parallax<td>近い側最大視差[pixel](30万画素の場合半分にすること)<td>double<td>
+<tr><td>/rovi/pshift_genpc/calc/max_ph_diff<td>滑らかさ(小さく厳しくすると穴が増える)<td>double<td>
+<tr><td>/rovi/pshift_genpc/calc/method3d<td>三次元座標計算手法の選択(0: Qマトリクス方式, 1:視線ベクトル方式, 2:P行列方式)<td>int<td>0-2
+<tr><td>/rovi/pshift_genpc/calc/min_parallax<td>遠い側最大視差[pixel](30万画素の場合半分にすること)<td>double<td>
+<tr><td>/rovi/pshift_genpc/calc/phase_wd_min<td>画像内での一周期分の幅の最小値[pixel]<td>int<td>
+<tr><td>/rovi/pshift_genpc/calc/phase_wd_thr<td>一周期分の幅がこの値以下であれば、その区間での位相は復号されない(三次元計算されない)。この値はphase_wd_minよりも大きくしないでください<td>int<td>
+<tr><td>/rovi/pshift_genpc/camera/ExposureTime<td>位相シフト時露光時間(&micro;s)<td>int<td>
+<tr><td>/rovi/pshift_genpc/camera/Gain<td>位相シフト時カメラゲイン<td>int<td>
+<tr><td>/rovi/pshift_genpc/projector/ExposureTime<td>発光時間(ms)<td>int<td>
+<tr><td>/rovi/pshift_genpc/projector/Intencity<td>発光強度<td>byte<td>
+<tr><td>/rovi/pshift_genpc/projector/Interval<td>発光間隔(ms)<td>int<td>
+<tr><td>/rovi/right/genpc/D<td>右カメラキャリブレーション結果。Dマトリクス<td>float[5]<td>
+<tr><td>/rovi/right/genpc/D_Cols<td>右カメラキャリブレーション結果。Dマトリクス列数<td>int<td>
+<tr><td>/rovi/right/genpc/D_Rows<td>右カメラキャリブレーション結果。Dマトリクス行数<td>int<td>
+<tr><td>/rovi/right/genpc/Height<td>右カメラ解像度(高さ)<td>int<td>
+<tr><td>/rovi/right/genpc/K<td>右カメラキャリブレーション結果。Kマトリクス<td>float[9]<td>
+<tr><td>/rovi/right/genpc/K_Cols<td>右カメラキャリブレーション結果。Kマトリクス列数<td>int<td>
+<tr><td>/rovi/right/genpc/K_Rows<td>右カメラキャリブレーション結果。Kマトリクス行数<td>int<td>
+<tr><td>/rovi/right/genpc/R<td>右カメラキャリブレーション結果。Rマトリクス<td>float[9]<td>
+<tr><td>/rovi/right/genpc/R_Cols<td>右カメラキャリブレーション結果。R行列マトリクス列数<td>int<td>
+<tr><td>/rovi/right/genpc/R_Rows<td>右カメラキャリブレーション結果。R行列マトリクス行数<td>int<td>
+<tr><td>/rovi/right/genpc/T<td>右カメラキャリブレーション結果。Tマトリクス<td>float[9]<td>
+<tr><td>/rovi/right/genpc/T_Cols<td>右カメラキャリブレーション結果。Tマトリクス列数<td>int<td>
+<tr><td>/rovi/right/genpc/T_Rows<td>右カメラキャリブレーション結果。Tマトリクス行数<td>int<td>
+<tr><td>/rovi/right/genpc/Width<td>右カメラ解像度(幅)<td>int<td>
+<tr><td>/rovi/right/remap/D<td>右カメラDマトリクス<td>float[5]<td>
+<tr><td>/rovi/right/remap/K<td>右カメラKマトリクス<td>float[9]<td>
+<tr><td>/rovi/right/remap/Kn<td>PマトリクスからdecomposeしたKマトリクス。remap_nodeが算出<td>float[5]<td>
+<tr><td>/rovi/right/remap/P<td>右カメラPマトリクス<td>float[12]<td>
+<tr><td>/rovi/right/remap/R<td>右カメラRマトリクス<td>float[9]<td>
+<tr><td>/rovi/right/remap/height<td>イメージの高さ<td>int<td>
+<tr><td>/rovi/right/remap/width<td>イメージの幅<td>int<td>
 </table>
 
 ## ドキュメントリスト  

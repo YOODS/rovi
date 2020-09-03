@@ -1,4 +1,6 @@
 #pragma once
+#include "ParamPhaseMatching.hpp"
+#include <map>
 
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
@@ -9,57 +11,106 @@
 #define M_PI_2	(0.5 * M_PI)
 #endif
 
+#ifdef YAML_PARAM
+#include <yaml-cpp/yaml.h>
+#endif
+
 /**
- * ä½ç›¸ã‚·ãƒ•ãƒˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+ * ƒOƒŒƒCƒR[ƒh{ˆÊ‘ŠƒVƒtƒgƒpƒ‰ƒ[ƒ^
  */
-struct PSFTParameter {
-	int bw_diff;			///< æš—ãã¦ç²¾åº¦ã®å‡ºãªã„ç‚¹ã—ãã„å€¤[è¼åº¦]
-	int brightness;			///< ãƒãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³æ°—å‘³ã§ç²¾åº¦ã®å‡ºãªã„ç‚¹ã—ãã„å€¤[è¼åº¦]
-	int darkness;			///< ãƒãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³æ°—å‘³ã§ç²¾åº¦ã®å‡ºãªã„ç‚¹ã—ãã„å€¤[è¼åº¦]
-	double step_diff;		///< ä½ç›¸é€£çµæ™‚ã®ãšã‚Œä¿®æ­£å€¤(phase)[rad]
-	double max_step;		///< è¦–å·®ç”»åƒã«ãŠã„ã¦éš£ã‚Šåˆã†ãƒ”ã‚¯ã‚»ãƒ«é–“è¦–å·®ã®æœ€å¤§å€¤
-	double max_ph_diff;		///< è¦–å·®è¨ˆç®—æ™‚ã®å·¦å³ã‚«ãƒ¡ãƒ©ã®æœ€å¤§ä½ç›¸å·®(ã“ã‚Œã‚’è¶Šã™ä½ç›¸å·®ã¯NG)[rad]	
-	double max_tex_diff;	///< ä½ç›¸ä¸€è‡´ãƒ”ã‚¯ã‚»ãƒ«ã®è¼åº¦å·®æœ€å¤§å€¤[è¼åº¦]
-	double max_parallax;	///< æœ€å¤§è¦–å·®[pixel]
-	double min_parallax;	///< æœ€å°è¦–å·®[pixel]
-	int right_dup_cnt;		///< è¦–å·®è¨ˆç®—æ™‚ã®åŒä¸€å³ãƒã‚¤ãƒ³ãƒˆãŒä½•å›æŒ‡å®šã§ãã‚‹ã‹
-	int ls_points;			///< è¦–å·®ã‚’æ±‚ã‚ã‚‹éš›ã®æœ€å°äºŒä¹—è¿‘ä¼¼ç‚¹æ•°[points](3 or 5)
+struct GPhaseDecodeParameter : public PhaseMatchingParameter {
+	int datatype;			///< “ü—Í‚ª‰æ‘œ‚Ìê‡ = 0, “ü—Í‚ª”’•‰æ‘œ•ˆÊ‘ŠEƒOƒŒƒCƒR[ƒhƒf[ƒ^‚Ìê‡ = 1, ‚»‚Ì‘¼‚ÍƒGƒ‰[
 
-	PSFTParameter() :
-		bw_diff(12), brightness(256), darkness(15), step_diff(1.2),
-		max_step(1.0), max_ph_diff(M_PI_2), max_tex_diff(0.7), max_parallax(400), min_parallax(-300),
-		right_dup_cnt(2), ls_points(3) {}
+	int bw_diff;			///< –¾ˆÃ·[‹P“x·].‘S“_“”‰æ‘œ-‘SÁ“”‰æ‘œ‚Ì‹P“x·‚ªA‚±‚Ì’l–¢–‚Å‚ ‚ê‚ÎŒvZ‚©‚çœŠO‚³‚ê‚é.
+	int brightness;			///< ‘S“_“”‰æ‘œ‚É‚¨‚¢‚ÄƒnƒŒ[ƒVƒ‡ƒ“‹C–¡‚Å¸“x‚Ìo‚È‚¢“_‚Ìè‡’l[‹P“x].‚±‚Ì’l‚æ‚è‚à‘å‚«‚È‰æ‘f‚ÍœŠO‚³‚ê‚é.
+	int darkness;			///< ‘S“_“”‰æ‘œ‚É‚¨‚¢‚ÄˆÃ‚­‚Ä¸“x‚Ìo‚È‚¢“_‚µ‚«‚¢’l[‹P“x].‚±‚Ì’l‚æ‚è‚à¬‚³‚È‰æ‘f‚ÍœŠO‚³‚ê‚é.
 
-	PSFTParameter(const PSFTParameter &obj) {
+	int phase_wd_min;		///< ‰æ‘œ“à‚ÌˆêüŠú•ª‚ÌÅ¬•(‰æ‘f”). ‚±‚Ì’l‚æ‚è‚à¬‚³‚¢•‚Ì‹æŠÔ‚ÍŠmÀ‚Èƒf[ƒ^‚Æ‚µ‚È‚¢.–³Œø‚É‚µ‚½‚¢ê‡‚Í0‚ğw’è‚·‚é‚±‚Æ.
+	int phase_wd_thr;		///< ƒSƒ~‚Æ‚µ‚ÄÌ‚Ä‚é‹æŠÔ‚ÌÅ‘å•. ‚±‚Ì’lˆÈ‰º‚Ì‹æŠÔ‚ÍÌ‚Ä‚ç‚ê‚é.–³Œø‚É‚µ‚½‚¢ê‡‚Í0‚É‚·‚é‚±‚Æ.
+	int gcode_variation;	///< ˆê‹æŠÔ‚ÉŠÜ‚Ü‚ê‚éƒOƒŒƒCƒR[ƒhí—Ş”‚ÌÅ‘å’l. 1ˆÈã3ˆÈ‰º
+
+	GPhaseDecodeParameter() : PhaseMatchingParameter(), datatype(0),
+		bw_diff(12), brightness(256), darkness(15), 
+		phase_wd_min(5), phase_wd_thr(2), gcode_variation(3) {}
+
+	GPhaseDecodeParameter(const GPhaseDecodeParameter &obj) : PhaseMatchingParameter(obj)
+	{
+		this->datatype = obj.datatype;
+
 		this->bw_diff = obj.bw_diff;
 		this->brightness = obj.brightness;
 		this->darkness = obj.darkness;
-		this->step_diff = obj.step_diff;
-		this->max_step = obj.max_step;
-		this->max_ph_diff = obj.max_ph_diff;
-		this->max_tex_diff = obj.max_tex_diff;
-		this->max_parallax = obj.max_parallax;
-		this->min_parallax = obj.min_parallax;
-		this->right_dup_cnt = obj.right_dup_cnt;
-		this->ls_points = obj.ls_points;
-		if (this->ls_points == 3 || this->ls_points == 5) return;
-		this->ls_points = 3;
+
+		this->phase_wd_min = obj.phase_wd_min;
+		this->phase_wd_thr = obj.phase_wd_thr;
+		this->gcode_variation = obj.gcode_variation;
 	}
 
-	PSFTParameter operator=(const PSFTParameter &obj) {
+	GPhaseDecodeParameter operator=(const GPhaseDecodeParameter &obj) 
+	{
+		PhaseMatchingParameter::operator=(obj);
+
+		this->datatype = obj.datatype;
+
 		this->bw_diff = obj.bw_diff;
 		this->brightness = obj.brightness;
 		this->darkness = obj.darkness;
-		this->step_diff = obj.step_diff;
-		this->max_step = obj.max_step;
-		this->max_ph_diff = obj.max_ph_diff;
-		this->max_tex_diff = obj.max_tex_diff;
-		this->max_parallax = obj.max_parallax;
-		this->min_parallax = obj.min_parallax;
-		this->right_dup_cnt = obj.right_dup_cnt;
-		this->ls_points = obj.ls_points;
-		if (this->ls_points == 3 || this->ls_points == 5) return *this;
-		this->ls_points = 3;
+
+		this->phase_wd_min = obj.phase_wd_min;
+		this->phase_wd_thr = obj.phase_wd_thr;
+		this->gcode_variation = obj.gcode_variation;
 		return *this;
 	}
+
+	void set(std::map<std::string, double> &params) 
+	{
+		reinterpret_cast<PhaseMatchingParameter*>(this)->set(params);
+
+		if (params.count("datatype")) this->datatype = (int)params["datatype"];
+
+		if (params.count("bw_diff")) this->bw_diff = (int)params["bw_diff"];
+		if (params.count("brightness")) this->brightness = (int)params["brightness"];
+		if (params.count("darkness")) this->darkness = (int)params["darkness"];
+
+		if (params.count("phase_wd_min")) this->phase_wd_min = (int)params["phase_wd_min"];
+		if (params.count("phase_wd_thr")) this->phase_wd_thr = (int)params["phase_wd_thr"];
+		if (params.count("gcode_variation")) this->gcode_variation = (int)params["gcode_variation"];
+	}
+
+#ifdef YAML_PARAM
+	void set(const YAML::Node &params) {
+		reinterpret_cast<PhaseMatchingParameter*>(this)->set(params);
+
+		if (params["datatype"]) this->datatype = params["datatype"].as<int>();
+
+		if (params["bw_diff"]) this->bw_diff = params["bw_diff"].as<int>();
+		if (params["brightness"]) this->brightness = params["brightness"].as<int>();
+		if (params["darkness"]) this->darkness = params["darkness"].as<int>();
+
+		if (params["phase_wd_min"]) this->phase_wd_min = params["phase_wd_min"].as<int>();
+		if (params["phase_wd_thr"]) this->phase_wd_thr = params["phase_wd_thr"].as<int>();
+		if (params["gcode_variation"]) this->gcode_variation = params["gcode_variation"].as<int>();		
+	}
+#endif
+
+	/**
+	 * ƒpƒ‰ƒ[ƒ^‚ªƒAƒ‹ƒSƒŠƒYƒ€‚Ì‹–—e”ÍˆÍ‚Éû‚Ü‚Á‚Ä‚¢‚é‚©‚Ç‚¤‚©‚ğƒ`ƒFƒbƒN‚·‚é.
+	 * @return –â‘è‚È‚¯‚ê‚Îtrue, –â‘è‚ ‚ê‚Îfalse.
+	 */
+	bool check(void) const {
+		if (!PhaseMatchingParameter::check()) return false;
+		
+		// ‰æ‘œ‚©ˆÊ‘Šƒf[ƒ^‚©w’è‚³‚ê‚Ä‚¢‚È‚¯‚ê‚Î‘Ê–Ú
+		if (datatype != 0 && datatype != 1) return false;
+
+		// •‰‚Ì’l‚Íó‚¯•t‚¯‚È‚¢
+		if (phase_wd_min < 0) return false;
+		if (phase_wd_thr < 0) return false;
+		if (gcode_variation < 1) return false;
+		
+		return true;
+	}
 };
+
+
+

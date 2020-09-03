@@ -1,110 +1,175 @@
 #pragma once
 
-/**
- * ç‚¹å‹
- */
-struct PointCloudElement {
-	float coord[3];			///< åº§æ¨™å€¤(x,y,zã®é †)
-	unsigned char col[4];	///< è‰²(r,g,bã®é †. ä½†ã—ä»Šã®ã¨ã“ã‚ç™½é»’ç”»åƒã«ã—ã‹å¯¾å¿œã—ã¦ã„ãªã„ã®ã§å…¨ã¦åŒã˜å€¤ãŒæ ¼ç´ã•ã‚Œã‚‹)
+#ifdef _WINDOWS
+#ifdef _WINDLL
+#define EXPORT_PCGEN __declspec(dllexport)
+#else
+#define EXPORT_PCGEN __declspec(dllimport)
+#endif
+#else
+#define EXPORT_PCGEN
+#endif
+
+#include <string>
+#include <limits>
+#include "iStereoCamera.hpp"
+
+
+class PointCloudCallback {
+public:
+	struct Point3d {
+		float x, y, z;
+
+		// ƒRƒ“ƒXƒgƒ‰ƒNƒ^
+		// @param _x, _y, _z OŸŒ³À•W’l
+		// @note ƒfƒtƒHƒ‹ƒg’l‚Í–³Œø‚È“_À•W’l‚ğ•\‚·’lstd::numeric_limits<float>::quiet_NaN()‚Å‚ ‚é.
+		Point3d(const float _x = std::numeric_limits<float>::quiet_NaN(), 
+				const float _y = std::numeric_limits<float>::quiet_NaN(),
+				const float _z = std::numeric_limits<float>::quiet_NaN()) : x(_x), y(_y), z(_z) {}
+	};
+
+	/**
+	  iPointCloudGenerator.get_pointcloud(this)‚Æ“n‚µ‚½‚Æ‚«‚ÉŒÄ‚Ño‚³‚ê‚éƒR[ƒ‹ƒoƒbƒNŠÖ”.
+	  @return –³‚µ
+	  @param [in] image “_ŒQ‚É’£‚è•t‚¯‚ç‚ê‚éƒeƒNƒXƒ`ƒƒ‰æ‘œ‚Ì¶ã’[ƒAƒhƒŒƒX
+	  @param [in] step ƒeƒNƒXƒ`ƒƒ‰æ‘œƒoƒbƒtƒ@‚Ì…•½•ûŒü‚ÌƒoƒCƒg”
+	  @param [in] width ƒeƒNƒXƒ`ƒƒ‰æ‘œ‚Ì‰¡•
+	  @param [in] height ƒeƒNƒXƒ`ƒƒ‰æ‘œ‚Ìc•
+	  @param [in] points “_ŒQ‚ÌOŸŒ³À•W’l(ƒeƒNƒXƒ`ƒƒ‰æ‘œ‚ğZƒXƒLƒƒƒ“‚µ‚½‡‚É•À‚ñ‚Å‚¢‚Ü‚·)
+	  @param [in] n_valid —LŒø‚È“_‚Ì”
+	  @note image(i, j)‚É‘Î‰‚·‚éOŸŒ³“_‚Ípoints[i + j * width]‚ÉŠi”[‚³‚ê‚Ä‚¢‚Ü‚·.‚»‚Ì“_‚ª—LŒø‚È“_‚©”Û‚©‚ÍÀ•W’l‚É
+	  std::numeric_limits<float>::quiet_NaN()‚ªŠi”[‚³‚ê‚Ä‚¢‚é‚©”Û‚©‚Å”»’f‚µ‚Ä‚­‚¾‚³‚¢.
+	 */
+	virtual void operator()(
+		unsigned char *image, const size_t step,
+		const int width, const int height, 
+		std::vector<Point3d> &points, const int n_valid) = 0;
 };
+
+
 
 class iPointCloudGenerator {
 public:
 	/**
-	 * ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚’ç ´æ£„ã—ã¾ã™.
-	 * @return ãªã—
+	 * “_ŒQ¶¬Ší‚ğ”jŠü‚µ‚Ü‚·.
+	 * @return ‚È‚µ
 	 */
 	virtual void destroy() = 0;
 
 	/**
-	 * ç‚¹ç¾¤ç”Ÿæˆå™¨ã®åˆæœŸåŒ–ã‚’è¡Œã„ã¾ã™.(å¿…è¦ãªãƒãƒƒãƒ•ã‚¡ã‚’ç¢ºä¿ã—ã¾ã™.)
-	 * @return æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
-	 * @param [in] w å…¥åŠ›ç”»åƒã®æ¨ªå¹…
-	 * @param [in] h å…¥åŠ›ç”»åƒã®ç¸¦å¹…
+	 * “_ŒQ¶¬Ší‚Ì‰Šú‰»‚ğs‚¢‚Ü‚·.
+	 * @return ‚È‚µ.
+	 * @param [in] cam g—p‚·‚éƒXƒeƒŒƒIƒJƒƒ‰‚ÌƒCƒ“ƒXƒ^ƒ“ƒX
 	 */
-	virtual bool init(const int w, const int h) = 0;
+	virtual void init(iStereoCamera *cam) = 0;
 
 	/**
-	 * 3Dåº§æ¨™å€¤è¨ˆç®—ã«å¿…è¦ãªã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’æŒ‡å®šã•ã‚ŒãŸãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªã‹ã‚‰èª­ã¿å–ã‚Šã¾ã™.
-	 * @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
-	 * @param [in] dirname ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå
-	 * @warning ã“ã¡ã‚‰ã‚’å‘¼ã³å‡ºã—ãŸå ´åˆã¯ã€setpictã§ä¸ãˆã‚‰ã‚ŒãŸç”»åƒã¯æœªå¹³è¡ŒåŒ–ç”»åƒã¨ã—ã¦ã€å†…éƒ¨ã§å¹³è¡ŒåŒ–ãŒè¡Œã‚ã‚Œã¾ã™.
+	 * OŸŒ³“_‚ÌÀ•W•ÏŠ·s—ñ‚ğƒZƒbƒg‚µ‚Ü‚·.
+	 * @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * @param [in] filename 4x4‚Ì„‘Ì•ÏŠ·s—ñ‚ªŠi”[‚³‚ê‚Ä‚¢‚éƒtƒ@ƒCƒ‹–¼(OpenCV‚ÌMatŒ`®)
 	 */
-	virtual bool set_camera_params(const char *dirname) = 0;
+	virtual bool convert_coordinate(const std::string filename) = 0;
 
 	/**
-	 * 3Dåº§æ¨™å€¤è¨ˆç®—ã«å¿…è¦ãªé€è¦–å¤‰æ›è¡Œåˆ—(4x4)ã‚’ã‚»ãƒƒãƒˆã—ã¾ã™.
-	 * @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
-	 * @param [in] Qbuff é€è¦–å¤‰æ›è¡Œåˆ—ãŒZã‚¹ã‚­ãƒ£ãƒ³é †ã«æ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
-	 * @warning ã“ã¡ã‚‰ã‚’å‘¼ã³å‡ºã—ãŸå ´åˆã¯ã€setpictã§ä¸ãˆã‚‰ã‚ŒãŸç”»åƒã¯å¹³è¡ŒåŒ–æ¸ˆç”»åƒã¨ã—ã¦ã€ãã®ã¾ã¾å‡¦ç†å¯¾è±¡ç”»åƒã¨ã—ã¦æ‰±ã„ã¾ã™.
+	 * OŸŒ³“_‚ÌÀ•W•ÏŠ·s—ñ‚ğƒZƒbƒg‚µ‚Ü‚·.
+	 * @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * @param [in] RT 4x4‚Ì„‘Ì•ÏŠ·s—ñ‚ªŠi”[‚³‚ê‚Ä‚¢‚évector(4x4=16—v‘f)
 	 */
-	virtual bool set_camera_params(const double *QBuff) = 0;
+	virtual bool convert_coordinate(std::vector<double> &RT) = 0;
+
 
 	/**
-	 * ç‚¹ç¾¤ç”Ÿæˆã«å¿…è¦ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ã‚»ãƒƒãƒˆã—ã¾ã™.
-	 * @param [in] params ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å‹ã¸ã®ãƒã‚¤ãƒ³ã‚¿
-	 * @warning params ã¯æ‰‹æ³•ã«ã‚ˆã£ã¦ç•°ãªã‚Šã¾ã™.ä½ç›¸ã‚·ãƒ•ãƒˆã®å ´åˆã¯ParamPSFT.hppã‚’ã€SGBMã®å ´åˆã¯ParamSGBM.hppã‚’å‚ç…§ã—ã¦ãã ã•ã„.
+	 * “_ŒQ¶¬‚É•K—v‚Èƒpƒ‰ƒ[ƒ^‚ğƒZƒbƒg‚µ‚Ü‚·.
+	 * @param [in] params ƒpƒ‰ƒ[ƒ^Œ^‚Ö‚Ìƒ|ƒCƒ“ƒ^
+	 * @note params ‚Íè–@‚É‚æ‚Á‚ÄˆÙ‚È‚è‚Ü‚·.ƒOƒŒƒCƒR[ƒh”ÅˆÊ‘ŠƒVƒtƒg‚Ìê‡‚ÍParamPSFT.hpp‚ğA
+	 * OˆÊ‘Š”ÅˆÊ‘ŠƒVƒtƒg‚Ìê‡‚ÍParamMPSFT.hpp‚ğASGBM‚Ìê‡‚ÍParamSGBM.hpp‚ğQÆ‚µ‚Ä‚­‚¾‚³‚¢.
 	 */
-	virtual void setparams(void *params) = 0;
+	virtual bool setparams(void *params) = 0;
 
 	/**
-	 * å‡¦ç†å¯¾è±¡ç”»åƒã‚’ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ã—ã¾ã™.
-	 * @return ãªã—
-	 * @param [in] grayim ç”»åƒãƒãƒƒãƒ•ã‚¡å·¦ä¸Šç«¯ã‚¢ãƒ‰ãƒ¬ã‚¹
-	 * @param [in] step ç”»åƒãƒãƒƒãƒ•ã‚¡ã®æ°´å¹³æ–¹å‘ã®ãƒã‚¤ãƒˆæ•°
-	 * @param [in] cam ã‚«ãƒ¡ãƒ©ç•ªå·
-	 * @warning ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’ä½œæˆã—ãŸå ´åˆã®ã¿ä½¿ç”¨å¯èƒ½ã«ãªã‚Šã¾ã™. ä½œæˆã—ã¦ã„ãªã„ã®ã«ã‚‚é–¢ã‚ã‚‰ãšã€å‘¼ã³å‡ºã—ãŸå ´åˆã¯ä½•ã‚‚ã—ã¾ã›ã‚“.
+	 * “_ŒQ‚ğ¶¬‚·‚é‚½‚ß‚É•K—v‚È‰æ‘œ–‡”
+	 * @return 
 	 */
-	virtual void rectify(unsigned char *grayim, const int cols, const int rows, const size_t step, const int cam) = 0;
+	virtual const int requiredframes() const { return 1; }
 
 	/**
-	 * å‡¦ç†å¯¾è±¡ç”»åƒã‚’ç”Ÿæˆå™¨ã«æ¸¡ã—ã¾ã™.
-	 * @return ãªã—.
-	 * @param [in] grayim ç”»åƒãƒãƒƒãƒ•ã‚¡å·¦ä¸Šç«¯ã‚¢ãƒ‰ãƒ¬ã‚¹
-	 * @param [in] step ç”»åƒãƒãƒƒãƒ•ã‚¡ã®æ°´å¹³æ–¹å‘ã®ãƒã‚¤ãƒˆæ•°
-	 * @param [in] cam ã‚«ãƒ¡ãƒ©ç•ªå·
-	 * @param [in] idx ç”»åƒç•ªå·(ä½ç›¸ã‚·ãƒ•ãƒˆã®å ´åˆå¿…ãšå¿…è¦)
+	 * ˆ—‘ÎÛ‰æ‘œ‚ğ“_ŒQ¶¬Ší‚É“n‚µ‚Ü‚·.
+	 * @return ¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * @param [in] grayim ‰æ‘œƒoƒbƒtƒ@¶ã’[ƒAƒhƒŒƒX(”’•‰æ‘œ‚Ì‚İ‰Â)
+	 * @param [in] step ‰æ‘œƒoƒbƒtƒ@‚Ì…•½•ûŒü‚ÌƒoƒCƒg”
+	 * @param [in] cam ƒJƒƒ‰”Ô†
+	 * @param [in] idx ‰æ‘œ”Ô†(ˆÊ‘ŠƒVƒtƒg‚Ìê‡•K‚¸•K—v)
+	 * @note ¶‰E˜AŒ‹‰æ‘œ(‰æ‘œ¶‘¤‚ª¶ƒJƒƒ‰‰æ‘œA‰E‘¤‚ª‰EƒJƒƒ‰‰æ‘œ‚Æ‚È‚é‚æ‚¤‚É˜AŒ‹‚³‚ê‚½‰æ‘œ)‚ğ—^‚¦‚éê‡‚É‚ÍAstep‚Í˜AŒ‹‰æ‘œ‚Ì
+	 * …•½•ûŒü‚ÌƒoƒCƒg”‚ğ—^‚¦AƒJƒƒ‰”Ô†‚Í2‚Æ‚µ‚Ä‚­‚¾‚³‚¢.
 	 */
-	virtual void setpict(unsigned char *grayim, const size_t step, const int cam, const int idx = 0) = 0;
+	virtual bool setpict(void *grayim, const size_t step, const int cam, const int idx = 0) = 0;
 
 	/**
-	 * è¦–å·®ã‚’è¨ˆç®—ã—ã¾ã™.
-	 * @return ãªã—.
+	 * w’è‚³‚ê‚½ƒtƒ@ƒCƒ‹‚©‚çˆ—‘ÎÛ‰æ‘œ‚ğ“Ç‚İ‚ñ‚ÅA“_ŒQ¶¬Ší‚É“n‚µ‚Ü‚·.
+	 * @return “Ç‚İ‚İ(•“_ŒQ¶¬Ší‚ÉƒZƒbƒg)‚ª¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * @param [in] filename ‰æ‘œƒtƒ@ƒCƒ‹–¼
+	 * @param [in] cam ƒZƒbƒg‚·‚éƒJƒƒ‰”Ô†(0: ¶ƒJƒƒ‰, 1: ‰EƒJƒƒ‰, 2: —¼ƒJƒƒ‰(’A‚µ‚±‚ê‚Í˜AŒ‹‰æ‘œ‚Ì‚İ³í‚É“®ì‚·‚é)
+	 * @param [in] idx ‰æ‘œ”Ô†(ˆÊ‘ŠƒVƒtƒg‚Ìê‡•K‚¸•K—v)
+	 * @note ¶‰E˜AŒ‹‰æ‘œ(‰æ‘œ¶‘¤‚ª¶ƒJƒƒ‰‰æ‘œA‰E‘¤‚ª‰EƒJƒƒ‰‰æ‘œ‚Æ‚È‚é‚æ‚¤‚É˜AŒ‹‚³‚ê‚½‰æ‘œ)‚ğ—^‚¦‚éê‡‚É‚ÍAƒJƒƒ‰”Ô†‚Í2
+	 * ‚Æ‚µ‚Ä‚­‚¾‚³‚¢.
 	 */
-	virtual void exec() = 0;
+	virtual bool loadpict(std::string filename, const int cam, const int idx = 0) = 0;
 
 	/**
-	 * ç‚¹ç¾¤ã‚’ä½œæˆã—ã¾ã™.
-	 * @return ç”Ÿæˆã•ã‚ŒãŸç‚¹ã®æ•°
-	 * @param [in] method ä¸‰æ¬¡å…ƒåº§æ¨™å€¤ã‚’è¨ˆç®—ã™ã‚‹æ‰‹æ³•(0: Qè¡Œåˆ—, 1: è¦–ç·šãƒ™ã‚¯ãƒˆãƒ«, 2: Pè¡Œåˆ—)
-	 * @warning method==1 or 2ã¯ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’ä½œæˆã—ãªã„ã¨ä½¿ç”¨ã§ãã¾ã›ã‚“.
+	 * setpict or loadpict‚É‚æ‚Á‚Ä“_ŒQ¶¬Ší‚É“n‚³‚êAƒŒƒNƒeƒBƒtƒ@ƒC‚³‚ê‚½‰æ‘œ‚ğæ‚èo‚µ‚Ü‚·.
+	 * @return ¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * @param top [out] ‰æ‘œæ“ªƒAƒhƒŒƒX‚ğŠi”[‚·‚é•Ï”‚Ö‚Ìƒ|ƒCƒ“ƒ^(ŠO‚Å‰ğ•ú‚µ‚È‚¢‚Å‚­‚¾‚³‚¢)
+	 * @param width [out] ‰æ‘œ‰¡•‚ğŠi”[‚·‚é•Ï”‚Ö‚Ìƒ|ƒCƒ“ƒ^
+	 * @param height [out] ‰æ‘œc•‚ğŠi”[‚·‚é•Ï”‚Ö‚Ìƒ|ƒCƒ“ƒ^
+	 * @param step [out] ‰æ‘œƒoƒbƒtƒ@‚Ì…•½•ûŒü‚ÌƒoƒCƒg”
+	 * @param [in] cam ƒJƒƒ‰”Ô†(0: ¶ƒJƒƒ‰, 1: ‰EƒJƒƒ‰, 2: ˜AŒ‹‰æ‘œ)
+	 * @param [in] idx ‰æ‘œ”Ô†(ˆÊ‘ŠƒVƒtƒg‚Ìê‡•K‚¸•K—v).0 or 1 ˆÈŠO‚Ì’l‚Í—^‚¦‚È‚¢‚Å‚­‚¾‚³‚¢. 0‚ª•‰æ‘œ, 1‚ª”’‰æ‘œ‚Å‚·.
 	 */
-	virtual int genPC(const int method = 0) = 0;
+	virtual bool getpict(unsigned char **top, int *width, int *height, size_t *step, const int cam, const int idx = 0) = 0;
 
 	/**
-	 * ç”Ÿæˆã•ã‚ŒãŸç‚¹ã®æ•°ã‚’è¿”ã—ã¾ã™.(genPC()ã®æˆ»ã‚Šå€¤ã¨åŒã˜)
-	 * @return ç”Ÿæˆã•ã‚ŒãŸç‚¹ã®æ•°
+	 * “_ŒQ¶¬‚Ì‚½‚ß‚Ì‘O€”õ‚ğs‚¢‚Ü‚·.
+	 * @return ‚È‚µ.
 	 */
-	virtual const int get_pointcloud_cnt() const = 0;
+	virtual bool exec() = 0;
+
+	/// OŸŒ³À•W’l‚ğŒvZ‚·‚éè–@
+	enum Method3D {
+		QMatrix = 0,	///< Qs—ñ
+		SVector,		///< ‹üƒxƒNƒgƒ‹•û®
+		PMatrix,		///< Ps—ñ
+	};
 
 	/**
-	 * ç”Ÿæˆã•ã‚ŒãŸç‚¹ãƒ‡ãƒ¼ã‚¿ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’è¿”ã—ã¾ã™.
-	 * @return ç‚¹ç¾¤ãƒ‡ãƒ¼ã‚¿ãƒãƒƒãƒ•ã‚¡ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
+	 * “_ŒQ‚ğì¬‚µ‚Ü‚·.
+	 * @return ‚È‚µ.
+	 * @param [in] method OŸŒ³À•W’l‚ğŒvZ‚·‚éè–@(Method3DQÆ)
+	 * @param [in] is_interpo ˆÊ‘Š‚ª•œ†o—ˆ‚È‚©‚Á‚½‰ÓŠ‚Å‚à•âŠÔ‚ğs‚¢‰Â”\‚ÈŒÀ‚è“_‚ğŒvZ‚·‚é
 	 */
-	virtual const PointCloudElement* get_pointcloud_ptr() const = 0;
+	virtual void genPC(const Method3D method = Method3D::QMatrix, const bool is_interpo = false) = 0;
 
 	/**
-	 * ç”Ÿæˆã•ã‚ŒãŸç‚¹ç¾¤ã®ãƒ¬ãƒ³ã‚¸ã‚°ãƒªãƒƒãƒ‰ãƒ‡ãƒ¼ã‚¿ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’è¿”ã—ã¾ã™.
-	 * @return ãƒ¬ãƒ³ã‚¸ã‚°ãƒªãƒƒãƒ‰ãƒãƒƒãƒ•ã‚¡ã®å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
-	 * @warning ã‚µã‚¤ã‚ºã¯ç”»åƒã‚µã‚¤ã‚ºã¨åŒã˜ã§ã™.
+	 * ì¬‚³‚ê‚½“_ŒQƒf[ƒ^‚ğæ“¾‚µ‚Ü‚·.(OnRevcPointCloud.operator()‚ğŒÄ‚Ño‚µ‚Ü‚·)
+	 * @return —LŒø‚È“_‚Ì”
 	 */
-	virtual const unsigned int *get_rangegrid() const = 0;
+	virtual int get_pointcloud(PointCloudCallback* callback) = 0;
 };
 
 
+
 /**
- * ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚’ä½œæˆã—ã¾ã™.
- * @return ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã¸ã®ãƒã‚¤ãƒ³ã‚¿
- * @param [in] method ç‚¹ç¾¤ç”Ÿæˆæ‰‹æ³•(0: ä½ç›¸ã‚·ãƒ•ãƒˆ, 1: SGBM)
+ * “_ŒQ¶¬ƒ‚[ƒh
  */
-iPointCloudGenerator* createPointCloudGenerator(const int method = 0);
+enum PcGenMode {
+	PCGEN_SGBM = 0,	///< SGBM
+	PCGEN_GRAYPS4,	///< ˆÊ‘ŠƒVƒtƒg: Gray + 4step PS
+	PCGEN_MULTI,	///< ˆÊ‘ŠƒVƒtƒg: ƒ}ƒ‹ƒ`
+};
+
+/**
+ * “_ŒQ¶¬Ší‚ğì¬‚µ‚Ü‚·.
+ * @return “_ŒQ¶¬ŠíƒCƒ“ƒXƒ^ƒ“ƒX‚Ö‚Ìƒ|ƒCƒ“ƒ^
+ * @param [in] mode “_ŒQ¶¬è–@(PcGenMode‚Ì‰½‚ê‚©)
+ */
+extern "C" EXPORT_PCGEN iPointCloudGenerator* CreatePointCloudGenerator(const int mode = 0);
+typedef iPointCloudGenerator *(*pCreatePointCloudGenerator)(const int mode);

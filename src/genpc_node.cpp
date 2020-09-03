@@ -1,94 +1,91 @@
+#include <stdio.h>
+#include <chrono>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 #include <std_msgs/String.h>
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <sensor_msgs/point_cloud_conversion.h>
 #include <opencv2/opencv.hpp>
 #include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
-#include <stdio.h>
 #include "rovi/Floats.h"
 #include "rovi/GenPC.h"
-#include "ParamPSFT.hpp"
+
 #include "iPointCloudGenerator.hpp"
-#include "writePLY.hpp"
+#include "YPCGeneratorUnix.hpp"
+#include "YPCData.hpp"
 
+#define LOG_HEADER "genpc: "
 
-//#define PLYDUMP
+#define DURATION_TO_MS(duration) (int)std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
+#define ELAPSED_TM(start_tm)   (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_tm).count()
 
+namespace {
+//============================================= 無名名前空間 start =============================================
+
+YPCGeneratorUnix pcgen;
+YPCData pcdata;
+
+int cur_cam_width = -1;
+int cur_cam_height = -1;
+const PcGenMode PC_GEN_MODE = PCGEN_GRAYPS4;
+//const bool IS_INTERPO = false;
+bool is_interpo=false;
+std::string file_dump("/tmp/");
 bool isready = false;
 
-ros::NodeHandle *nh;
-ros::Publisher *pub1,*pub2,*pub3,*pub4;
+ros::NodeHandle *nh = nullptr;
+ros::Publisher *pub1 = nullptr;
+ros::Publisher *pub2 = nullptr;
+ros::Publisher *pub3 = nullptr;
+ros::Publisher *pub4 = nullptr;
 
 std::vector<double> vecQ;
 std::vector<double> cam_K;
-int cam_width,cam_height;
-std::string file_dump("/tmp");
 
-PSFTParameter param;
-iPointCloudGenerator *pcgenerator = 0;
-static int depth_base=400;
-static int depth_unit=1;
+//int depth_base=400;
+//int depth_unit=1;
 
-int reload()
-{
-	nh->getParam("pshift_genpc/calc/bw_diff", param.bw_diff);
-	nh->getParam("pshift_genpc/calc/brightness", param.brightness);
-	nh->getParam("pshift_genpc/calc/darkness", param.darkness);
-	nh->getParam("pshift_genpc/calc/step_diff", param.step_diff);
-	nh->getParam("pshift_genpc/calc/max_step", param.max_step);
-	nh->getParam("pshift_genpc/calc/max_ph_diff", param.max_ph_diff);
-	nh->getParam("pshift_genpc/calc/max_tex_diff", param.max_tex_diff);
-	nh->getParam("pshift_genpc/calc/max_parallax", param.max_parallax);
-	nh->getParam("pshift_genpc/calc/min_parallax", param.min_parallax);
-	nh->getParam("pshift_genpc/calc/right_dup_cnt", param.right_dup_cnt);
-	nh->getParam("pshift_genpc/calc/ls_points", param.ls_points);
-	nh->getParam("pshift_genpc/calc/depth_base", depth_base);
-	nh->getParam("pshift_genpc/calc/depth_unit", depth_unit);
 
-	nh->getParam("genpc/Q", vecQ); 
-	if (vecQ.size() != 16){
-		ROS_ERROR("Param Q NG");
-		return -1;
+struct CamCalibMat {
+	int rows=0;
+	int cols=0;
+	std::vector<double> values;
+	
+	bool validate()const {
+		if(rows < 0 || cols < 0 || values.empty()) return false;
+		return (rows * cols) == values.size();
 	}
-	nh->getParam("left/remap/K", cam_K);
-	if (cam_K.size() != 9){
-		ROS_ERROR("Param K NG");
-		return -1;
+	
+	std::string to_string()const{		
+		std::ostringstream oss;
+		
+		oss << "rows=" << rows;
+		oss << " cols=" << cols;
+		
+		oss << " values=";
+		std::copy(values.begin(), values.end(),std::ostream_iterator<double>(oss, ", "));
+		
+		return oss.str();
 	}
-	nh->getParam("left/remap/width", cam_width);
-	nh->getParam("left/remap/height", cam_height);
-	if(nh->hasParam("genpc/dump")) nh->getParam("genpc/dump",file_dump);
-	else file_dump="";
-	if (vecQ.size() != 16){
-		ROS_ERROR("Param Q NG");
-		return -1;
-	}
+};
 
-	ROS_INFO("genpc:reload ok");
-	return 0;
+
+bool get_ps_params(ros::NodeHandle *nh,std::map<std::string,double> &params,const std::string &src_key,const std::string &dst_key){
+	bool ret=false;
+	
+	double val=0;
+	if(nh->getParam(src_key,val)){
+		params[dst_key]=val;
+		ret=true;
+	}
+	return ret;
 }
 
-sensor_msgs::ImagePtr to_depth(std::vector<geometry_msgs::Point32> ps,const unsigned int *grid){
-	long base=depth_base*256;
-  cv::Mat depthim=cv::Mat(cam_height,cam_width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
-	int n = 0;
-	for (int j = 0; j < cam_height; j++) {
-		unsigned short *dP = depthim.ptr<unsigned short>(j);
-		for (int i = 0; i < cam_width; i++, n++) {
-			if (grid[n] == ((unsigned int)-1)) continue;
-			long d = std::round((depth_unit*ps[grid[n]].z - depth_base)*256);
-      if(d<0) dP[i] = 0;
-      else if(d<65536L) dP[i]=d;
-		}
-	}
-  return cv_bridge::CvImage(std_msgs::Header(),"mono16",depthim).toImageMsg();
-}
 
 struct XYZW{ float x,y,z,w;};
+
 bool operator<(const XYZW& left, const XYZW& right){ return left.w < right.w;}
 
 union PACK{ float d[3]; char a[12];};
@@ -121,38 +118,217 @@ std::string base64encode(const std::vector<geometry_msgs::Point32> data) {
   return ret;
 }
 
-
-
-bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
+bool load_phase_shift_params()
 {
-	ROS_INFO("genpc called: %d %d", req.imgL.size(), req.imgR.size());
-	int width  = req.imgL[0].width;
-	int height = req.imgL[0].height;						  
+	ROS_INFO(LOG_HEADER"phase shift parameter relod start.");
 	
-	if (!isready) {
-		ROS_INFO("genpc img w, h: %d %d", width, height);
-		pcgenerator->init(width, height);
-		ROS_INFO("pcgenerator->init done");
-		isready=true;
+	const auto proc_start = std::chrono::high_resolution_clock::now() ;
+	std::map<std::string,double> params;
+	{
+		int prm_width=0;
+		if(nh->getParam("pshift_genpc/calc/image_width",prm_width) && prm_width != cur_cam_width){
+			ROS_ERROR(LOG_HEADER"param image width different. cur_cam_width=%d param_width=%d",cur_cam_width,prm_width);
+			return false;
+		}
+		
+		int prm_height=0;
+		if(nh->getParam("pshift_genpc/calc/image_height",prm_height) && prm_height != cur_cam_height){
+			ROS_ERROR(LOG_HEADER"param image height different. cur_cam_height=%d param_height=%d",cur_cam_height,prm_height);
+			return false;
+		}
 	}
-	reload();
-	pcgenerator->setparams(&param);
-	pcgenerator->set_camera_params(&vecQ[0]);
+	
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/method3d","method3d")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/camera_type","camera_type")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/bw_diff","bw_diff")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/brightness","brightness")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/darkness","darkness")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/phase_wd_min","phase_wd_min")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/phase_wd_thr","phase_wd_thr")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/gcode_variation","gcode_variation")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/max_ph_diff","max_ph_diff")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/max_parallax","max_parallax")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/min_parallax","min_parallax")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/ls_points","ls_points")) { return -1; }
+	if( ! get_ps_params(nh,params,"pshift_genpc/calc/interpolation","interpolation")) { return -1; }
+	
+	params["image_width"]=cur_cam_width;
+	params["image_height"]=cur_cam_height;
+	
+	for(std::map<std::string,double>::iterator it=params.begin();it!=params.end();++it){
+		ROS_INFO(LOG_HEADER"(param) %s=%g",it->first.c_str(),it->second);
+	}
+	if( ! params.count("interpolation") ){
+		is_interpo = false;
+	}else{
+		is_interpo = ((int)params["interpolation"]) ;
+	}
+	
+	if ( ! pcgen.init(params) ) {
+		ROS_ERROR(LOG_HEADER"phase shift parameter reload failed.");
+		return false;
+	}
 
-	// read phase shift data images. (13 left images and 13 right images)
+	nh->getParam("genpc/Q", vecQ); 
+	if (vecQ.size() != 16){
+		ROS_ERROR(LOG_HEADER"Param Q NG");
+		return false;
+	}
+	nh->getParam("left/remap/K", cam_K);
+	if (cam_K.size() != 9){
+		ROS_ERROR(LOG_HEADER"Param K NG");
+		return false;
+	}
+	
+	{
+		int remap_width=0;
+		if(nh->getParam("left/remap/width", remap_width) && remap_width != cur_cam_width){
+			ROS_ERROR(LOG_HEADER"remap image width different. cur_cam_width=%d remap_width=%d",cur_cam_width,remap_width);
+			return false;
+		}
+		
+		int remap_height=0;
+		if(nh->getParam("left/remap/height", remap_height) && remap_height != cur_cam_height){
+			ROS_ERROR(LOG_HEADER"remap image height different. cur_cam_width=%d remap_height=%d",cur_cam_height,remap_height);
+			return false;
+		}
+	}
+	
+	if(nh->hasParam("genpc/dump")) nh->getParam("genpc/dump",file_dump);
+	else file_dump="";
+	if (vecQ.size() != 16){
+		ROS_ERROR(LOG_HEADER"Param Q NG");
+		return false;
+	}
+	ROS_INFO(LOG_HEADER"phase shift parameter load finished. proc_tm=%d ms",ELAPSED_TM(proc_start));
+	
+	return true;
+}
+
+bool load_camera_calib_data(){
+	ROS_INFO(LOG_HEADER"camera calibration data load start.");
+	const auto proc_start = std::chrono::high_resolution_clock::now() ;
+	
+	bool ret=false;
+	
+	CamCalibMat Kl;
+	CamCalibMat Dl;
+	CamCalibMat Kr;
+	CamCalibMat Dr;
+	CamCalibMat R;
+	CamCalibMat T;
+	if( ! nh->getParam("/rovi/left/genpc/K_Cols",Kl.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Cols");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/K_Rows",Kl.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Rows");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/K",Kl.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K");
+		
+	}else if( ! Kl.validate() ){
+		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=left %s", Kl.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D_Cols",Dl.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Cols");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D_Rows",Dl.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Rows");
+		
+	}else if( ! nh->getParam("/rovi/left/genpc/D",Dl.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D");
+		
+	}else if( ! Kl.validate() ){
+		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=left %s", Dl.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K_Cols",Kr.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K_Rows",Kr.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/K",Kr.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K");
+		
+	}else if( ! Kr.validate() ){
+		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=right %s", Kr.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D_Cols",Dr.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D_Rows",Dr.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/D",Dr.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D");
+		
+	}else if( ! Dr.validate() ){
+		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=right %s", Dr.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R_Cols",R.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R_Rows",R.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/R",R.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R");
+		
+	}else if( ! R.validate() ){
+		ROS_ERROR(LOG_HEADER"R matrix is wrong. cam=right %s", R.to_string().c_str());
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T_Cols",T.cols) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Cols");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T_Rows",T.rows) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Rows");
+		
+	}else if( ! nh->getParam("/rovi/right/genpc/T",T.values) ){
+		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T");
+		
+	}else if( ! T.validate() ){
+		ROS_ERROR(LOG_HEADER"T matix is wrong. %s", T.to_string().c_str());
+		
+	}
+	
+	ROS_INFO(LOG_HEADER"camera calib: <left>  K %s",Kl.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <left>  D %s",Dl.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <right> K %s",Kr.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib: <right> D %s",Dr.to_string().c_str());
+	
+	ROS_INFO(LOG_HEADER"camera calib:         R %s",R.to_string().c_str());
+	ROS_INFO(LOG_HEADER"camera calib:         T %s",T.to_string().c_str());
+	
+	if( ! pcgen.create_camera_raw(Kl.values,Kr.values,Dl.values,Dr.values,R.values,T.values) ){
+		ROS_ERROR(LOG_HEADER"stereo camera create failed.");
+	}else{
+		ret=true;
+	}
+	ROS_INFO(LOG_HEADER"camera calibration data load finished. proc_tm=%d ms",ELAPSED_TM(proc_start));
+	
+	return ret;
+}
+	
+bool convert_stereo_camera_images(const rovi::GenPC::Request &req,std::vector<cv::Mat> &imgs,std::vector<unsigned char*> &img_pointers){
+	bool ret=false;
 	try {
-		for (int j = 0; j < 13; j++) {
-			cv::Mat img = cv_bridge::toCvCopy(req.imgL[j], sensor_msgs::image_encodings::MONO8)->image;
-			pcgenerator->setpict(img.data, img.step, 0, j);			
+		for (int i = 0, n = 0; i < 13; i++, n += 2 ) {
+			cv::Mat img = cv_bridge::toCvCopy(req.imgL[i], sensor_msgs::image_encodings::MONO8)->image;
+			//ROS_INFO(LOG_HEADER"[%d] left  size=%dx%d",i,img.cols,img.rows);
+			imgs.push_back(img);
+			img_pointers.push_back(imgs.back().data);
+			
 			if(file_dump.size() > 0) {
-				cv::imwrite(cv::format((file_dump + "/capt%02d_0.pgm").c_str(), j), img);
+				cv::imwrite(cv::format((file_dump + "/capt%02d_0.pgm").c_str(), i), img);
 			}
 			
-			img = cv_bridge::toCvCopy(req.imgR[j], sensor_msgs::image_encodings::MONO8)->image;
-			pcgenerator->setpict(img.data, img.step, 1, j);
+			img = cv_bridge::toCvCopy(req.imgR[i], sensor_msgs::image_encodings::MONO8)->image;
+			//ROS_INFO(LOG_HEADER"[%d] right size=%dx%d",i,img.cols,img.rows);
 			if(file_dump.size() > 0) {
-				cv::imwrite(cv::format((file_dump + "/capt%02d_1.pgm").c_str(), j), img);
+				cv::imwrite(cv::format((file_dump + "/capt%02d_1.pgm").c_str(), i), img);
 			}
+			imgs.push_back(img);
+			img_pointers.push_back(imgs.back().data);
 		}
 		if(file_dump.size() > 0) {
 			FILE *f = fopen((file_dump+"/captseq.log").c_str(), "w");
@@ -161,56 +337,30 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			}
 			fclose(f);
 		}
+		ret=true;
+	}catch (cv_bridge::Exception& e)	{
+		ROS_ERROR(LOG_HEADER"genpc:cv_bridge:exception: %s", e.what());
 	}
-	catch (cv_bridge::Exception& e)	{
-		ROS_ERROR("genpc:cv_bridge:exception: %s", e.what());
+	return ret;
+}
+
+
+bool calc_point_cloud_norm(const sensor_msgs::PointCloud &pts,rovi::Floats &output){
+	const int N = pts.points.size();
+	if( N <= 0 ){
 		return false;
 	}
-
-	// Do calc
-	ROS_INFO("before pcgenerator->exec");
-	pcgenerator->exec();
-	int N = pcgenerator->genPC(0);
-	ROS_INFO("generated point cloud points = %d", N);
-
-	// output point clouds
-	sensor_msgs::PointCloud pts;
-	pts.header.stamp = ros::Time::now();
-	pts.header.frame_id = "/camera";
-	if (N == 0) {
-		pub1->publish(pts);
-		std_msgs::String b64;
-		pub2->publish(b64);
-		rovi::Floats buf;
-		pub3->publish(buf);
-		res.pc_cnt = N;
-		ROS_INFO("genpc point count 0");
-		return true;
-	}
-	pts.points.resize(N);
-	pts.channels.resize(3);
-	pts.channels[0].name = "r";
-	pts.channels[0].values.resize(N);
-	pts.channels[1].name = "g";
-	pts.channels[1].values.resize(N);
-	pts.channels[2].name = "b";
-	pts.channels[2].values.resize(N);
 	
-	// building point cloud, getting center of points, and getting norm from the center
 	double X0=0,Y0=0,Z0=0;
-	const PointCloudElement *pcdP = pcgenerator->get_pointcloud_ptr();
-
-	for (int n = 0; n < N; n++) {
-		X0 += (pts.points[n].x = pcdP[n].coord[0]);
-		Y0 += (pts.points[n].y = pcdP[n].coord[1]);
-		Z0 += (pts.points[n].z = pcdP[n].coord[2]);
-		pts.channels[0].values[n] = pcdP[n].col[0] / 255.0;
-		pts.channels[1].values[n] = pcdP[n].col[1] / 255.0;
-		pts.channels[2].values[n] = pcdP[n].col[2] / 255.0;
+	
+	for (int n = 0 ; n < N ; n++ ) {
+		X0 += pts.points[n].x;
+		Y0 += pts.points[n].y;
+		Z0 += pts.points[n].z;
 	}
-	X0/=N; Y0/=N; Z0/=N;
-  //convert to depth image
-  sensor_msgs::ImagePtr depthimg=to_depth(pts.points,pcgenerator->get_rangegrid());
+	X0/=N;
+	Y0/=N;
+	Z0/=N;
 	
 	// getting norm from the center and sort by it
 	std::vector<XYZW> norm;
@@ -225,34 +375,179 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	std::sort(norm.begin(), norm.end());
 	
 	// Quantize points count for Numpy array
-	rovi::Floats buf;
 	double gamma=1.1;
 	double kn=floor((log10(N)-1)/log10(gamma));
 	int Qn=N<10? N:floor(10*pow(gamma,kn));
-	buf.data.resize(3*Qn);
+	output.data.resize(3*Qn);
 	for (int n = 0; n < Qn; n++) {
 		int n3=3*n;
-		buf.data[n3++] = norm[n].x;
-		buf.data[n3++] = norm[n].y;
-		buf.data[n3  ] = norm[n].z;
+		output.data[n3++] = norm[n].x;
+		output.data[n3++] = norm[n].y;
+		output.data[n3  ] = norm[n].z;
 	}
-	if(file_dump.size()>0) {
-		ROS_INFO("before outPLY");
-		writePLY(file_dump + "/test.ply", pcdP, N);
-		writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
-		ROS_INFO("after  outPLY");
-	}
+	
+	return true;
+}
 
-	pub1->publish(pts);
+bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
+{
+	const auto node_start = std::chrono::high_resolution_clock::now() ;
+	ROS_INFO(LOG_HEADER"start: image_width=%d image_height=%d", (int)req.imgL.size(), (int)req.imgR.size());
+	
+	pcdata = YPCData();
+	
+	const int width  = req.imgL[0].width;
+	const int height = req.imgL[0].height;
+	
+	if( cur_cam_width < 0 || cur_cam_height < 0 ){
+		cur_cam_width = width;
+		cur_cam_height = height;
+		
+	}else if( cur_cam_width != width ){
+		ROS_ERROR(LOG_HEADER"camera width has changed. old_width=%d cur_width=%d",cur_cam_width, width);
+		return false;
+	}else if( cur_cam_height != height ){
+		ROS_ERROR(LOG_HEADER"camera height has changed. old_height=%d cur_height=%d",cur_cam_height,height);
+		return false;
+	}
+	
+	
+	sensor_msgs::PointCloud pts;
+	pts.header.stamp = ros::Time::now();
+	pts.header.frame_id = "/camera";
 	std_msgs::String b64;
-	b64.data=base64encode(pts.points);
+	rovi::Floats buf;
+	res.pc_cnt = 0;
+	
+	
+	if( ! load_phase_shift_params() ){
+		ROS_ERROR(LOG_HEADER"phase shift parameter load failed.");
+		
+	}else if ( ! isready ) {
+		ROS_INFO(LOG_HEADER"current camera resolution. w=%d h=%d", cur_cam_width, cur_cam_height);
+		if( ! load_camera_calib_data() ){
+			ROS_ERROR(LOG_HEADER"camera calibration data load failed.");
+		}else{
+			ROS_INFO(LOG_HEADER"camera calibration data loaded.");
+			isready=true;
+		}
+	}
+	
+	std::vector<cv::Mat> imgs;
+	std::vector<unsigned char*> img_pointers;
+	sensor_msgs::ImagePtr depthimg;
+	cv::Mat depthimg_mat;
+	
+	if( ! isready ){
+		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d",ELAPSED_TM(node_start));
+		
+	}else if( ! convert_stereo_camera_images(req,imgs,img_pointers) ){
+		ROS_ERROR(LOG_HEADER"stereo camera image convert failed. elapsed=%d",ELAPSED_TM(node_start));
+		
+	}else{
+		int N = 0;
+		ROS_INFO(LOG_HEADER"point cloud generation start. interpolation=%s",is_interpo?"enabled":"disabled");
+		const auto genpc_start = std::chrono::high_resolution_clock::now() ;
+		N = pcgen.generate_pointcloud(img_pointers,is_interpo,&pcdata);
+		
+		ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d, ms genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
+			N, DURATION_TO_MS(pcgen.get_elapsed_disparity()), DURATION_TO_MS(pcgen.get_elapsed_genpcloud()),
+			ELAPSED_TM(genpc_start), ELAPSED_TM(node_start));
+
+		//pts = pcdata.get_point_cloud();
+		
+		if( pcdata.is_empty() ){
+			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
+			
+		}else{
+			//点群データ変換
+			if( true ){
+				ROS_INFO(LOG_HEADER"point cloud data convert start.");
+				const auto conv_start = std::chrono::high_resolution_clock::now();
+				if( ! pcdata.make_point_cloud(pts) ){
+					ROS_ERROR(LOG_HEADER"point cloud data convert failed.");
+				}
+				ROS_INFO(LOG_HEADER"point cloud data convert finished.proc_tm=%d ms, elapsed=%d ms",
+					ELAPSED_TM(conv_start), ELAPSED_TM(node_start));
+			}
+			
+			//normalization
+			if( true ){
+				ROS_INFO(LOG_HEADER"point cloud clac normalization start.");
+				
+				const auto norm_start = std::chrono::high_resolution_clock::now() ;
+				if( ! calc_point_cloud_norm(pts,buf) ){
+					ROS_ERROR(LOG_HEADER"point cloud clac normalization failed.");
+				}
+				ROS_INFO(LOG_HEADER"point cloud clac normalization finished. proc_tm=%d ms, elapsed=%d ms",
+					ELAPSED_TM(norm_start), ELAPSED_TM(node_start));
+			}
+			
+			//depthmap making
+			if( true ){
+				ROS_INFO(LOG_HEADER"depthmap image create start.");
+				const auto depthimg_start = std::chrono::high_resolution_clock::now() ;
+				
+				if( ! pcdata.make_depth_image(depthimg_mat) ){
+					ROS_ERROR(LOG_HEADER"depthmap image make failed.");
+				}else{
+					try{
+						depthimg = cv_bridge::CvImage(std_msgs::Header(),"mono16",depthimg_mat).toImageMsg();
+					}catch (cv_bridge::Exception& e)	{
+						ROS_ERROR(LOG_HEADER"depthmap image cv_bridge:exception: %s", e.what());
+					}
+				}
+				
+				ROS_INFO(LOG_HEADER"depthmap image create finished. proc_tm=%d ms",ELAPSED_TM(depthimg_start));
+			}
+			b64.data=base64encode(pts.points);
+			res.pc_cnt = N;
+		}
+	}
+	
+	pub1->publish(pts);
 	pub2->publish(b64);
 	pub3->publish(buf);
 	pub4->publish(depthimg);
+	
+	ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms",ELAPSED_TM(node_start));
+	
+	if( ! pcdata.is_empty() &&  ! file_dump.empty() ) {
+		if( true ){
+			const auto save_start = std::chrono::high_resolution_clock::now() ;
+			
+			const std::string save_file_path=file_dump + "/test.ply";
+			if( ! pcdata.save_ply(save_file_path) ){
+				ROS_ERROR(LOG_HEADER"ply file save failed. proc_tm=%d ms, path=%s",
+					ELAPSED_TM(save_start), save_file_path.c_str());
+			}else{
+				ROS_INFO(LOG_HEADER"ply file save succeeded. proc_tm=%d ms, path=%s",
+					ELAPSED_TM(save_start), save_file_path.c_str());
+			}
+		}
+		//todo:************* pending *************
+		//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
+		//ROS_INFO("after  outPLY");
+		
+		//depthmap image save
+		if( ! depthimg_mat.empty() ){
+			const auto save_start = std::chrono::high_resolution_clock::now() ;
+			std::string save_file_path = file_dump + "/depth.png";
+			if( ! cv::imwrite(save_file_path,depthimg_mat) ){
+				ROS_ERROR(LOG_HEADER"depthmap image save failed. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start), save_file_path.c_str());
+			}else {
+				ROS_INFO(LOG_HEADER"depthmap image make succeeded. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start), save_file_path.c_str());
+			}
+		}
+		
+	}
 
-	res.pc_cnt = N;
-	ROS_INFO("genPC point counts %d / %d", N, Qn);
+	ROS_INFO(LOG_HEADER "node end. elapsed=%d ms",ELAPSED_TM(node_start));
 	return true;
+}
+
+	
+//============================================= 無名名前空間  end  =============================================
 }
 
 int main(int argc, char **argv)
@@ -260,10 +555,11 @@ int main(int argc, char **argv)
 	ros::init(argc, argv, "genpc_node");
 	ros::NodeHandle n;
 	nh = &n;
-	if(reload()<0) return 1;
-
-	pcgenerator = createPointCloudGenerator();
-
+	
+	if( ! pcgen.create_pcgen(PC_GEN_MODE) ){
+		ROS_ERROR(LOG_HEADER"point cloud generator create failed.");
+		return 2;
+	}
   
 	ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
 	ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
@@ -275,8 +571,6 @@ int main(int argc, char **argv)
 	ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub4 = &p4;
 	ros::spin();
-
-	pcgenerator->destroy();
-  
+	
 	return 0;
 }
