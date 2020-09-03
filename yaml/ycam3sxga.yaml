@@ -4,8 +4,9 @@ pshift_genpc:
     Gain: 0
   projector:
     ExposureTime: 20
-    Intencity: 40
+    Intensity: 40
     Interval: 60
+    Mode: 1
   calc:
     image_width: 1280
     image_height: 1024
@@ -22,13 +23,25 @@ pshift_genpc:
     min_parallax: -200
     ls_points: 3
     interpolation: 1
+  paramset:
+    camera:
+      ExposureTime: [8400,8400,8400,8400,8400,16800,16800]
+      Gain: [0,0,0,0,0,0,0]
+    projector:
+      Intensity: [20,40,80,160,255,100,255]
+      Interval: [60,60,60,60,60,60,60]
 live:
   camera:
     AcquisitionFrameRate: 20
     GainAnalog: 3
     ExposureTime: 30000
     Gain: 50
-    SoftwareTriggerRate: 4
+    SoftwareTriggerRate: 2
+  paramset:
+    camera:
+      ExposureTime: [3000,5000,10000,20000,30000]
+      Gain: [0,0,0,0,63]
+
 camera:
   TriggerMode: On
   MTU: 9000

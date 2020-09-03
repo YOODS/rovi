@@ -90,5 +90,14 @@ ros.log.info('Stop streaming neither');
       return Promise.resolve(true);
     }
   }
+  sens.scanDelay=function(tmd){
+    if(sens.streaming==null) return;
+    clearTimeout(sens.streaming);
+    let tm=arguments.length==0? 1000:tmd;
+    sens.streaming=setTimeout(function(){
+      sens.streaming=null;
+      sens.scanDo_();
+    },tm);
+  }
   return sens;
 }
