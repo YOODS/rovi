@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   stereo_msgs
   cv_bridge
   tf2_ros
+  pcl_ros
+  pcl_conversions
   message_generation
   image_geometry
 )
@@ -79,12 +81,12 @@ add_executable(remap_node src/remap_node.cpp)
 target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
-#2020/08/24 modified by hato ----------------- start ------------------
+#2020/09/03 modified by hato ----------------- start ------------------
 #add_executable(genpc_node src/genpc_node.cpp)
-add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp)
+add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp src/YPCData.cpp)
 #target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d yaml-cpp ${OpenCV_LIBRARIES})
-#2020/08/24 modified by hato -----------------  end ------------------
+#2020/09/03 modified by hato -----------------  end ------------------
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)
