@@ -54,19 +54,34 @@ setImmediate(async function() {
     proj: new Notifier(rosNode,NSps + '/projector') //Genpc projector params
   };
   param.camlv.on('change',async function(key,val){
-    let obj={};
-    obj[key]=val;
-    await sens.cset(obj);
+    if(param.proj.objs.Mode==1){
+      let obj={};
+      obj[key]=val;
+      await sens.cset(obj);
+    }
+  });
+  param.camps.on('change',async function(key,val){
+    if(param.proj.objs.Mode==2){
+      let obj={};
+      obj[key]=val;
+      await sens.cset(obj);
+    }
   });
   param.proj.on('change',async function(key,val){
     let obj={};
     obj[key]=val;
-//    if(key=='Mode'){
     if(key!='Go'){
-      if(sensEv.streaming){
-        await sensEv.scanStop(1000);
-        sensEv.lit=false;
-        sensEv.scanStart(1000);
+      if(key=='Mode'){
+        sensEv.scanDelay(3000);
+        console.log("Mode change "+obj[key]);
+        if(obj[key]==1){
+          await sens.cset(param.camlv.objs);
+          console.log("Mode 1 "+JSON.stringify(param.camlv.objs));
+        }
+        else{
+          await sens.cset(param.camps.objs);
+          console.log("Mode 2 "+JSON.stringify(param.camps.objs));
+        }
       }
     }
     await sens.pset(obj);
@@ -117,7 +132,8 @@ setImmediate(async function() {
       break;
     case 2:
     case 3:
-      sensEv.lit=!sensEv.lit;
+//      sensEv.lit=!sensEv.lit;
+      sensEv.lit=true;
       if(sensEv.lit) param.proj.raise({Go:1});
       else param.proj.raise({Go:-1});
       break;

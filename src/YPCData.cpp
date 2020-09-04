@@ -1,12 +1,11 @@
 #include "YPCData.hpp"
 
-#include <cv_bridge/cv_bridge.h>
 #include <ros/types.h>
 #include <ros/ros.h>
 #include <pcl_ros/filters/voxel_grid.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
-#include <sensor_msgs/ChannelFloat32.h>
+
 #include "YPCGenerator.hpp"
 
 namespace {
