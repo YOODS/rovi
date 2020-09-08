@@ -82,9 +82,22 @@ right:
 genpc:
   Q: [1.0, 0.0, 0.0, -226.62960815429688, 0.0, 1.0, 0.0, -224.84519386291504, 0.0,
     0.0, 0.0, 1035.8376579761182, 0.0, 0.0, 12.37004593724999, 2445.6211343737505]
-  voxelization:
+  dump: /tmp/gen_pc
+  point_cloud:
+    img_save: On
+    data_save: On
+  depthmap_img:
     enabled: On
+    img_save: On
+  quantize_points_count:
+    enabled: On
+  voxelize:
+    enabled: On
+    data_save: On
     leaf_size:
-      x: 5
-      y: 5
-      z: 5
+      x: 1
+      y: 1
+      z: 1
+    recalc:
+      enabled: On
+      interval: 1

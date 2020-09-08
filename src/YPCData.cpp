@@ -32,6 +32,10 @@ bool YPCData::is_empty()const{
 	return n_valid <= 0 ;
 }
 
+int YPCData::count()const{
+	return n_valid;
+}
+
 /*
 void YPCData::clearNorm(){
 	mX0=NAN;
@@ -76,7 +80,6 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
 	}
 	
 	// building point cloud, getting center of points, and getting norm from the center
-
 	const Point3d *org_points = this->points.data();
 	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
 		const Point3d * org_point = org_points + i;
@@ -123,7 +126,7 @@ bool YPCData::voxelization(const float leaf_x,const float leaf_y,const float lea
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcdata_pcl(new pcl::PointCloud<pcl::PointXYZRGB>());
 	pcdata_pcl->width = this->n_valid;
 	pcdata_pcl->height = 1;
-	pcdata_pcl->points.resize(this->width * this->height);
+	pcdata_pcl->points.resize(this->n_valid);
 	
 	const std::vector<PointCloudCallback::Point3d> &pcdP=this->points;
 	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
@@ -140,18 +143,29 @@ bool YPCData::voxelization(const float leaf_x,const float leaf_y,const float lea
 	//sensor_msgs::PointCloud2::Ptr pts2;
 	//pcl::PointCloud<pcl::PointXYZ> cloud2;
 	//pcl::fromROSMsg (*pts2, cloud2);
-	
+
 	pcl::PointCloud<pcl::PointXYZRGB> vx_points;
 	pcl::VoxelGrid<pcl::PointXYZRGB> sor;
 	sor.setInputCloud (pcdata_pcl);
 	sor.setLeafSize (leaf_x, leaf_y, leaf_z);
 	sor.filter (vx_points);
 	
-	sensor_msgs::PointCloud2 pts2_vx;
-	pcl::toROSMsg(vx_points, pts2_vx);
-	sensor_msgs::convertPointCloud2ToPointCloud(pts2_vx,pts);
+	const Eigen::Vector3i minBoxCoord= sor.getMinBoxCoordinates();
+	const Eigen::Vector3i maxBoxCoord= sor.getMaxBoxCoordinates();
+
+	bool ret = false;
+	if( minBoxCoord[0] == 0 && minBoxCoord[1] == 0 && minBoxCoord[2] == 0 &&
+		maxBoxCoord[0] == 0 && maxBoxCoord[1] == 0 && maxBoxCoord[2] == 0){
+		std::cerr << "voxelization failure. out of memory? leaf_size=(" << leaf_x << ", " << leaf_y << ", " << leaf_z << ")" << std::endl;
 	
-	return true;
+	}else{
+		ret = true;
+		sensor_msgs::PointCloud2 pts2_vx;
+		pcl::toROSMsg(vx_points, pts2_vx);
+		sensor_msgs::convertPointCloud2ToPointCloud(pts2_vx,pts);
+	}
+	
+	return ret;
 }
 
 bool YPCData::save_ply(const std::string &file_path){

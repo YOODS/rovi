@@ -23,6 +23,8 @@ public:
 	
 	bool is_empty()const;
 	
+	int count()const;
+	
 	void operator()(unsigned char *image, const size_t step,const int width, const int height,std::vector<Point3d> &points, const int n_valid);
 	
 	bool make_point_cloud(sensor_msgs::PointCloud &pts);
