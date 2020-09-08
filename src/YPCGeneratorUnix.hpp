@@ -30,10 +30,10 @@ public:
 		pcgen = 0;
 	}
 
-	/// ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚’ä½œæˆã™ã‚‹.
+	/// “_ŒQ¶¬Ší‚ğì¬‚·‚é.
 	bool create_pcgen(const PcGenMode pcgen_mode);
 
-	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®åˆæœŸåŒ–
+	/// ƒpƒ‰ƒ[ƒ^‚Ì‰Šú‰»
 	//2020/08/26 modified by hato ---------- start ----------
 #ifdef YAML_PARAM
 	bool init(const char* cfgpath);
@@ -41,44 +41,44 @@ public:
 	bool init(std::map<std::string,double> &paramMap);
 	//2020/08/26 modified by hato ----------  end  ----------
 
-	/// ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ä½œæˆ
+	/// ƒXƒeƒŒƒIƒJƒƒ‰ì¬
 	bool create_camera(const char* dirname);
 	bool create_camera_raw(
 		std::vector<double> &Kl, std::vector<double> &Kr,
 		std::vector<double> &Dl, std::vector<double> &Dr,
 		std::vector<double> &R, std::vector<double> &T);
 
-	/// å…¥åŠ›ãƒ•ã‚¡ã‚¤ãƒ«åãƒªã‚¹ãƒˆä½œæˆ
+	/// “ü—Íƒtƒ@ƒCƒ‹–¼ƒŠƒXƒgì¬
 	std::vector<std::string> create_filelist(const char* dirname, const char* ext);
 	
 
 	
 	/**
-	  ç‚¹ç¾¤ç”Ÿæˆã—ã¦PLYãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’è¡Œã„ã¾ã™
-	  @param [in] filelist å…¥åŠ›ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«åãƒªã‚¹ãƒˆ
-	  @param [in] outpath PLYãƒ•ã‚¡ã‚¤ãƒ«å
-	  @param [in] is_interpo è£œé–“ã‚’è¡Œã†ã‹å¦ã‹
+	  “_ŒQ¶¬‚µ‚ÄPLYƒtƒ@ƒCƒ‹•Û‘¶‚ğs‚¢‚Ü‚·
+	  @param [in] filelist “ü—Í‰æ‘œƒtƒ@ƒCƒ‹–¼ƒŠƒXƒg
+	  @param [in] outpath PLYƒtƒ@ƒCƒ‹–¼
+	  @param [in] is_interpo •âŠÔ‚ğs‚¤‚©”Û‚©
 	 */
 	bool generate_pointcloud(std::vector<std::string> &filelist, const char* outpath, const bool is_interpo);
 	
 //2020/08/25 modified by hato ---------- start ----------
 	/**
-	  ç‚¹ç¾¤ç”Ÿæˆã—ã¦PLYãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’è¡Œã„ã¾ã™
-	  @param [in] cam_imgs å·¦å³ã‚«ãƒ¡ãƒ©ç”»åƒ
-	  @param [in] outpath PLYãƒ•ã‚¡ã‚¤ãƒ«å
-	  @param [in] is_interpo è£œé–“ã‚’è¡Œã†ã‹å¦ã‹
+	  “_ŒQ¶¬‚µ‚ÄPLYƒtƒ@ƒCƒ‹•Û‘¶‚ğs‚¢‚Ü‚·
+	  @param [in] cam_imgs ¶‰EƒJƒƒ‰‰æ‘œ
+	  @param [in] outpath PLYƒtƒ@ƒCƒ‹–¼
+	  @param [in] is_interpo •âŠÔ‚ğs‚¤‚©”Û‚©
 	 */
 	int generate_pointcloud(std::vector<unsigned char*>& cam_imgs, const bool is_interpo,PointCloudCallback*callback);
 
 //2020/08/25 modified by hato ----------  end  ----------
 
 //2020/08/26 modified by hato ---------- start ----------
-	///< è¦–å·®è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
+	///< ‹·ŒvZ‚É‚©‚©‚Á‚½ŠÔ
 	std::chrono::system_clock::duration get_elapsed_disparity(){
 		return this->elapsed_disparity;
 	}
 	
-	///< ç‚¹ç¾¤è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
+	///< “_ŒQŒvZ‚É‚©‚©‚Á‚½ŠÔ
 	std::chrono::system_clock::duration get_elapsed_genpcloud(){
 		return this->elapsed_genpcloud;
 	}
@@ -88,13 +88,13 @@ private:
 //2020/08/25 modified by hato ---------- start ----------
 #ifdef YAML_PARAM
 //2020/08/25 modified by hato ----------  end  ----------
-	/// SGBMã®è¨­å®šå€¤ã‚’èª­ã¿è¾¼ã‚“ã§è¨­å®šã—ã¾ã™.
+	/// SGBM‚Ìİ’è’l‚ğ“Ç‚İ‚ñ‚Åİ’è‚µ‚Ü‚·.
 	bool _init_SGBM(const YAML::Node& param);
 
-	// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
+	// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
 	bool _init_PSFT(const YAML::Node& param);
 
-	// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
+	// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
 	bool _init_MPSFT(const YAML::Node& param);
 //2020/08/25 modified by hato ---------- start ----------
 #endif

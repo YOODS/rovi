@@ -4,14 +4,14 @@
 #include "iPointCloudGenerator.hpp"
 
 /**
- * ç‚¹ç¾¤ãƒ‡ãƒ¼ã‚¿ã‚’PLYå½¢å¼ã§ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
- * @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
- * @param [in] filename å‡ºåŠ›å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
- * @param [in] cloud ç‚¹ç¾¤ãƒ‡ãƒ¼ã‚¿ãƒãƒƒãƒ•ã‚¡å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹
- * @param [in] n_point ç·ç‚¹æ•°
- * @param [in] rgrid ãƒ¬ãƒ³ã‚¸ã‚°ãƒªãƒƒãƒ‰ãƒ‡ãƒ¼ã‚¿ãƒãƒƒãƒ•ã‚¡å…ˆé ­ã‚¢ãƒ‰ãƒ¬ã‚¹(å‡ºåŠ›ã—ãªã„å ´åˆã¯0)
- * @param [in] width ãƒ¬ãƒ³ã‚¸ã‚°ãƒªãƒƒãƒ‰ãƒ‡ãƒ¼ã‚¿ã®æ¨ªå¹…
- * @param [in] height ãƒ¬ãƒ³ã‚¸ã‚°ãƒªãƒƒãƒ‰ãƒ‡ãƒ¼ã‚¿ã®ç¸¦å¹…
+ * “_ŒQƒf[ƒ^‚ğPLYŒ`®‚Åƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
+ * @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+ * @param [in] filename o—Íæƒtƒ@ƒCƒ‹–¼
+ * @param [in] cloud “_ŒQƒf[ƒ^ƒoƒbƒtƒ@æ“ªƒAƒhƒŒƒX
+ * @param [in] n_point ‘“_”
+ * @param [in] rgrid ƒŒƒ“ƒWƒOƒŠƒbƒhƒf[ƒ^ƒoƒbƒtƒ@æ“ªƒAƒhƒŒƒX(o—Í‚µ‚È‚¢ê‡‚Í0)
+ * @param [in] width ƒŒƒ“ƒWƒOƒŠƒbƒhƒf[ƒ^‚Ì‰¡•
+ * @param [in] height ƒŒƒ“ƒWƒOƒŠƒbƒhƒf[ƒ^‚Ìc•
  */
 bool writePLY(const std::string filename, const PointCloudElement *cloud, const int n_point,
 	const unsigned int *rgrid = 0, const int width = 0, const int height = 0);

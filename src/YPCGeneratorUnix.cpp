@@ -61,29 +61,29 @@ bool YPCGeneratorUnix::init(const char* cfgpath)
 		return false;
 	}
 	
-	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
+	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
 	std::cerr << params << std::endl;
 #endif
 	//2020/08/31 modified by hato ----------  end  ----------
 	
-	// å…±é€šãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®š
+	// ‹¤’Êƒpƒ‰ƒ[ƒ^İ’è
 	if (params["image_width"]) set_camera_cols(params["image_width"].as<int>());
 	if (params["image_height"]) set_camera_rows(params["image_height"].as<int>());
 	if (params["method3d"]) this->method3d = (iPointCloudGenerator::Method3D)(params["method3d"].as<int>());
 	if (params["camera_type"]) this->camtype = (CamParamType)(params["camera_type"].as<int>());
 
 	if (this->pcgen_mode == PcGenMode::PCGEN_SGBM) {
-		// SGBMã®å ´åˆ
+		// SGBM‚Ìê‡
 		return _init_SGBM(params["SGBM"]);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_GRAYPS4) {
-		// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
+		// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
 		return _init_PSFT(params["PSFT"]);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_MULTI) {
-		// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
+		// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
 		return _init_MPSFT(params["MPSFT"]);
 	}
 	else return false;
@@ -106,29 +106,29 @@ bool YPCGeneratorUnix::init(std::map<std::string,double> &params){
 	}
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
-	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
+	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
 	for (std::map<std::string, double>::const_iterator i = params.begin(); i != params.end(); ++i) {
         std::cout << i->first << " => " << i->second << std::endl;
     }
 #endif
 	//2020/08/31 modified by hato ----------  ebd  ----------
 	
-	// å…±é€šãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®š
+	// ‹¤’Êƒpƒ‰ƒ[ƒ^İ’è
 	if ( params.count("image_width") ) set_camera_cols(params.at("image_width"));
 	if ( params.count("image_height") ) set_camera_rows((int)params.at("image_height"));
 	if ( params.count("method3d") ) this->method3d = (iPointCloudGenerator::Method3D)((int)params.at("method3d"));
 	if ( params.count("camera_type") ) this->camtype = (CamParamType)((int)params.at("camera_type"));
 	
 	if (this->pcgen_mode == PcGenMode::PCGEN_SGBM) {
-		// SGBMã®å ´åˆ
+		// SGBM‚Ìê‡
 		return _init_SGBM(params);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_GRAYPS4) {
-		// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
+		// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
 		return _init_PSFT(params);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_MULTI) {
-		// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
+		// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
 		return _init_MPSFT(params);
 	}
 	else return false;
@@ -194,7 +194,7 @@ bool YPCGeneratorUnix::create_camera(const char* dirname)
 	
 	if (!(this->stereo = CreateStereoCamera(this->camtype, filenames, &this->settings))) return false;
 
-	// ç‚¹ç¾¤ç”Ÿæˆå™¨ã«ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’æ¸¡ã™
+	// “_ŒQ¶¬Ší‚ÉƒXƒeƒŒƒIƒJƒƒ‰‚ğ“n‚·
 	this->pcgen->init(this->stereo);
 	return true;
 }
@@ -206,7 +206,7 @@ bool YPCGeneratorUnix::create_camera_raw(
 {
 	if (!(this->stereo = CreateStereoCameraFromRaw(Kl, Kr, Dl, Dr, R, T, &this->settings))) return false;
 	
-	// ç‚¹ç¾¤ç”Ÿæˆå™¨ã«ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’æ¸¡ã™
+	// “_ŒQ¶¬Ší‚ÉƒXƒeƒŒƒIƒJƒƒ‰‚ğ“n‚·
 	this->pcgen->init(this->stereo);
 	return true;	
 }
@@ -224,12 +224,12 @@ YPCGeneratorUnix::create_filelist(const char* dirname, const char* ext)
 	std::vector<std::string> filelist;
 	std::string path(dirname);
 	
-	// ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå†…ã®ãƒ•ã‚¡ã‚¤ãƒ«ä¸€è¦§ã‚’ä½œæˆ
+	// ƒfƒBƒŒƒNƒgƒŠ“à‚Ìƒtƒ@ƒCƒ‹ˆê——‚ğì¬
 	struct dirent *dent;
 	while ((dent = readdir(dp)) != NULL) {
 		std::string name(dent->d_name);
 		if (name.find(ext) != std::string::npos) {
-			// æŒ‡å®šã•ã‚ŒãŸæ‹¡å¼µå­ã‚’å«ã‚“ã§ã„ãŸã‚‰åå‰ã‚’å–ã£ã¦ãŠã
+			// w’è‚³‚ê‚½Šg’£q‚ğŠÜ‚ñ‚Å‚¢‚½‚ç–¼‘O‚ğæ‚Á‚Ä‚¨‚­
 			std::string name_ = path + "/" + name;
 			filelist.push_back(name_);
 		}
@@ -242,7 +242,7 @@ YPCGeneratorUnix::create_filelist(const char* dirname, const char* ext)
 	}
 	
 	
-	// ã‚¢ãƒ«ãƒ•ã‚¡ãƒ™ãƒƒãƒˆé †ã«ä¸¦ã¹æ›¿ãˆã‚‹
+	// ƒAƒ‹ƒtƒ@ƒxƒbƒg‡‚É•À‚×‘Ö‚¦‚é
 	std::sort(filelist.begin(), filelist.end());
 	return filelist;
 }
@@ -283,12 +283,12 @@ bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 	SGBMParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
 
-	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
+	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
 	
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
@@ -317,11 +317,11 @@ bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 	GPhaseDecodeParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
-	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
+	// ƒpƒ‰ƒ[ƒ^•\¦
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
@@ -352,12 +352,12 @@ bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 	param.set(p);
 	
 	if (!pcgen->setparams((void*)&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
 	
-	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
+	// ƒpƒ‰ƒ[ƒ^•\¦
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
@@ -394,13 +394,13 @@ bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 	SGBMParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
-	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
+	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
 	std::cerr << "\tmin_disparity    : " << param.min_disparity << std::endl;
 	std::cerr << "\tnum_disparities  : " << param.num_disparities << std::endl;
 	std::cerr << "\tblockSize        : " << param.blockSize << std::endl;
@@ -425,11 +425,11 @@ bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 	GPhaseDecodeParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
-	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
+	// ƒpƒ‰ƒ[ƒ^•\¦
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
@@ -462,12 +462,12 @@ bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 	param.set(p);
 	
 	if (!pcgen->setparams((void*)&param)) {
-		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
+		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
 		std::cerr << "params value failure\n";
 		return false;
 	}
 	
-	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
+	// ƒpƒ‰ƒ[ƒ^•\¦
 	//2020/08/31 modified by hato ---------- start ----------
 #ifdef DETAIL_DEBUG_LOG
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
