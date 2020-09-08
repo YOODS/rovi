@@ -3,7 +3,6 @@
 #include <ros/types.h>
 #include <ros/ros.h>
 #include <pcl_ros/filters/voxel_grid.h>
-#include <sensor_msgs/PointCloud2.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
 #include "YPCGenerator.hpp"
@@ -12,7 +11,17 @@ namespace {
 	const int DEPTH_BASE=400;
 	const int DEPTH_UNIT=1;
 	
-	
+	//sample:è´óàìIÇ…ÇÕPointCloud2Ç÷
+	/*
+#pragma pack(1)
+	struct VertexXYZRGB{
+		float x=0;
+		float y=0;
+		float z=0;
+		float rgb=0;
+	} __attribute__((__packed__)) __attribute__((aligned(1)));
+#pragma pack()
+	*/
 }
 
 YPCData::YPCData():
@@ -21,7 +30,6 @@ YPCData::YPCData():
 	height(0),
 	n_valid(0)
 {
-	
 }
 
 YPCData::~YPCData(){
@@ -36,11 +44,10 @@ int YPCData::count()const{
 	return n_valid;
 }
 
+//sample:è´óàìIÇ…ÇÕPointCloud2Ç÷
 /*
-void YPCData::clearNorm(){
-	mX0=NAN;
-	mY0=NAN;
-	mZ0=NAN;
+const sensor_msgs::PointCloud2 * YPCData::get_data() const{
+	return &pcdata;
 }
 */
 
@@ -61,8 +68,6 @@ void YPCData::operator()(
 
 
 bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
-	
-	//clearNorm();
 	
 	const int N = this->n_valid;
 	
@@ -95,6 +100,59 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
 			n++;
 		}
 	}
+	//sample:è´óàìIÇ…ÇÕPointCloud2Ç÷
+	/*
+	pcdata = sensor_msgs::PointCloud2();
+	pcdata.header.stamp = ros::Time::now();
+	pcdata.fields.resize(4);
+	pcdata.fields[0].name = "x";
+	pcdata.fields[0].offset = 0;
+	pcdata.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+	pcdata.fields[0].count = 1;
+	pcdata.fields[1].name = "y";
+	pcdata.fields[1].offset = 4;
+	pcdata.fields[1].datatype =  sensor_msgs::PointField::FLOAT32;
+	pcdata.fields[1].count = 1;
+	pcdata.fields[2].name = "z";
+	pcdata.fields[2].offset = 8;
+	pcdata.fields[2].datatype =  sensor_msgs::PointField::FLOAT32;
+	pcdata.fields[2].count = 1;
+	pcdata.fields[3].name = "rgb";
+	pcdata.fields[3].offset = 12;
+	pcdata.fields[3].datatype =  sensor_msgs::PointField::FLOAT32;
+	pcdata.fields[3].count = 1;
+	
+	pcdata.point_step = 16;
+	pcdata.width = N;
+	pcdata.height = 1;
+	pcdata.row_step = N;
+	pcdata.is_dense= true;
+	pcdata.is_bigendian = true;
+	const int data_size = sizeof(VertexXYZRGB);
+	pcdata.data.assign(N * data_size,0);
+
+	std::cerr << "pcdata_size=" << pcdata.data.size() << std::endl;
+	
+	VertexXYZRGB *vertices=(VertexXYZRGB*)pcdata.data.data();
+	bool once=false;
+	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
+		const Point3d * org_point = org_points + i;
+		const unsigned char pixel = *(this->image + i);
+		
+		if( n  < N  && ! std::isnan(org_point->x) ){
+			VertexXYZRGB * vtx = vertices + n;
+			vtx->x = org_point->x;
+			vtx->y = org_point->y;
+			vtx->z = org_point->z;
+			
+			int32_t rgb = (pixel << 16) | (pixel << 8) | pixel; 
+			vtx->rgb = *(float *)(&rgb);
+			n++;
+		}
+	}
+	
+	//std::cerr << "fileds=" <<  p2.fields.size() << std::endl;
+	*/
 	
 	return true;
 }

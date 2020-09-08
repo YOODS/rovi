@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <sensor_msgs/PointCloud.h>
+#include <sensor_msgs/PointCloud2.h>
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -16,6 +17,8 @@ private:
 	std::vector<Point3d> points;
 	int n_valid;
 	
+	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//sensor_msgs::PointCloud2 pcdata;
 public:
 	
 	YPCData();
@@ -24,6 +27,9 @@ public:
 	bool is_empty()const;
 	
 	int count()const;
+	
+	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//const sensor_msgs::PointCloud2 *get_data() const;
 	
 	void operator()(unsigned char *image, const size_t step,const int width, const int height,std::vector<Point3d> &points, const int n_valid);
 	

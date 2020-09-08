@@ -713,6 +713,13 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				ROS_INFO(LOG_HEADER"voxelized point cloud data save succeeded. proc_tm=%d ms, path=%s",
 					ELAPSED_TM(save_start), save_file_path.c_str());
 			}
+			
+			//sample:è´óàìIÇ…ÇÕPointCloud2Ç÷
+			/*
+			pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl2;
+			pcl::fromROSMsg(*pcdata.get_data(),pts_vx_pcl2);
+			ply_writer.write<pcl::PointXYZRGB> ("/tmp/zzzz.ply",pts_vx_pcl2 , true);
+			*/
 		}
 		
 		//depthmap image save
