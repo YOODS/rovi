@@ -103,7 +103,7 @@ struct CamCalibMat {
 };
 
 
-bool get_ps_params(ros::NodeHandle *nh,std::map<std::string,double> &params,const std::string &src_key,const std::string &dst_key){
+bool get_ps_params(std::map<std::string,double> &params,const std::string &src_key,const std::string &dst_key){
 	bool ret=false;
 	
 	double val=0;
@@ -115,7 +115,7 @@ bool get_ps_params(ros::NodeHandle *nh,std::map<std::string,double> &params,cons
 }
 
 template<typename T>
-T get_param(ros::NodeHandle *nh,const std::string &key,const T defaultVal){
+T get_param(const std::string &key,const T defaultVal){
 	T val=defaultVal;
 	if( ! nh->getParam(key,val) ){
 		ROS_ERROR(LOG_HEADER"ros param get failed. key=%s",key.c_str());
@@ -177,19 +177,19 @@ bool load_phase_shift_params()
 		}
 	}
 	
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/method3d","method3d")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/camera_type","camera_type")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/bw_diff","bw_diff")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/brightness","brightness")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/darkness","darkness")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/phase_wd_min","phase_wd_min")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/phase_wd_thr","phase_wd_thr")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/gcode_variation","gcode_variation")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/max_ph_diff","max_ph_diff")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/max_parallax","max_parallax")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/min_parallax","min_parallax")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/ls_points","ls_points")) { return -1; }
-	if( ! get_ps_params(nh,params,"pshift_genpc/calc/interpolation","interpolation")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/method3d","method3d")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/camera_type","camera_type")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/bw_diff","bw_diff")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/brightness","brightness")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/darkness","darkness")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/phase_wd_min","phase_wd_min")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/phase_wd_thr","phase_wd_thr")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/gcode_variation","gcode_variation")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/max_ph_diff","max_ph_diff")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/max_parallax","max_parallax")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/min_parallax","min_parallax")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/ls_points","ls_points")) { return -1; }
+	if( ! get_ps_params(params,"pshift_genpc/calc/interpolation","interpolation")) { return -1; }
 	
 	params["image_width"]=cur_cam_width;
 	params["image_height"]=cur_cam_height;
@@ -256,73 +256,73 @@ bool load_camera_calib_data(){
 	CamCalibMat Dr;
 	CamCalibMat R;
 	CamCalibMat T;
-	if( ! nh->getParam("/rovi/left/genpc/K_Cols",Kl.cols) ){
+	if( ! nh->getParam("left/genpc/K_Cols",Kl.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Cols");
 		
-	}else if( ! nh->getParam("/rovi/left/genpc/K_Rows",Kl.rows) ){
+	}else if( ! nh->getParam("left/genpc/K_Rows",Kl.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K_Rows");
 		
-	}else if( ! nh->getParam("/rovi/left/genpc/K",Kl.values) ){
+	}else if( ! nh->getParam("left/genpc/K",Kl.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=K");
 		
 	}else if( ! Kl.validate() ){
 		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=left %s", Kl.to_string().c_str());
 		
-	}else if( ! nh->getParam("/rovi/left/genpc/D_Cols",Dl.cols) ){
+	}else if( ! nh->getParam("left/genpc/D_Cols",Dl.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Cols");
 		
-	}else if( ! nh->getParam("/rovi/left/genpc/D_Rows",Dl.rows) ){
+	}else if( ! nh->getParam("left/genpc/D_Rows",Dl.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D_Rows");
 		
-	}else if( ! nh->getParam("/rovi/left/genpc/D",Dl.values) ){
+	}else if( ! nh->getParam("left/genpc/D",Dl.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=left, key=D");
 		
 	}else if( ! Kl.validate() ){
 		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=left %s", Dl.to_string().c_str());
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/K_Cols",Kr.cols) ){
+	}else if( ! nh->getParam("right/genpc/K_Cols",Kr.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Cols");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/K_Rows",Kr.rows) ){
+	}else if( ! nh->getParam("right/genpc/K_Rows",Kr.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K_Rows");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/K",Kr.values) ){
+	}else if( ! nh->getParam("right/genpc/K",Kr.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=K");
 		
 	}else if( ! Kr.validate() ){
 		ROS_ERROR(LOG_HEADER"K matrix is wrong. cam=right %s", Kr.to_string().c_str());
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/D_Cols",Dr.cols) ){
+	}else if( ! nh->getParam("right/genpc/D_Cols",Dr.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Cols");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/D_Rows",Dr.rows) ){
+	}else if( ! nh->getParam("right/genpc/D_Rows",Dr.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D_Rows");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/D",Dr.values) ){
+	}else if( ! nh->getParam("right/genpc/D",Dr.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=D");
 		
 	}else if( ! Dr.validate() ){
 		ROS_ERROR(LOG_HEADER"D matix is wrong. cam=right %s", Dr.to_string().c_str());
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/R_Cols",R.cols) ){
+	}else if( ! nh->getParam("right/genpc/R_Cols",R.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Cols");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/R_Rows",R.rows) ){
+	}else if( ! nh->getParam("right/genpc/R_Rows",R.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R_Rows");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/R",R.values) ){
+	}else if( ! nh->getParam("right/genpc/R",R.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=R");
 		
 	}else if( ! R.validate() ){
 		ROS_ERROR(LOG_HEADER"R matrix is wrong. cam=right %s", R.to_string().c_str());
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/T_Cols",T.cols) ){
+	}else if( ! nh->getParam("right/genpc/T_Cols",T.cols) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Cols");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/T_Rows",T.rows) ){
+	}else if( ! nh->getParam("right/genpc/T_Rows",T.rows) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T_Rows");
 		
-	}else if( ! nh->getParam("/rovi/right/genpc/T",T.values) ){
+	}else if( ! nh->getParam("right/genpc/T",T.values) ){
 		ROS_ERROR(LOG_HEADER"param read failed. cam=right, key=T");
 		
 	}else if( ! T.validate() ){
@@ -438,25 +438,25 @@ bool count_quantize_points(const sensor_msgs::PointCloud &pts,rovi::Floats &outp
 
 void re_voxelization_monitor(const ros::TimerEvent& e)
 {
-	if( ! get_param<bool>(nh,"/rovi/genpc/voxelize/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
+	if( ! get_param<bool>("genpc/voxelize/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
 		clear_pre_voxel_leaf_size();
 		//ROS_INFO(LOG_HEADER"voxelization is disabled.");
 		
-	}else if( ! get_param<bool>(nh,"/rovi/genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
+	}else if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
 		clear_pre_voxel_leaf_size();
 		//ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
 		
 	}else{
 		//leaf_sizeを個別に変えるとそのたびにpublishされるので一気に指定する方法
-		//$rosparam set /rovi/genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
+		//$rosparam set genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
 		const float vx_leaf_x = std::max(get_param<float>(
-			nh,"/rovi/genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+			"genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 		
 		const float vx_leaf_y = std::max(get_param<float>(
-			nh,"/rovi/genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+			"genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 		
 		const float vx_leaf_z = std::max(get_param<float>(
-			nh,"/rovi/genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+			"genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 		
 		if( vx_leaf_x == pre_vx_leaf_x && vx_leaf_y == pre_vx_leaf_y && vx_leaf_z == pre_vx_leaf_z ){
 			//ROS_INFO(LOG_HEADER"re-voxelization update is nothing.");
@@ -485,7 +485,7 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 	}
 	
 	const float vx_re_interval= std::max(get_param<float>(
-			nh,"/rovi/genpc/voxelize/recalc/interval",RE_VOXEL_DEFAULT_INTERVAL),RE_VOXEL_MIN_INTERVAL);
+			"genpc/voxelize/recalc/interval",RE_VOXEL_DEFAULT_INTERVAL),RE_VOXEL_MIN_INTERVAL);
 	if( vx_re_interval != cur_re_vx_interval ){
 		re_vx_monitor_timer.setPeriod(ros::Duration(vx_re_interval));
 		ROS_INFO(LOG_HEADER"re-voxelization interval has changed. %g sec -> %g sec",cur_re_vx_interval,vx_re_interval);
@@ -574,7 +574,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				ELAPSED_TM(conv_start), ELAPSED_TM(node_start));
 			
 			//Quantize points count for Numpy array
-			if( ! get_param<bool>(nh,"/rovi/genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED) ){
+			if( ! get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED) ){
 				ROS_INFO(LOG_HEADER"quantize points count skipped.");
 			}else{
 				ROS_INFO(LOG_HEADER"quantize points count start.");
@@ -588,7 +588,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			}
 			
 			//voxelization
-			if( ! get_param<bool>(nh,"/rovi/genpc/voxelize/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
+			if( ! get_param<bool>("genpc/voxelize/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
 				ROS_INFO(LOG_HEADER"point cloud voxelization skipped.");
 			}else{
 				ROS_INFO(LOG_HEADER"point cloud voxelization start.");
@@ -596,13 +596,13 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				const auto voxel_start = std::chrono::high_resolution_clock::now() ;
 				
 				const float vx_leaf_x = std::max(get_param<float>(
-					nh,"/rovi/genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+					"genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 				
 				const float vx_leaf_y = std::max(get_param<float>(
-					nh,"/rovi/genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+					"genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 				
 				const float vx_leaf_z = std::max(get_param<float>(
-					nh,"/rovi/genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
+					"genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE),VOXEL_LEAF_MIN_SIZE);
 				
 				
 				pre_vx_leaf_x = vx_leaf_x;
@@ -620,7 +620,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			}
 			
 			//depthmap making
-			if( ! get_param<bool>(nh,"/rovi/genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
+			if( ! get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
 				ROS_INFO(LOG_HEADER"depthmap image make skipped.");
 			}else{
 				ROS_INFO(LOG_HEADER"depthmap image make start.");
@@ -653,7 +653,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	//データ保存
 	if( ! file_dump.empty() ) {
-		if( ! get_param<bool>(nh,"/rovi/genpc/point_cloud/img_save",STEREO_CAM_IMGS_DEFAULT_SAVE) ){
+		if( ! get_param<bool>("genpc/point_cloud/img_save",STEREO_CAM_IMGS_DEFAULT_SAVE) ){
 			ROS_INFO(LOG_HEADER"stereo camera images save skipped.");
 		}else{
 			const auto save_start = std::chrono::high_resolution_clock::now() ;
@@ -675,7 +675,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			ROS_INFO(LOG_HEADER"stereo camera images save finished. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start),file_dump.c_str());
 		}
 		
-		if( ! get_param<bool>(nh,"/rovi/genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE) ){
+		if( ! get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE) ){
 			ROS_INFO(LOG_HEADER"ply file save skipped.");
 		}else{
 			const auto save_start = std::chrono::high_resolution_clock::now() ;
@@ -693,7 +693,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
 		//ROS_INFO("after  outPLY");
 		
-		if( pts_vx.points.empty() || ! get_param<bool>(nh,"/rovi/genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED) ){
+		if( pts_vx.points.empty() || ! get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED) ){
 			ROS_INFO(LOG_HEADER"voxelized point cloud data save skipped.");
 		}else{
 			const auto save_start = std::chrono::high_resolution_clock::now() ;
@@ -723,7 +723,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		}
 		
 		//depthmap image save
-		if( depthimg_mat.empty() || ! get_param<bool>(nh,"/rovi/genpc/depthmap_img/img_save",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
+		if( depthimg_mat.empty() || ! get_param<bool>("genpc/depthmap_img/img_save",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
 			ROS_INFO(LOG_HEADER"depthmap image save skipped.");
 		}else{
 			const auto save_start = std::chrono::high_resolution_clock::now() ;
@@ -739,7 +739,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	//再ボクセル化監視
 	{
-		cur_re_vx_interval = std::max(get_param<float>(nh,"/rovi/genpc/voxelize/recalc/interval",RE_VOXEL_DEFAULT_INTERVAL),RE_VOXEL_MIN_INTERVAL);
+		cur_re_vx_interval = std::max(get_param<float>("genpc/voxelize/recalc/interval",RE_VOXEL_DEFAULT_INTERVAL),RE_VOXEL_MIN_INTERVAL);
 		
 		ROS_INFO(LOG_HEADER"re-voxelization monitor start. interval=%g sec",cur_re_vx_interval);
 		re_vx_monitor_timer.setPeriod(ros::Duration(cur_re_vx_interval));
