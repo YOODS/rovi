@@ -21,9 +21,10 @@ pshift_genpc:
     ls_points: 3
   paramset:
     camera:
-      ExposureTime: [8400,16800]
+      ExposureTime: [8333,16666,25000,33333]
     projector:
-      Interval: [60,60]
+      Interval: [40,60,60,70]
+      ExposureTime: [20,20,30,40]
 live:
   camera:
     AcquisitionFrameRate: 20
