@@ -22,25 +22,20 @@ pshift_genpc:
     max_parallax: 300
     min_parallax: -200
     ls_points: 3
-    interpolation: 1
+    interpolation: 0
   paramset:
     camera:
-      ExposureTime: [8400,8400,8400,8400,8400,16800,16800]
-      Gain: [0,0,0,0,0,0,0]
+      ExposureTime: [8333,16666,25000,33333]
     projector:
-      Intensity: [20,40,80,160,255,100,255]
-      Interval: [40,40,40,40,40,60,60]
+      Interval: [40,60,60,70]
+      ExposureTime: [20,20,30,40]
 live:
   camera:
     AcquisitionFrameRate: 30
     GainAnalog: 3
     ExposureTime: 30000
-    Gain: 50
+    Gain: 63
     SoftwareTriggerRate: 2
-  paramset:
-    camera:
-      ExposureTime: [3000,5000,10000,20000,30000]
-      Gain: [0,0,0,0,63]
 
 camera:
   TriggerMode: On
