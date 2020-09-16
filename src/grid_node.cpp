@@ -161,10 +161,10 @@ template <typename T> void load_param(std::string pname, T &value)
     std::string param_name = std::string("gridboard/") + pname;
 	if (nh->hasParam(param_name)) {
 		nh->getParam(param_name, value);
-		ROS_INFO("grid_node::param overriden %s %f", pname, (double)value);
+		ROS_INFO("grid_node::param overriden %s %f", pname.c_str(), (double)value);
 	}
 	else {
-		ROS_WARN("grid_node::param default %s %f", pname, (double)value);
+		ROS_WARN("grid_node::param default %s %f", pname.c_str(), (double)value);
 	}
 }
 
