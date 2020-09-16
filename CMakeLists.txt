@@ -4,6 +4,8 @@ project(rovi)
 EXECUTE_PROCESS(COMMAND arch COMMAND tr -d '\n' OUTPUT_VARIABLE ARCH)
 message(STATUS "Architecture: ${ARCH}")
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_SOURCE_DIR}/CMakeModules)
+
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   std_msgs
@@ -19,6 +21,13 @@ find_package(catkin REQUIRED COMPONENTS
 )
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 REQUIRED)
+
+#2020/09/09 add by hato ---------- start ----------
+find_package(Aravis REQUIRED)
+find_package(PkgConfig REQUIRED)
+
+pkg_check_modules(GLIB REQUIRED glib-2.0)
+#2020/09/09 add by hato ----------  end  ----------
 
 add_service_files(
   FILES
@@ -58,6 +67,10 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
+#2020/09/09 add by hato ---------- start ----------
+  ${ARAVIS_INCLUDE_PATH}
+  ${GLIB_INCLUDE_DIRS}
+#2020/09/09 add by hato ----------  end  ----------
 )
 
 link_directories(
@@ -96,6 +109,12 @@ add_dependencies(grid_node rovi_gencpp)
 add_executable(floats2pc src/floats2pc.cpp)
 target_link_libraries(floats2pc ${catkin_LIBRARIES})
 add_dependencies(floats2pc rovi_gencpp)
+
+#2020/09/09 modified by hato ----------------- start ------------------
+add_executable(ycam3d_node src/ycam3d_node.cpp src/Aravis.cpp src/CameraYCAM3D.cpp src/ElapsedTimer.cpp)
+target_link_libraries(ycam3d_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${ARAVIS_LIBRARY} gobject-2.0 glib-2.0 )
+add_dependencies(ycam3d_node rovi_gencpp)
+#2020/09/09 modified by hato -----------------  end  ------------------
 
 #############
 ## Install ##

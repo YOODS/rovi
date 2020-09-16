@@ -96,3 +96,12 @@ genpc:
     recalc:
       enabled: On
       interval: 1
+ycam:
+  Mode: 1
+  Strobe: 0
+  SoftwareTriggerRate: 1
+  ExposureTimeLevel: 0
+  camera:
+    Gain: 0
+  projector:
+    Intensity: 80
