@@ -74,6 +74,31 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		std::lock_guard<std::timed_mutex> locker(m_self->m_img_update_mutex);
 		camera::ycam3d::CameraImage *img_buf_l = m_self->m_imgs_left.data()+ frmidx;
 		camera::ycam3d::CameraImage *img_buf_r = m_self->m_imgs_right.data()+ frmidx;
+		img_buf_l->dt = img_buf_r->dt = std::chrono::system_clock::now(); 
+		
+		/*
+		char date[64];
+		time_t t = ros::Time::now().sec;
+    	strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+		ROS_INFO("%s", date);
+		
+		const auto p0 = std::chrono::time_point<std::chrono::high_resolution_clock>{};
+		const auto p3 = img_buf_l->dt;
+
+		auto tstamp = p3 - p0;
+		int32_t sec = std::chrono::duration_cast<std::chrono::seconds>(tstamp).count();
+		int32_t nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(tstamp).count() % 1000000000UL;
+		std::cout << "sec: " << sec << " nsec: " << nsec << " since epoch: \n";
+		ros::Time n(sec, nsec);
+		t = n.sec;
+    	strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+		ROS_INFO("2:%s", date);
+		*/
+		
+		//t = std::chrono::system_clock::to_time_t(img_buf_l->dt);
+		//strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+		//ROS_INFO("chrono:%s", date);
+		
 		const int lr_img_step = lr_width;
 		const int img_step = lr_img_step / 2;
 		
@@ -146,6 +171,9 @@ void CameraYCAM3D::CameraDisconnectCallbck::operator()(int camno)
 	ROS_ERROR(LOG_HEADER"#%d disconnect !!!",m_self->m_camno);
 	m_self->start_auto_connect();
 	
+	if( m_self->m_callback_cam_disconnect ){
+		m_self->m_callback_cam_disconnect();
+	}
 }
 
 CameraYCAM3D::CameraYCAM3D():
@@ -222,6 +250,10 @@ void CameraYCAM3D::set_callback_camera_open_finished(camera::ycam3d::f_camera_op
 	m_callback_cam_open_finished = callback;
 }
 
+void CameraYCAM3D::set_callback_camera_disconnect(camera::ycam3d::f_camera_disconnect callback){
+	m_callback_cam_disconnect = callback;
+}
+
 void CameraYCAM3D::set_callback_camera_closed(camera::ycam3d::f_camera_closed callback){
 	m_callback_cam_closed = callback;
 }
@@ -269,11 +301,11 @@ void CameraYCAM3D::open() {
 		// ********** m_camera_mutex UNLOCKED **********
 	}
 	
-	if( ! m_arv_ptr->isLost() ){
-		ROS_WARN(LOG_HEADER"#%d camera is already connected.", m_camno);
-		return;
-		// ********** m_camera_mutex UNLOCKED **********
-	}
+	//if( ! m_arv_ptr->isLost() ){
+	//	ROS_WARN(LOG_HEADER"#%d camera is already connected.", m_camno);
+	//	return;
+	//	// ********** m_camera_mutex UNLOCKED **********
+	//}
 	m_open_stat.store(false);
 	
 	ROS_INFO(LOG_HEADER"#%d open start.", m_camno);
@@ -289,6 +321,7 @@ void CameraYCAM3D::open() {
 		ROS_INFO(LOG_HEADER"#%d stream open start.", m_camno);
 		if( ! m_arv_ptr->openStream(CAMERA_STREAM_BUF_SIZE) ){
 			ROS_ERROR(LOG_HEADER"#%d error:stream open failed.", m_camno);
+			
 		}else{
 			ROS_INFO(LOG_HEADER"#%d stream open success.", m_camno);
 			if( m_arv_img_buf.empty() ){
@@ -327,9 +360,11 @@ void CameraYCAM3D::start_auto_connect(){
 	
 	if( m_open_stat.load() ){
 		ROS_WARN(LOG_HEADER"#%d camera is already connected. [1] ", m_camno);
+		
 	}else if( ! m_auto_connect_mutex.try_lock_for(std::chrono::seconds(0)) ){
 		// ******** auto_connect_mutex UNLOCKED ******** 
 		ROS_WARN(LOG_HEADER"#%d auto connect already started.", m_camno);
+		
 	}else{
 		// ******** auto_connect_mutex  LOCKED  ******** 
 		ROS_INFO(LOG_HEADER"#%d auto connect start.", m_camno);
@@ -481,10 +516,10 @@ bool CameraYCAM3D::capture(){
 			
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:capture is timeouted.", m_camno);
-				m_callback_capt_img_recv(false,capt_tmr.elapsed_ms(),img_l,img_r);
+				m_callback_capt_img_recv(false,capt_tmr.elapsed_ms(),img_l,img_r,true);
 			}else{
 				const bool result = img_l.result && img_r.result && img_l.valid() && img_r.valid();
-				m_callback_capt_img_recv(result,capt_tmr.elapsed_ms(),img_l,img_r);
+				m_callback_capt_img_recv(result,capt_tmr.elapsed_ms(),img_l,img_r,false);
 			}
 		}
 		
@@ -559,10 +594,10 @@ bool CameraYCAM3D::capture_strobe(){
 			
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:capture is timeouted.", m_camno);
-				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r);
+				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true);
 			}else{
 				const bool result = img_l.result && img_r.result && img_l.valid() && img_r.valid();
-				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r);
+				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r,false);
 			}
 		}
 		
@@ -651,11 +686,11 @@ bool CameraYCAM3D::capture_pattern(){
 			
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
-				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r);
+				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true);
 			}else{
 				
 				//todo:çáî€îªíË
-				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r);
+				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false);
 			}
 		}
 		

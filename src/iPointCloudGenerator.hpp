@@ -88,9 +88,10 @@ public:
 
 	/**
 	 * 点群を生成するために必要な画像枚数
-	 * @return 
+	 * @return 必要な画像枚数
+	 * @note 1はSGBMの場合. 位相シフトの場合は手法によって異なる
 	 */
-	virtual const int requiredframes() const { return 1; }
+	virtual const size_t requiredframes() const { return 1; }
 
 	/**
 	 * 処理対象画像を点群生成器に渡します.

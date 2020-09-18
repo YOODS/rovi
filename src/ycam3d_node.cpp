@@ -1,16 +1,22 @@
 #include <chrono>
 #include <thread>
 #include <mutex>
-
+#include <sstream>
+#include <condition_variable>
 #include <ros/ros.h>
 #include <boost/thread.hpp>
 #include <opencv2/opencv.hpp>
 #include <std_msgs/String.h>
+#include <std_msgs/Bool.h>
+#include <std_msgs/Int32.h>
+#include <std_srvs/Trigger.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
 #include <cv_bridge/cv_bridge.h>
 #include "CameraYCAM3D.hpp"
 #include "ElapsedTimer.hpp"
+#include "rovi/Floats.h"
+#include "rovi/GenPC.h"
 
 namespace {
 //============================================= 無名名前空間 start =============================================
@@ -29,6 +35,12 @@ ros::NodeHandle *nh = nullptr;
 ros::Publisher pub_cam_img_left;
 ros::Publisher pub_cam_img_right;
 ros::Publisher pub_Y1;
+ros::Publisher pub_pcount;
+ros::Publisher pub_stat;
+ros::Publisher pub_error;
+ros::Publisher pub_info;
+	
+ros::ServiceClient svc_genpc;
 
 int cam_width = -1;
 int cam_height = -1;
@@ -55,16 +67,24 @@ const int YCAM_STAND_BY_MODE_CYCLE = 3; //Hz
 
 std::unique_ptr<CameraYCAM3D> camera_ptr;
 
-std::thread img_trans_thread;
-	
 ros::Timer mode_mon_timer;
 int cur_mode_mon_cyc = YCAM_STAND_BY_MODE_CYCLE; //Hz
+
+ros::Timer cam_open_mon_timer;
 
 bool cam_params_refreshed=false;
 
 int pre_ycam_exposure_level=0;
 int pre_cam_gain_d    = 0;
 int pre_proj_intensity = 0;
+
+std::timed_mutex pc_gen_mutex;
+std::mutex ptn_capt_wait_mutex;
+std::condition_variable ptn_capt_wait_cv;
+std::thread pc_gen_thread;
+
+std::vector<camera::ycam3d::CameraImage> ptn_imgs_l;
+std::vector<camera::ycam3d::CameraImage> ptn_imgs_r;
 
 template<typename T>
 T get_param(const std::string &key,const T default_val){
@@ -94,34 +114,25 @@ T get_param(const std::string &key,const T default_val,const T min_val,const T m
 	}
 	return val;
 }
-
-//debug**********
-	void update_camera_params();
 	
-void exec_capture(const std_msgs::String::ConstPtr& msg){
-	ROS_INFO("I heard: [%s]", msg->data.c_str());
-	
-	if( ! camera_ptr ){
-		//todo:Y1結果返す
-		return;
-	}
-	
-	//camera_ptr->close();
-	//camera_ptr->start_auto_connect();
-	//camera_ptr->set_exposure_time(30000);
-	//camera_ptr->set_gain_digital(80);
-	//camera_ptr->capture();
-	
-	ElapsedTimer tt;
-	//update_camera_params();
-	
-	//camera_ptr->close();
-	//camera_ptr->capture();
-	camera_ptr->capture_strobe();
-	
-	//camera_ptr.reset();
+void publish_bool(ros::Publisher&pub, const bool val){
+	std_msgs::Bool rmsg;
+	rmsg.data = val;
+	pub.publish(rmsg);
 }
 
+void publish_int32(ros::Publisher&pub, const int &val){
+	std_msgs::Int32 rmsg;
+	rmsg.data = val;
+	pub.publish(rmsg);
+}
+
+void publish_string(ros::Publisher&pub, const std::string &val){
+	std_msgs::String rmsg;
+	rmsg.data = val;
+	pub.publish(rmsg);
+}
+	
 bool init(){
 	bool ret=false;
 	if( ! nh->getParam("camera/Width", cam_width) ){
@@ -215,6 +226,13 @@ void update_camera_params(){
 	//ROS_INFO(LOG_HEADER"camera parameter updated. elapsed=%d ms",tmr.elapsed_ms());
 }
 
+void cam_open_monitor_task(const ros::TimerEvent& e){
+	if( ! camera_ptr || ! camera_ptr->is_open()){
+		return;
+	}
+	publish_bool(pub_stat,true);
+}
+
 void mode_monitor_task(const ros::TimerEvent& e){
 	const int cur_ycam_mode = get_param<int>(PRM_MODE,(int)Mode_StandBy);
 	
@@ -235,7 +253,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 	//パラメータ取得
 	update_camera_params();
 	
-	if( cur_ycam_mode == Mode_Streaming){
+	if( cur_ycam_mode == Mode_Streaming ){
 		if(camera_ptr->is_busy()){
 			ROS_WARN(LOG_HEADER"camera is busy.!!!!");
 		}else{
@@ -248,7 +266,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 			
 		}
 	}else{
-		
+		//todo ******************* pending *******************
 	}
 	
 	//監視周期変更
@@ -282,23 +300,11 @@ void mode_monitor_task(const ros::TimerEvent& e){
 	pre_ycam_mode = cur_ycam_mode;
 }
 
-void phase_shift_capture_task(){
-	ROS_INFO(LOG_HEADER"phase shift capture start.");
-	ElapsedTimer tmr;
-	
-	//sensor_msgs::ImagePtr img(new sensor_msgs::Image());
-	//pub_cam_img_left.publish(img);
-	
-	ROS_INFO(LOG_HEADER"phase shift capture finished. elapsed=%d ms",tmr.elapsed_ms());
-	
-}
-
 void on_camera_open_finished(const bool result){
 	ROS_INFO(LOG_HEADER"camera opened. result=%s",(result?"OK":"NG"));
 	if( ! result ){
 		return;
 	}
-	
 
 	pre_cam_gain_d = get_param<int>( PRM_CAM_GAIN_D,
 		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
@@ -310,16 +316,32 @@ void on_camera_open_finished(const bool result){
 	ROS_INFO(LOG_HEADER"projector intensity = %d", pre_proj_intensity);
 	
 	cam_params_refreshed=true;
+	if( ! result ){
+		publish_string(pub_error,"YCAM open failed.");
+	}else{
+		publish_string(pub_info,"YCAM ready.");
+	}
+}
+
+void on_camera_disconnect(){
+	ROS_ERROR(LOG_HEADER"error: camera disconnected.");
+	cam_params_refreshed=false;
+	
+	publish_bool(pub_stat,false);
+	publish_string(pub_error,"YCAM disconected");
 }
 	
 void on_camera_closed(){
 	ROS_INFO(LOG_HEADER"camera closed.");
 	cam_params_refreshed=false;
+	
+	publish_bool(pub_stat,false);
+	publish_string(pub_info,"YCAM closed");
 }
 	
-void on_capture_image_received(const bool result,const int proc_tm, const camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r){
-	ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
-		(result?"true":"false"), proc_tm, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+void on_capture_image_received(const bool result,const int proc_tm, const camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
+	ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, timeout=%d imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
+		(result?"OK":"NG"), proc_tm, timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
 	
 	const ros::Time now = ros::Time::now();
 	
@@ -330,40 +352,19 @@ void on_capture_image_received(const bool result,const int proc_tm, const camera
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
 	}else{
-		
 		for (int i = 0 ; i < 2 ; i++ ){
-			sensor_msgs::Image *ros_img=&ros_imgs[i];
-			const camera::ycam3d::CameraImage *cam_img=&cam_imgs[i];
-			ros_img->header.stamp = now;
-			ros_img->header.frame_id = FRAME_ID;
-			ros_img->width = cam_img->width;
-			ros_img->height = cam_img->height;
-			ros_img->encoding = sensor_msgs::image_encodings::MONO8;
-			ros_img->step = cam_img->step;
-			ros_img->is_bigendian = false;
-			ros_img->data.resize(cam_img->byte_count());
-			memcpy(ros_img->data.data(),cam_img->data.data(),cam_img->byte_count());
+			cam_imgs[i].to_ros_img(ros_imgs[i],FRAME_ID);
 		}
 	}
-	/*
-	cv::Mat img = cv_bridge::toCvCopy(ros_imgs[0], sensor_msgs::image_encodings::MONO8)->image;
-	cv::imwrite("/home/ros/cam_l.png",img);
-	
-	img = cv_bridge::toCvCopy(ros_imgs[1], sensor_msgs::image_encodings::MONO8)->image;
-	cv::imwrite("/home/ros/cam_r.png",img);
-	
-	ROS_INFO(LOG_HEADER"ros image convert. elapsed=%d",tmr.elapsed_ms());
-	*/
-	
 	//ROS_INFO(LOG_HEADER"capture image recevie finished. elapsed=%d ms",tmr.elapsed_ms());
 	
 	pub_cam_img_left.publish(ros_imgs[0]);
 	pub_cam_img_right.publish(ros_imgs[1]);
 }
 
-void on_pattern_image_received(const bool result,const int proc_tm, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r){
-	ROS_INFO(LOG_HEADER"pattern image recevied. result=%s, proc_tm=%d ms, imgs_l: num=%d, imgs_r: num=%d",
-		(result?"true":"false"), proc_tm, (int)imgs_l.size(),(int)imgs_r.size());
+void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
+	ROS_INFO(LOG_HEADER"pattern image recevied. result=%s, proc_tm=%d ms, timeout=%d, imgs_l: num=%d, imgs_r: num=%d",
+		(result?"OK":"NG"), proc_tm, timeout, (int)imgs_l.size(),(int)imgs_r.size());
 	
 	ElapsedTimer tmr;
 	tmr.restart();
@@ -371,56 +372,137 @@ void on_pattern_image_received(const bool result,const int proc_tm, const std::v
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:pattern capture failed.");
 	}else{
-		char path[256];
-		//left images 
-		for(int i=0;i<imgs_l.size();++i){
-			sprintf(path,"/tmp/capt_%02d_0.pgm",i);
-			cv::imwrite(path,imgs_l.at(i).to_mat());
+		ptn_imgs_l = imgs_l;
+		ptn_imgs_r = imgs_r;
+	}
+	if( timeout ){
+		publish_string(pub_error,"Image streaming timeout");
+	}
+	//ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr.elapsed_ms());
+	
+	ptn_capt_wait_cv.notify_one();
+	// ********** ptn_capt_wait_cv NOTIFY **********
+}
+
+bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res){
+	ROS_INFO("exec_point_cloud_generation");
+	ElapsedTimer tmr;
+
+	if( ! pc_gen_mutex.try_lock_for(std::chrono::seconds(0)) ){
+		res.success = false;
+		ROS_WARN(LOG_HEADER"genpc is busy");
+		return true;
+	}
+	ptn_imgs_l.clear();
+	ptn_imgs_r.clear();
+	
+	// ********** pc_gen_mutex LOCKED **********
+	pc_gen_thread=std::thread([&](ElapsedTimer a_tmr){
+		ROS_INFO("point cloud generation start.");
+		bool result = false;
+		std::lock_guard<std::timed_mutex> locker(pc_gen_mutex,std::adopt_lock);
+		
+		std::stringstream  res_msg_str;
+		
+		if( pre_ycam_mode != Mode_StandBy){
+			ROS_WARN(LOG_HEADER"mode is not standby");
+			
+		}else if( ! camera_ptr || ! camera_ptr->is_open() ){
+			ROS_ERROR(LOG_HEADER"camera is null");
+			
+		} else {
+			std::unique_lock<std::mutex> lock(ptn_capt_wait_mutex);
+			if( ! camera_ptr->capture_pattern() ){
+				ROS_ERROR(LOG_HEADER"pattern catpture failed.");
+				
+			}else{
+				ptn_capt_wait_cv.wait(lock);
+				// ********** ptn_capt_wait_cv WAIT **********
+				
+				if( ptn_imgs_l.size() != ptn_imgs_l.size() || camera::ycam3d::PATTERN_CAPTURE_NUM != ptn_imgs_l.size() ){
+					ROS_ERROR(LOG_HEADER"pattern capture num is different.");
+					
+				}else{
+					std::vector<sensor_msgs::Image> ros_ptn_imgs_l;
+					std::vector<sensor_msgs::Image> ros_ptn_imgs_r;
+					
+					ros_ptn_imgs_l.assign(camera::ycam3d::PATTERN_CAPTURE_NUM,sensor_msgs::Image());
+					ros_ptn_imgs_r.assign(camera::ycam3d::PATTERN_CAPTURE_NUM,sensor_msgs::Image());
+					
+					bool all_recevied = true;
+					for( int i = 0 ; i < camera::ycam3d::PATTERN_CAPTURE_NUM ; ++i ){
+						
+						if( ! ptn_imgs_l.at(i).to_ros_img(ros_ptn_imgs_l[i],FRAME_ID) ){
+							ROS_ERROR(LOG_HEADER"left pattern image is invalid. no=%d",i);
+							all_recevied=false;
+							break;
+							
+						}else if( ! ptn_imgs_r.at(i).to_ros_img(ros_ptn_imgs_r[i],FRAME_ID) ){
+							ROS_ERROR(LOG_HEADER"right pattern image is invalid. no=%d",i);
+							all_recevied=false;
+							break;
+							
+						}
+					}
+					if(  ! all_recevied ){
+						ROS_ERROR(LOG_HEADER"pattern image receive failed. elapsed=%d ms", a_tmr.elapsed_ms());
+						
+					}else{
+						ROS_INFO(LOG_HEADER"all pattern image received. elapsed=%d ms", a_tmr.elapsed_ms());
+						
+						rovi::GenPC genpc_msg;
+						genpc_msg.request.imgL = ros_ptn_imgs_l;
+						genpc_msg.request.imgR = ros_ptn_imgs_r;
+						
+						if( ! svc_genpc.call(genpc_msg) ){
+							ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", a_tmr.elapsed_ms());
+							
+						}else{
+							res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count="
+							<< genpc_msg.response.pc_cnt;
+							ROS_INFO(LOG_HEADER"!!!! point num=%d",genpc_msg.response.pc_cnt);
+							
+							publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
+							result=true;
+						}
+					}
+				}
+			}
 		}
 		
-		//right images 
-		for(int i=0;i<imgs_l.size();++i){
-			sprintf(path,"/tmp/capt_%02d_1.pgm",i);
-			cv::imwrite(path,imgs_r.at(i).to_mat());
-		}
+		publish_bool(pub_Y1,result);
+		
+		res.success = true;
+		res.message = res_msg_str.str();
+		
+		ROS_INFO(LOG_HEADER"point cloud generation finished. result=%d tmr=%d ms", result,  a_tmr.elapsed_ms());
+		// ********** pc_gen_mutex UNLOCKED **********
+		
+	},tmr);
+	//pc_gen_thread.detach();
+	pc_gen_thread.join(); //joinするならスレッドにしなくてもいいかも
+	
+	return true;
+}
+
+
+void exec_point_cloud_generation_sub(const std_msgs::Bool::ConstPtr &req){
+	
+	if( ! camera_ptr || ! camera_ptr->is_open() ){
+		ROS_ERROR(LOG_HEADER"camera is not open");
+		publish_bool(pub_Y1,false);
+		return;
 	}
 	
-	ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr.elapsed_ms());
+	std_srvs::TriggerRequest trig_req;
+	std_srvs::TriggerResponse trig_res;
+	bool ret=exec_point_cloud_generation(trig_req,trig_res);
 	
-	/*
-	//ElapsedTimer tmr;
-	tmr.restart();
-	ElapsedTimer tmr_1;
-	const ros::Time now = ros::Time::now();
-	
-	sensor_msgs::Image ros_img_l;
-	ros_img_l.header.stamp = now;
-	ros_img_l.header.frame_id = FRAME_ID;
-	ros_img_l.width = width;
-	ros_img_l.height = height;
-	ros_img_l.encoding = sensor_msgs::image_encodings::MONO8;
-	ros_img_l.step = width;
-	ros_img_l.is_bigendian = false;
-	ros_img_l.data.resize(width * height);
-	ROS_INFO(LOG_HEADER"make ros image. tm=%d",tmr.elapsed_ms());
-	tmr.restart();
-	//std::copy((char*)mem,((char*)mem) + width*height,ros_img_l.data.data());
-	memcpy(ros_img_l.data.data(),mem,width * height);
-	ROS_INFO(LOG_HEADER"copy ros image. tm=%d",tmr.elapsed_ms());
-	
-	tmr.restart();
-	cv::Mat img = cv_bridge::toCvCopy(ros_img_l, sensor_msgs::image_encodings::MONO8)->image;
-	ROS_INFO(LOG_HEADER"ros image convert. tm=%d",tmr.elapsed_ms());
-	
-	tmr.restart();
-	cv::imwrite("/home/ros/catkin_ws/src/rovi/test.png",img);
-	ROS_INFO(LOG_HEADER"mat image saved. tm=%d",tmr.elapsed_ms());
-	
-	ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr_1.elapsed_ms());
-	*/
 }
+	
 //============================================= 無名名前空間  end  =============================================
 }
+
 
 int main(int argc, char **argv)
 {
@@ -435,6 +517,7 @@ int main(int argc, char **argv)
 	}
 	ROS_INFO(LOG_HEADER"initialization finished");
 	
+	//camera initialization
 	ROS_INFO(LOG_HEADER"camera: size= %d x %d, resolution=%s", cam_width, cam_height, camera_res.c_str());
 	ROS_INFO(LOG_HEADER"ycam3d: mode=%d, cycle=%d Hz", pre_ycam_mode, cur_mode_mon_cyc);
 	
@@ -446,31 +529,33 @@ int main(int argc, char **argv)
 	}
 	
 	camera_ptr->set_callback_camera_open_finished(on_camera_open_finished);
+	camera_ptr->set_callback_camera_disconnect(on_camera_disconnect);
 	camera_ptr->set_callback_camera_closed(on_camera_closed);
 	camera_ptr->set_callback_capture_img_received(on_capture_image_received);
 	camera_ptr->set_callback_pattern_img_received(on_pattern_image_received);
 	
-	//ros::Publisher pub1 = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
-	//pub_cam_img_left = &pub1;
+	//publishers
 	pub_cam_img_left = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
-	
-	//ros::Publisher pub2 = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
-	//pub_cam_img_right = &pub2;
 	pub_cam_img_right = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
-
-	//ros::Publisher pub3 = n.advertise<sensor_msgs::Image>("Y1", 1);
-	//pub_Y1 = &pub3;
-	pub_Y1 = n.advertise<sensor_msgs::Image>("Y1", 1);
+	pub_Y1 = n.advertise<std_msgs::Bool>("Y1", 1);
+	pub_pcount = n.advertise<std_msgs::Int32>("pcount", 1);
+	pub_stat = n.advertise<std_msgs::Bool>("stat", 1);
+	pub_error = n.advertise<std_msgs::String>("error", 1);
+	pub_info  = n.advertise<std_msgs::String>("message", 1);
 	
-	const ros::Subscriber sub1 = n.subscribe("X1", 1, exec_capture );
 	
+	//service servers
+	const ros::ServiceServer svs1 = n.advertiseService("pshift_genpc", exec_point_cloud_generation);
+	
+	//service clients
+	svc_genpc = n.serviceClient<rovi::GenPC>("genpc");
+	
+	//subscribers
+	const ros::Subscriber sub1 = n.subscribe<std_msgs::Bool>("X1", 1, exec_point_cloud_generation_sub);
+	
+	//timers
 	mode_mon_timer = n.createTimer(ros::Duration(1/(float)cur_mode_mon_cyc), mode_monitor_task);
-	
-	//streaming_cycle_timer = n.createTimer(ros::Duration(1 /(float)sw_trig_rate ), streaming_cyc_task);
-	
-	//live.reset(new CameraLive(nh));
-	//live->start();
-	//const ros::ServiceServer svc1 = n.advertiseService("ycam3d", ycam3d_service);
+	cam_open_mon_timer = n.createTimer(ros::Duration(1), cam_open_monitor_task);
 	
 	camera_ptr->start_auto_connect();
 	
@@ -478,6 +563,9 @@ int main(int argc, char **argv)
 	
 	mode_mon_timer.stop();
 	ROS_INFO(LOG_HEADER"mode monitor timer stopped.");
+	
+	cam_open_mon_timer.stop();
+	ROS_INFO(LOG_HEADER"camera open monitor timer stopped.");
 	
 	//todo:******画像転送スレッドの終了待ち
 	ROS_INFO(LOG_HEADER"image transfer task wait start.");

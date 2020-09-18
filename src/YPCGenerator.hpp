@@ -3,6 +3,7 @@
 #include "iStereoCamera.hpp"
 #include "iPointCloudGenerator.hpp"
 #include <chrono>
+#include <vector>
 
 
 class YPCGenerator {
@@ -63,11 +64,47 @@ public:
 	}
 
 	/**
-	  カメラがHMatから構築されたか否かを返します.座標系変換済みのHMatからステレオカメラを構築している可能性があるため	 */
+	  カメラがHMatから構築されたか否かを返します.座標系変換済みのHMatからステレオカメラを構築している可能性があるため
+	 */
 	const bool is_camera_from_hmat() const {
 		return (this->camtype == CamParamType::HMat) ? true : false;
 	}
 
+	/**
+	  ファイルから画像を読み込んで点群生成器に渡します.
+	  @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	  @param [in] filenames ファイルのフルパスが格納されているvector
+	 */
+	bool load_images(std::vector<std::string> &filenames);
+
+	/**
+	  バッファから画像を点群生成器に渡します.
+	  @return 処理に成功した場合はtrue, 失敗した場合はfalse.
+	  @param [in] buffers 画像左上端アドレスが格納されているvector
+	 */
+	bool set_images(std::vector<unsigned char*> &buffers);
+	
+
+	/**
+	  点群を生成します.
+	  @return 処理が成功したか否か
+	  @param [in] is_interpo 点群補間を行うか否か
+	 */
+	bool execute(const bool is_interpo);
+
+	
+	/**
+	   点群を保存します.
+	   @return 作成された点の数
+	 */
+	int save_pointcloud(PointCloudCallback *callback) {
+		return pcgen->get_pointcloud(callback);
+	}
+	
+
+	// 下２つは一回呼び出せば点群保存まで実行する簡単(?)まとめ関数
+	// callbackを複数呼び出す場合は、this->execute()までを複数回実行する必要はないです
+	
 	/**
 	  画像ファイルから画像を読み込んで点群生成を行います.
 	  @return 作成された点の数
@@ -78,7 +115,8 @@ public:
 	 */
 	int generate_pointcloud(std::vector<std::string> filenames, const bool is_interpo, PointCloudCallback *callback) {
 		if (!load_images(filenames)) return false;
-		return this->exec(is_interpo, callback);
+		if (!this->execute(is_interpo)) return false;
+		return this->save_pointcloud(callback);
 	}
 
 	/**
@@ -93,10 +131,10 @@ public:
 	  @note 左右連結画像は左側に左カメラ画像、右側に右カメラ画像となるように連結されていることを想定しています.
 	  @note buffers.size()で画像が連結されているか、そうでないかを判定します.
 	 */
-	int generate_pointcloud(std::vector<unsigned char*> &buffers, const bool is_interpo, PointCloudCallback *callback) {
+	int generate_pointcloud2(std::vector<unsigned char*> &buffers, const bool is_interpo, PointCloudCallback *callback) {
 		if (!set_images(buffers)) return false;
-		return this->exec(is_interpo, callback);
-	
+		if (!this->execute(is_interpo)) return false;
+		return this->save_pointcloud(callback);
 	}
 
 protected:
@@ -112,26 +150,6 @@ protected:
 	 */
 	const int get_image_rows(void) const { return settings.output_rows; }
 
-	/**
-	  ファイルから画像を読み込んで点群生成器に渡します.
-	  @return 処理に成功した場合はtrue, 失敗した場合はfalse.
-	  @param [in] filenames ファイルのフルパスが格納されているvector
-	 */
-	bool load_images(std::vector<std::string> &filenames);
-
-	/**
-	  バッファから画像を点群生成器に渡します.
-	  @return 処理に成功した場合はtrue, 失敗した場合はfalse.
-	  @param [in] buffers 画像左上端アドレスが格納されているvector
-	 */
-	bool set_images(std::vector<unsigned char*> &buffers);
-
-	/**
-	  点群を生成します.
-	  @return 作成された点の数
-	  @param [in] callback 点群作成後に呼び出されるコールバック関数
-	 */
-	int exec(const bool is_interpo, PointCloudCallback *callback);
 
 	/**
 	  カメラ画像の横幅を設定します
@@ -182,6 +200,7 @@ protected:
 
 
 
+// PLY ファイルに点群データを保存するcallback
 class PLYSaver : public PointCloudCallback {
 	std::string filename;
 	bool status;
@@ -199,3 +218,23 @@ public:
 	void operator()(unsigned char *image, const size_t step, const int width, const int height,
 		std::vector<Point3d> &points, const int n_valid);
 };
+
+
+// Depthデータを保存するcallback
+class DepthSaver : public PointCloudCallback {
+	std::string filename;
+	bool status;
+
+public:
+	DepthSaver(const std::string name) : filename(name) {}
+
+	const bool is_ok() const { return status; }
+	const std::string get_filename() const { return filename; }
+
+	/**
+	   get_pointcloudに渡したときに呼び出されるcallback関数(Depthデータ(最小-最大で正規化)を保存します.)
+	   @note 保存に成功したか否かはstatusに保存されます.
+	 */
+	void operator()(unsigned char *image, const size_t step, const int width, const int height,
+		std::vector<Point3d> &points, const int n_valid);
+};	

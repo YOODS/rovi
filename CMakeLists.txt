@@ -29,6 +29,15 @@ find_package(PkgConfig REQUIRED)
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 #2020/09/09 add by hato ----------  end  ----------
 
+#2020/09/18 add by hato ---------- start ----------
+find_package(OpenMP REQUIRED)
+if(OPENMP_FOUND)
+  message(STATUS "OPENMP FOUND")
+  set(OpenMP_FLAGS ${OpenMP_CXX_FLAGS})  # or if you use C: ${OpenMP_C_FLAGS}
+  set(OpenMP_LIBS gomp)
+endif()
+#2020/09/18 add by hato ----------  end  ----------
+
 add_service_files(
   FILES
   ImageFilter.srv
@@ -56,6 +65,9 @@ catkin_package(
 #  LIBRARIES
   CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs stereo_msgs cv_bridge tf2_ros image_geometry
   DEPENDS OpenCV
+#2020/09/18 add by hato ---------- start ----------
+  OpenMP
+#2020/09/18 add by hato ----------  end  ----------
 )
 
 ###########
@@ -94,16 +106,19 @@ add_executable(remap_node src/remap_node.cpp)
 target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
-#2020/09/03 modified by hato ----------------- start ------------------
+#2020/09/17 modified by hato ----------------- start ------------------
 #add_executable(genpc_node src/genpc_node.cpp)
-add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp src/YPCData.cpp)
+add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp src/YPCData.cpp src/ElapsedTimer.cpp)
 #target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d yaml-cpp ${OpenCV_LIBRARIES})
-#2020/09/03 modified by hato -----------------  end ------------------
+#2020/09/17 modified by hato -----------------  end ------------------
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)
-target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+#2020/09/17 modified by hato ----------------- start ------------------
+#target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES} ${OpenMP_LIBS})
+#2020/09/17 modified by hato -----------------  end  ------------------
 add_dependencies(grid_node rovi_gencpp)
 
 add_executable(floats2pc src/floats2pc.cpp)

@@ -1,5 +1,6 @@
 #pragma once 
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <atomic>
@@ -8,6 +9,8 @@
 #include <thread>
 #include <opencv2/core.hpp>
 #include <opencv2/highgui.hpp>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/image_encodings.h>
 #include "Aravis.h"
 #include "YCAM3D.h"
 
@@ -43,12 +46,16 @@ namespace camera{
 		constexpr int YCAM_EXPOSURE_TIME_LEVEL_MIN = 0;
 		const int YCAM_EXPOSURE_TIME_LEVEL_MAX = aravis::ycam3d::EXPOSURE_TIME_SET_SIZE -1;
 		
+		
+		constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;
+		
 		struct CameraImage {
 			bool result =false;
 			int width = -1;
 			int height = -1;
 			int step = -1;
 			int color_ch = -1;
+			std::chrono::system_clock::time_point dt;
 			
 			std::vector<unsigned char> data;
 			
@@ -78,18 +85,49 @@ namespace camera{
 				return data.size() == buf_size;
 			}
 			
-			cv::Mat to_mat()const {
-				if(!valid()){ return cv::Mat(); }
+			bool to_mat(cv::Mat &img)const {
+				if( ! result || ! valid() ){ return false; }
 				
-				cv::Mat img=cv::Mat(height,width,CV_8UC1,cv::Scalar(0));
+				img=cv::Mat(height,width,CV_8UC1,cv::Scalar(0));
 				memcpy(img.data,data.data(),byte_count());
-				return img;
+				return true;
+			}
+			
+			bool to_ros_img(sensor_msgs::Image &img,const std::string &frame_id=std::string())const{
+				if( ! result || ! valid() ){ return false; }
+				
+				const auto t0 = std::chrono::time_point<std::chrono::high_resolution_clock>{};
+				const auto t1 = this->dt;
+				
+				const auto tstamp = t1 - t0;
+				const int32_t sec = std::chrono::duration_cast<std::chrono::seconds>(tstamp).count();
+				const int32_t nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(tstamp).count() % 1000000000UL;
+				img.header.stamp = ros::Time(sec, nsec);
+				
+				//char date[64];
+				//time_t t = img.header.stamp.sec;
+    			//strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
+				//std::cerr << "!!!" <<  date << std::endl;
+								
+				if( ! frame_id.empty() ){
+					img.header.frame_id = frame_id;
+				}
+				img.width = this->width;
+				img.height = this->height;
+				img.encoding = sensor_msgs::image_encodings::MONO8;
+				img.step = this->step;
+				img.is_bigendian = false;
+				img.data.resize(this->byte_count());
+				memcpy(img.data.data(),this->data.data(),this->byte_count());
+				
+				return true;
 			}
 		};
 		using f_camera_open_finished = std::function<void(const bool result)>;
+		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
-		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r)>;
-		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage img_l,const camera::ycam3d::CameraImage &img_r)>;
+		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout)>;
+		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout)>;
 
 	}
 }
@@ -150,6 +188,8 @@ private:
 	bool set_camera_param_int(const std::string &label,std::function<bool(int)> func,const int val);
 protected:
 	int m_camno;
+		
+	camera::ycam3d::f_camera_disconnect m_callback_cam_disconnect;
 	
 	std::atomic<CaptureStatus> m_capt_stat;
 	std::timed_mutex m_capt_finish_wait_mutex;
@@ -212,7 +252,9 @@ public:
 
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	
-	void set_callback_camera_closed(camera::ycam3d::f_camera_closed);
+	void set_callback_camera_disconnect(camera::ycam3d::f_camera_disconnect callback);
+	
+	void set_callback_camera_closed(camera::ycam3d::f_camera_closed callback);
 	
 	void set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback);
 

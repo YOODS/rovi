@@ -33,6 +33,8 @@ namespace ycam3d{
 	constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
 	constexpr int PROJ_FLASH_INTERVAL_MAX = 999;//?
 	
+	constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
+	
 	struct ExposureTimeSet {
 		const int cam_exposure_tm;
 		const int proj_exposure_tm;

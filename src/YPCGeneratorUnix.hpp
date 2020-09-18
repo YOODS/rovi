@@ -2,19 +2,7 @@
 
 #include <vector>
 #include <string>
-
-//2020/08/25 modified by hato ---------- start ----------
-#ifdef YAML_PARAM
-//2020/08/25 modified by hato ----------  end  ----------
 #include <yaml-cpp/yaml.h>
-//2020/08/25 modified by hato ---------- start ----------
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
-
-//2020/08/26 modified by hato ---------- start ----------
-#include <map>
-//2020/08/26 modified by hato ----------  end ----------
-
 #include "YPCGenerator.hpp"
 
 class YPCGeneratorUnix : public YPCGenerator {
@@ -30,79 +18,64 @@ public:
 		pcgen = 0;
 	}
 
-	/// “_ŒQ¶¬Ší‚ğì¬‚·‚é.
+	/// ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚’ä½œæˆã™ã‚‹.
 	bool create_pcgen(const PcGenMode pcgen_mode);
 
-	/// ƒpƒ‰ƒ[ƒ^‚Ì‰Šú‰»
-	//2020/08/26 modified by hato ---------- start ----------
-#ifdef YAML_PARAM
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®åˆæœŸåŒ–
 	bool init(const char* cfgpath);
-#endif
+	//2020/08/26 modified by hato ---------- start ----------
 	bool init(std::map<std::string,double> &paramMap);
 	//2020/08/26 modified by hato ----------  end  ----------
-
-	/// ƒXƒeƒŒƒIƒJƒƒ‰ì¬
+	
+	/// ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ä½œæˆ
 	bool create_camera(const char* dirname);
 	bool create_camera_raw(
 		std::vector<double> &Kl, std::vector<double> &Kr,
 		std::vector<double> &Dl, std::vector<double> &Dr,
 		std::vector<double> &R, std::vector<double> &T);
 
-	/// “ü—Íƒtƒ@ƒCƒ‹–¼ƒŠƒXƒgì¬
+	/// å…¥åŠ›ãƒ•ã‚¡ã‚¤ãƒ«åãƒªã‚¹ãƒˆä½œæˆ
 	std::vector<std::string> create_filelist(const char* dirname, const char* ext);
-	
 
-	
 	/**
-	  “_ŒQ¶¬‚µ‚ÄPLYƒtƒ@ƒCƒ‹•Û‘¶‚ğs‚¢‚Ü‚·
-	  @param [in] filelist “ü—Í‰æ‘œƒtƒ@ƒCƒ‹–¼ƒŠƒXƒg
-	  @param [in] outpath PLYƒtƒ@ƒCƒ‹–¼
-	  @param [in] is_interpo •âŠÔ‚ğs‚¤‚©”Û‚©
+	  ç‚¹ç¾¤ç”Ÿæˆã—ã¦PLYãƒ•ã‚¡ã‚¤ãƒ«ä¿å­˜ã‚’è¡Œã„ã¾ã™
+	  @param [in] filelist å…¥åŠ›ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«åãƒªã‚¹ãƒˆ
+	  @param [in] outpath PLYãƒ•ã‚¡ã‚¤ãƒ«å
+	  @param [in] is_interpo è£œé–“ã‚’è¡Œã†ã‹å¦ã‹
 	 */
 	bool generate_pointcloud(std::vector<std::string> &filelist, const char* outpath, const bool is_interpo);
-	
-//2020/08/25 modified by hato ---------- start ----------
-	/**
-	  “_ŒQ¶¬‚µ‚ÄPLYƒtƒ@ƒCƒ‹•Û‘¶‚ğs‚¢‚Ü‚·
-	  @param [in] cam_imgs ¶‰EƒJƒƒ‰‰æ‘œ
-	  @param [in] outpath PLYƒtƒ@ƒCƒ‹–¼
-	  @param [in] is_interpo •âŠÔ‚ğs‚¤‚©”Û‚©
-	 */
-	int generate_pointcloud(std::vector<unsigned char*>& cam_imgs, const bool is_interpo,PointCloudCallback*callback);
 
-//2020/08/25 modified by hato ----------  end  ----------
-
-//2020/08/26 modified by hato ---------- start ----------
-	///< ‹·ŒvZ‚É‚©‚©‚Á‚½ŠÔ
+	//2020/08/26 modified by hato ---------- start ----------
+	///< è¦–å·®è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
 	std::chrono::system_clock::duration get_elapsed_disparity(){
 		return this->elapsed_disparity;
 	}
 	
-	///< “_ŒQŒvZ‚É‚©‚©‚Á‚½ŠÔ
+	///< ç‚¹ç¾¤è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
 	std::chrono::system_clock::duration get_elapsed_genpcloud(){
 		return this->elapsed_genpcloud;
 	}
-//2020/08/26 modified by hato ---------- end ----------
+	//2020/08/26 modified by hato ---------- end ----------
 	
 private:
-//2020/08/25 modified by hato ---------- start ----------
-#ifdef YAML_PARAM
-//2020/08/25 modified by hato ----------  end  ----------
-	/// SGBM‚Ìİ’è’l‚ğ“Ç‚İ‚ñ‚Åİ’è‚µ‚Ü‚·.
+	/// SGBMã®è¨­å®šå€¤ã‚’èª­ã¿è¾¼ã‚“ã§è¨­å®šã—ã¾ã™.
 	bool _init_SGBM(const YAML::Node& param);
 
-	// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
+	/// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
 	bool _init_PSFT(const YAML::Node& param);
 
-	// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
+	/// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
 	bool _init_MPSFT(const YAML::Node& param);
-//2020/08/25 modified by hato ---------- start ----------
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
 
-//2020/08/26 modified by hato ---------- start ----------
+	//2020/08/26 modified by hato ---------- start ----------
+	/// SGBMã®è¨­å®šå€¤ã‚’èª­ã¿è¾¼ã‚“ã§è¨­å®šã—ã¾ã™.
 	bool _init_SGBM(std::map<std::string,double>& p);
+	/// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
 	bool _init_PSFT(std::map<std::string,double>& p);
+	/// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
 	bool _init_MPSFT(std::map<std::string,double>& p);
-//2020/08/26 modified by hato ----------  end  ----------
+	//2020/08/26 modified by hato ----------  end  ----------
+	
+	/// çµŒéæ™‚é–“è¡¨ç¤º
+	void print_elapsed();
 };

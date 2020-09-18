@@ -8,23 +8,10 @@
 #include "iPointCloudGenerator.hpp"
 #include "iStereoCamera.hpp"
 
-//2020/08/26 modified by hato ---------- start ----------
-#include <sys/stat.h>
-//2020/08/26 modified by hato ----------  end  ----------
-
-
-//2020/08/31 modified by hato ---------- start ----------
-//#define DETAIL_DEBUG_LOG
-//2020/08/31 modified by hato ----------  end  ----------
-
 
 bool YPCGeneratorUnix::create_pcgen(const PcGenMode pcgen_mode_)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cout << "YPCGeneratorUnix::create_pcgen() " << pcgen_mode_ << std::endl;
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	if (this->pcgen) this->pcgen->destroy();
 	this->pcgen_mode = pcgen_mode_;	
 	this->pcgen = CreatePointCloudGenerator(pcgen_mode_);
@@ -32,17 +19,10 @@ bool YPCGeneratorUnix::create_pcgen(const PcGenMode pcgen_mode_)
 }
 
 
-//2020/08/26 modified by hato ---------- start ----------
-#ifdef YAML_PARAM
-//2020/08/26 modified by hato ----------  end  ----------
 
 bool YPCGeneratorUnix::init(const char* cfgpath)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cout << "YPCGeneratorUnix::init()\n";
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	if (!this->pcgen) {
 		std::cerr << "no point cloud generator\n";
 		return false;
@@ -60,75 +40,62 @@ bool YPCGeneratorUnix::init(const char* cfgpath)
 		std::cerr << "load parameter failure\n";
 		return false;
 	}
-	
-	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+
+	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
 	std::cerr << params << std::endl;
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	
-	// ‹¤’Êƒpƒ‰ƒ[ƒ^İ’è
+	// å…±é€šãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®š
 	if (params["image_width"]) set_camera_cols(params["image_width"].as<int>());
 	if (params["image_height"]) set_camera_rows(params["image_height"].as<int>());
 	if (params["method3d"]) this->method3d = (iPointCloudGenerator::Method3D)(params["method3d"].as<int>());
 	if (params["camera_type"]) this->camtype = (CamParamType)(params["camera_type"].as<int>());
 
 	if (this->pcgen_mode == PcGenMode::PCGEN_SGBM) {
-		// SGBM‚Ìê‡
+		// SGBMã®å ´åˆ
 		return _init_SGBM(params["SGBM"]);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_GRAYPS4) {
-		// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
+		// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
 		return _init_PSFT(params["PSFT"]);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_MULTI) {
-		// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
+		// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
 		return _init_MPSFT(params["MPSFT"]);
 	}
 	else return false;
 }
 
-//2020/08/26 modified by hato ----------  end  ----------
-#endif
 //2020/08/26 modified by hato ---------- start ----------
 
 bool YPCGeneratorUnix::init(std::map<std::string,double> &params){
 	
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
-	std::cout << "YPCGeneratorUnix::init()\n";
-#endif
-	//2020/08/31 modified by hato ----------  ebd  ----------
+	//std::cout << "YPCGeneratorUnix::init()\n";
 	if (!this->pcgen) {
 		std::cerr << "no point cloud generator\n";
 		return false;
 	}
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
-	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
-	for (std::map<std::string, double>::const_iterator i = params.begin(); i != params.end(); ++i) {
-        std::cout << i->first << " => " << i->second << std::endl;
-    }
-#endif
-	//2020/08/31 modified by hato ----------  ebd  ----------
 	
-	// ‹¤’Êƒpƒ‰ƒ[ƒ^İ’è
+	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
+	//for (std::map<std::string, double>::const_iterator i = params.begin(); i != params.end(); ++i) {
+    //    std::cout << i->first << " => " << i->second << std::endl;
+    //}
+	
+	// å…±é€šãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®š
 	if ( params.count("image_width") ) set_camera_cols(params.at("image_width"));
 	if ( params.count("image_height") ) set_camera_rows((int)params.at("image_height"));
 	if ( params.count("method3d") ) this->method3d = (iPointCloudGenerator::Method3D)((int)params.at("method3d"));
 	if ( params.count("camera_type") ) this->camtype = (CamParamType)((int)params.at("camera_type"));
 	
 	if (this->pcgen_mode == PcGenMode::PCGEN_SGBM) {
-		// SGBM‚Ìê‡
+		// SGBMã®å ´åˆ
 		return _init_SGBM(params);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_GRAYPS4) {
-		// GrayƒR[ƒhˆÊ‘ŠƒVƒtƒg
+		// Grayã‚³ãƒ¼ãƒ‰ä½ç›¸ã‚·ãƒ•ãƒˆ
 		return _init_PSFT(params);
 	}
 	else if (this->pcgen_mode == PcGenMode::PCGEN_MULTI) {
-		// ƒ}ƒ‹ƒ`ˆÊ‘ŠƒVƒtƒg
+		// ãƒãƒ«ãƒä½ç›¸ã‚·ãƒ•ãƒˆ
 		return _init_MPSFT(params);
 	}
 	else return false;
@@ -137,10 +104,8 @@ bool YPCGeneratorUnix::init(std::map<std::string,double> &params){
 
 //2020/08/26 modified by hato ----------  end  ----------
 
-
 bool YPCGeneratorUnix::create_camera(const char* dirname)
 {
-	
 	if (!pcgen) return false;
 	if (stereo) {
 		stereo->destroy();
@@ -149,52 +114,38 @@ bool YPCGeneratorUnix::create_camera(const char* dirname)
 
 	std::string dirnm(dirname);
 
-	//std::cerr << "YPCGeneratorUnix: create stereo camera from\n";
+	std::cerr << "YPCGeneratorUnix: create stereo camera from\n";
 	std::vector<std::string> filenames;
 	if (this->camtype == CamParamType::HMat) {
 		std::string name = dirnm + "/hmat0.dat";
 		filenames.push_back(name);
-		//std::cerr << "\t" << name.c_str() << "\n";
+		std::cerr << "\t" << name.c_str() << "\n";
 
 		name = dirnm + "/hmat1.dat";
 		filenames.push_back(name);
-		//std::cerr << "\t" << name.c_str() << "\n";
+		std::cerr << "\t" << name.c_str() << "\n";
 
 		name = dirnm + "/rect.param";
 		filenames.push_back(name);
-		//std::cerr << "\t" << name.c_str() << "\n";
+		std::cerr << "\t" << name.c_str() << "\n";
 	}
 	else if (this->camtype == CamParamType::CamN) {
 		std::string name = dirnm + "/cam0_param.yaml";
 		filenames.push_back(name);
-		//std::cerr << "\t" << name.c_str() << "\n";
+		std::cerr << "\t" << name.c_str() << "\n";
 
 		name = dirnm + "/cam1_param.yaml";
 		filenames.push_back(name);
-		//std::cerr << "\t" << name.c_str() << "\n";
+		std::cerr << "\t" << name.c_str() << "\n";
 	}
 	else {
 		std::cerr << "Camera Type Error\n";
 		return false;
 	}
-	
-	struct stat buffer;   
-	bool allExists=true;
-	for(const std::string &filename:filenames){
-		if( stat (filename.c_str(), &buffer) != 0){
-			std::cerr << "file not found. path=" << filename.c_str() << "\n";
-			allExists=false;
-			break;
-		}
-	}
-	if ( ! allExists ) { return false; }
-	
-	//fprintf(stderr,"camera:(input)  width=%d height=%d\n",this->settings.input_cols,this->settings.input_rows);
-	//fprintf(stderr,"camera:(output) width=%d height=%d\n",this->settings.output_cols,this->settings.output_rows);
-	
+
 	if (!(this->stereo = CreateStereoCamera(this->camtype, filenames, &this->settings))) return false;
 
-	// “_ŒQ¶¬Ší‚ÉƒXƒeƒŒƒIƒJƒƒ‰‚ğ“n‚·
+	// ç‚¹ç¾¤ç”Ÿæˆå™¨ã«ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’æ¸¡ã™
 	this->pcgen->init(this->stereo);
 	return true;
 }
@@ -206,7 +157,7 @@ bool YPCGeneratorUnix::create_camera_raw(
 {
 	if (!(this->stereo = CreateStereoCameraFromRaw(Kl, Kr, Dl, Dr, R, T, &this->settings))) return false;
 	
-	// “_ŒQ¶¬Ší‚ÉƒXƒeƒŒƒIƒJƒƒ‰‚ğ“n‚·
+	// ç‚¹ç¾¤ç”Ÿæˆå™¨ã«ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’æ¸¡ã™
 	this->pcgen->init(this->stereo);
 	return true;	
 }
@@ -224,12 +175,12 @@ YPCGeneratorUnix::create_filelist(const char* dirname, const char* ext)
 	std::vector<std::string> filelist;
 	std::string path(dirname);
 	
-	// ƒfƒBƒŒƒNƒgƒŠ“à‚Ìƒtƒ@ƒCƒ‹ˆê——‚ğì¬
+	// ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå†…ã®ãƒ•ã‚¡ã‚¤ãƒ«ä¸€è¦§ã‚’ä½œæˆ
 	struct dirent *dent;
 	while ((dent = readdir(dp)) != NULL) {
 		std::string name(dent->d_name);
 		if (name.find(ext) != std::string::npos) {
-			// w’è‚³‚ê‚½Šg’£q‚ğŠÜ‚ñ‚Å‚¢‚½‚ç–¼‘O‚ğæ‚Á‚Ä‚¨‚­
+			// æŒ‡å®šã•ã‚ŒãŸæ‹¡å¼µå­ã‚’å«ã‚“ã§ã„ãŸã‚‰åå‰ã‚’å–ã£ã¦ãŠã
 			std::string name_ = path + "/" + name;
 			filelist.push_back(name_);
 		}
@@ -242,12 +193,13 @@ YPCGeneratorUnix::create_filelist(const char* dirname, const char* ext)
 	}
 	
 	
-	// ƒAƒ‹ƒtƒ@ƒxƒbƒg‡‚É•À‚×‘Ö‚¦‚é
+	// ã‚¢ãƒ«ãƒ•ã‚¡ãƒ™ãƒƒãƒˆé †ã«ä¸¦ã¹æ›¿ãˆã‚‹
 	std::sort(filelist.begin(), filelist.end());
 	return filelist;
 }
 
-bool YPCGeneratorUnix::generate_pointcloud(std::vector<std::string>& filelist, const char* outpath, const bool is_interpo)
+bool YPCGeneratorUnix::generate_pointcloud(std::vector<std::string>& filelist,
+										   const char* outpath, const bool is_interpo)
 {
 	std::cerr << "YPCGeneratorUnix: generate point cloud\n";
 	PLYSaver saver(outpath);
@@ -257,41 +209,21 @@ bool YPCGeneratorUnix::generate_pointcloud(std::vector<std::string>& filelist, c
 	return (num == 0) ? false : true;
 }
 
-//2020/08/25 modified by hato ---------- start ----------
 
-int YPCGeneratorUnix::generate_pointcloud(std::vector<unsigned char*>& buffers, const bool is_interpo,PointCloudCallback *callback){
-	//std::cerr << "YPCGeneratorUnix: generate point cloud \n";	
-	const int num = YPCGenerator::generate_pointcloud(buffers, is_interpo, callback );	
-	//std::cerr << "n_points = " << num << std::endl;
-	return num;
-}
-
-//2020/08/25 modified by hato ----------  end  ----------
-
-//2020/08/25 modified by hato ---------- start ----------
-#ifdef YAML_PARAM
-//2020/08/25 modified by hato ----------  end  ----------
 
 bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 {
-	
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_SGBM()\n";
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
+	
 	SGBMParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
 
-	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
-	
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
 	std::cerr << "\tmin_disparity    : " << param.min_disparity << std::endl;
 	std::cerr << "\tnum_disparities  : " << param.num_disparities << std::endl;
 	std::cerr << "\tblockSize        : " << param.blockSize << std::endl;
@@ -301,29 +233,22 @@ bool YPCGeneratorUnix::_init_SGBM(const YAML::Node& p)
 	std::cerr << "\tspeckleWindowSize: " << param.speckleWindowSize << std::endl;
 	std::cerr << "\tspeckleRange     : " << param.speckleRange << std::endl;
 	std::cerr << "\tmode             : " << param.mode << std::endl;
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_PSFT()\n";
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	
 	GPhaseDecodeParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
-	// ƒpƒ‰ƒ[ƒ^•\¦
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+
+	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -337,29 +262,23 @@ bool YPCGeneratorUnix::_init_PSFT(const YAML::Node& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_MPSFT()\n";
-#endif
+	
 	MPhaseDecodeParameter param;
 	param.set(p);
 	
 	if (!pcgen->setparams((void*)&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
 	
-	// ƒpƒ‰ƒ[ƒ^•\¦
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -373,34 +292,32 @@ bool YPCGeneratorUnix::_init_MPSFT(const YAML::Node& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
-#endif
-	//2020/08/31 modified by hato ----------  end  ----------
 	return true;
 }
 
-//2020/08/25 modified by hato ---------- start ----------
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
+void YPCGeneratorUnix::print_elapsed()
+{
+	double disp = std::chrono::duration_cast<std::chrono::milliseconds>(this->elapsed_disparity).count();
+	double gnpc = std::chrono::duration_cast<std::chrono::milliseconds>(this->elapsed_genpcloud).count();
+	std::cerr << "dispmap: " << disp << ", ";
+	std::cerr << "genpc: " << gnpc << ", ";
+	std::cerr << "elapsed: " << disp + gnpc << std::endl;
+}
 
+//2020/08/31 modified by hato ---------- start ----------
 
 bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_SGBM()\n";
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
 	
 	SGBMParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
-	// “Ç‚İ‚ñ‚¾ƒpƒ‰ƒ[ƒ^‚ğ•\¦
+	// èª­ã¿è¾¼ã‚“ã ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¡¨ç¤º
 	std::cerr << "\tmin_disparity    : " << param.min_disparity << std::endl;
 	std::cerr << "\tnum_disparities  : " << param.num_disparities << std::endl;
 	std::cerr << "\tblockSize        : " << param.blockSize << std::endl;
@@ -410,28 +327,22 @@ bool YPCGeneratorUnix::_init_SGBM(std::map<std::string,double>& p)
 	std::cerr << "\tspeckleWindowSize: " << param.speckleWindowSize << std::endl;
 	std::cerr << "\tspeckleRange     : " << param.speckleRange << std::endl;
 	std::cerr << "\tmode             : " << param.mode << std::endl;
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
+
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_PSFT()\n";
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
+
 	GPhaseDecodeParameter param;
 	param.set(p);
 	if (!pcgen->setparams(&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
-	// ƒpƒ‰ƒ[ƒ^•\¦
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -445,31 +356,23 @@ bool YPCGeneratorUnix::_init_PSFT(std::map<std::string,double>& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
 	
 	return true;
 }
 
 bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 {
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
 	std::cerr << "YPCGeneratorUnix::_init_MPSFT()\n";
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
 	MPhaseDecodeParameter param;
 	param.set(p);
 	
 	if (!pcgen->setparams((void*)&param)) {
-		// ƒpƒ‰ƒ[ƒ^‚ª‰½‚©ŠÔˆá‚Á‚Ä‚¢‚é
+		// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãŒä½•ã‹é–“é•ã£ã¦ã„ã‚‹
 		std::cerr << "params value failure\n";
 		return false;
 	}
 	
-	// ƒpƒ‰ƒ[ƒ^•\¦
-	//2020/08/31 modified by hato ---------- start ----------
-#ifdef DETAIL_DEBUG_LOG
+	// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¡¨ç¤º
 	std::cerr << "\tbw_diff    : " << param.bw_diff << std::endl;
 	std::cerr << "\tbrightness : " << param.brightness << std::endl;
 	std::cerr << "\tdarkness   : " << param.darkness << std::endl;
@@ -483,8 +386,8 @@ bool YPCGeneratorUnix::_init_MPSFT(std::map<std::string,double>& p)
 	std::cerr << "\tmax_ph_diff  : " << param.max_ph_diff << std::endl;
 
 	std::cerr << "\tls_points    : " << param.ls_points << std::endl;
-#endif
-//2020/08/25 modified by hato ----------  end  ----------
+
 	return true;
 }
 
+//2020/08/25 modified by hato ----------  end  ----------

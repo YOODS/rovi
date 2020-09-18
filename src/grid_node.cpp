@@ -65,17 +65,31 @@ void solve(sensor_msgs::Image src)
     	
 	
 	rovi::Floats buf;
-	buf.data.resize(5 * imagePoints.size());
-	for (int n = 0, i = 0; n < imagePoints.size(); n++, i += 5) {
-		cv::Point3f markerpos = cboard->get_3d_position(n);
-		cv::Point2f imagepos = imagePoints[n];
-		
-		buf.data[i + 0] = markerpos.x;
-		buf.data[i + 1] = markerpos.y;
-		buf.data[i + 2] = markerpos.z;
-		buf.data[i + 3] = imagepos.x;
-		buf.data[i + 4] = imagepos.y;
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//buf.data.resize(5 * imagePoints.size());
+	//for (int n = 0, i = 0; n < imagePoints.size(); n++, i += 5) {
+	//	cv::Point3f markerpos = cboard->get_3d_position(n);
+	//	cv::Point2f imagepos = imagePoints[n];
+	//	buf.data[i + 0] = markerpos.x;
+	//	buf.data[i + 1] = markerpos.y;
+	//	buf.data[i + 2] = markerpos.z;
+	//	buf.data[i + 3] = imagepos.x;
+	//	buf.data[i + 4] = imagepos.y;
+	//}
+	std::vector<cv::Point2f> found_img_points;
+	std::vector<cv::Point3f> found_obj_points;
+	const int found_num = cboard->corresponding_points(imagePoints, found_img_points, found_obj_points);
+	buf.data.resize( 5 * found_num);
+	for( int n = 0 , i =0 ; n < found_num ; n++, i += 5 ){
+		const cv::Point3f *markerpos = found_obj_points.data() + n;
+		const cv::Point2f *imagepos = found_img_points.data() + n;
+		buf.data[i + 0] = markerpos->x;
+		buf.data[i + 1] = markerpos->y;
+		buf.data[i + 2] = markerpos->z;
+		buf.data[i + 3] = imagepos->x;
+		buf.data[i + 4] = imagepos->y;
 	}
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
 	pub3->publish(buf);
 
 	
@@ -168,12 +182,19 @@ template <typename T> void load_param(std::string pname, T &value)
 	}
 }
 
-
-void set_PreProcParams(PreProcParams &pp)
+//2020/09/18 modified by hato ------------------------ start ------------------------
+//void set_PreProcParams(PreProcParams &pp)
+void set_PreProcParams(PreProcParam &pp)
+//2020/09/18 modified by hato ------------------------  end  ------------------------
 {
-	load_param("do_reverse_bw", pp.do_reverse_bw);
-	load_param("do_equalize_hist", pp.do_equalize_hist);
-	load_param("do_smoothing", pp.do_smoothing);
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//load_param("do_reverse_bw", pp.do_reverse_bw);
+	load_param("do_reverse_bw", pp.reverse_bw);
+	//load_param("do_equalize_hist", pp.do_equalize_hist);
+	load_param("do_equalize_hist", pp.equalize_hist);
+	//load_param("do_smoothing", pp.do_smoothing);
+	load_param("do_smoothing", pp.smoothing);
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
 	load_param("bin_type", pp.bin_type);
 	load_param("bin_param0", pp.bin_param0);
 	load_param("bin_param1", pp.bin_param1);
@@ -181,19 +202,29 @@ void set_PreProcParams(PreProcParams &pp)
 }
 
 
-void set_CircleMarkerParams(CircleMarkerParams &mp)
+//2020/09/18 modified by hato ------------------------ start ------------------------
+//void set_CircleMarkerParams(CircleMarkerParams &mp)
+void set_CircleMarkerParams(CircleMarkerParam &mp)
+//2020/09/18 modified by hato ------------------------  end  ------------------------
 {
 	load_param("fitscore", mp.fitscore);
-	load_param("n_minimum", mp.n_minimum);
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//load_param("n_minimum", mp.n_minimum);
+	load_param("n_minimum", mp.n_circles_minimum);
+	//2020/09/18 modified by hato ------------------------ start ------------------------
 	load_param("max_radius", mp.max_radius);
 	load_param("min_radius", mp.min_radius);
 	load_param("showscale", mp.debug_show_scale);
 }
 
-
-void set_CalibBoardParams(CalibBoardParams & cp)
+//2020/09/18 modified by hato ------------------------ start ------------------------
+//void set_CalibBoardParams(CalibBoardParams & cp)
+void set_CalibBoardParams(CalibBoardParam & cp)
+//2020/09/18 modified by hato ------------------------  end  ------------------------
 {
-	load_param("unitleng", cp.unit_length);
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//load_param("unitleng", cp.unit_length);
+	load_param("unitleng", cp.unitleng);
 	load_param("n_circles_x", cp.n_circles_x);
 	load_param("n_circles_y", cp.n_circles_y);
 	load_param("origin_x", cp.origin_x);
@@ -206,16 +237,30 @@ void reload(std_msgs::Bool e)
 {
 	ROS_INFO("grid_node LD_PATH=%s",getenv("LD_LIBRARY_PATH"));
 	
-	PreProcParams pprc_param;
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//PreProcParams pprc_param;
+	PreProcParam pprc_param;
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
 	set_PreProcParams(pprc_param);
 	
-	CircleMarkerParams cmrk_param;
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//CircleMarkerParams cmrk_param;
+	CircleMarkerParam cmrk_param;
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
 	set_CircleMarkerParams(cmrk_param);
 	
-	CalibBoardParams cbrd_param;
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//CalibBoardParams cbrd_param;
+	CalibBoardParam cbrd_param;
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
+	
 	set_CalibBoardParams(cbrd_param);
-	if (cbrd_param.unit_length == 0.0 || cbrd_param.n_circles_x == 0.0 || cbrd_param.n_circles_y == 0.0 ||
+	//2020/09/18 modified by hato ------------------------ start ------------------------
+	//if (cbrd_param.unit_length == 0.0 || cbrd_param.n_circles_x == 0.0 || cbrd_param.n_circles_y == 0.0 ||
+	//	cbrd_param.origin_x == 0.0 || cbrd_param.origin_y == 0.0) {
+	if (cbrd_param.unitleng == 0.0 || cbrd_param.n_circles_x == 0.0 || cbrd_param.n_circles_y == 0.0 ||
 		cbrd_param.origin_x == 0.0 || cbrd_param.origin_y == 0.0) {
+	//2020/09/18 modified by hato ------------------------  end  ------------------------
 		ROS_ERROR("GetGrid::paramer \"CalibBoardParams\" not found");
 		return;		
 	}

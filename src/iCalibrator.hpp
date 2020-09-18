@@ -58,6 +58,8 @@ struct CameraCalibParam {
 
 class iCameraCalibrator {
 public:
+	virtual ~iCameraCalibrator() {}
+	
 	/**
 	 * デストラクタ呼び出し
 	 */
@@ -146,6 +148,8 @@ struct RectifyParam {
 
 class iStereoCalibrator {
 public:
+	virtual ~iStereoCalibrator() {}
+	
 	/**
 	 * デストラクタ呼び出し
 	 */

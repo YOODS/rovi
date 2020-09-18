@@ -11,4 +11,5 @@ public:
 	
 	int elapsed_ms();
 	
+	static int duration_ms(const std::chrono::system_clock::duration &duration);
 };
