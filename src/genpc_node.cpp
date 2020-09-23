@@ -565,7 +565,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ROS_INFO(LOG_HEADER"point cloud generation start. interpolation=%s",is_interpo?"enabled":"disabled");
 		//const auto genpc_start = std::chrono::high_resolution_clock::now() ;
 		ElapsedTimer tmr_genpc;
-		const int N = pcgen.generate_pointcloud2(stereo_img_pointers,is_interpo,&pcdata);
+		const int N = pcgen.generate_pointcloud_raw(stereo_img_pointers,is_interpo,&pcdata);
 		
 		ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
 			//N, DURATION_TO_MS(pcgen.get_elapsed_disparity()), DURATION_TO_MS(pcgen.get_elapsed_genpcloud()),

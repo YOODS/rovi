@@ -2,6 +2,7 @@
 #include <arv.h>
 #include <stdint.h>
 #include <string>
+#include <sstream>
 
 #include "YCAM3D.h"
 
@@ -35,18 +36,47 @@ namespace ycam3d{
 	
 	constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
 	
-	struct ExposureTimeSet {
-		const int cam_exposure_tm;
-		const int proj_exposure_tm;
+	struct ExposureTimeLevelSetting {
+		const int min_lv;
+		const int max_lv;
+		const int default_lv;
 		
-		ExposureTimeSet(const int a_cam_expsr_tm,const int a_proj_expsr_tm):
-			cam_exposure_tm(a_cam_expsr_tm),proj_exposure_tm(a_proj_expsr_tm)
+		struct Param {
+			const int cam_exposure_tm;
+			const int proj_exposure_tm;
+			const int cam_frame_rate;
+			
+			Param(const int a_cam_exposure_tm,const int a_proj_exposure_tm,const int a_cam_frame_rate):
+				cam_exposure_tm(a_cam_exposure_tm),
+				proj_exposure_tm(a_proj_exposure_tm),
+				cam_frame_rate(a_cam_frame_rate)
+			{
+			}
+			std::string to_string()const{
+				std::stringstream ss;
+				ss << "cam_exposure_tm=" << cam_exposure_tm;
+				ss << ", proj_exposure_tm=" << proj_exposure_tm;
+				ss << ", cam_frame_rate=" << cam_frame_rate;
+				return ss.str();
+			}
+		};
+		const std::vector<Param> params;
+		
+		ExposureTimeLevelSetting(const int a_min_lv,const int a_max_lv,const int a_def_lv,const std::vector<Param> &a_params):
+			min_lv(a_min_lv),
+			max_lv(a_max_lv),
+			default_lv(a_def_lv),
+			params(a_params)
 		{
 		}
+		const Param *get_param(const int lv)const{
+			if( lv < min_lv || max_lv < lv ){
+				return nullptr;
+			}
+			return params.data()+lv;
+		}
+		
 	};
-	constexpr int EXPOSURE_TIME_SET_DEFAULT = 0;
-	extern const ExposureTimeSet EXPOSURE_TIME_SET_LIST[];
-	extern const int EXPOSURE_TIME_SET_SIZE;
 }
 }
 //2020/09/15 add by hato --------------------  end  --------------------
@@ -94,7 +124,8 @@ class Aravis
 	
 	
 	//2020/09/16 add by hato -------------------- start --------------------
-	int m_exposure_tm_lv;
+	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting;
+	int m_expsr_tm_lv;
 	//2020/09/16 add by hato --------------------  end  --------------------
 
 	//Aravis control
@@ -146,8 +177,11 @@ public:
 	
 	
 	//2020/09/16 add by hato -------------------- start --------------------
-	int get_exposure_tm_level()const;
-	bool set_exposure_tm_level(const int val);
+	bool get_exposure_time_level(int *val)const;
+	bool get_exposure_time_level_default(int *val)const;
+	bool get_exposure_time_level_min(int *val)const;
+	bool get_exposure_time_level_max(int *val)const;
+	bool set_exposure_time_level(const int val);
 	//2020/09/16 add by hato --------------------  end  --------------------
 	
 	//

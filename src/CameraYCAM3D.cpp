@@ -737,16 +737,39 @@ bool CameraYCAM3D::set_camera_param_int(const std::string &label,std::function<b
 	// ********** m_camera_mutex UNLOCKED **********
 }
 
+bool CameraYCAM3D::get_exposure_time_level_default(int *val)const{
+	if( ! m_arv_ptr ){
+		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
+		return false;
+	}
+	return m_arv_ptr->get_exposure_time_level_default(val);
+}
+
+bool CameraYCAM3D::get_exposure_time_level_min(int *val)const{
+	if( ! m_arv_ptr ){
+		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
+		return false;
+	}
+	return m_arv_ptr->get_exposure_time_level_min(val);
+}
+
+bool CameraYCAM3D::get_exposure_time_level_max(int *val)const{
+	if( ! m_arv_ptr ){
+		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
+		return false;
+	}
+	return m_arv_ptr->get_exposure_time_level_max(val);
+}
+
 bool CameraYCAM3D::get_exposure_time_level(int * val){
 	return get_camera_param_int("digital_gain",[&](int *l_val) {
-		*l_val =  m_arv_ptr->get_exposure_tm_level();
-		return *l_val >= 0;
+		return m_arv_ptr->get_exposure_time_level(l_val);
 	},val);
 }
 
 bool CameraYCAM3D::set_exposure_time_level(const int val){
 	return set_camera_param_int("exposure_time_level",[&](const int l_val) {
-		return m_arv_ptr->set_exposure_tm_level(l_val);
+		return m_arv_ptr->set_exposure_time_level(l_val);
 	},val);
 }
 

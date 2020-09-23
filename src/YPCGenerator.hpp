@@ -131,7 +131,7 @@ public:
 	  @note 左右連結画像は左側に左カメラ画像、右側に右カメラ画像となるように連結されていることを想定しています.
 	  @note buffers.size()で画像が連結されているか、そうでないかを判定します.
 	 */
-	int generate_pointcloud2(std::vector<unsigned char*> &buffers, const bool is_interpo, PointCloudCallback *callback) {
+	int generate_pointcloud_raw(std::vector<unsigned char*> &buffers, const bool is_interpo, PointCloudCallback *callback) {
 		if (!set_images(buffers)) return false;
 		if (!this->execute(is_interpo)) return false;
 		return this->save_pointcloud(callback);

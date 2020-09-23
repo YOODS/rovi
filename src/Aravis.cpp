@@ -18,16 +18,25 @@ typedef std::vector<std::string> STRLIST;
 
 #define Sleep(ms) usleep(ms*1e3)
 
-//2020/09/15 add by hato -------------------- start --------------------
+//2020/09/18 add by hato -------------------- start --------------------
 namespace aravis{
 namespace ycam3d{
-	const ExposureTimeSet EXPOSURE_TIME_SET_LIST[] = { {8300,8333}, {16000,16666}, {25000,25000}, {33000,33333} };
-	const int EXPOSURE_TIME_SET_SIZE = sizeof(EXPOSURE_TIME_SET_LIST)/sizeof(ExposureTimeSet);
+	//カメラ露光時間に対して設定できるフレームレート
+	// 8300: 10～64
+	//16600: 10～60
+	//16666: 10～59
+	//25000: 10～39
+	//32000: 10～31
+	
+	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_SXGA = 
+		{ 1, 3, 1, { {   -1,   -1,  -1 } , { 16600, 16666, 59 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
+	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_VGA  = 
+		{ 0, 3, 0, { { 8300, 8333, 116 } , { 16600, 16666, 59 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
 }
 }
 
 using namespace aravis::ycam3d;
-//2020/09/15 add by hato --------------------  end  --------------------
+//2020/09/18 add by hato --------------------  end  --------------------
 
 namespace{
 	//2020/09/11 add by hato -------------------- start --------------------
@@ -93,6 +102,9 @@ int Aravis::static_camno_ = 0;
 
 //ncam:ポートを共有するカメラ数(GevSCPD計算用)
 Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
+	//2020/09/18 add by hato -------------------- start --------------------
+	,m_expsr_tm_lv_setting(nullptr),m_expsr_tm_lv(-1)
+	//2020/09/18 add by hato --------------------  end --------------------
 {
 	camno_ = static_camno_++;
 	camera_ = nullptr;
@@ -102,8 +114,19 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	on_lost_ = nullptr;
 	payload_=width_=height_=color_=0;
 	trigger_mode_ = YCAM_TRIG_INT;
-	if (res==YCAM_RES_VGA) {width_=1280,height_=480;}
-	else if (res==YCAM_RES_SXGA) {width_=2560,height_=1024;}
+	//2020/09/18 add by hato -------------------- start --------------------
+	//if (res==YCAM_RES_VGA) {width_=1280,height_=480;}
+	//else if (res==YCAM_RES_SXGA) {width_=2560,height_=1024;}
+	if (res==YCAM_RES_VGA) {
+		width_=1280;
+		height_=480;
+		m_expsr_tm_lv_setting = &EXPOSURE_TIME_LV_SETTING_VGA;
+	}else if (res==YCAM_RES_SXGA){
+		width_=2560,
+		height_=1024;
+		m_expsr_tm_lv_setting = &EXPOSURE_TIME_LV_SETTING_SXGA;
+	}
+	//2020/09/18 add by hato --------------------  end  --------------------
 	else dprintf("invalid resolution type:%d",res);
 	packet_delay_=0;
 	lost_=true;
@@ -115,9 +138,6 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	pthread_cond_init(&cap_cond_, &attr);
 	//
 	pthread_mutex_init(&cap_mutex_, NULL);
-	//2020/09/11 add by hato -------------------- start --------------------
-	m_exposure_tm_lv=EXPOSURE_TIME_SET_DEFAULT;
-	//2020/09/11 add by hato --------------------  end  --------------------
 }
 
 Aravis::~Aravis()
@@ -130,9 +150,19 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 	*name_='\0';
 	dprintf("*** open camera [%s]",name ? name : "");
 	
-	//2020/09/11 add by hato -------------------- start --------------------
-	m_exposure_tm_lv = -1;
-	//2020/09/11 add by hato --------------------  end  --------------------
+	//2020/09/18 add by hato -------------------- start --------------------
+	m_expsr_tm_lv = -1;
+	if( ! m_expsr_tm_lv_setting ){
+		dprintf("error: exposure time level setting is null.");
+		return false;
+	}
+	const int cur_expsr_tm_lv = m_expsr_tm_lv_setting->default_lv;
+	const ExposureTimeLevelSetting::Param * exp_tm_lv_param = m_expsr_tm_lv_setting->get_param(cur_expsr_tm_lv);
+	if( ! exp_tm_lv_param ){
+		dprintf("error: exposure time level param is null.");
+		return false;
+	}
+	//2020/09/18 add by hato --------------------  end  --------------------
 	
 	//
 	ArvInterface *arvif=arv_gv_interface_get_instance();
@@ -217,45 +247,82 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 		pset_TrigMode(1);        usleep(500000);
 		#endif
 		
-		const ExposureTimeSet * init_expsr_tm_set = &EXPOSURE_TIME_SET_LIST[EXPOSURE_TIME_SET_DEFAULT];
+#if 0
+		setExposureTime(16666);
+		std::vector<int> frameRates;
+		for(int i=1;i<120;++i){
+			if(set_node_int("AcquisitionFrameRate",i)){
+				frameRates.push_back(i);
+			}
+		}
+		dprintf("------------------");
+		for(const int frameRate:frameRates){
+			dprintf("[%03d]",frameRate);
+		}
+		dprintf("------------------");
+#endif
 		
-		dprintf(" setup exposure time ...");
-		setExposureTime(init_expsr_tm_set->cam_exposure_tm);
-		
-		dprintf(" setup digital gain ...");
-		setGainD(CAM_DIGITAL_GAIN_DEFAULT);
-		
-		dprintf(" setup analog gain ...");
-		setGainA(CAM_ANALOG_GAIN_DEFAULT);
-		
-		dprintf(" setup trigger mode ...");
-		setTriggerMode(YCAM_TRIG_INT);
-		msleep(500);
-		
-		dprintf(" setup projector exposure time ...");
-		bool retaa=setProjectorExposureTime(init_expsr_tm_set->proj_exposure_tm);
-		msleep(500);
-		
-		dprintf(" setup projector brightness ...");
-		setProjectorBrightness(PROJ_BRIGHTNESS_DEFAULT);
-		msleep(500);
-		
-		dprintf(" setup projector interval ...");
-		setProjectorFlashInterval(PROJ_FLASH_INTERVAL_DEFAULT);
-		msleep(500);
-		
-		dprintf(" setup projector pattern ...");
-		setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
-		msleep(3000);
-		
-		dprintf(" setup trigger mode ...");
-		setTriggerMode(YCAM_TRIG_EXT);
-		msleep(500);
+		{
+			const bool reult_cam_expsr_tm = reg_write(REG_EXPOSURE_TIME,exp_tm_lv_param->cam_exposure_tm);
+			dprintf(" setup camera exposure time.    result=%s, set_val=%5d, cur_val=%5d",
+				(reult_cam_expsr_tm?"OK":"NG"), exp_tm_lv_param->cam_exposure_tm, exposureTime());
+		}
+		{
+			const bool result_frame_rate = set_node_int("AcquisitionFrameRate", exp_tm_lv_param->cam_frame_rate);
+			dprintf(" setup camera frame rate.       result=%s, set_val=%5d, cur_val=%5d",
+				(result_frame_rate?"OK":"NG"), exp_tm_lv_param->cam_frame_rate, get_node_int("AcquisitionFrameRate"));
+		}
+		{
+			
+			const bool result_gain_d = setGainD(CAM_DIGITAL_GAIN_DEFAULT);
+			dprintf(" setup camera digital gain.     result=%s, set_val=%5d, cur_val=%5d",
+				(result_gain_d?"OK":"NG"),CAM_DIGITAL_GAIN_DEFAULT, gainD());
+		}
+		{
+			const bool result_gain_a = setGainA(CAM_ANALOG_GAIN_DEFAULT);
+			dprintf(" setup camera analog gain.      result=%s, set_val=%5d, cur_val=%5d",
+				(result_gain_a?"OK":"NG"),CAM_ANALOG_GAIN_DEFAULT, gainA());
+		}
+		{
+			const bool result_tig_mode = setTriggerMode(YCAM_TRIG_INT);
+			dprintf(" setup trigger mode.            result=%s, set_val=%5d, cur_val=%5d",
+				(result_tig_mode?"OK":"NG"),YCAM_TRIG_INT, triggerMode());
+			msleep(500);
+		}
+		{
+			const bool result_proj_expsr_tm = setProjectorExposureTime(exp_tm_lv_param->proj_exposure_tm);
+			dprintf(" setup projector exposure time. result=%s, set_val=%5d",
+				"--",exp_tm_lv_param->proj_exposure_tm);
+			
+			msleep(500);
+		}
+		{
+			const bool result_proj_bright =  setProjectorBrightness(PROJ_BRIGHTNESS_DEFAULT);
+			dprintf(" setup projector brightness.    result=%s, set_val=%5d",
+				"--",PROJ_BRIGHTNESS_DEFAULT);
+			msleep(500);
+		}
+		{
+			const bool result_proj_flash_interval= setProjectorFlashInterval(PROJ_FLASH_INTERVAL_DEFAULT);
+			dprintf(" setup projector interval.      result=%s, set_val=%5d",
+				(result_proj_flash_interval?"OK":"NG"),PROJ_FLASH_INTERVAL_DEFAULT);
+			msleep(500);
+		}
+		{
+			const bool result_proj_ptn = setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
+			dprintf(" setup projector pattern.       result=%s, set_val=%5d",
+				(result_proj_ptn?"OK":"NG"),YCAM_PROJ_PTN_PHSFT);
+			msleep(3000);
+		}
+		{
+			const bool result_trig_mode = setTriggerMode(YCAM_TRIG_EXT);
+			dprintf(" setup trigger mode.            result=%s, set_val=%5d, cur_val=%5d",
+				(result_trig_mode?"OK":"NG"),YCAM_TRIG_EXT,triggerMode());
+			msleep(500);
+		}
+		m_expsr_tm_lv = cur_expsr_tm_lv;
+		//dprintf(" current exposure time lv =%d",m_expsr_tm_lv);
 		//2020/09/14 add by hato --------------------  end  --------------------
-		
-		//2020/09/16 add by hato -------------------- start --------------------
-		m_exposure_tm_lv = EXPOSURE_TIME_SET_DEFAULT;
-		//2020/09/16 add by hato --------------------  end  --------------------
 		
 		dprintf(" --------------------");
 		if(1 < ncam_){
@@ -411,31 +478,82 @@ void Aravis::imageSize(int *width, int *height)
 	*height=height_;
 }
 //2020/09/16 add by hato -------------------- start --------------------
-int Aravis::get_exposure_tm_level()const{
-	return m_exposure_tm_lv;
-}
-
-bool Aravis::set_exposure_tm_level(const int lv){
-	m_exposure_tm_lv = -1;
-	if( lv < 0 || EXPOSURE_TIME_SET_SIZE <= lv ){
-		dprintf("exposure time level out of bounds. level=%d size=%d",lv,EXPOSURE_TIME_SET_SIZE);
+bool Aravis::get_exposure_time_level(int *val)const{
+	if( ! m_expsr_tm_lv_setting ){
+		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
-	const ExposureTimeSet * expsr_tm_set = &EXPOSURE_TIME_SET_LIST[lv];
-	dprintf("exposure time set. camera=%d proj=%d", expsr_tm_set->cam_exposure_tm, expsr_tm_set->proj_exposure_tm);
-		
-	bool ret=false;
-	if( ! setExposureTime( expsr_tm_set->cam_exposure_tm ) ){
-		dprintf("camera exposure time set failed. val=%d", expsr_tm_set->cam_exposure_tm);
-		
-	//}else if( ! setProjectorExposureTime( expsr_tm_set->proj_exposure_tm ) ){
-	//	dprintf("projector exposure time set failed. val=%d",expsr_tm_set->proj_exposure_tm );
-		
-	}else{
-		setProjectorExposureTime( expsr_tm_set->proj_exposure_tm ); //正しい結果が返って来ないので必ず成功するとみなす。
-		m_exposure_tm_lv = lv;
-		ret = true;
+	*val = m_expsr_tm_lv;
+	return *val >= 0;
+}
+
+bool Aravis::get_exposure_time_level_default(int *val)const{
+	if( ! m_expsr_tm_lv_setting ){
+		dprintf("error: exposure time level setting is null.");
+		return false;
 	}
+	*val = m_expsr_tm_lv_setting->default_lv;
+	return *val >= 0;
+}
+
+bool Aravis::get_exposure_time_level_min(int *val)const{
+	if( ! m_expsr_tm_lv_setting ){
+		dprintf("error: exposure time level setting is null.");
+		return false;
+	}
+	*val = m_expsr_tm_lv_setting->min_lv;
+	return *val >= 0 ;
+}
+
+bool Aravis::get_exposure_time_level_max(int *val)const{
+	if( ! m_expsr_tm_lv_setting ){
+		dprintf("error: exposure time level setting is null.");
+		return false;
+	}
+	*val = m_expsr_tm_lv_setting->max_lv;
+	return *val >= 0;
+}
+
+bool Aravis::set_exposure_time_level(const int lv){
+	const ExposureTimeLevelSetting::Param * exp_tm_lv_param = nullptr;
+	if( ! m_expsr_tm_lv_setting || ! ( exp_tm_lv_param = m_expsr_tm_lv_setting->get_param(lv)) ){
+		dprintf("error: exposure time level param is null. lv=%d",lv);
+		return false;
+	}
+	
+	dprintf("exposure time lv param. %s", exp_tm_lv_param->to_string().c_str());
+	
+	bool ret=false;
+	{
+		const bool ret_expsr = reg_write(REG_EXPOSURE_TIME, exp_tm_lv_param->cam_exposure_tm);
+		dprintf("camera exposure time set.    result=%s, set_val=%5d, cur_val=%5d",
+			(ret_expsr?"OK":"NG"),exp_tm_lv_param->cam_exposure_tm,exposureTime());
+	}
+	{
+		const bool ret_frame_rate = set_node_int("AcquisitionFrameRate", exp_tm_lv_param->cam_frame_rate);
+		dprintf("camera frame rate set.       result=%s, set_val=%5d, cur_val=%5d", 
+			(ret_frame_rate?"OK":"NG"),exp_tm_lv_param->cam_frame_rate, get_node_int("AcquisitionFrameRate"));
+	}
+	
+	//プロジェクタ関係の関数を呼び出す前にはsetTriggerMode(0)、終わったらsetTriggerMode(1)
+	setTriggerMode(YCAM_TRIG_INT); //******** TIGGER_MOD (YCAM_TRIG_INT) ********
+	
+	{
+		const bool ret_prj_expsr = setProjectorExposureTime( exp_tm_lv_param->proj_exposure_tm );
+		dprintf("projector exposure time set. result=%s, set_val=%5d",
+			"--",exp_tm_lv_param->proj_exposure_tm);
+	}
+	{
+		bool ret_prj_ptn =setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
+		dprintf("projector pattern changed.   result=%s, set_val=%5d",
+			"--",YCAM_PROJ_PTN_PHSFT);
+	}
+	
+	setTriggerMode(YCAM_TRIG_EXT); //******** TIGGER_MOD (YCAM_TRIG_EXT) ********
+	
+	m_expsr_tm_lv = lv;
+	ret = true;
+	
 	
 	return ret;
 }

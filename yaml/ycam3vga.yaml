@@ -100,7 +100,7 @@ ycam:
   Mode: 1
   Strobe: 0
   SoftwareTriggerRate: 1
-  ExposureTimeLevel: 0
+  ExposureTimeLevel: 1
   camera:
     Gain: 0
   projector:

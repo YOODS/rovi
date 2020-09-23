@@ -42,10 +42,6 @@ namespace camera{
 		constexpr int PROJ_FLASH_INTERVAL_MIN     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MIN;
 		constexpr int PROJ_FLASH_INTERVAL_MAX     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MAX;
 		
-		constexpr int YCAM_EXPOSURE_TIME_LEVEL_DEFAULT = aravis::ycam3d::EXPOSURE_TIME_SET_DEFAULT;
-		constexpr int YCAM_EXPOSURE_TIME_LEVEL_MIN = 0;
-		const int YCAM_EXPOSURE_TIME_LEVEL_MAX = aravis::ycam3d::EXPOSURE_TIME_SET_SIZE -1;
-		
 		
 		constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;
 		
@@ -229,6 +225,9 @@ public:
 	
 	void start_auto_connect();
 	
+	bool get_exposure_time_level_default(int *val)const;
+	bool get_exposure_time_level_min(int *val)const;
+	bool get_exposure_time_level_max(int *val)const;
 	bool get_exposure_time_level(int *val);
 	bool set_exposure_time_level(const int val);
 	

@@ -74,7 +74,6 @@ ros::Timer cam_open_mon_timer;
 
 bool cam_params_refreshed=false;
 
-int pre_ycam_exposure_level=0;
 int pre_cam_gain_d    = 0;
 int pre_proj_intensity = 0;
 
@@ -86,6 +85,10 @@ std::thread pc_gen_thread;
 std::vector<camera::ycam3d::CameraImage> ptn_imgs_l;
 std::vector<camera::ycam3d::CameraImage> ptn_imgs_r;
 
+int expsr_tm_lv_ui_default = -1;
+int expsr_tm_lv_ui_min = -1;
+int expsr_tm_lv_ui_max = -1;
+	
 template<typename T>
 T get_param(const std::string &key,const T default_val){
 	T val = default_val;
@@ -102,9 +105,9 @@ T get_param(const std::string &key,const T default_val,const T min_val,const T m
 		ROS_ERROR(LOG_HEADER"error:parameter get failed. key=%s",key.c_str());
 		
 	}else if( val < min_val){
+		ROS_ERROR(LOG_HEADER"error:current parameter value is below minimum value. key=%s val=%d min_val=%d",key.c_str(),val,min_val);
 		val = min_val;
 		nh->setParam(key,min_val);
-		ROS_ERROR(LOG_HEADER"error:current parameter value is below minimum value. key=%s val=%d min_val=%d",key.c_str(),val,min_val);
 		
 	}else if( max_val < val){
 		val = max_val;
@@ -168,24 +171,38 @@ void update_camera_params(){
 		ROS_ERROR(LOG_HEADER"error:camera is not opened.");
 		return;
 	}
-	const int cur_ycam_exposure_level = get_param<int>( PRM_EXPOSURE_TIME_LEVEL,
-		camera::ycam3d::YCAM_EXPOSURE_TIME_LEVEL_DEFAULT, camera::ycam3d::YCAM_EXPOSURE_TIME_LEVEL_MIN, camera::ycam3d::YCAM_EXPOSURE_TIME_LEVEL_MAX);
-	if( pre_ycam_exposure_level != cur_ycam_exposure_level ){
-		if( ! camera_ptr->set_exposure_time_level(cur_ycam_exposure_level) ){
-			ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. val=%d",cur_ycam_exposure_level);
-			int latest_val=0;
-			if( ! camera_ptr->get_exposure_time_level(&latest_val) ){
-				ROS_ERROR(LOG_HEADER"error:'exposure time level' get failed.");
-			}else{
-				ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. set_val=%d cur_val=%d", cur_ycam_exposure_level, latest_val);
-				nh->setParam(PRM_EXPOSURE_TIME_LEVEL, latest_val);
-				pre_ycam_exposure_level = latest_val;
-			}
+	if( expsr_tm_lv_ui_default < 0 || expsr_tm_lv_ui_min < 0 || expsr_tm_lv_ui_max < 0 ){
+		//skip
+	}else{
+		int cur_expsr_lv_raw = -1;
+		if( ! camera_ptr->get_exposure_time_level(&cur_expsr_lv_raw) ){
+			ROS_ERROR(LOG_HEADER"error:current exposure time level get failed.");
 		}else{
-			ROS_INFO(LOG_HEADER"'exposure time level' paramter changed. old=%d new=%d", pre_ycam_exposure_level, cur_ycam_exposure_level);
-			pre_ycam_exposure_level = cur_ycam_exposure_level;
+			
+			const int cur_expsr_lv_ui = get_param<int>(PRM_EXPOSURE_TIME_LEVEL, expsr_tm_lv_ui_default);
+			if( cur_expsr_lv_ui < expsr_tm_lv_ui_min ){
+				ROS_ERROR(LOG_HEADER"error:'exposure time level' is below minimum value. val=%d min=%d",cur_expsr_lv_ui,expsr_tm_lv_ui_min);
+				nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv_raw + 1 );
+				
+			}else if( expsr_tm_lv_ui_max < cur_expsr_lv_ui ){
+				ROS_ERROR(LOG_HEADER"error:'exposure time level' is above maximum value. val=%d max=%d",cur_expsr_lv_ui,expsr_tm_lv_ui_max);
+				nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv_raw + 1 );
+				
+			}else{
+				//ui用は1プラスされていると考える
+				if( cur_expsr_lv_raw != cur_expsr_lv_ui - 1 ){
+					if( ! camera_ptr->set_exposure_time_level(cur_expsr_lv_ui - 1) ){
+						ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. val=%d",cur_expsr_lv_ui);
+						nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv_raw + 1 );
+					}else{
+						ROS_INFO(LOG_HEADER"'exposure time level' paramter changed. old=%d new=%d", cur_expsr_lv_raw + 1 , cur_expsr_lv_ui);
+					}
+				}
+			}
+			
 		}
 	}
+	
 	
 	const int cur_cam_gain_d = get_param<int>( PRM_CAM_GAIN_D,
 		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
@@ -302,10 +319,33 @@ void mode_monitor_task(const ros::TimerEvent& e){
 
 void on_camera_open_finished(const bool result){
 	ROS_INFO(LOG_HEADER"camera opened. result=%s",(result?"OK":"NG"));
+	
+	expsr_tm_lv_ui_default = -1;
+	expsr_tm_lv_ui_min = -1;
+	expsr_tm_lv_ui_max = -1;
+	
 	if( ! result ){
 		return;
 	}
 
+	int expsr_tm_lv_raw_default = -1;
+	int expsr_tm_lv_raw_min = -1;
+	int expsr_tm_lv_raw_max = -1;
+	if( ! camera_ptr->get_exposure_time_level_default(&expsr_tm_lv_raw_default) ){
+		ROS_ERROR(LOG_HEADER"exposure time level default val get failed.");
+	}else if( ! camera_ptr->get_exposure_time_level_min(&expsr_tm_lv_raw_min) ){
+		ROS_ERROR(LOG_HEADER"exposure time level min val get failed.");
+	}else if( ! camera_ptr->get_exposure_time_level_max(&expsr_tm_lv_raw_max) ){
+		ROS_ERROR(LOG_HEADER"exposure time level max val get failed.");
+	}else{
+		expsr_tm_lv_ui_default = expsr_tm_lv_raw_default + 1;
+		expsr_tm_lv_ui_min = expsr_tm_lv_raw_min + 1;
+		expsr_tm_lv_ui_max = expsr_tm_lv_raw_max + 1;
+		
+		ROS_INFO(LOG_HEADER"exposure time level: min=%d max=%d default=%d",
+			expsr_tm_lv_ui_min, expsr_tm_lv_ui_max, expsr_tm_lv_ui_default);
+	}
+	
 	pre_cam_gain_d = get_param<int>( PRM_CAM_GAIN_D,
 		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
 	
