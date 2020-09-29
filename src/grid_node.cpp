@@ -19,6 +19,8 @@ iCalibBoardRecognizer *cboard;
 ros::NodeHandle *nh;
 std::string paramK("gridboard/K");
 static std::vector<double> kvec;
+std::string paramD("");
+static std::vector<double> dvec={0,0,0,0,0};
 static ros::Publisher *pub1, *pub2, *pub3, *pub4, *pub5;
 static double torelance=1.0;
 static tf2_ros::TransformBroadcaster *broadcaster;
@@ -87,12 +89,12 @@ void solve(sensor_msgs::Image src)
 	int N = model.size();  
 	cv::Mat kmat(kvec);
 	cv::Mat Kmat=kmat.reshape(1,3);
-	cv::Mat dvec = cv::Mat::zeros(5, 1, cv::DataType<float>::type); // No distortion
+	cv::Mat dmat(dvec);
 	cv::Mat rvec(3, 1, cv::DataType<double>::type);
 	cv::Mat tvec(3, 1, cv::DataType<double>::type);
 	cv::OutputArray oRvec(rvec), oTvec(tvec);
 	if(N>10){
-		cv::solvePnP(model, scene, Kmat, dvec, oRvec, oTvec);
+		cv::solvePnP(model, scene, Kmat, dmat, oRvec, oTvec);
 	}
 	else{
 		ROS_WARN("Too few recognized markers");
@@ -109,7 +111,6 @@ void solve(sensor_msgs::Image src)
 	tf.rotation.y = rw > 0 ? sin(rw / 2) * ry / rw : ry;
 	tf.rotation.z = rw > 0 ? sin(rw / 2) * rz / rw : rz;
 	tf.rotation.w = cos(rw / 2);
-
 	cv::Mat Rmat(3,3,cv::DataType<double>::type);
 	cv::OutputArray oRmat(Rmat);
 	cv::Rodrigues(rvec,oRmat);
@@ -226,6 +227,11 @@ void reload(std_msgs::Bool e)
 		ROS_ERROR("GetGrid::paramer \"K\" not found");
 		return;
 	}
+	if (paramD.length()>0){
+        if(! nh->getParam(paramD.c_str(), dvec)) {
+            ROS_WARN("GetGrid::paramer \"D\" not found");
+        }
+	}
 	if (! nh->getParam("gridboard/torelance", torelance)) {
 		ROS_WARN("GetGrid::paramer \"torelance\" not found");
 	}
@@ -260,11 +266,13 @@ int main(int argc, char **argv)
 		paramK = argv[1];
 		std::cout << "K=" << paramK << "\n";
 	}
+	if (argc >= 3) {
+		paramD = argv[2];
+		std::cout << "D=" << paramD << "\n";
+	}
 
-	cboard = CreateCalibBoardRecognizer();	
-	
-	
-  
+	cboard = CreateCalibBoardRecognizer();
+
 	ros::init(argc, argv, "grid_node");
 	ros::NodeHandle n;
 	nh = &n;
