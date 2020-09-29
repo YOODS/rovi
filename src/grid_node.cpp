@@ -12,7 +12,6 @@
 #include "iCalibBoardRecognizer.hpp"
 #include <stdlib.h>
 
-
 iCalibBoardRecognizer *cboard;
 
 
@@ -235,7 +234,7 @@ void reload(std_msgs::Bool e)
 	if (! nh->getParam("gridboard/torelance", torelance)) {
 		ROS_WARN("GetGrid::paramer \"torelance\" not found");
 	}
-	
+
 	ROS_WARN("grid::param::reload %f",torelance);
 }
 
@@ -262,11 +261,11 @@ void tf_test(std_msgs::Bool e)
 
 int main(int argc, char **argv)
 {
-	if (argc >= 2) {
+	if (argc>=2 && strstr(argv[1],":=")==NULL) {
 		paramK = argv[1];
 		std::cout << "K=" << paramK << "\n";
 	}
-	if (argc >= 3) {
+	if (argc>=3 && strstr(argv[2],":=")==NULL) {
 		paramD = argv[2];
 		std::cout << "D=" << paramD << "\n";
 	}
