@@ -30,6 +30,7 @@ function add_sendmsg(pub){
     pub.publish(m);
   }
 }
+function time_now(){ return ros.Time.toSeconds(ros.Time.now());}
 
 setImmediate(async function() {
   const rosNode = await ros.initNode(NSycamctrl);
@@ -162,7 +163,7 @@ setImmediate(async function() {
     param.camlv.raise(param.camps.diff(param.camlv.objs));//---restore overwritten camera params
   }
   let psgenpc = function(req,res){
-    Report["T00"]=ros.Time.toSeconds(ros.Time.now());
+    Report["T00"]=time_now();
     if(!sens.normal){
       ros.log.warn(res.message='YCAM not ready');
       res.success = false;
@@ -204,7 +205,7 @@ setImmediate(async function() {
         icnt++;
       });
 //
-      Report["T01"]=ros.Time.toSeconds(ros.Time.now());
+      Report["T01"]=time_now();
       if(param.proj.objs.Mode==1){
         ros.log.info('Ready to store');
         setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
@@ -224,7 +225,7 @@ setImmediate(async function() {
           pub_Y1.publish(new std_msgs.Bool());
           return;
         }
-        Report["T02"]=ros.Time.toSeconds(ros.Time.now());
+        Report["T02"]=time_now();
         clearTimeout(wdt);
         let gpreq = new rovi_srvs.GenPC.Request();
         gpreq.imgL = imgs[0];
@@ -241,6 +242,7 @@ setImmediate(async function() {
           res.message = 'genpc failed';
           res.success = false;
         }
+        Report["T03"]=time_now();
         let pcount=new std_msgs.Int32();
         pcount.data=gpres.pc_cnt;
         pub_pcount.publish(pcount);
