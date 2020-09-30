@@ -20,6 +20,7 @@ const jsyaml = require('js-yaml');
 const ImageSwitcher = require('./image_switcher.js');
 const Notifier = require('./notifier.js');
 const SensControl = require('./sens_ctrl.js');
+let Report={};
 
 function sleep(msec){return new Promise(function(resolve){setTimeout(function(){resolve(true);},msec);});}
 function add_sendmsg(pub){
@@ -42,6 +43,7 @@ setImmediate(async function() {
   add_sendmsg(pub_info);
   const pub_pcount=rosNode.advertise(NSrovi+'/pcount',std_msgs.Int32);
   const pub_Y1=rosNode.advertise(NSrovi+'/Y1',std_msgs.Bool);
+  const pub_report=rosNode.advertise('/report',std_msgs.String);
   const genpc=rosNode.serviceClient(NSgenpc, rovi_srvs.GenPC, { persist: true });
   if (!await rosNode.waitForService(genpc.getService(), 2000)) {
     ros.log.error('genpc service not available');
@@ -49,7 +51,7 @@ setImmediate(async function() {
   }
   const param_camnode=await rosNode.getParam(NSrovi + '/camera');
   let param={
-    camps: new Notifier(rosNode,NSps + '/camera'),//Genpc mode camera params
+    camps: new Notifier(rosNode,NSps + '/camera'),//Genpc mode 
     camlv: new Notifier(rosNode,NSlive + '/camera'),  //Live mode camera params
     proj: new Notifier(rosNode,NSps + '/projector') //Genpc projector params
   };
@@ -94,7 +96,7 @@ setImmediate(async function() {
     break;
   case 'ycam1s':
     sensEv = await sens.open(rosNode,NScamL, NScamR, param.proj.objs.Url, param.proj.objs.Port);
-    break;
+    break;Time
   }
   sensEv=SensControl.assign(sensEv);
   sensEv.on('wake', async function() {
@@ -160,6 +162,7 @@ setImmediate(async function() {
     param.camlv.raise(param.camps.diff(param.camlv.objs));//---restore overwritten camera params
   }
   let psgenpc = function(req,res){
+    Report["T00"]=ros.Time.toSeconds(ros.Time.now());
     if(!sens.normal){
       ros.log.warn(res.message='YCAM not ready');
       res.success = false;
@@ -201,6 +204,7 @@ setImmediate(async function() {
         icnt++;
       });
 //
+      Report["T01"]=ros.Time.toSeconds(ros.Time.now());
       if(param.proj.objs.Mode==1){
         ros.log.info('Ready to store');
         setImmediate(function(){ sens.pset({ 'Go': 2 });});  //---projector starts in the next loop
@@ -219,7 +223,8 @@ setImmediate(async function() {
           resolve(true);
           pub_Y1.publish(new std_msgs.Bool());
           return;
-        }     
+        }
+        Report["T02"]=ros.Time.toSeconds(ros.Time.now());
         clearTimeout(wdt);
         let gpreq = new rovi_srvs.GenPC.Request();
         gpreq.imgL = imgs[0];
@@ -245,6 +250,10 @@ setImmediate(async function() {
         let finish=new std_msgs.Bool();
         finish.data=res.success;
         pub_Y1.publish(finish);
+        let rmsg=new std_msgs.String();
+        rmsg.data=JSON.stringify(Report);
+        pub_report.publish(rmsg);
+        Report={};
         resolve(true);
       }
       else if(param.proj.objs.Mode==4){
