@@ -562,6 +562,32 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ROS_ERROR(LOG_HEADER"stereo camera image convert failed. elapsed=%d", tmr_proc.elapsed_ms());
 		
 	}else{
+		//撮影画像保存
+		if( ! file_dump.empty() ) {
+			if( ! get_param<bool>("genpc/point_cloud/img_save",STEREO_CAM_IMGS_DEFAULT_SAVE) ){
+				ROS_INFO(LOG_HEADER"stereo camera images save skipped.");
+			}else{
+				//const auto save_start = std::chrono::high_resolution_clock::now() ;
+				ElapsedTimer tmr_save_img;
+				for (int i = 0, n = 0; i < 13 ; i++) {
+					if( stereo_imgs.size() > n && ! stereo_imgs.at(n).empty() ) {
+						cv::imwrite(cv::format((file_dump + "/capt%02d_0.pgm").c_str(), i), stereo_imgs.at(n) );
+					}
+					n++;
+					if( stereo_imgs.size() > n && ! stereo_imgs.at(n).empty() ) {
+						cv::imwrite(cv::format((file_dump + "/capt%02d_1.pgm").c_str(), i), stereo_imgs.at(n) );
+					}
+					n++;
+				}
+				FILE *f = fopen((file_dump+"/captseq.log").c_str(), "w");
+				for(int j=0; j < 13; j++) {
+					fprintf(f,"(%d) %d %d\n", j, req.imgL[j].header.seq, req.imgR[j].header.seq);
+				}
+				fclose(f);
+				ROS_INFO(LOG_HEADER"stereo camera images save finished. proc_tm=%d ms, path=%s",tmr_save_img.elapsed_ms(),file_dump.c_str());
+			}
+		}
+		
 		ROS_INFO(LOG_HEADER"point cloud generation start. interpolation=%s",is_interpo?"enabled":"disabled");
 		//const auto genpc_start = std::chrono::high_resolution_clock::now() ;
 		ElapsedTimer tmr_genpc;
@@ -576,7 +602,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		if( pcdata.is_empty() ){
 			//ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
 			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", tmr_proc.elapsed_ms());
-			
 		}else{
 			//点群データ変換
 			ROS_INFO(LOG_HEADER"point cloud data convert start.");
@@ -677,29 +702,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	//データ保存
 	if( ! file_dump.empty() ) {
-		if( ! get_param<bool>("genpc/point_cloud/img_save",STEREO_CAM_IMGS_DEFAULT_SAVE) ){
-			ROS_INFO(LOG_HEADER"stereo camera images save skipped.");
-		}else{
-			//const auto save_start = std::chrono::high_resolution_clock::now() ;
-			ElapsedTimer tmr_save_img;
-			for (int i = 0, n = 0; i < 13 ; i++) {
-				if( stereo_imgs.size() > n && ! stereo_imgs.at(n).empty() ) {
-					cv::imwrite(cv::format((file_dump + "/capt%02d_0.pgm").c_str(), i), stereo_imgs.at(n) );
-				}
-				n++;
-				if( stereo_imgs.size() > n && ! stereo_imgs.at(n).empty() ) {
-					cv::imwrite(cv::format((file_dump + "/capt%02d_1.pgm").c_str(), i), stereo_imgs.at(n) );
-				}
-				n++;
-			}
-			FILE *f = fopen((file_dump+"/captseq.log").c_str(), "w");
-			for(int j=0; j < 13; j++) {
-				fprintf(f,"(%d) %d %d\n", j, req.imgL[j].header.seq, req.imgR[j].header.seq);
-			}
-			fclose(f);
-			//ROS_INFO(LOG_HEADER"stereo camera images save finished. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start),file_dump.c_str());
-			ROS_INFO(LOG_HEADER"stereo camera images save finished. proc_tm=%d ms, path=%s",tmr_save_img.elapsed_ms(),file_dump.c_str());
-		}
 		
 		if( ! get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE) ){
 			ROS_INFO(LOG_HEADER"ply file save skipped.");

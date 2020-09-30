@@ -17,6 +17,8 @@
 #include "ElapsedTimer.hpp"
 #include "rovi/Floats.h"
 #include "rovi/GenPC.h"
+#include "rovi/ImageFilter.h"
+
 
 namespace {
 //============================================= 無名名前空間 start =============================================
@@ -39,8 +41,15 @@ ros::Publisher pub_pcount;
 ros::Publisher pub_stat;
 ros::Publisher pub_error;
 ros::Publisher pub_info;
-	
+
+ros::Publisher pub_rects[2];
+ros::Publisher pub_rects0[2];
+ros::Publisher pub_rects1[2];
+ros::Publisher pub_diffs[2];
+ros::Publisher pub_views[2];
+
 ros::ServiceClient svc_genpc;
+ros::ServiceClient svc_remap[2];
 
 int cam_width = -1;
 int cam_height = -1;
@@ -191,12 +200,14 @@ void update_camera_params(){
 			}else{
 				//ui用は1プラスされていると考える
 				if( cur_expsr_lv_raw != cur_expsr_lv_ui - 1 ){
+					ROS_WARN(LOG_HEADER"exposure time level change start.");
 					if( ! camera_ptr->set_exposure_time_level(cur_expsr_lv_ui - 1) ){
 						ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. val=%d",cur_expsr_lv_ui);
 						nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv_raw + 1 );
 					}else{
 						ROS_INFO(LOG_HEADER"'exposure time level' paramter changed. old=%d new=%d", cur_expsr_lv_raw + 1 , cur_expsr_lv_ui);
 					}
+					ROS_WARN(LOG_HEADER"exposure time level change end.");
 				}
 			}
 			
@@ -257,6 +268,13 @@ void mode_monitor_task(const ros::TimerEvent& e){
 		return;
 	}
 	
+	if( ! pc_gen_mutex.try_lock_for(std::chrono::seconds(0)) ){
+		ROS_WARN(LOG_HEADER"genpc is working. live was skipped.");
+		return;
+	}
+	pc_gen_mutex.unlock();
+	
+	
 	//ROS_INFO(LOG_HEADER"ycam mode=%d ",cur_ycam_mode);
 	if( ! camera_ptr->is_open() ){
 		//ROS_ERROR(LOG_HEADER"error:camera disconnect.");
@@ -274,6 +292,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 		if(camera_ptr->is_busy()){
 			ROS_WARN(LOG_HEADER"camera is busy.!!!!");
 		}else{
+			//ROS_WARN(LOG_HEADER"live capture start.");
 			int strobe=0;
 			if(nh->getParam("ycam/Strobe",strobe) && strobe != 0){
 				camera_ptr->capture_strobe();
@@ -380,8 +399,8 @@ void on_camera_closed(){
 }
 	
 void on_capture_image_received(const bool result,const int proc_tm, const camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
-	ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, timeout=%d imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
-		(result?"OK":"NG"), proc_tm, timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, timeout=%d imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
+	//	(result?"OK":"NG"), proc_tm, timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
 	
 	const ros::Time now = ros::Time::now();
 	
@@ -400,6 +419,36 @@ void on_capture_image_received(const bool result,const int proc_tm, const camera
 	
 	pub_cam_img_left.publish(ros_imgs[0]);
 	pub_cam_img_right.publish(ros_imgs[1]);
+	
+	pub_rects1[0].publish(ros_imgs[0]);
+	pub_rects1[1].publish(ros_imgs[1]);
+	
+	//tmr.restart();
+	
+	//char path[256];
+	//cv::Mat img;
+	for(int i=0;i<2;++i){
+		rovi::ImageFilter remap_img_filter;
+		remap_img_filter.request.img = ros_imgs[i];
+		//ROS_INFO(LOG_HEADER"remap start. camno=%d",i);
+		if( ! svc_remap[i].call(remap_img_filter) ){
+			ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d",i);
+		}else{
+			//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
+			pub_rects[i].publish(remap_img_filter.response.img);
+		}
+#if 0		
+		sprintf(path,"/tmp/remap_%d_0.pgm",i);
+		img = cv_bridge::toCvCopy(ros_imgs[i], sensor_msgs::image_encodings::MONO8)->image;
+		cv::imwrite(path,img);
+		
+		sprintf(path,"/tmp/remap_%d_0_remapped.pgm",i);
+		img = cv_bridge::toCvCopy(remap_img_filter.response.img, sensor_msgs::image_encodings::MONO8)->image;
+		cv::imwrite(path,img);
+#endif
+	}
+	//ROS_INFO(LOG_HEADER"image remap finished. elapsed=%d ms",tmr.elapsed_ms());
+	//ROS_WARN(LOG_HEADER"ycam3d node capture image received.");
 }
 
 void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
@@ -443,11 +492,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		std::lock_guard<std::timed_mutex> locker(pc_gen_mutex,std::adopt_lock);
 		
 		std::stringstream  res_msg_str;
-		
+		/*
 		if( pre_ycam_mode != Mode_StandBy){
 			ROS_WARN(LOG_HEADER"mode is not standby");
 			
-		}else if( ! camera_ptr || ! camera_ptr->is_open() ){
+		}else */if( ! camera_ptr || ! camera_ptr->is_open() ){
 			ROS_ERROR(LOG_HEADER"camera is null");
 			
 		} else {
@@ -496,15 +545,92 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						
 						if( ! svc_genpc.call(genpc_msg) ){
 							ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", a_tmr.elapsed_ms());
-							
+							exit(-1);
 						}else{
 							res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count="
 							<< genpc_msg.response.pc_cnt;
-							ROS_INFO(LOG_HEADER"!!!! point num=%d",genpc_msg.response.pc_cnt);
 							
 							publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
 							result=true;
 						}
+						
+						std::vector<sensor_msgs::Image> ros_imgs[2]={ros_ptn_imgs_l,ros_ptn_imgs_r};
+						std::vector<camera::ycam3d::CameraImage> ptn_imgs[2]={ptn_imgs_l,ptn_imgs_r};
+						
+						ElapsedTimer tmr_remap;
+						
+						//*remapした画像を配信するよ
+						for( int camno = 0 ; camno < 2 ; ++camno ){
+							sensor_msgs::Image remap_ros_img_ptn_0;
+							{
+								rovi::ImageFilter remap_img_filter;
+								remap_img_filter.request.img = ros_imgs[camno][0];
+								if( ! svc_remap[camno].call(remap_img_filter) ){
+									ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d, ptn=0",camno);
+								}else{
+									remap_ros_img_ptn_0 = remap_img_filter.response.img;
+								}
+								pub_rects0[camno].publish(remap_ros_img_ptn_0);
+								
+								//char path[256];
+								//sprintf(path,"/tmp/remap_%d_0_A.pgm",camno);
+								//cv::Mat img = cv_bridge::toCvCopy(ros_imgs[camno][0], sensor_msgs::image_encodings::MONO8)->image;
+								//cv::imwrite(path,img);
+								//
+								//sprintf(path,"/tmp/remap_%d_0_B.pgm",camno);
+								//img = cv_bridge::toCvCopy(remap_ros_img_ptn_0, sensor_msgs::image_encodings::MONO8)->image;
+								//cv::imwrite(path,img);
+							}
+							
+							sensor_msgs::Image remap_ros_img_ptn_1;
+							{
+								rovi::ImageFilter remap_img_filter;
+								remap_img_filter.request.img = ros_imgs[camno][1];
+								if( ! svc_remap[camno].call(remap_img_filter) ){
+									ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d, ptn=1",camno);
+								}else{
+									remap_ros_img_ptn_1 = remap_img_filter.response.img;
+								}
+								pub_rects1[camno].publish(remap_ros_img_ptn_1);
+								pub_rects[camno].publish(remap_ros_img_ptn_1);
+								
+								//char path[256];
+								//sprintf(path,"/tmp/remap_%d_1_A.pgm",camno);
+								//cv::Mat img = cv_bridge::toCvCopy(ros_imgs[camno][1], sensor_msgs::image_encodings::MONO8)->image;
+								//cv::imwrite(path,img);
+								//
+								//sprintf(path,"/tmp/remap_%d_1_B.pgm",camno);
+								//img = cv_bridge::toCvCopy(remap_ros_img_ptn_1, sensor_msgs::image_encodings::MONO8)->image;
+								//cv::imwrite(path,img);
+							}
+							{
+								
+								sensor_msgs::Image diff_img;
+								if( remap_ros_img_ptn_0.data.empty() ||
+									remap_ros_img_ptn_0.data.size() != remap_ros_img_ptn_1.data.size()
+								){
+									ROS_ERROR(LOG_HEADER"error:remapped camera image is wrong. camno=%d",camno);
+									
+								}else{
+									diff_img = remap_ros_img_ptn_0;
+									for ( int n=0; n < remap_ros_img_ptn_0.data.size(); n++ ) {
+										int val = remap_ros_img_ptn_1.data[n] - remap_ros_img_ptn_0.data[n];
+										if (val < 1) { val = 0; }
+										else if (val>255) { val=255; }
+										
+										diff_img.data[n] = val;
+									}
+								}
+								
+								pub_diffs[camno].publish(diff_img);
+								
+								//char path[256];
+								//sprintf(path,"/tmp/remap_%d_diff.pgm",camno);
+								//cv::Mat img = cv_bridge::toCvCopy(diff_img, sensor_msgs::image_encodings::MONO8)->image;
+								//cv::imwrite(path,img);
+							}
+						}
+						
 					}
 				}
 			}
@@ -583,12 +709,25 @@ int main(int argc, char **argv)
 	pub_error = n.advertise<std_msgs::String>("error", 1);
 	pub_info  = n.advertise<std_msgs::String>("message", 1);
 	
+	pub_rects[0] = n.advertise<sensor_msgs::Image>("left/image_rect", 1);
+	pub_rects0[0] = n.advertise<sensor_msgs::Image>("left/image_rect0", 1);
+    pub_rects1[0] = n.advertise<sensor_msgs::Image>("left/image_rect1", 1);
+    pub_diffs[0] = n.advertise<sensor_msgs::Image>("left/diff_rect", 1);
+	pub_views[0] = n.advertise<sensor_msgs::Image>("left/view",1);
+	
+	pub_rects[1] = n.advertise<sensor_msgs::Image>("right/image_rect", 1);
+	pub_rects0[1] = n.advertise<sensor_msgs::Image>("right/image_rect0", 1);
+    pub_rects1[1] = n.advertise<sensor_msgs::Image>("right/image_rect1", 1);
+    pub_diffs[1] = n.advertise<sensor_msgs::Image>("right/diff_rect", 1);
+	pub_views[1] = n.advertise<sensor_msgs::Image>("right/view",1);
 	
 	//service servers
 	const ros::ServiceServer svs1 = n.advertiseService("pshift_genpc", exec_point_cloud_generation);
 	
 	//service clients
 	svc_genpc = n.serviceClient<rovi::GenPC>("genpc");
+	svc_remap[0] = n.serviceClient<rovi::ImageFilter>("left/remap");
+	svc_remap[1] = n.serviceClient<rovi::ImageFilter>("right/remap");
 	
 	//subscribers
 	const ros::Subscriber sub1 = n.subscribe<std_msgs::Bool>("X1", 1, exec_point_cloud_generation_sub);

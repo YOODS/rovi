@@ -18,6 +18,11 @@ typedef std::vector<std::string> STRLIST;
 
 #define Sleep(ms) usleep(ms*1e3)
 
+
+//2020/09/25 add by hato -------------------- start --------------------
+//#define DEBUG_DETAIL
+//2020/09/25 add by hato --------------------  end  --------------------
+
 //2020/09/18 add by hato -------------------- start --------------------
 namespace aravis{
 namespace ycam3d{
@@ -29,9 +34,9 @@ namespace ycam3d{
 	//32000: 10～31
 	
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_SXGA = 
-		{ 1, 3, 1, { {   -1,   -1,  -1 } , { 16600, 16666, 59 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
+		{ 1, 3, 1, { {   -1,   -1,  -1 } , { 16600, 16666, 58 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_VGA  = 
-		{ 0, 3, 0, { { 8300, 8333, 116 } , { 16600, 16666, 59 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
+		{ 0, 3, 0, { { 8300, 8333, 116 } , { 16600, 16666, 58 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
 }
 }
 
@@ -204,7 +209,13 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 	}
 	camera_ = arv_camera_new(camera_name);
 	if(camera_){
+		
 		device_=arv_camera_get_device(camera_);
+		
+		//2020/09/25 add by hato -------------------- start --------------------
+		uart_flush();
+		//2020/09/25 add by hato --------------------  end  --------------------
+		
 		//inital values...
 		set_node_int("Width", width_);
 		set_node_int("Height", height_);
@@ -342,6 +353,9 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			v.a = reg_read(REG_FW_VERSION);
 			version_ = v.b[1] * 10 + v.b[0];
 			dprintf(" firmware          = MicroBlaze[%d.%d] FPGA[%d.%d]", v.b[3], v.b[2], v.b[1], v.b[0]);
+			//2020/09/25 add by hato -------------------- start --------------------
+			dprintf(" high_speed_version= %s", (isAsync()?"yes":"no"));
+			//2020/09/25 add by hato --------------------  end  --------------------
 			dprintf(" transfer mode     = %d", reg_read(REG_TRANSFER_MODE));
 			dprintf(" pixel clock delay = %d", reg_read(REG_CLOCK_DELAY));
 			dprintf(" exposure time     = %d", reg_read(REG_EXPOSURE_TIME));
@@ -351,6 +365,10 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			dprintf(" --------------------");
 		}
 		setTriggerMode(YCAM_TRIG_EXT);
+		
+		//2020/09/25 add by hato -------------------- start --------------------
+		uart_flush();
+		//2020/09/25 add by hato --------------------  end  --------------------
 	}
 	else dprintf("error: arv_camera_new");
 	lost_ = camera_ ? false : true;
@@ -425,12 +443,22 @@ bool Aravis::capture(unsigned char *data, float timeout_sec)
 	out_ = data;
 //	arv_camera_software_trigger(camera_);
 	if (isAsync()){
-		uart_write('a', 0);	//プロジェクターOFF
-		usleep(100);
+//2020/09/25 modified by hato -------------------- start --------------------
+		//uart_write('a', 0);	//プロジェクターOFF
+		//usleep(100);
+		uart_cmd( 'a' , 0 );
+//2020/09/25 modified by hato --------------------  end  --------------------
 		reg_write(REG_STREAM_NUM, 1);
+		
+//2020/09/25 add by hato -------------------- start --------------------
+		//uart_cmd( 'a' , 1 );
+//2020/09/25 add by hato --------------------  end --------------------
 	}
 	else{
-		uart_write('o', -1);
+//2020/09/25 modified by hato -------------------- start --------------------
+		//uart_write('o', -1);
+		uart_cmd( 'o' , -1);
+//2020/09/25 modified by hato --------------------  end  --------------------
 	}
 	if(0.0f < timeout_sec){
 		struct timespec abs_time;
@@ -544,7 +572,12 @@ bool Aravis::set_exposure_time_level(const int lv){
 			"--",exp_tm_lv_param->proj_exposure_tm);
 	}
 	{
-		bool ret_prj_ptn =setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
+		uart_flush();
+		//bool ret_prj_ptn =setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
+		if ( ! uart_cmd('z', YCAM_PROJ_PTN_PHSFT) ){
+			dprintf("projector pattern change failed. !!!!!!");
+		}
+		Sleep(3000);
 		dprintf("projector pattern changed.   result=%s, set_val=%5d",
 			"--",YCAM_PROJ_PTN_PHSFT);
 	}
@@ -686,6 +719,93 @@ bool Aravis::uart_write(char command, const char *data)
 	snprintf(cmd, sizeof(cmd), "%c%s\r", command, data);
 	return uart_write(cmd);
 }
+//2020/09/25 add by hato -------------------- start --------------------
+bool Aravis::uart_cmd(const char command,const char *val,const int sleep_ms){
+	bool ret=false;
+#ifdef DEBUG_DETAIL
+	dprintf(">>> uart_cmd start. cmd='%c' val=%s",command,val);
+#endif
+	uart_flush();
+	
+	if( ! uart_write( command, val ) ){
+		dprintf("error: uart_cmd failed. cmd=%c val=%d", command, val);
+	}else{
+#ifdef DEBUG_DETAIL
+		std::string reply=uart_read();
+		dprintf("---------------- cmd=%c val=%d reply start -----------------",command,val);
+		dprintf("%s",reply.c_str());
+		dprintf("---------------- cmd=%c val=%d reply  end  -----------------",command,val);
+#else
+		uart_read();
+#endif
+		if( sleep_ms > 0){
+			usleep(sleep_ms * 1000);
+		}
+		ret=true;
+	}
+#ifdef DEBUG_DETAIL
+	dprintf("<<< uart_cmd end.   cmd='%c' val=%s ret=%s",command,val ,(ret?"OK":"NG"));
+#endif
+	return ret;
+}
+
+
+bool Aravis::uart_cmd(const char command,const int val,const int sleep_ms){
+	bool ret=false;
+#ifdef DEBUG_DETAIL
+	dprintf(">>> uart_cmd start. cmd='%c' val=%d",command,val);
+#endif
+	uart_flush();
+	
+	if( ! uart_write( command, val ) ){
+		dprintf("error: uart_cmd failed. cmd=%c val=%d", command, val);
+	}else{
+#ifdef DEBUG_DETAIL
+		std::string reply=uart_read();
+		dprintf("---------------- cmd=%c val=%d reply start -----------------",command,val);
+		dprintf("%s",reply.c_str());
+		dprintf("---------------- cmd=%c val=%d reply  end  -----------------",command,val);
+#else
+		uart_read();
+#endif
+		if( sleep_ms > 0){
+			usleep(sleep_ms * 1000);
+		}
+		ret=true;
+	}
+#ifdef DEBUG_DETAIL
+	dprintf("<<< uart_cmd end.    cmd='%c' val=%d ret=%s",command,val,(ret?"OK":"NG"));
+#endif
+	return ret;
+}
+
+std::string Aravis::uart_read(){
+	string ret;
+	const int RMAX = 2048;
+	ret.reserve(RMAX);
+	const string st = "//cmd:diag";
+	const string ed = "Dlp.X>";
+	const size_t nst = st.length();
+	const size_t ned = ed.length();
+	for (int i = 0; i < RMAX; ++i){
+		UART_DATA_FIELD u;
+		u.dwData = reg_read(REG_UART);
+		if (u.b.data){
+			ret.push_back(u.b.data);
+			if (nst <= ret.length() && ret.compare(ret.length() - nst, nst, st) == 0){	//開始が出てきたらリセット
+				ret.clear();
+				ret.append(st);
+			}
+			else if (ned <= ret.length() && ret.compare(ret.length() - ned, ned, ed) == 0){	//終了
+				break;
+			}
+		}
+		usleep(100);
+	}
+	
+	return ret;
+}
+//2020/09/25 add by hato --------------------  end --------------------
 
 void Aravis::uart_flush()
 {
@@ -789,7 +909,10 @@ bool Aravis::setTriggerMode(YCAM_TRIG tm)
 {
 	bool ret;
 	if (isAsync()){	//非同期ver
-		ret = uart_write('a', tm==YCAM_TRIG_EXT ? 1 : 0);
+//2020/09/25 modified by hato -------------------- start --------------------
+		//ret = uart_write('a', tm==YCAM_TRIG_EXT ? 1 : 0);
+		ret = uart_cmd( 'a' , tm==YCAM_TRIG_EXT ? 1 : 0 );
+//2020/09/25 modified by hato --------------------  end  --------------------
 	}
 	else{
 		ret = reg_write(REG_EXTERNAL_TRIGGER, tm==YCAM_TRIG_EXT ? 1 : 0);
@@ -807,12 +930,18 @@ bool Aravis::trigger(YCAM_PROJ_MODE mode)
 	frame_index_ = 0;
 	bool ret;
 	if (isAsync()){	//非同期ver
-		uart_write('a', 1);	//プロジェクターON
+//2020/09/25 modified by hato -------------------- start --------------------
+		//uart_write('a', 1);	//プロジェクターON
+		ret = uart_cmd( 'a' , 1 );
+//2020/09/25 modified by hato --------------------  end  --------------------
 		int num = (mode == YCAM_PROJ_MODE_CONT) ? PHSFT_CAP_NUM : 1;
 		ret = reg_write(REG_STREAM_NUM, num);
 	}
 	else{
-		ret = uart_write('o', mode);
+//2020/09/25 modified by hato -------------------- start --------------------
+		//ret = uart_write('o', mode);
+		uart_cmd( 'o' , mode);
+//2020/09/25 modified by hato --------------------  end  --------------------
 	}
 	return ret;
 }
@@ -940,7 +1069,10 @@ bool Aravis::setProjectorBrightness(int value)
 {
 	char d[16];
 	snprintf(d, sizeof(d), "%02X%02X%02X", value, value, value);
-	return uart_write('i', d);
+	//2020/09/25 modified by hato -------------------- start --------------------
+	//return uart_write('i', d);
+	return uart_cmd( 'i' , d );
+	//2020/09/25 modified by hato --------------------  end  --------------------
 }
 
 bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
@@ -948,16 +1080,27 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 	bool ret = false;
 	if (isAsync()){	//非同期ver
 		for (;;){
+//2020/09/25 modified by hato -------------------- start --------------------
+#if 0
 			if (!uart_write('a', 0)) break;			//外部トリガ発行を受付しない
 			if (!uart_write('z', ptn)) break;		//パターン切り替え
 			Sleep(3000);
 			if (!uart_write('a', 1)) break;			//外部トリガ発行を受付する(cam->proj)
+#endif
+			if ( ! uart_cmd('a', 0) ) break;			//外部トリガ発行を受付しない
+			if ( ! uart_cmd('z', ptn) ) break;		//パターン切り替え
+			Sleep(3000);
+			if ( ! uart_cmd('a', 1) ) break;			//外部トリガ発行を受付する(cam->proj)
+//2020/09/25 modified by hato --------------------  end  --------------------
 			ret = true;
 			break;
 		}
 	}
 	else{
-		if (uart_write('z', ptn)){
+//2020/09/25 modified by hato -------------------- start --------------------
+		//if (uart_write('z', ptn)){
+		if( uart_cmd( 'z' , ptn) ){
+//2020/09/25 modified by hato --------------------  end  --------------------
 			ret = projector_wait();
 		}
 	}
@@ -978,16 +1121,26 @@ int Aravis::projectorExposureTime()
 
 bool Aravis::setProjectorExposureTime(int value)
 {
-	if (uart_write('x', value)){
-		return projector_wait();
+	
+//2020/09/25 modified by hato -------------------- start --------------------
+	//if (uart_write('x', value)){
+	//	return projector_wait();
+	//}
+	//return false;
+	if( ! uart_cmd( 'x' , value) ){
+		dprintf("error: setProjectorExposureTime failed. value=%d",value);
 	}
-	return false;
+	return true;
+//2020/09/25 modified by hato --------------------  end  --------------------
 }
 
 
 bool Aravis::setProjectorFlashInterval(int value)
 {
-	return uart_write('p', value);
+//2020/09/25 modified by hato -------------------- start --------------------
+	//return uart_write('p', value);
+	return uart_cmd( 'p', value );
+//2020/09/25 modified by hato --------------------  end  --------------------
 }
 
 int Aravis::projectorFlashInterval()

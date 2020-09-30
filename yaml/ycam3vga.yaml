@@ -23,12 +23,7 @@ pshift_genpc:
     min_parallax: -200
     ls_points: 3
     interpolation: 0
-  paramset:
-    camera:
-      ExposureTime: [8333,16666,25000,33333]
-    projector:
-      Interval: [40,60,60,70]
-      ExposureTime: [20,20,30,40]
+
 live:
   camera:
     AcquisitionFrameRate: 30

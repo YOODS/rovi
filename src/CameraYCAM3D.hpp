@@ -118,6 +118,26 @@ namespace camera{
 				
 				return true;
 			}
+			
+			const CameraImage operator-(const CameraImage &b)const{
+				CameraImage diff;
+				if(this->width == b.width &&
+					this->height == b.height && 
+					this->step == b.step && 
+					this->color_ch == b.color_ch && 
+					this->data.size() == b.data.size()
+				){
+					diff = *this;
+					for (int i=0; i < this->data.size(); i++) {
+						int val = this->data[i] - b.data[i];
+						if (val < 1) { val = 0; }
+						else if (val>255) { val=255; }
+						
+						diff.data[i] = val;
+					}
+				}
+				return diff;
+			}
 		};
 		using f_camera_open_finished = std::function<void(const bool result)>;
 		using f_camera_disconnect = std::function<void(void)>;
