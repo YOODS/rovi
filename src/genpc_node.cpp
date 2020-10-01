@@ -21,7 +21,7 @@
 bool isready = false;
 
 ros::NodeHandle *nh;
-ros::Publisher *pub1,*pub2,*pub3,*pub4;
+ros::Publisher *pub1,*pub2,*pub3,*pub4,*pubrep;
 
 std::vector<double> vecQ;
 std::vector<double> cam_K;
@@ -249,6 +249,11 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	pub2->publish(b64);
 	pub3->publish(buf);
 	pub4->publish(depthimg);
+  char s[32];
+  sprintf(s,"{'T03':%f}",ros::Time::now().toSec());
+	std_msgs::String tnow;
+  tnow.data=s;
+  pubrep->publish(tnow);
 
 	res.pc_cnt = N;
 	ROS_INFO("genPC point counts %d / %d", N, Qn);
@@ -275,6 +280,8 @@ int main(int argc, char **argv)
 	ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub4 = &p4;
 	ros::spin();
+	ros::Publisher prep = n.advertise<std_msgs::String>("/report", 1);
+	pubrep = &prep;
 
 	pcgenerator->destroy();
   

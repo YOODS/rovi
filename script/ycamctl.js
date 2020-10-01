@@ -242,7 +242,6 @@ setImmediate(async function() {
           res.message = 'genpc failed';
           res.success = false;
         }
-        Report["T03"]=time_now();
         let pcount=new std_msgs.Int32();
         pcount.data=gpres.pc_cnt;
         pub_pcount.publish(pcount);
