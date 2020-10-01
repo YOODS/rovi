@@ -250,7 +250,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	pub3->publish(buf);
 	pub4->publish(depthimg);
   char s[32];
-  sprintf(s,"{'T03':%f}",ros::Time::now().toSec());
+  sprintf(s,"{'T03':%lf}",ros::Time::now().toSec());
 	std_msgs::String tnow;
   tnow.data=s;
   pubrep->publish(tnow);
@@ -268,7 +268,6 @@ int main(int argc, char **argv)
 	if(reload()<0) return 1;
 
 	pcgenerator = createPointCloudGenerator();
-
   
 	ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
 	ros::Publisher p1 = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
@@ -279,10 +278,10 @@ int main(int argc, char **argv)
 	pub3 = &p3;
 	ros::Publisher p4 = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub4 = &p4;
-	ros::spin();
 	ros::Publisher prep = n.advertise<std_msgs::String>("/report", 1);
 	pubrep = &prep;
 
+	ros::spin();
 	pcgenerator->destroy();
   
 	return 0;
