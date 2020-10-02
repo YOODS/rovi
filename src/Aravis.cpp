@@ -34,7 +34,7 @@ namespace ycam3d{
 	//32000: 10～31
 	
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_SXGA = 
-		{ 1, 3, 1, { {   -1,   -1,  -1 } , { 16600, 16666, 58 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
+		{ 0, 3, 0, { { 8300, 8333, 60  } , { 16600, 16666, 58 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_VGA  = 
 		{ 0, 3, 0, { { 8300, 8333, 116 } , { 16600, 16666, 58 } , { 25000, 25000, 39 } , { 32000, 32000, 30 } } };
 }
