@@ -53,6 +53,10 @@ if result:
     print(LOG_HEADER + "xml comment area found. removed.")
     cam_xml_str = result.group(1)
 
+result = re.match("(.*</RegisterDescription>)(.*)",cam_xml_str,re.MULTILINE| re.DOTALL)
+if result:
+    cam_xml_str = result.group(1)
+    
 print(LOG_HEADER + "xml parse start")
 # tree = ET.parse("genicam.txt")
 tree = ET.fromstring(cam_xml_str)
