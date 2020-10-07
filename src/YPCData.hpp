@@ -6,6 +6,7 @@
 #include <opencv2/opencv.hpp>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include "rovi/Floats.h"
 #include "iPointCloudGenerator.hpp"
 
 class YPCData : public PointCloudCallback{
@@ -27,7 +28,7 @@ public:
 	bool is_empty()const;
 	
 	int count()const;
-	
+		
 	//sample:è´óàìIÇ…ÇÕPointCloud2Ç÷
 	//const sensor_msgs::PointCloud2 *get_data() const;
 	
@@ -40,4 +41,7 @@ public:
 	bool voxelization(const float leaf_x, const float leaf_y, const float leaf_z, sensor_msgs::PointCloud &pts);
 	
 	bool save_ply(const std::string &file_path);
+	
+	//range grid. X,Y,Z, X,Y,Z ...
+	rovi::Floats to_rg_floats()const;
 };

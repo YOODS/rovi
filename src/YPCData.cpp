@@ -231,3 +231,26 @@ bool YPCData::save_ply(const std::string &file_path){
 	saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
 	return saver.is_ok();
 }
+
+rovi::Floats YPCData::to_rg_floats()const{
+	rovi::Floats pt_floats;
+	
+	if( ! this->points.empty() ){
+		const int num = this->points.size();
+		pt_floats.data.assign( num * 3 , 0);
+		const Point3d *pts = this->points.data();
+		for( int i = 0,n = 0 ; i < num ; ++i){
+			const Point3d *pt = pts + i;
+			if( std::isnan(pt->x) ){
+				n+=3;
+			}else{
+				pt_floats.data[  n] = pt->x;
+				pt_floats.data[++n] = pt->y;
+				pt_floats.data[++n] = pt->z;
+				++n;
+			}
+		}
+	}
+	
+	return pt_floats;
+}

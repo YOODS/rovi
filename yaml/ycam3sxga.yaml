@@ -87,12 +87,12 @@ genpc:
   quantize_points_count:
     enabled: On
   voxelize:
-    enabled: On
     data_save: On
     leaf_size:
       x: 1
       y: 1
       z: 1
+      v: 1
     recalc:
       enabled: On
       interval: 1

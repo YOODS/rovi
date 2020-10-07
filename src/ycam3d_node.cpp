@@ -420,8 +420,8 @@ void on_capture_image_received(const bool result,const int proc_tm, const camera
 	pub_cam_img_left.publish(ros_imgs[0]);
 	pub_cam_img_right.publish(ros_imgs[1]);
 	
-	pub_rects1[0].publish(ros_imgs[0]);
-	pub_rects1[1].publish(ros_imgs[1]);
+	//pub_rects1[0].publish(ros_imgs[0]);
+	//pub_rects1[1].publish(ros_imgs[1]);
 	
 	//tmr.restart();
 	
@@ -711,14 +711,14 @@ int main(int argc, char **argv)
 	
 	pub_rects[0] = n.advertise<sensor_msgs::Image>("left/image_rect", 1);
 	pub_rects0[0] = n.advertise<sensor_msgs::Image>("left/image_rect0", 1);
-    pub_rects1[0] = n.advertise<sensor_msgs::Image>("left/image_rect1", 1);
-    pub_diffs[0] = n.advertise<sensor_msgs::Image>("left/diff_rect", 1);
+	pub_rects1[0] = n.advertise<sensor_msgs::Image>("left/image_rect1", 1);
+	pub_diffs[0] = n.advertise<sensor_msgs::Image>("left/diff_rect", 1);
 	pub_views[0] = n.advertise<sensor_msgs::Image>("left/view",1);
 	
 	pub_rects[1] = n.advertise<sensor_msgs::Image>("right/image_rect", 1);
 	pub_rects0[1] = n.advertise<sensor_msgs::Image>("right/image_rect0", 1);
-    pub_rects1[1] = n.advertise<sensor_msgs::Image>("right/image_rect1", 1);
-    pub_diffs[1] = n.advertise<sensor_msgs::Image>("right/diff_rect", 1);
+	pub_rects1[1] = n.advertise<sensor_msgs::Image>("right/image_rect1", 1);
+	pub_diffs[1] = n.advertise<sensor_msgs::Image>("right/diff_rect", 1);
 	pub_views[1] = n.advertise<sensor_msgs::Image>("right/view",1);
 	
 	//service servers
