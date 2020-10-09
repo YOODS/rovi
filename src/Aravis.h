@@ -202,7 +202,10 @@ public:
 	//
 	YCAM_TRIG triggerMode(){ return trigger_mode_; }
 	bool setTriggerMode(YCAM_TRIG tm);
-	bool trigger(YCAM_PROJ_MODE mode);
+	//2020/10/09 modified by hato -------------------- start --------------------
+	//bool trigger(YCAM_PROJ_MODE mode);
+	bool trigger(YCAM_PROJ_MODE mode,const  bool projectorOn=true);
+	//2020/10/09 modified by hato --------------------  end  --------------------
 	//
 	bool setProjectorPattern(YCAM_PROJ_PTN ptn);
 

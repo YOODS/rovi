@@ -920,8 +920,10 @@ bool Aravis::setTriggerMode(YCAM_TRIG tm)
 	trigger_mode_ = tm;
 	return ret;
 }
-
-bool Aravis::trigger(YCAM_PROJ_MODE mode)
+//2020/10/09 modified by hato -------------------- start --------------------
+//bool Aravis::trigger(YCAM_PROJ_MODE mode)
+bool Aravis::trigger(YCAM_PROJ_MODE mode,const bool projectorOn)
+//2020/10/09 modified by hato --------------------  end  --------------------
 {
 	if (trigger_mode_ == YCAM_TRIG_INT){
 		dprintf("warning: current trigger mode is INTERNAL");
@@ -932,7 +934,7 @@ bool Aravis::trigger(YCAM_PROJ_MODE mode)
 	if (isAsync()){	//非同期ver
 //2020/09/25 modified by hato -------------------- start --------------------
 		//uart_write('a', 1);	//プロジェクターON
-		ret = uart_cmd( 'a' , 1 );
+		ret = uart_cmd( 'a' , projectorOn ? 1 : 0);
 //2020/09/25 modified by hato --------------------  end  --------------------
 		int num = (mode == YCAM_PROJ_MODE_CONT) ? PHSFT_CAP_NUM : 1;
 		ret = reg_write(REG_STREAM_NUM, num);

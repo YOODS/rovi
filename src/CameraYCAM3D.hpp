@@ -155,7 +155,7 @@ protected:
 	
 	enum CaptureStatus {
 		CaptStat_Ready,
-		CaptStat_Single,
+		//CaptStat_Single, //îpé~
 		CaptStat_Pattern
 	};
 	
