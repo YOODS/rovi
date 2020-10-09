@@ -2,7 +2,6 @@
 
 #include <ros/types.h>
 #include <ros/ros.h>
-#include <pcl_ros/filters/voxel_grid.h>
 #include <sensor_msgs/point_cloud_conversion.h>
 
 #include "YPCGenerator.hpp"
@@ -179,57 +178,52 @@ bool YPCData::make_depth_image(cv::Mat &img){
 	return true;
 }
 
-bool YPCData::voxelization(const float leaf_x,const float leaf_y,const float leaf_z, sensor_msgs::PointCloud &pts){
-	
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcdata_pcl(new pcl::PointCloud<pcl::PointXYZRGB>());
-	pcdata_pcl->width = this->n_valid;
-	pcdata_pcl->height = 1;
-	pcdata_pcl->points.resize(this->n_valid);
-	
-	const std::vector<PointCloudCallback::Point3d> &pcdP=this->points;
-	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
-		if( n  < this->n_valid  && ! std::isnan(pcdP[i].x) ){
-			pcl::PointXYZRGB * pos = pcdata_pcl->points.data() + n;
-			pos->x = pcdP[i].x;
-			pos->y = pcdP[i].y;
-			pos->z = pcdP[i].z;
-			pos->r = pos->g = pos->b =  this->image[i];
-			n++;
-		}
-	}
-	//const sensor_msgs::PointCloud2ConstPtr input2;
-	//sensor_msgs::PointCloud2::Ptr pts2;
-	//pcl::PointCloud<pcl::PointXYZ> cloud2;
-	//pcl::fromROSMsg (*pts2, cloud2);
-
-	pcl::PointCloud<pcl::PointXYZRGB> vx_points;
-	pcl::VoxelGrid<pcl::PointXYZRGB> sor;
-	sor.setInputCloud (pcdata_pcl);
-	sor.setLeafSize (leaf_x, leaf_y, leaf_z);
-	sor.filter (vx_points);
-	
-	const Eigen::Vector3i minBoxCoord= sor.getMinBoxCoordinates();
-	const Eigen::Vector3i maxBoxCoord= sor.getMaxBoxCoordinates();
-
-	bool ret = false;
-	if( minBoxCoord[0] == 0 && minBoxCoord[1] == 0 && minBoxCoord[2] == 0 &&
-		maxBoxCoord[0] == 0 && maxBoxCoord[1] == 0 && maxBoxCoord[2] == 0){
-		std::cerr << "voxelization failure. out of memory? leaf_size=(" << leaf_x << ", " << leaf_y << ", " << leaf_z << ")" << std::endl;
-	
-	}else{
-		ret = true;
-		sensor_msgs::PointCloud2 pts2_vx;
-		pcl::toROSMsg(vx_points, pts2_vx);
-		sensor_msgs::convertPointCloud2ToPointCloud(pts2_vx,pts);
-	}
-	
-	return ret;
-}
-
 bool YPCData::save_ply(const std::string &file_path){
-	PLYSaver saver(file_path);
-	saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
-	return saver.is_ok();
+	//PLYSaver saver(file_path);
+	//saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
+	//return saver.is_ok();
+	
+	std::ofstream ofs(file_path, std::ios::binary);
+	if ( ! ofs.is_open() ) {
+		return false;
+	}
+
+	ofs << "ply\n";
+	ofs << "format binary_little_endian 1.0\n";
+	ofs << "comment VCGLIB generated\n";
+	ofs << "element vertex " << n_valid << std::endl;
+	ofs << "property float x\n";
+	ofs << "property float y\n";
+	ofs << "property float z\n";
+	ofs << "property uchar red\n";
+	ofs << "property uchar green\n";
+	ofs << "property uchar blue\n";
+	ofs << "element face 0\n";
+	ofs << "end_header\n";
+
+	int count=0;
+	for (int j = 0, n = 0; j < height; j++) {
+		unsigned char *iP = image;
+		for (int i = 0; i < width; i++, n++) {
+			float pos[3] = {0, 0, 0};
+			unsigned char col[3] = {iP[i], iP[i], iP[i]};
+				
+			if ( ! std::isnan(points[n].x) ) {
+				pos[0] = points[n].x;
+				pos[1] = points[n].y;
+				pos[2] = points[n].z;
+				
+				ofs.write((char *)pos, sizeof(float) * 3);
+				ofs.write((char *)col, 3);
+				count++;
+			}
+		}
+		image += step;
+	}
+
+	ofs.close();
+	
+	return count == n_valid;
 }
 
 rovi::Floats YPCData::to_rg_floats()const{

@@ -1,5 +1,4 @@
 #include <stdio.h>
-//#include <chrono>
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 #include <std_msgs/String.h>
@@ -12,6 +11,7 @@
 #include <sensor_msgs/Image.h>
 #include <pcl/point_cloud.h>
 #include <pcl/io/ply_io.h>
+#include <pcl_ros/filters/voxel_grid.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include "rovi/Floats.h"
 #include "rovi/GenPC.h"
@@ -21,64 +21,69 @@
 #include "YPCData.hpp"
 #include "ElapsedTimer.hpp"
 
-#define LOG_HEADER "genpc: "
+#define LOG_HEADER "(genpc) "
 
-//#define DURATION_TO_MS(duration) (int)std::chrono::duration_cast<std::chrono::milliseconds>(duration).count()
-//#define ELAPSED_TM(start_tm)   (int)std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start_tm).count()
 
 namespace {
 //============================================= 無名名前空間 start =============================================
 
 YPCGeneratorUnix pcgen;
 YPCData pcdata;
+sensor_msgs::PointCloud pre_pts;
 
 int cur_cam_width = -1;
 int cur_cam_height = -1;
 const PcGenMode PC_GEN_MODE = PCGEN_GRAYPS4;
-//const bool IS_INTERPO = false;
 bool is_interpo=false;
 std::string file_dump("/tmp/");
 bool isready = false;
-
-
 
 ros::NodeHandle *nh = nullptr;
 ros::Publisher pub_ps_pc;
 ros::Publisher pub_ps_floats;
 ros::Publisher pub_depth_img;
-ros::Publisher pub_ps_pc_vx;
 ros::Publisher pub_ps_all;
 
 const bool STEREO_CAM_IMGS_DEFAULT_SAVE = true;
 const bool PC_DATA_DEFAULT_SAVE = true;
-
 const bool QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED = true;
-std::vector<double> vecQ;
-std::vector<double> cam_K;
-
 const bool DEPTH_MAP_IMG_DEFAULT_ENABELED = true;
 
 const bool VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED = false;
 const float VOXEL_LEAF_MIN_SIZE     = 0.001f;
 const float VOXEL_LEAF_DEFAULT_SIZE = 1.0f;
-float pre_vx_leaf_x = 0;
-float pre_vx_leaf_y = 0;
-float pre_vx_leaf_z = 0;
+const float VOXEL_LEAF_SIZE_INVALID = 0.0f;
 
 const float RE_VOXEL_DEFAULT_INTERVAL = 0.1;
 const float RE_VOXEL_MIN_INTERVAL     = 0.0001;
+const bool  RE_VOXEL_DEFAULT_ENABLED  = false;
+	
+std::vector<double> vecQ;
+std::vector<double> cam_K;
+bool pre_quantize_points_count_enabled=false;
 
-const bool  RE_VOXEL_DEFAULT_ENABLED = false;
+
+struct VoxelLeafSize {
+	float x=VOXEL_LEAF_SIZE_INVALID;
+	float y=VOXEL_LEAF_SIZE_INVALID;
+	float z=VOXEL_LEAF_SIZE_INVALID;
+	
+	bool operator == (const VoxelLeafSize &obj){
+		return this->x == obj.x && this->y == obj.y && this->z == obj.z;
+	}
+	
+	bool is_disabled() const{
+		return  x == VOXEL_LEAF_SIZE_INVALID && y == VOXEL_LEAF_SIZE_INVALID && z == VOXEL_LEAF_SIZE_INVALID; 
+	}
+};
+
+VoxelLeafSize pre_vx_leaf_size;
+
 
 bool cur_re_vx_enabled = false;
 float cur_re_vx_interval = RE_VOXEL_DEFAULT_INTERVAL;
 ros::Timer re_vx_monitor_timer;
 
-void clear_pre_voxel_leaf_size(){
-	pre_vx_leaf_x = 0;
-	pre_vx_leaf_y = 0;
-	pre_vx_leaf_z = 0;
-}
 
 struct CamCalibMat {
 	int rows=0;
@@ -132,7 +137,6 @@ bool load_phase_shift_params()
 {
 	ROS_INFO(LOG_HEADER"phase shift parameter relod start.");
 	
-	//const auto proc_start = std::chrono::high_resolution_clock::now() ;
 	ElapsedTimer tmr;
 	std::map<std::string,double> params;
 	{
@@ -167,7 +171,7 @@ bool load_phase_shift_params()
 	params["image_height"]=cur_cam_height;
 	
 	for(std::map<std::string,double>::iterator it=params.begin();it!=params.end();++it){
-		ROS_INFO(LOG_HEADER"(phsft) %s=%g",it->first.c_str(),it->second);
+		ROS_INFO(LOG_HEADER"<phsft> %s=%g",it->first.c_str(),it->second);
 	}
 	if( ! params.count("interpolation") ){
 		is_interpo = false;
@@ -211,14 +215,12 @@ bool load_phase_shift_params()
 		ROS_ERROR(LOG_HEADER"Param Q NG");
 		return false;
 	}
-	//ROS_INFO(LOG_HEADER"phase shift parameter load finished. proc_tm=%d ms",ELAPSED_TM(proc_start));
 	ROS_INFO(LOG_HEADER"phase shift parameter load finished. proc_tm=%d ms",tmr.elapsed_ms());
 	return true;
 }
 
 bool load_camera_calib_data(){
 	ROS_INFO(LOG_HEADER"camera calibration data load start.");
-	//const auto proc_start = std::chrono::high_resolution_clock::now() ;
 	ElapsedTimer tmr;
 	
 	bool ret=false;
@@ -316,7 +318,6 @@ bool load_camera_calib_data(){
 	}else{
 		ret=true;
 	}
-	//ROS_INFO(LOG_HEADER"camera calibration data load finished. proc_tm=%d ms",ELAPSED_TM(proc_start));
 	ROS_INFO(LOG_HEADER"camera calibration data load finished. proc_tm=%d ms",tmr.elapsed_ms() );
 	
 	return ret;
@@ -324,7 +325,6 @@ bool load_camera_calib_data(){
 	
 bool convert_stereo_camera_images(const rovi::GenPC::Request &req,std::vector<cv::Mat> &imgs,std::vector<unsigned char*> &img_pointers){
 	ROS_INFO(LOG_HEADER"stereo camera image convert start.");
-	//const auto start_tm = std::chrono::high_resolution_clock::now() ;
 	ElapsedTimer tmr;
 	
 	bool ret=false;
@@ -360,12 +360,29 @@ bool convert_stereo_camera_images(const rovi::GenPC::Request &req,std::vector<cv
 		ROS_ERROR(LOG_HEADER"cv_bridge:exception: %s", e.what());
 	}
 	
-	//ROS_INFO(LOG_HEADER"stereo camera image convert finished. proc_tm=%d ms", ELAPSED_TM(start_tm));
 	ROS_INFO(LOG_HEADER"stereo camera image convert finished. proc_tm=%d ms", tmr.elapsed_ms());
 	
 	return ret;
 }
 
+VoxelLeafSize get_voxel_leaf_size(){
+	VoxelLeafSize leaf_size;
+	leaf_size.x = get_param<float>("genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE);
+	leaf_size.y = get_param<float>("genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE);
+	leaf_size.z = get_param<float>("genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE);
+	
+	if( leaf_size.is_disabled() ){
+		//voxelization disabled
+	}else{
+		const float vx_leaf_v = get_param<float>("genpc/voxelize/leaf_size/v",0);
+		
+		leaf_size.x = std::max( vx_leaf_v , std::max( leaf_size.x , VOXEL_LEAF_MIN_SIZE ) );
+		leaf_size.y = std::max( vx_leaf_v , std::max( leaf_size.y , VOXEL_LEAF_MIN_SIZE ) );
+		leaf_size.z = std::max( vx_leaf_v , std::max( leaf_size.z , VOXEL_LEAF_MIN_SIZE ) );
+	}
+	
+	return leaf_size;
+}
 
 bool count_quantize_points(const sensor_msgs::PointCloud &pts,rovi::Floats &output){
 	const int N = pts.points.size();
@@ -411,52 +428,157 @@ bool count_quantize_points(const sensor_msgs::PointCloud &pts,rovi::Floats &outp
 	return true;
 }
 
+bool voxelizing_pcdata (const sensor_msgs::PointCloud &src_pcdata,const VoxelLeafSize &vxLeafSize, sensor_msgs::PointCloud &dst_pcdata){
+	if( src_pcdata.points.size() < 10 ){
+		ROS_ERROR("voxelization failure. too few points.");
+		return false;
+	}
+	
+	pcl::PointCloud<pcl::PointXYZRGB>::Ptr pcdata_pcl(new pcl::PointCloud<pcl::PointXYZRGB>());
+	pcdata_pcl->width = src_pcdata.points.size();
+	pcdata_pcl->height = 1;
+	pcdata_pcl->points.resize(src_pcdata.points.size());
+	
+	for (int i = 0 ; i < src_pcdata.points.size(); i++) {
+		pcl::PointXYZRGB * pos = pcdata_pcl->points.data() + i;
+		pos->x = src_pcdata.points[i].x;
+		pos->y = src_pcdata.points[i].y;
+		pos->z = src_pcdata.points[i].z;
+		pos->r = pos->g = pos->b =  src_pcdata.channels[0].values[i] * 255.0;
+	}
+
+	pcl::PointCloud<pcl::PointXYZRGB> vx_points;
+	pcl::VoxelGrid<pcl::PointXYZRGB> sor;
+	sor.setInputCloud (pcdata_pcl);
+	sor.setLeafSize (vxLeafSize.x, vxLeafSize.y, vxLeafSize.z);
+	sor.filter (vx_points);
+	
+	const Eigen::Vector3i minBoxCoord= sor.getMinBoxCoordinates();
+	const Eigen::Vector3i maxBoxCoord= sor.getMaxBoxCoordinates();
+
+	bool ret = false;
+	if( minBoxCoord[0] == 0 && minBoxCoord[1] == 0 && minBoxCoord[2] == 0 &&
+		maxBoxCoord[0] == 0 && maxBoxCoord[1] == 0 && maxBoxCoord[2] == 0){
+		ROS_ERROR("voxelization failure. out of memory? leaf_size=(%g, %g, %g)",vxLeafSize.x,vxLeafSize.y,vxLeafSize.z);
+		
+	}else{
+		ret = true;
+		sensor_msgs::PointCloud2 pts2_vx;
+		pcl::toROSMsg(vx_points, pts2_vx);
+		sensor_msgs::convertPointCloud2ToPointCloud(pts2_vx,dst_pcdata);
+	}
+	return ret;
+}
+	
+bool exec_downsampling (const sensor_msgs::PointCloud &pts,const VoxelLeafSize &vx_leaf_size,const bool quantize_count_exec,rovi::Floats &ds_points,sensor_msgs::PointCloud *out_pts_vx=nullptr){
+	
+	const int N = pts.points.size();
+	
+	sensor_msgs::PointCloud pts_ds = pts;
+	//voxelization
+	if( vx_leaf_size.is_disabled() ){
+		ROS_INFO(LOG_HEADER"voxelization disabled.");
+		
+	}else if(pts_ds.points.empty()){
+		ROS_INFO(LOG_HEADER"voxelization skipped. data is empty.");
+		
+	}else{
+		ElapsedTimer tmr_voxel;
+		
+		ROS_INFO(LOG_HEADER"voxelization start.");
+		
+		sensor_msgs::PointCloud pts_vx;
+		if( ! voxelizing_pcdata( pts_ds, vx_leaf_size, pts_vx) ){
+			ROS_ERROR(LOG_HEADER"voxelization failed.");
+		}else{
+			pts_ds = pts_vx;
+			if(out_pts_vx){
+				*out_pts_vx=pts_vx;
+			}
+		}
+		
+		ROS_INFO(LOG_HEADER"voxelization finished. leaf_size=(%g, %g, %g) count=%d / %d (%.2f%%), proc_tm=%d ms",
+			vx_leaf_size.x, vx_leaf_size.y, vx_leaf_size.z,
+			(int)pts_vx.points.size(), N, N==0?0:pts_vx.points.size()/(float)N *100,
+			tmr_voxel.elapsed_ms());
+	}
+
+	//Quantize points count for Numpy array
+	if( ! quantize_count_exec ){
+		ROS_INFO(LOG_HEADER"quantize points count disabled.");
+		
+	}else if(pts_ds.points.empty()){
+		ROS_INFO(LOG_HEADER"quantize points count skipped. data is empty.");
+		
+	}else{
+		
+		ROS_INFO(LOG_HEADER"quantize points count start.");
+		ElapsedTimer tmr_norm_calc;
+		if( ! count_quantize_points( pts_ds, ds_points ) ){
+			ROS_ERROR(LOG_HEADER"quantize points count failed.");
+		}
+		const int ds_point_count = ds_points.data.size()/3;
+		ROS_INFO(LOG_HEADER"quantize points count finished. count=%d / %d (%.2f%%), proc_tm=%d ms",
+			ds_point_count, (int)pts_ds.points.size(),ds_point_count /(float)pts_ds.points.size() *100,tmr_norm_calc.elapsed_ms());
+	}
+	
+	if( ds_points.data.empty() ){
+		const int pts_ds_count = pts_ds.points.size();
+		ds_points.data.resize(pts_ds_count * 3);
+		
+		for (int i = 0,n=0 ; i < pts_ds_count ; ++i,++n) {
+			ds_points.data[  n] = pts_ds.points[i].x;
+			ds_points.data[++n] = pts_ds.points[i].y;
+			ds_points.data[++n] = pts_ds.points[i].z;
+		}
+	}
+	
+	return true;
+}
+
 void re_voxelization_monitor(const ros::TimerEvent& e)
 {
-
-	if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
-		clear_pre_voxel_leaf_size();
+	//leaf_sizeを個別に変えるとそのたびにpublishされるので一気に指定する方法
+	//$rosparam set genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
+	if( pre_pts.points.empty() ){
+		//ROS_WARN(LOG_HEADER"pre pcdata is empty.");
+		
+	}else if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
+		//pre_vx_leaf_size = VoxelLeafSize();
 		//ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
 		
 	}else{
-		//leaf_sizeを個別に変えるとそのたびにpublishされるので一気に指定する方法
-		//$rosparam set genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
-		const float vx_leaf_x = get_param<float>("genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE);
-		const float vx_leaf_y = get_param<float>("genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE);
-		const float vx_leaf_z = get_param<float>("genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE);
-		const float vx_leaf_v = get_param<float>("genpc/voxelize/leaf_size/v",0);
 		
-		if( vx_leaf_x == 0 && vx_leaf_x == vx_leaf_y && vx_leaf_y == vx_leaf_z ){
-			//ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
-			clear_pre_voxel_leaf_size();
-			
+		VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
+		
+		//ROS_INFO("!!! pre(%f,%f,%f) cur(%f,%f,%f)",
+		//	pre_vx_leaf_size.x,pre_vx_leaf_size.y,pre_vx_leaf_size.z,
+		//	vx_leaf_size.x,vx_leaf_size.y,vx_leaf_size.z
+		//);
+		//再ボクセル化の際はボクセル化のサイズが異なる時だけ計算する。
+		if( pre_vx_leaf_size == vx_leaf_size ){
+			//ROS_INFO(LOG_HEADER"re-voxelization update is nothing.");
 		}else{
-			const float cur_vx_leaf_x =std::max( vx_leaf_v , std::max( vx_leaf_x , VOXEL_LEAF_MIN_SIZE ) );
-			const float cur_vx_leaf_y =std::max( vx_leaf_v , std::max( vx_leaf_y , VOXEL_LEAF_MIN_SIZE ) );
-			const float cur_vx_leaf_z =std::max( vx_leaf_v , std::max( vx_leaf_z , VOXEL_LEAF_MIN_SIZE ) );
+			ROS_INFO(LOG_HEADER"re-voxelization start.");
+			ElapsedTimer tmr_voxel;
 			
-			if( cur_vx_leaf_x == pre_vx_leaf_x && cur_vx_leaf_y == pre_vx_leaf_y && cur_vx_leaf_z == pre_vx_leaf_z ){
-				//ROS_INFO(LOG_HEADER"re-voxelization update is nothing.");
+			sensor_msgs::PointCloud pts_vx;
+			
+			rovi::Floats pc_points;
+			if( ! exec_downsampling( pre_pts, vx_leaf_size, pre_quantize_points_count_enabled, pc_points ) ){
+				ROS_ERROR(LOG_HEADER"downsampling failed.");
 			}else{
-				ROS_INFO(LOG_HEADER"re-voxelization start.");
-				//const auto re_voxel_start = std::chrono::high_resolution_clock::now() ;
-				ElapsedTimer tmr_voxel;
-				sensor_msgs::PointCloud pts_vx;
-				if ( ! pcdata.voxelization( cur_vx_leaf_x, cur_vx_leaf_y, cur_vx_leaf_z, pts_vx ) ){
-					ROS_ERROR(LOG_HEADER"re-voxelization failed.");
-				}
-				
-				pre_vx_leaf_x = cur_vx_leaf_x;
-				pre_vx_leaf_y = cur_vx_leaf_y;
-				pre_vx_leaf_z = cur_vx_leaf_z;
-				
-				const int N = pcdata.count();
-				ROS_INFO(LOG_HEADER"re-voxelization finished. leaf_size=(%g, %g, %g), point_num=%d / %d(%.1f%%), proc_tm=%d",
-					cur_vx_leaf_x, cur_vx_leaf_y, cur_vx_leaf_z,
-					(int)pts_vx.points.size(), N, N==0?0:pts_vx.points.size()/(float)N *100,
-					tmr_voxel.elapsed_ms());
-				pub_ps_pc_vx.publish(pts_vx);
+				//ROS_INFO(LOG_HEADER"point after downsampling. count=%d (%d)",(int)pc_points.data.size()/3,(int)pc_points.data.size()/3);
 			}
+			pre_vx_leaf_size = vx_leaf_size;
+			
+			const int N = pre_pts.points.size();
+			const int ds_point_count=pc_points.data.size()/3;
+			ROS_INFO(LOG_HEADER"re-voxelization finished. leaf_size=(%g, %g, %g), point_num=%d / %d (%.2f%%), proc_tm=%d ms",
+				vx_leaf_size.x, vx_leaf_size.y, vx_leaf_size.z,
+				ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
+				tmr_voxel.elapsed_ms());
+			pub_ps_floats.publish(pc_points);
 		}
 	}
 	
@@ -471,14 +593,14 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
-	//const auto node_start = std::chrono::high_resolution_clock::now() ;
 	ElapsedTimer tmr_proc;
 	ROS_INFO(LOG_HEADER"start: ptn_image_l_num=%d ptn_image_r_num=%d", (int)req.imgL.size(), (int)req.imgR.size());
 	
 	re_vx_monitor_timer.stop();
 	
 	pcdata = YPCData();
-	clear_pre_voxel_leaf_size();
+	pre_pts = sensor_msgs::PointCloud();
+	pre_vx_leaf_size = VoxelLeafSize();
 	
 	const int width  = req.imgL[0].width;
 	const int height = req.imgL[0].height;
@@ -499,9 +621,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	sensor_msgs::PointCloud pts;
 	pts.header.stamp = ros::Time::now();
 	pts.header.frame_id = "/camera";
-	rovi::Floats buf;
+	rovi::Floats ds_points;
 	res.pc_cnt = 0;
-	sensor_msgs::PointCloud pts_vx;
 	rovi::Floats pc_points;
 	
 	if( ! load_phase_shift_params() ){
@@ -520,15 +641,14 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	std::vector<cv::Mat> stereo_imgs;
 	std::vector<unsigned char*> stereo_img_pointers;
 	sensor_msgs::ImagePtr depthimg(new sensor_msgs::Image());
+	sensor_msgs::PointCloud pts_vx;
 	cv::Mat depthimg_mat;
 	
 	if( ! isready ){
-		//ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d",ELAPSED_TM(node_start));
-		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d", tmr_proc.elapsed_ms());
+		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d ms", tmr_proc.elapsed_ms());
 		
 	}else if( ! convert_stereo_camera_images(req,stereo_imgs,stereo_img_pointers) ){
-		//ROS_ERROR(LOG_HEADER"stereo camera image convert failed. elapsed=%d",ELAPSED_TM(node_start));
-		ROS_ERROR(LOG_HEADER"stereo camera image convert failed. elapsed=%d", tmr_proc.elapsed_ms());
+		ROS_ERROR(LOG_HEADER"stereo camera image convert failed. elapsed=%d ms", tmr_proc.elapsed_ms());
 		
 	}else{
 		//撮影画像保存
@@ -536,7 +656,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			if( ! get_param<bool>("genpc/point_cloud/img_save",STEREO_CAM_IMGS_DEFAULT_SAVE) ){
 				ROS_INFO(LOG_HEADER"stereo camera images save skipped.");
 			}else{
-				//const auto save_start = std::chrono::high_resolution_clock::now() ;
 				ElapsedTimer tmr_save_img;
 				for (int i = 0, n = 0; i < 13 ; i++) {
 					if( stereo_imgs.size() > n && ! stereo_imgs.at(n).empty() ) {
@@ -558,93 +677,58 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		}
 		
 		ROS_INFO(LOG_HEADER"point cloud generation start. interpolation=%s",is_interpo?"enabled":"disabled");
-		//const auto genpc_start = std::chrono::high_resolution_clock::now() ;
 		ElapsedTimer tmr_genpc;
 		const int N = pcgen.generate_pointcloud_raw(stereo_img_pointers,is_interpo,&pcdata);
 		
 		ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
-			//N, DURATION_TO_MS(pcgen.get_elapsed_disparity()), DURATION_TO_MS(pcgen.get_elapsed_genpcloud()),
 			N, ElapsedTimer::duration_ms(pcgen.get_elapsed_disparity()), ElapsedTimer::duration_ms(pcgen.get_elapsed_genpcloud()),
-			//ELAPSED_TM(genpc_start), ELAPSED_TM(node_start));
 			tmr_genpc.elapsed_ms(), tmr_proc.elapsed_ms());
 		
 		if( pcdata.is_empty() ){
-			//ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", ELAPSED_TM(node_start));
 			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", tmr_proc.elapsed_ms());
+			
 		}else{
 			//点群データ変換
 			ROS_INFO(LOG_HEADER"point cloud data convert start.");
-			//const auto conv_start = std::chrono::high_resolution_clock::now();
 			ElapsedTimer tmr_pcgen_conv;
 			if( ! pcdata.make_point_cloud(pts) ){
 				ROS_ERROR(LOG_HEADER"point cloud data convert failed.");
+			}else{
+				pre_pts=pts;
 			}
-			ROS_INFO(LOG_HEADER"point cloud data convert finished.proc_tm=%d ms, elapsed=%d ms",
-				//ELAPSED_TM(conv_start), ELAPSED_TM(node_start));
+			
+			ROS_INFO(LOG_HEADER"point cloud data convert finished. proc_tm=%d ms, elapsed=%d ms",
 				tmr_pcgen_conv.elapsed_ms(), tmr_proc.elapsed_ms());
 			
-			//Quantize points count for Numpy array
-			if( ! get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED) ){
-				ROS_INFO(LOG_HEADER"quantize points count skipped.");
-			}else{
-				ROS_INFO(LOG_HEADER"quantize points count start.");
-				
-				//const auto norm_start = std::chrono::high_resolution_clock::now() ;
-				ElapsedTimer tmr_norm_calc;
-				if( ! count_quantize_points(pts,buf) ){
-					ROS_ERROR(LOG_HEADER"quantize points count failed.");
-				}
-				ROS_INFO(LOG_HEADER"quantize points count finished. proc_tm=%d ms, elapsed=%d ms",
-					//(norm_start), ELAPSED_TM(node_start));
-					tmr_norm_calc.elapsed_ms(), tmr_proc.elapsed_ms());
-			}
-			
-			//voxelization
+			//downsampling
 			{
-			
-				const float vx_leaf_x = get_param<float>("genpc/voxelize/leaf_size/x",VOXEL_LEAF_DEFAULT_SIZE);
-				const float vx_leaf_y = get_param<float>("genpc/voxelize/leaf_size/y",VOXEL_LEAF_DEFAULT_SIZE);
-				const float vx_leaf_z = get_param<float>("genpc/voxelize/leaf_size/z",VOXEL_LEAF_DEFAULT_SIZE);
-				const float vx_leaf_v = get_param<float>("genpc/voxelize/leaf_size/v",0);
+				VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
 				
-				if( vx_leaf_x == 0 && vx_leaf_x == vx_leaf_y && vx_leaf_y == vx_leaf_z ){
-					//voxelization disabled
-					pre_vx_leaf_x = 0;
-					pre_vx_leaf_y = 0;
-					pre_vx_leaf_z = 0;
-					ROS_INFO(LOG_HEADER"voxelization disabled.");
+				const bool quantize_count_enabled=get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED);
+				pre_quantize_points_count_enabled = quantize_count_enabled;
+				
+				ElapsedTimer tmr_downsampling;
+				ROS_INFO(LOG_HEADER"downsampling start.");
+				if( ! exec_downsampling( pts, vx_leaf_size, quantize_count_enabled, ds_points,&pts_vx) ){
+					ROS_ERROR(LOG_HEADER"downsampling failed.");
 				}else{
-				
-					ElapsedTimer tmr_voxel;
-					
-					const float cur_vx_leaf_x =std::max( vx_leaf_v , std::max( vx_leaf_x , VOXEL_LEAF_MIN_SIZE ) );
-					const float cur_vx_leaf_y =std::max( vx_leaf_v , std::max( vx_leaf_y , VOXEL_LEAF_MIN_SIZE ) );
-					const float cur_vx_leaf_z =std::max( vx_leaf_v , std::max( vx_leaf_z , VOXEL_LEAF_MIN_SIZE ) );
-					
-					ROS_INFO(LOG_HEADER"point cloud voxelization start.");
-					
-					if ( ! pcdata.voxelization( cur_vx_leaf_x, cur_vx_leaf_y, cur_vx_leaf_z,pts_vx ) ){
-						//ROS_ERROR(LOG_HEADER"point cloud voxelization failed. elapsed=%d",ELAPSED_TM(node_start));
-						ROS_ERROR(LOG_HEADER"voxelization failed. elapsed=%d", tmr_proc.elapsed_ms());
-					}
-					
-					ROS_INFO(LOG_HEADER"voxelization finished. leaf_size=(%g, %g, %g) point_num=%d / %d(%.1f%%), proc_tm=%d ms, elapsed=%d ms",
-						cur_vx_leaf_x,cur_vx_leaf_y,cur_vx_leaf_z,(int)pts_vx.points.size(), N, N==0?0:pts_vx.points.size()/(float)N *100,
-						tmr_voxel.elapsed_ms(), tmr_proc.elapsed_ms());
-					
-					pre_vx_leaf_x = cur_vx_leaf_x;
-					pre_vx_leaf_y = cur_vx_leaf_y;
-					pre_vx_leaf_z = cur_vx_leaf_z;
+					//ROS_INFO(LOG_HEADER"point after downsampling. count=%d (%d)",(int)ds_points.data.size()/3,(int)ds_points.data.size());
 				}
+				
+				pre_vx_leaf_size = vx_leaf_size;
+				
+				const int N = pts.points.size();
+				const int ds_point_count=ds_points.data.size()/3;
+				ROS_INFO(LOG_HEADER"downsampling finished. count=%d / %d (%.2f%%), proc_tm=%d ms, elapsed=%d ms",
+					ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
+					tmr_downsampling.elapsed_ms(), tmr_proc.elapsed_ms());
 			}
-			
 			
 			//depthmap making
 			if( ! get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
 				ROS_INFO(LOG_HEADER"depthmap image make skipped.");
 			}else{
 				ROS_INFO(LOG_HEADER"depthmap image make start.");
-				//const auto depthimg_start = std::chrono::high_resolution_clock::now() ;
 				ElapsedTimer tmr_depthmap;
 				
 				if( ! pcdata.make_depth_image(depthimg_mat) ){
@@ -656,8 +740,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 						ROS_ERROR(LOG_HEADER"depthmap image cv_bridge:exception: %s", e.what());
 					}
 				}
-				
-				//ROS_INFO(LOG_HEADER"depthmap image make finished. proc_tm=%d ms",ELAPSED_TM(depthimg_start));
 				ROS_INFO(LOG_HEADER"depthmap image make finished. proc_tm=%d ms", tmr_depthmap.elapsed_ms());
 			}
 			res.pc_cnt = N;
@@ -666,12 +748,10 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	}
 	
 	pub_ps_pc.publish(pts);
-	pub_ps_floats.publish(buf);
+	pub_ps_floats.publish(ds_points);
 	pub_depth_img.publish(depthimg);
-	pub_ps_pc_vx.publish(pts_vx);
 	pub_ps_all.publish(pc_points);
 	
-	//ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms",ELAPSED_TM(node_start));
 	ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms", tmr_proc.elapsed_ms());
 	
 	//データ保存
@@ -680,16 +760,13 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		if( ! get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE) ){
 			ROS_INFO(LOG_HEADER"ply file save skipped.");
 		}else{
-			//const auto save_start = std::chrono::high_resolution_clock::now() ;
 			ElapsedTimer tmr_save_pcdata;
 			const std::string save_file_path=file_dump + "/test.ply";
 			if( ! pcdata.save_ply(save_file_path) ){
 				ROS_ERROR(LOG_HEADER"ply file save failed. proc_tm=%d ms, path=%s",
-					//ELAPSED_TM(save_start), save_file_path.c_str());
 					tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
 			}else{
 				ROS_INFO(LOG_HEADER"ply file save succeeded. proc_tm=%d ms, path=%s",
-					//ELAPSED_TM(save_start), save_file_path.c_str());
 					tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
 			}
 		}
@@ -700,7 +777,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		if( pts_vx.points.empty() || ! get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED) ){
 			ROS_INFO(LOG_HEADER"voxelized point cloud data save skipped.");
 		}else{
-			//const auto save_start = std::chrono::high_resolution_clock::now() ;
 			ElapsedTimer tmr_save_voxel;
 			
 			const std::string save_file_path=file_dump + "/voxel.ply";
@@ -713,11 +789,9 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			int save_ret = 0;
 			if( save_ret =  ply_writer.write<pcl::PointXYZRGB> (save_file_path, pts_vx_pcl, true) ){
 				ROS_ERROR(LOG_HEADER"voxelized point cloud data save failed. ret=%d, proc_tm=%d ms, path=%s",
-					//save_ret, ELAPSED_TM(save_start), save_file_path.c_str());
 					save_ret, tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
 			}else{
 				ROS_INFO(LOG_HEADER"voxelized point cloud data save succeeded. proc_tm=%d ms, path=%s",
-					//ELAPSED_TM(save_start), save_file_path.c_str());
 					tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
 			}
 			
@@ -733,15 +807,12 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		if( depthimg_mat.empty() || ! get_param<bool>("genpc/depthmap_img/img_save",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
 			ROS_INFO(LOG_HEADER"depthmap image save skipped.");
 		}else{
-			//const auto save_start = std::chrono::high_resolution_clock::now() ;
 			ElapsedTimer tmr_save_depthmap;
 			
 			std::string save_file_path = file_dump + "/depth.png";
 			if( ! cv::imwrite(save_file_path,depthimg_mat) ){
-				//ROS_ERROR(LOG_HEADER"depthmap image save failed. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start), save_file_path.c_str());
 				ROS_ERROR(LOG_HEADER"depthmap image save failed. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
 			}else {
-				//ROS_INFO(LOG_HEADER"depthmap image make succeeded. proc_tm=%d ms, path=%s",ELAPSED_TM(save_start), save_file_path.c_str());
 				ROS_INFO(LOG_HEADER"depthmap image make succeeded. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
 			}
 		}
@@ -756,9 +827,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		re_vx_monitor_timer.setPeriod(ros::Duration(cur_re_vx_interval));
 		re_vx_monitor_timer.start();
 	}
-	
-	
-	//ROS_INFO(LOG_HEADER "node end. elapsed=%d ms",ELAPSED_TM(node_start));
 	ROS_INFO(LOG_HEADER "node end. elapsed=%d ms", tmr_proc.elapsed_ms());
 	return true;
 }
@@ -783,7 +851,6 @@ int main(int argc, char **argv)
 	pub_ps_pc     = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
 	pub_ps_floats = n.advertise<rovi::Floats>("ps_floats", 1);
 	pub_depth_img = n.advertise<sensor_msgs::Image>("image_depth", 1);
-	pub_ps_pc_vx  = n.advertise<sensor_msgs::PointCloud>("ps_pc_vx", 1);
 	pub_ps_all    = n.advertise<rovi::Floats>("ps_all", 1);
 	
 	re_vx_monitor_timer = nh->createTimer(ros::Duration(RE_VOXEL_DEFAULT_INTERVAL), re_voxelization_monitor);

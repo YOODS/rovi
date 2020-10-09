@@ -89,10 +89,10 @@ genpc:
   voxelize:
     data_save: On
     leaf_size:
-      x: 1
-      y: 1
-      z: 1
-      v: 1
+      x: 0
+      y: 0
+      z: 0
+      v: 0
     recalc:
       enabled: On
       interval: 1
@@ -100,7 +100,7 @@ ycam:
   Mode: 1
   Strobe: 0
   SoftwareTriggerRate: 1
-  ExposureTimeLevel: 2
+  ExposureTimeLevel: 1
   camera:
     Gain: 0
   projector:

@@ -34,8 +34,7 @@ enum YCam3DMode {
 	
 ros::NodeHandle *nh = nullptr;
 
-ros::Publisher pub_cam_img_left;
-ros::Publisher pub_cam_img_right;
+ros::Publisher pub_img_raws[2];
 ros::Publisher pub_Y1;
 ros::Publisher pub_pcount;
 ros::Publisher pub_stat;
@@ -68,12 +67,11 @@ constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
 constexpr int PRM_SW_TRIG_RATE_MAX = 6; //Hz
 constexpr int PRM_SW_TRIG_RATE_MIN = 1; //Hz
 
+constexpr int YCAM_STAND_BY_MODE_CYCLE = 3; //Hz
+	
 int pre_ycam_mode = (int)Mode_StandBy;
 
 std::string camera_res;
-
-const int YCAM_STAND_BY_MODE_CYCLE = 3; //Hz
-
 std::unique_ptr<CameraYCAM3D> camera_ptr;
 
 ros::Timer mode_mon_timer;
@@ -413,12 +411,11 @@ void on_capture_image_received(const bool result,const int proc_tm, const camera
 	}else{
 		for (int i = 0 ; i < 2 ; i++ ){
 			cam_imgs[i].to_ros_img(ros_imgs[i],FRAME_ID);
+			
+			pub_img_raws[i].publish(ros_imgs[i]);
 		}
 	}
 	//ROS_INFO(LOG_HEADER"capture image recevie finished. elapsed=%d ms",tmr.elapsed_ms());
-	
-	pub_cam_img_left.publish(ros_imgs[0]);
-	pub_cam_img_right.publish(ros_imgs[1]);
 	
 	//pub_rects1[0].publish(ros_imgs[0]);
 	//pub_rects1[1].publish(ros_imgs[1]);
@@ -486,7 +483,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	ptn_imgs_r.clear();
 	
 	// ********** pc_gen_mutex LOCKED **********
-	pc_gen_thread=std::thread([&](ElapsedTimer a_tmr){
+	//pc_gen_thread=std::thread([&](ElapsedTimer a_tmr){
 		ROS_INFO("point cloud generation start.");
 		bool result = false;
 		std::lock_guard<std::timed_mutex> locker(pc_gen_mutex,std::adopt_lock);
@@ -534,17 +531,17 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						}
 					}
 					if(  ! all_recevied ){
-						ROS_ERROR(LOG_HEADER"pattern image receive failed. elapsed=%d ms", a_tmr.elapsed_ms());
+						ROS_ERROR(LOG_HEADER"pattern image receive failed. elapsed=%d ms", tmr.elapsed_ms());
 						
 					}else{
-						ROS_INFO(LOG_HEADER"all pattern image received. elapsed=%d ms", a_tmr.elapsed_ms());
+						ROS_INFO(LOG_HEADER"all pattern image received. elapsed=%d ms", tmr.elapsed_ms());
 						
 						rovi::GenPC genpc_msg;
 						genpc_msg.request.imgL = ros_ptn_imgs_l;
 						genpc_msg.request.imgR = ros_ptn_imgs_r;
 						
 						if( ! svc_genpc.call(genpc_msg) ){
-							ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", a_tmr.elapsed_ms());
+							ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", tmr.elapsed_ms());
 							exit(-1);
 						}else{
 							res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count="
@@ -553,14 +550,21 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
 							result=true;
 						}
-						
+						//DEBUG******************
+						//if(genpc_msg.response.pc_cnt < 200000){
+						//	ROS_ERROR(LOG_HEADER"!!!!!!!!!!!!!!!!!");
+						//	exit(1);
+						//}
 						std::vector<sensor_msgs::Image> ros_imgs[2]={ros_ptn_imgs_l,ros_ptn_imgs_r};
 						std::vector<camera::ycam3d::CameraImage> ptn_imgs[2]={ptn_imgs_l,ptn_imgs_r};
 						
 						ElapsedTimer tmr_remap;
 						
-						//*remapした画像を配信するよ
+						//画像を配信するよ
 						for( int camno = 0 ; camno < 2 ; ++camno ){
+							
+							pub_img_raws[camno].publish(ros_imgs[camno][1]);
+							
 							sensor_msgs::Image remap_ros_img_ptn_0;
 							{
 								rovi::ImageFilter remap_img_filter;
@@ -641,12 +645,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		res.success = true;
 		res.message = res_msg_str.str();
 		
-		ROS_INFO(LOG_HEADER"point cloud generation finished. result=%d tmr=%d ms", result,  a_tmr.elapsed_ms());
+		ROS_INFO(LOG_HEADER"point cloud generation finished. result=%d tmr=%d ms", result,  tmr.elapsed_ms());
 		// ********** pc_gen_mutex UNLOCKED **********
 		
-	},tmr);
-	//pc_gen_thread.detach();
-	pc_gen_thread.join(); //joinするならスレッドにしなくてもいいかも
+	//},tmr);
+	//pc_gen_thread.join();
 	
 	return true;
 }
@@ -701,8 +704,8 @@ int main(int argc, char **argv)
 	camera_ptr->set_callback_pattern_img_received(on_pattern_image_received);
 	
 	//publishers
-	pub_cam_img_left = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
-	pub_cam_img_right = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
+	pub_img_raws[0] = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
+	pub_img_raws[1] = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
 	pub_Y1 = n.advertise<std_msgs::Bool>("Y1", 1);
 	pub_pcount = n.advertise<std_msgs::Int32>("pcount", 1);
 	pub_stat = n.advertise<std_msgs::Bool>("stat", 1);

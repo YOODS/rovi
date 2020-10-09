@@ -4,8 +4,8 @@
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
 #include <opencv2/opencv.hpp>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
+//#include <pcl/point_types.h>
+//#include <pcl/point_cloud.h>
 #include "rovi/Floats.h"
 #include "iPointCloudGenerator.hpp"
 
@@ -37,9 +37,7 @@ public:
 	bool make_point_cloud(sensor_msgs::PointCloud &pts);
 	
 	bool make_depth_image(cv::Mat &img);
-	
-	bool voxelization(const float leaf_x, const float leaf_y, const float leaf_z, sensor_msgs::PointCloud &pts);
-	
+		
 	bool save_ply(const std::string &file_path);
 	
 	//range grid. X,Y,Z, X,Y,Z ...
