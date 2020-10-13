@@ -269,7 +269,7 @@ void CameraYCAM3D::set_callback_camera_closed(camera::ycam3d::f_camera_closed ca
 	m_callback_cam_closed = callback;
 }
 
-void CameraYCAM3D::set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback){
+void CameraYCAM3D::set_callback_capture_img_received(camera::ycam3d::f_pattern_img_received callback){
 	m_callback_capt_img_recv = callback;
 }
 	
@@ -518,6 +518,7 @@ bool CameraYCAM3D::capture(){
 			m_camno,timeout_occured,capt_tmr.elapsed_ms());
 #endif
 		if( m_callback_capt_img_recv ){
+#if 0
 			camera::ycam3d::CameraImage img_l;
 			camera::ycam3d::CameraImage img_r;
 			{
@@ -538,6 +539,44 @@ bool CameraYCAM3D::capture(){
 			}else{
 				const bool result = img_l.result && img_r.result && img_l.valid() && img_r.valid();
 				m_callback_capt_img_recv(result,capt_tmr.elapsed_ms(),img_l,img_r,false);
+			}
+#endif
+			
+			std::vector<camera::ycam3d::CameraImage> imgs_l;
+			std::vector<camera::ycam3d::CameraImage> imgs_r;
+			bool result=false;
+			{
+				std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
+				// ********** m_img_update_mutex LOCKED **********
+				imgs_l = m_imgs_left;
+				imgs_r = m_imgs_right;
+				int validImgNum = 0;
+				if( imgs_l.size() == imgs_r.size() && imgs_l.size() == PHSFT_CAP_NUM){
+					
+					result=true;
+					
+					for(int i = 0 ; i < imgs_l.size() ; ++i ){
+						const camera::ycam3d::CameraImage *img_l = imgs_l.data() + i;
+						const camera::ycam3d::CameraImage *img_r = imgs_r.data() + i;
+						if( ! img_l->result || ! img_l->valid()  ){
+							ROS_ERROR(LOG_HEADER"#%d error:pattern image is error. side=left, idx=%d", m_camno, i);
+							result=false;
+							break;
+						}else if( ! img_r->result || ! img_r->valid()  ){
+							ROS_ERROR(LOG_HEADER"#%d error:pattern image is error. side=right, idx=%d", m_camno, i);
+							result=false;
+							break;
+						}
+					}
+				}
+				// ********** m_img_update_mutex UNLOCKED **********
+			}
+			
+			if( timeout_occured ){
+				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
+				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true);
+			}else{
+				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false);
 			}
 		}
 		
@@ -599,6 +638,7 @@ bool CameraYCAM3D::capture_strobe(){
 			m_camno,timeout_occured,capt_tmr.elapsed_ms());
 #endif
 		if( m_callback_capt_img_recv ){
+#if 0
 			camera::ycam3d::CameraImage img_l;
 			camera::ycam3d::CameraImage img_r;
 			{
@@ -619,6 +659,43 @@ bool CameraYCAM3D::capture_strobe(){
 			}else{
 				const bool result = img_l.result && img_r.result && img_l.valid() && img_r.valid();
 				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r,false);
+			}
+#endif
+			std::vector<camera::ycam3d::CameraImage> imgs_l;
+			std::vector<camera::ycam3d::CameraImage> imgs_r;
+			bool result=false;
+			{
+				std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
+				// ********** m_img_update_mutex LOCKED **********
+				imgs_l = m_imgs_left;
+				imgs_r = m_imgs_right;
+				int validImgNum = 0;
+				if( imgs_l.size() == imgs_r.size() && imgs_l.size() == PHSFT_CAP_NUM){
+					
+					result=true;
+					
+					for(int i = 0 ; i < imgs_l.size() ; ++i ){
+						const camera::ycam3d::CameraImage *img_l = imgs_l.data() + i;
+						const camera::ycam3d::CameraImage *img_r = imgs_r.data() + i;
+						if( ! img_l->result || ! img_l->valid()  ){
+							ROS_ERROR(LOG_HEADER"#%d error:pattern image is error. side=left, idx=%d", m_camno, i);
+							result=false;
+							break;
+						}else if( ! img_r->result || ! img_r->valid()  ){
+							ROS_ERROR(LOG_HEADER"#%d error:pattern image is error. side=right, idx=%d", m_camno, i);
+							result=false;
+							break;
+						}
+					}
+				}
+				// ********** m_img_update_mutex UNLOCKED **********
+			}
+			
+			if( timeout_occured ){
+				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
+				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true);
+			}else{
+				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false);
 			}
 		}
 		
@@ -712,8 +789,6 @@ bool CameraYCAM3D::capture_pattern(){
 				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
 				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true);
 			}else{
-				
-				//todo:çáî€îªíË
 				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false);
 			}
 		}

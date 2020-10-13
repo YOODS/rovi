@@ -96,6 +96,9 @@ int expsr_tm_lv_ui_default = -1;
 int expsr_tm_lv_ui_min = -1;
 int expsr_tm_lv_ui_max = -1;
 	
+//**********DEBUG
+//int debug_pre_strobe = 0;
+	
 template<typename T>
 T get_param(const std::string &key,const T default_val){
 	T val = default_val;
@@ -297,7 +300,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 			}else{
 				camera_ptr->capture();
 			}
-			
+			//debug_pre_strobe = strobe;
 		}
 	}else{
 		//todo ******************* pending *******************
@@ -395,26 +398,123 @@ void on_camera_closed(){
 	publish_bool(pub_stat,false);
 	publish_string(pub_info,"YCAM closed");
 }
+
 	
-void on_capture_image_received(const bool result,const int proc_tm, const camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
+sensor_msgs::Image to_diff_img(const sensor_msgs::Image &src_img,sensor_msgs::Image &dst_img){
+	sensor_msgs::Image diff_img;
+	if( src_img.data.empty() ||
+		src_img.data.size() != dst_img.data.size()
+	){
+		ROS_ERROR(LOG_HEADER"error:camera image size is different");
+	}else{
+		diff_img = src_img;
+		for ( int n=0; n < src_img.data.size(); n++ ) {
+			int val = dst_img.data[n] - src_img.data[n];
+			if (val < 1) { val = 0; }
+			else if (val>255) { val=255; }
+			
+			diff_img.data[n] = val;
+		}
+	}
+	
+	return diff_img;
+}
+	
+void on_capture_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
 	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, timeout=%d imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
 	//	(result?"OK":"NG"), proc_tm, timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+	
+	if( ! result ){
+		ROS_ERROR(LOG_HEADER"error:capture failed.");
+		return;
+	}
 	
 	const ros::Time now = ros::Time::now();
 	
 	ElapsedTimer tmr;
-	sensor_msgs::Image ros_imgs[2];
-	const camera::ycam3d::CameraImage cam_imgs[2] = { img_l, img_r };
+	sensor_msgs::Image ros_imgs_darks[2];
+	sensor_msgs::Image ros_imgs_brights[2];
+		
+	const camera::ycam3d::CameraImage cam_imgs_darks[2] = { imgs_l.at(0), imgs_r.at(0) };
+	const camera::ycam3d::CameraImage cam_imgs_brights[2] = { imgs_l.at(1), imgs_r.at(1) };
 	
-	if( ! result ){
-		ROS_ERROR(LOG_HEADER"error:capture failed.");
-	}else{
-		for (int i = 0 ; i < 2 ; i++ ){
-			cam_imgs[i].to_ros_img(ros_imgs[i],FRAME_ID);
-			
-			pub_img_raws[i].publish(ros_imgs[i]);
+	for (int i = 0 ; i < 2 ; ++i ){
+		cam_imgs_brights[i].to_ros_img(ros_imgs_brights[i],FRAME_ID);
+		pub_img_raws[i].publish(ros_imgs_brights[i]);
+		
+		cam_imgs_darks[i].to_ros_img(ros_imgs_darks[i],FRAME_ID);
+		
+		
+		//remap
+		sensor_msgs::Image remap_img_bright;
+		sensor_msgs::Image remap_img_dark;
+		{
+			//remap-bright
+			rovi::ImageFilter remap_img_filter;
+			remap_img_filter.request.img = ros_imgs_brights[i];
+			//ROS_INFO(LOG_HEADER"remap start. camno=%d",i);
+			if( ! svc_remap[i].call(remap_img_filter) ){
+				ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d",i);
+			}else{
+				remap_img_bright = remap_img_filter.response.img;
+				
+				//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
+				pub_rects[i].publish(remap_img_bright);
+				
+				pub_rects1[i].publish(remap_img_bright);
+			}
+		}
+		{
+			//remap-dark
+			rovi::ImageFilter remap_img_filter;
+			remap_img_filter.request.img = ros_imgs_darks[i];
+			//ROS_INFO(LOG_HEADER"remap start. camno=%d",i);
+			if( ! svc_remap[i].call(remap_img_filter) ){
+				ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d",i);
+			}else{
+				//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
+				remap_img_dark = remap_img_filter.response.img;
+				pub_rects0[i].publish(remap_img_dark);
+			}
+		}
+		//diff
+		const sensor_msgs::Image diff_img = to_diff_img(remap_img_dark,remap_img_bright);
+		pub_diffs[i].publish(diff_img);
+	}
+	
+	//******* DEBUG ***********
+	/*
+	int brightCount=0;
+	for(int i=0;i<2;++i){
+		long sum=0;
+		for( int n=0;n < ros_imgs_brights[i].data.size();++n){
+			sum += ros_imgs_brights[i].data[n];
+		}
+		const float avg = sum /(float)ros_imgs_brights[i].data.size();
+		ROS_INFO(LOG_HEADER"img brightness avg. val=%f",avg);
+		if(avg > 65){
+			brightCount ++;
 		}
 	}
+	ROS_INFO("strobe=%d",debug_pre_strobe);
+		
+	if(debug_pre_strobe){
+		if( brightCount != 2 ){
+			ROS_ERROR("strobe switch faild.");
+			exit(1);
+		}else{
+			ROS_WARN("strobe switch success");
+		}
+	}else{
+		if( brightCount != 0 ){
+			ROS_ERROR("strobe switch faild.");
+			exit(1);
+		}else{
+			ROS_WARN("strobe switch success");
+		}
+	}*/
+	//******* DEBUG ***********
+	
 	//ROS_INFO(LOG_HEADER"capture image recevie finished. elapsed=%d ms",tmr.elapsed_ms());
 	
 	//pub_rects1[0].publish(ros_imgs[0]);
@@ -422,30 +522,9 @@ void on_capture_image_received(const bool result,const int proc_tm, const camera
 	
 	//tmr.restart();
 	
-	//char path[256];
-	//cv::Mat img;
-	for(int i=0;i<2;++i){
-		rovi::ImageFilter remap_img_filter;
-		remap_img_filter.request.img = ros_imgs[i];
-		//ROS_INFO(LOG_HEADER"remap start. camno=%d",i);
-		if( ! svc_remap[i].call(remap_img_filter) ){
-			ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d",i);
-		}else{
-			//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
-			pub_rects[i].publish(remap_img_filter.response.img);
-		}
-#if 0		
-		sprintf(path,"/tmp/remap_%d_0.pgm",i);
-		img = cv_bridge::toCvCopy(ros_imgs[i], sensor_msgs::image_encodings::MONO8)->image;
-		cv::imwrite(path,img);
-		
-		sprintf(path,"/tmp/remap_%d_0_remapped.pgm",i);
-		img = cv_bridge::toCvCopy(remap_img_filter.response.img, sensor_msgs::image_encodings::MONO8)->image;
-		cv::imwrite(path,img);
-#endif
-	}
 	//ROS_INFO(LOG_HEADER"image remap finished. elapsed=%d ms",tmr.elapsed_ms());
 	//ROS_WARN(LOG_HEADER"ycam3d node capture image received.");
+	
 }
 
 void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
@@ -470,6 +549,8 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	// ********** ptn_capt_wait_cv NOTIFY **********
 }
 
+
+	
 bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res){
 	ROS_INFO("exec_point_cloud_generation");
 	ElapsedTimer tmr;
@@ -548,13 +629,19 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							<< genpc_msg.response.pc_cnt;
 							
 							publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
+							if( genpc_msg.response.pc_cnt < 1000 ){
+								ROS_WARN(LOG_HEADER"The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
+							}
 							result=true;
 						}
 						//DEBUG******************
-						//if(genpc_msg.response.pc_cnt < 200000){
-						//	ROS_ERROR(LOG_HEADER"!!!!!!!!!!!!!!!!!");
-						//	exit(1);
-						//}
+						/*
+						if(genpc_msg.response.pc_cnt < 900000){
+							ROS_ERROR(LOG_HEADER"!!!!!!!!!!!!!!!!!");
+							exit(1);
+						}*/
+						//DEBUG******************
+							
 						std::vector<sensor_msgs::Image> ros_imgs[2]={ros_ptn_imgs_l,ros_ptn_imgs_r};
 						std::vector<camera::ycam3d::CameraImage> ptn_imgs[2]={ptn_imgs_l,ptn_imgs_r};
 						
@@ -562,9 +649,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						
 						//âÊëúÇîzêMÇ∑ÇÈÇÊ
 						for( int camno = 0 ; camno < 2 ; ++camno ){
-							
 							pub_img_raws[camno].publish(ros_imgs[camno][1]);
-							
 							sensor_msgs::Image remap_ros_img_ptn_0;
 							{
 								rovi::ImageFilter remap_img_filter;
@@ -608,6 +693,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 								//cv::imwrite(path,img);
 							}
 							{
+								sensor_msgs::Image diff_img = to_diff_img(remap_ros_img_ptn_0,remap_ros_img_ptn_1);
+								pub_diffs[camno].publish(diff_img);
+							}
+							/*
+							{
 								
 								sensor_msgs::Image diff_img;
 								if( remap_ros_img_ptn_0.data.empty() ||
@@ -632,7 +722,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 								//sprintf(path,"/tmp/remap_%d_diff.pgm",camno);
 								//cv::Mat img = cv_bridge::toCvCopy(diff_img, sensor_msgs::image_encodings::MONO8)->image;
 								//cv::imwrite(path,img);
-							}
+							}*/
 						}
 						
 					}

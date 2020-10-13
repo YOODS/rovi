@@ -577,7 +577,7 @@ bool Aravis::set_exposure_time_level(const int lv){
 		if ( ! uart_cmd('z', YCAM_PROJ_PTN_PHSFT) ){
 			dprintf("projector pattern change failed. !!!!!!");
 		}
-		Sleep(3000);
+		Sleep(500);
 		dprintf("projector pattern changed.   result=%s, set_val=%5d",
 			"--",YCAM_PROJ_PTN_PHSFT);
 	}
