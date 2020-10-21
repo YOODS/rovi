@@ -93,10 +93,10 @@ genpc:
       interval: 1
 ycam:
   Mode: 1
-  Strobe: 0
-  SoftwareTriggerRate: 1
+  Strobe: 1
+  SoftwareTriggerRate: 2
   ExposureTimeLevel: 1
-  DrawCenterCross : Off
+  DrawCameraOrigin : Off
   camera:
     Gain: 0
   projector:

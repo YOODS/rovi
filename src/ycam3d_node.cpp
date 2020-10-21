@@ -54,17 +54,17 @@ ros::ServiceClient svc_remap[2];
 int cam_width = -1;
 int cam_height = -1;
 
-const std::string PRM_MODE                = "ycam/Mode";
-const std::string PRM_CAM_OPEN_STAT       = "ycam/stat";
-const std::string PRM_SW_TRIG_RATE        = "ycam/SoftwareTriggerRate";
-const std::string PRM_EXPOSURE_TIME_LEVEL = "ycam/ExposureTimeLevel";
-const std::string PRM_DRAW_CENTER_CROSS   = "ycam/DrawCenterCross";
-//const std::string PRM_CAM_EXPSR_TM   = "ycam/camera/ExposureTime";
-const std::string PRM_CAM_GAIN_D          = "ycam/camera/Gain";
-//const std::string PRM_CAM_GAIN_A     = "ycam/camera/GainA";
-//const std::string PRM_PROJ_EXPSR_TM  = "ycam/projector/ExposureTime";
-const std::string PRM_PROJ_INTENSITY      = "ycam/projector/Intensity";
-
+const std::string PRM_MODE                    = "ycam/Mode";
+const std::string PRM_CAM_OPEN_STAT           = "ycam/stat";
+const std::string PRM_SW_TRIG_RATE            = "ycam/SoftwareTriggerRate";
+const std::string PRM_EXPOSURE_TIME_LEVEL     = "ycam/ExposureTimeLevel";
+const std::string PRM_DRAW_CAMERA_ORIGIN      = "ycam/DrawCameraOrigin";
+//const std::string PRM_CAM_EXPSR_TM          = "ycam/camera/ExposureTime";
+const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
+//const std::string PRM_CAM_GAIN_A            = "ycam/camera/GainA";
+//const std::string PRM_PROJ_EXPSR_TM         = "ycam/projector/ExposureTime";
+const std::string PRM_PROJ_INTENSITY          = "ycam/projector/Intensity";
+const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 	
 constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
 constexpr int PRM_SW_TRIG_RATE_MAX = 6; //Hz
@@ -204,14 +204,14 @@ void update_camera_params(){
 			}else{
 				//ui用は1プラスされていると考える
 				if( cur_expsr_lv_raw != cur_expsr_lv_ui - 1 ){
-					ROS_WARN(LOG_HEADER"exposure time level change start.");
+					//ROS_WARN(LOG_HEADER"exposure time level change start.");
 					if( ! camera_ptr->set_exposure_time_level(cur_expsr_lv_ui - 1) ){
 						ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. val=%d",cur_expsr_lv_ui);
 						nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv_raw + 1 );
 					}else{
 						ROS_INFO(LOG_HEADER"'exposure time level' paramter changed. old=%d new=%d", cur_expsr_lv_raw + 1 , cur_expsr_lv_ui);
 					}
-					ROS_WARN(LOG_HEADER"exposure time level change end.");
+					//ROS_WARN(LOG_HEADER"exposure time level change end.");
 				}
 			}
 			
@@ -424,13 +424,14 @@ sensor_msgs::Image to_diff_img(const sensor_msgs::Image &src_img,sensor_msgs::Im
 }
 
 
-sensor_msgs::Image drawCenterCross(sensor_msgs::Image &inputImg){
+sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point &posCross){
 	const int width = inputImg.width;
 	const int height = inputImg.height;
 	if( inputImg.encoding.compare(sensor_msgs::image_encodings::MONO8) != 0){
 		ROS_ERROR(LOG_HEADER"error:center cross draw failed. unsupport image encoding.");
 		return inputImg;
 	}
+	
 	cv::Mat grayImg = cv_bridge::toCvCopy(inputImg, sensor_msgs::image_encodings::MONO8)->image;
 	
 	cv_bridge::CvImage colorImg;
@@ -440,10 +441,13 @@ sensor_msgs::Image drawCenterCross(sensor_msgs::Image &inputImg){
 	const int cross_width = std::max(size_gcd / 150,1);
 	const int cross_len = std::max(size_gcd/30,3);
 	
-	const int cx = width /2;
-	const int cy = height/2;
-	cv::line(colorImg.image, cv::Point( (width - cross_len)/2  , cy) , cv::Point(( width + cross_len)/2, cy), cv::Scalar(255,0,0),cross_width , 8);
-	cv::line(colorImg.image, cv::Point(cx, (height - cross_len)/2), cv::Point(cx, (height+cross_len)/2), cv::Scalar(255,0,0),cross_width , 8);
+	const int cx = posCross.x;//width /2;
+	const int cy = posCross.y;//height/2;
+	
+	cv::line(colorImg.image, cv::Point(cx - cross_len/2  , cy) , cv::Point(cx + cross_len/2, cy), cv::Scalar(255,0,0),cross_width , CV_AA);
+	cv::line(colorImg.image, cv::Point(cx, cy - cross_len/2),    cv::Point(cx, cy + cross_len/2)   , cv::Scalar(255,0,0),cross_width , CV_AA);
+	
+	cv::imwrite("/tmp/color.png",colorImg.image);
 	
 	sensor_msgs::Image outputImg;
 	outputImg=*colorImg.toImageMsg();
@@ -472,14 +476,10 @@ void on_capture_image_received(const bool result,const int proc_tm,const std::ve
 	const camera::ycam3d::CameraImage cam_imgs_darks[2] = { imgs_l.at(0), imgs_r.at(0) };
 	
 	const camera::ycam3d::CameraImage cam_imgs_brights[2] = { imgs_l.at(1), imgs_r.at(1) };
-	const bool drawCenterCrossFlg =  get_param<bool>(PRM_DRAW_CENTER_CROSS,false);
+	const bool drawCameraOriginCrossFlg =  get_param<bool>(PRM_DRAW_CAMERA_ORIGIN,false);
 	for (int i = 0 ; i < 2 ; ++i ){
 		cam_imgs_brights[i].to_ros_img(ros_imgs_brights[i],FRAME_ID);
-		if(drawCenterCrossFlg){
-			pub_img_raws[i].publish(drawCenterCross(ros_imgs_brights[i]));
-		}else{
-			pub_img_raws[i].publish(ros_imgs_brights[i]);
-		}
+		pub_img_raws[i].publish(ros_imgs_brights[i]);
 		
 		cam_imgs_darks[i].to_ros_img(ros_imgs_darks[i],FRAME_ID);
 		
@@ -498,8 +498,20 @@ void on_capture_image_received(const bool result,const int proc_tm,const std::ve
 				remap_img_bright = remap_img_filter.response.img;
 				
 				//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
-				pub_rects[i].publish(remap_img_bright);
 				
+				if(drawCameraOriginCrossFlg && i == 0){
+					std::vector<float> matK;
+					if( ! nh->getParam(PRM_CAM_CALIB_MAT_K_LIST[i],matK)){
+						ROS_ERROR(LOG_HEADER"error:camera calib matrix get failed.");
+					}else if( matK.size() != 9 ){
+						ROS_ERROR(LOG_HEADER"error:camera calib matrix K is wrong.");
+					}
+					
+					cv::Point pos(matK[2],matK[5]);
+					pub_rects[i].publish(drawCameraOriginCross(remap_img_bright,pos));
+				}else{
+					pub_rects[i].publish(remap_img_bright);
+				}
 				pub_rects1[i].publish(remap_img_bright);
 			}
 		}
@@ -628,7 +640,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						result=true;
 					}
 					
-					const bool drawCenterCrossFlg =  get_param<bool>(PRM_DRAW_CENTER_CROSS,false);
 					
 					std::vector<sensor_msgs::Image> ros_imgs[2]={ros_ptn_imgs_l,ros_ptn_imgs_r};
 					std::vector<camera::ycam3d::CameraImage> ptn_imgs[2]={ptn_imgs_l,ptn_imgs_r};
@@ -637,11 +648,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					
 					//画像を配信するよ
 					for( int camno = 0 ; camno < 2 ; ++camno ){
-						if(drawCenterCrossFlg){
-							pub_img_raws[camno].publish(drawCenterCross(ros_imgs[camno][1]));
-						}else{
-							pub_img_raws[camno].publish(ros_imgs[camno][1]);
-						}
+						pub_img_raws[camno].publish(ros_imgs[camno][1]);
 						
 						sensor_msgs::Image remap_ros_img_ptn_0;
 						{
