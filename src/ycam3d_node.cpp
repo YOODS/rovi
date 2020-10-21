@@ -425,8 +425,6 @@ sensor_msgs::Image to_diff_img(const sensor_msgs::Image &src_img,sensor_msgs::Im
 
 
 sensor_msgs::Image drawCenterCross(sensor_msgs::Image &inputImg){
-	
-	
 	const int width = inputImg.width;
 	const int height = inputImg.height;
 	if( inputImg.encoding.compare(sensor_msgs::image_encodings::MONO8) != 0){
@@ -444,28 +442,13 @@ sensor_msgs::Image drawCenterCross(sensor_msgs::Image &inputImg){
 	
 	const int cx = width /2;
 	const int cy = height/2;
-	//std::cerr << "cx =" << cx << std::endl;
-	//std::cerr << "cy =" << cy << std::endl;
 	cv::line(colorImg.image, cv::Point( (width - cross_len)/2  , cy) , cv::Point(( width + cross_len)/2, cy), cv::Scalar(255,0,0),cross_width , 8);
 	cv::line(colorImg.image, cv::Point(cx, (height - cross_len)/2), cv::Point(cx, (height+cross_len)/2), cv::Scalar(255,0,0),cross_width , 8);
-	//std::cerr << "end" << std::endl;
 	
-	//cv::imwrite("/tmp/out.png",colorImg.image);
 	sensor_msgs::Image outputImg;
 	outputImg=*colorImg.toImageMsg();
 	outputImg.header = inputImg.header;
-	//outputImg.width = width;
-	//outputImg.height = height;
-	//outputImg.is_bigendian = inputImg.is_bigendian;
-	//outputImg.step = inputImg.step * 3;
 	outputImg.encoding = sensor_msgs::image_encodings::RGB8;
-	//outputImg.data.resize(outputImg.step * height);
-	
-	//std::cerr << "width =" << outputImg.width << std::endl;
-	//std::cerr << "height =" << outputImg.height << std::endl;
-	//std::cerr << "is_bigendian =" << outputImg.is_bigendian << std::endl;
-	//std::cerr << "step =" << outputImg.step << std::endl;
-	//std::cerr << "encoding =" << outputImg.encoding << std::endl;
 	
 	return outputImg;
 }
@@ -489,10 +472,14 @@ void on_capture_image_received(const bool result,const int proc_tm,const std::ve
 	const camera::ycam3d::CameraImage cam_imgs_darks[2] = { imgs_l.at(0), imgs_r.at(0) };
 	
 	const camera::ycam3d::CameraImage cam_imgs_brights[2] = { imgs_l.at(1), imgs_r.at(1) };
-	const bool drawCenterCross =  get_param<bool>(PRM_DRAW_CENTER_CROSS,false);
+	const bool drawCenterCrossFlg =  get_param<bool>(PRM_DRAW_CENTER_CROSS,false);
 	for (int i = 0 ; i < 2 ; ++i ){
 		cam_imgs_brights[i].to_ros_img(ros_imgs_brights[i],FRAME_ID);
-		pub_img_raws[i].publish(ros_imgs_brights[i]);
+		if(drawCenterCrossFlg){
+			pub_img_raws[i].publish(drawCenterCross(ros_imgs_brights[i]));
+		}else{
+			pub_img_raws[i].publish(ros_imgs_brights[i]);
+		}
 		
 		cam_imgs_darks[i].to_ros_img(ros_imgs_darks[i],FRAME_ID);
 		
@@ -642,9 +629,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					}
 					
 					const bool drawCenterCrossFlg =  get_param<bool>(PRM_DRAW_CENTER_CROSS,false);
-					if(drawCenterCrossFlg){
-						ROS_WARN("!!!!!!!!!!!!!!!!!!!!!!!!!!");
-					}
 					
 					std::vector<sensor_msgs::Image> ros_imgs[2]={ros_ptn_imgs_l,ros_ptn_imgs_r};
 					std::vector<camera::ycam3d::CameraImage> ptn_imgs[2]={ptn_imgs_l,ptn_imgs_r};
