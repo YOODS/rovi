@@ -97,10 +97,10 @@ genpc:
       enabled: On
       interval: 1
 ycam:
-  Mode: 1
-  Strobe: 1
-  SoftwareTriggerRate: 2
-  ExposureTimeLevel: 2
+  Mode: 2
+  Strobe: 0
+  SoftwareTriggerRate: 1
+  ExposureTimeLevel: 1
   DrawCameraOrigin : Off
   camera:
     Gain: 0
