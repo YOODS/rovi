@@ -96,7 +96,7 @@ ycam:
   Strobe: 0
   SoftwareTriggerRate: 1
   ExposureTimeLevel: 1
-  DrawCenterCross : Off
+  DrawCameraOrigin : Off
   camera:
     Gain: 0
   projector:
