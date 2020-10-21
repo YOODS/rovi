@@ -100,7 +100,7 @@ ycam:
   Mode: 1
   Strobe: 1
   SoftwareTriggerRate: 2
-  ExposureTimeLevel: 1
+  ExposureTimeLevel: 2
   DrawCameraOrigin : Off
   camera:
     Gain: 0
