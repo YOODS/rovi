@@ -14,7 +14,7 @@ pshift_genpc:
     camera_type: 2
     bw_diff: 16
     brightness: 256
-    darkness: 32
+    darkness: 16
     phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
