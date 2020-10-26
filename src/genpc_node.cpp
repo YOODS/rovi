@@ -2,6 +2,7 @@
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Int32.h>
 #include <geometry_msgs/Point32.h>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
@@ -43,6 +44,8 @@ ros::Publisher pub_ps_pc;
 ros::Publisher pub_ps_floats;
 ros::Publisher pub_depth_img;
 ros::Publisher pub_ps_all;
+ros::Publisher pub_rep;
+ros::Publisher pub_pcount;
 
 const bool STEREO_CAM_IMGS_DEFAULT_SAVE = true;
 const bool PC_DATA_DEFAULT_SAVE = true;
@@ -593,6 +596,7 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 
 bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 {
+    double t02 = ros::Time::now().toSec();
 	ElapsedTimer tmr_proc;
 	ROS_INFO(LOG_HEADER"start: ptn_image_l_num=%d ptn_image_r_num=%d", (int)req.imgL.size(), (int)req.imgR.size());
 	
@@ -680,6 +684,10 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ElapsedTimer tmr_genpc;
 		const int N = pcgen.generate_pointcloud_raw(stereo_img_pointers,is_interpo,&pcdata);
 		
+	    std_msgs::Int32 pcnt;
+        pcnt.data=N;
+        pub_pcount.publish(pcnt);
+
 		ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
 			N, ElapsedTimer::duration_ms(pcgen.get_elapsed_disparity()), ElapsedTimer::duration_ms(pcgen.get_elapsed_genpcloud()),
 			tmr_genpc.elapsed_ms(), tmr_proc.elapsed_ms());
@@ -747,10 +755,18 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		}
 	}
 	
+    double t03 = ros::Time::now().toSec();
+
 	pub_ps_pc.publish(pts);
 	pub_ps_floats.publish(ds_points);
 	pub_depth_img.publish(depthimg);
 	pub_ps_all.publish(pc_points);
+
+    char s[64];
+    sprintf(s,"{'T02':%lf, 'T03':%lf}", t02, t03);
+	std_msgs::String tnow;
+    tnow.data=s;
+    pub_rep.publish(tnow);
 	
 	ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms", tmr_proc.elapsed_ms());
 	
@@ -852,6 +868,8 @@ int main(int argc, char **argv)
 	pub_ps_floats = n.advertise<rovi::Floats>("ps_floats", 1);
 	pub_depth_img = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub_ps_all    = n.advertise<rovi::Floats>("ps_all", 1);
+	pub_pcount    = n.advertise<std_msgs::Int32>("pcount", 1);
+	pub_rep       = n.advertise<std_msgs::String>("/report", 1);
 	
 	re_vx_monitor_timer = nh->createTimer(ros::Duration(RE_VOXEL_DEFAULT_INTERVAL), re_voxelization_monitor);
 	re_vx_monitor_timer.stop();
