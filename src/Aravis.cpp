@@ -629,11 +629,6 @@ bool Aravis::set_exposure_time_level(const int lv){
 	//2020/10/26 comment by hato --------------------  end  --------------------
 	setTriggerMode(YCAM_TRIG_EXT); //******** TIGGER_MOD (YCAM_TRIG_EXT) ********
 	msleep(PROJ_TRIGGER_MODE_WAIT);
-	//2020/10/26 add by hato -------------------- start --------------------
-	//一回だけだとプロジェクタの設定が有効にならずプロジェクタが光らないときがあるので念の為
-	setTriggerMode(YCAM_TRIG_EXT);
-	msleep(PROJ_TRIGGER_MODE_WAIT);
-	//2020/10/26 add by hato --------------------  end  --------------------
 	m_expsr_tm_lv = lv;
 	ret = true;
 		
