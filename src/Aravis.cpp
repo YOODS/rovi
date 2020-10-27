@@ -612,6 +612,9 @@ bool Aravis::set_exposure_time_level(const int lv){
 			"--",exp_tm_lv_param->proj_exposure_tm);
 		msleep(PROJ_EXPOSURE_TIME_WAIT);
 	}
+	//2020/10/26 comment by hato -------------------- start --------------------
+	//2020/10/26時点のカメラのファームウエアではパターンロードの必要がなくなった。
+	/*
 	{
 		uart_flush();
 		//bool ret_prj_ptn =setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
@@ -622,11 +625,15 @@ bool Aravis::set_exposure_time_level(const int lv){
 		
 		dprintf("projector pattern changed.   result=%s, set_val=%5d",
 			"--",YCAM_PROJ_PTN_PHSFT);
-	}
-	
+	}*/
+	//2020/10/26 comment by hato --------------------  end  --------------------
 	setTriggerMode(YCAM_TRIG_EXT); //******** TIGGER_MOD (YCAM_TRIG_EXT) ********
 	msleep(PROJ_TRIGGER_MODE_WAIT);
-	
+	//2020/10/26 add by hato -------------------- start --------------------
+	//一回だけだとプロジェクタの設定が有効にならずプロジェクタが光らないときがあるので念の為
+	setTriggerMode(YCAM_TRIG_EXT);
+	msleep(PROJ_TRIGGER_MODE_WAIT);
+	//2020/10/26 add by hato --------------------  end  --------------------
 	m_expsr_tm_lv = lv;
 	ret = true;
 		
