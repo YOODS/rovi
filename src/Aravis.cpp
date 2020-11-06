@@ -84,11 +84,11 @@ namespace{
 	//2020/09/11 add by hato --------------------  end  --------------------
 	
 	//2020/10/21 add by hato -------------------- start --------------------
-	const int PROJ_TRIGGER_MODE_WAIT = 100;
-	const int PROJ_EXPOSURE_TIME_WAIT = 100;
+	//const int PROJ_TRIGGER_MODE_WAIT = 50;
+	//const int PROJ_EXPOSURE_TIME_WAIT = 50;
 	const int PROJ_BRIHGHTNESS_WAIT = 100;
 	const int PROJ_FLASH_INTERVAL_WAIT = 100;
-	const int PROJ_PTN_LOAD_WAIT = 500;
+	//const int PROJ_PTN_LOAD_WAIT = 500;
 	//2020/10/21 add by hato --------------------  end  --------------------
 	void dprintf(const char *fmt,...){
 		va_list args, args2;
@@ -149,6 +149,11 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	//2020/09/18 add by hato -------------------- start --------------------
 	,m_expsr_tm_lv_setting(nullptr),m_expsr_tm_lv(-1)
 	//2020/09/18 add by hato --------------------  end --------------------
+	//2020/11/05 add by hato -------------------- start --------------------
+	,cur_proj_ptn_(YCAM_PROJ_PTN_PHSFT)
+	//,cur_proj_enabled_(Proj_Disabled)
+	,cur_proj_brightness_(0)
+	//2020/11/05 add by hato --------------------  end  --------------------
 {
 	camno_ = static_camno_++;
 	camera_ = nullptr;
@@ -333,43 +338,49 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			dprintf(" setup camera analog gain.      result=%s, set_val=%5d, cur_val=%5d",
 				(result_gain_a?"OK":"NG"),CAM_ANALOG_GAIN_DEFAULT, gainA());
 		}
+		//2020/11/05 comment out by hato -------------------- start --------------------
+		/*
 		{
 			const bool result_tig_mode = setTriggerMode(YCAM_TRIG_INT);
 			dprintf(" setup trigger mode.            result=%s, set_val=%5d, cur_val=%5d",
 				(result_tig_mode?"OK":"NG"),YCAM_TRIG_INT, triggerMode());
 			msleep(PROJ_TRIGGER_MODE_WAIT);
-		}
+		}*/
+		//2020/11/05 comment out by hato --------------------  end --------------------
 		{
 			const bool result_proj_expsr_tm = setProjectorExposureTime(exp_tm_lv_param->proj_exposure_tm);
 			dprintf(" setup projector exposure time. result=%s, set_val=%5d",
 				"--",exp_tm_lv_param->proj_exposure_tm);
 			
-			msleep(PROJ_EXPOSURE_TIME_WAIT);
+			//msleep(PROJ_EXPOSURE_TIME_WAIT);
 		}
 		{
 			const bool result_proj_bright =  setProjectorBrightness(PROJ_BRIGHTNESS_DEFAULT);
 			dprintf(" setup projector brightness.    result=%s, set_val=%5d",
 				"--",PROJ_BRIGHTNESS_DEFAULT);
-			msleep(PROJ_BRIHGHTNESS_WAIT);
+			//msleep(PROJ_BRIHGHTNESS_WAIT);
 		}
 		{
 			const bool result_proj_flash_interval= setProjectorFlashInterval(PROJ_FLASH_INTERVAL_DEFAULT);
 			dprintf(" setup projector interval.      result=%s, set_val=%5d",
 				(result_proj_flash_interval?"OK":"NG"),PROJ_FLASH_INTERVAL_DEFAULT);
-			msleep(PROJ_FLASH_INTERVAL_WAIT);
+			//msleep(PROJ_FLASH_INTERVAL_WAIT);
 		}
 		{
 			const bool result_proj_ptn = setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
 			dprintf(" setup projector pattern.       result=%s, set_val=%5d",
 				(result_proj_ptn?"OK":"NG"),YCAM_PROJ_PTN_PHSFT);
-			msleep(PROJ_PTN_LOAD_WAIT);
+			//msleep(PROJ_PTN_LOAD_WAIT);
 		}
+		//2020/11/05 comment out by hato -------------------- start --------------------
+		/*
 		{
 			const bool result_trig_mode = setTriggerMode(YCAM_TRIG_EXT);
 			dprintf(" setup trigger mode.            result=%s, set_val=%5d, cur_val=%5d",
 				(result_trig_mode?"OK":"NG"),YCAM_TRIG_EXT,triggerMode());
 			msleep(PROJ_TRIGGER_MODE_WAIT);
-		}
+		}*/
+		//2020/11/05 comment out by hato -------------------- start --------------------
 		m_expsr_tm_lv = cur_expsr_tm_lv;
 		//dprintf(" current exposure time lv =%d",m_expsr_tm_lv);
 		//2020/09/14 add by hato --------------------  end  --------------------
@@ -591,6 +602,9 @@ bool Aravis::set_exposure_time_level(const int lv){
 	dprintf("exposure time lv param. %s", exp_tm_lv_param->to_string().c_str());
 	
 	bool ret=false;
+	
+	set_node_int("AcquisitionFrameRate", 10);
+	
 	{
 		const bool ret_expsr = reg_write(REG_EXPOSURE_TIME, exp_tm_lv_param->cam_exposure_tm);
 		dprintf("camera exposure time set.    result=%s, set_val=%5d, cur_val=%5d",
@@ -602,33 +616,16 @@ bool Aravis::set_exposure_time_level(const int lv){
 			(ret_frame_rate?"OK":"NG"),exp_tm_lv_param->cam_frame_rate, get_node_int("AcquisitionFrameRate"));
 	}
 	
-	//プロジェクタ関係の関数を呼び出す前にはsetTriggerMode(0)、終わったらsetTriggerMode(1)
-	setTriggerMode(YCAM_TRIG_INT); //******** TIGGER_MOD (YCAM_TRIG_INT) ********
-	msleep(PROJ_TRIGGER_MODE_WAIT);
-	
-	{
-		const bool ret_prj_expsr = setProjectorExposureTime( exp_tm_lv_param->proj_exposure_tm );
-		dprintf("projector exposure time set. result=%s, set_val=%5d",
+	pset_stopgo(Proj_Disabled);
+	int vres=1;
+	dprintf("projector exposure time set. result=%s, set_val=%5d",
 			"--",exp_tm_lv_param->proj_exposure_tm);
-		msleep(PROJ_EXPOSURE_TIME_WAIT);
-	}
-	//2020/10/26 comment by hato -------------------- start --------------------
-	//2020/10/26時点のカメラのファームウエアではパターンロードの必要がなくなった。
-	/*
-	{
-		uart_flush();
-		//bool ret_prj_ptn =setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
-		if ( ! uart_cmd('z', YCAM_PROJ_PTN_PHSFT) ){
-			dprintf("projector pattern change failed. !!!!!!");
-		}
-		msleep(PROJ_PTN_LOAD_WAIT);
-		
-		dprintf("projector pattern changed.   result=%s, set_val=%5d",
-			"--",YCAM_PROJ_PTN_PHSFT);
-	}*/
-	//2020/10/26 comment by hato --------------------  end  --------------------
-	setTriggerMode(YCAM_TRIG_EXT); //******** TIGGER_MOD (YCAM_TRIG_EXT) ********
-	msleep(PROJ_TRIGGER_MODE_WAIT);
+	do {
+		const bool ret_prj_expsr = setProjectorExposureTime( exp_tm_lv_param->proj_exposure_tm );
+		vres=pset_validate();
+	} while(vres);
+	pset_stopgo(Proj_Enabled);
+	
 	m_expsr_tm_lv = lv;
 	ret = true;
 		
@@ -733,7 +730,7 @@ bool Aravis::reg_write(uint64_t reg, int value)
 	if (err) {
 		dprintf("error: arv_device_write_register [0x%0X=%d] %s", reg, value, err->message);
 	    g_clear_error (&err);
-	}
+	}	
 	return ret;
 }
 
@@ -953,10 +950,13 @@ bool Aravis::setTriggerMode(YCAM_TRIG tm)
 {
 	bool ret;
 	if (isAsync()){	//非同期ver
-//2020/09/25 modified by hato -------------------- start --------------------
-		//ret = uart_write('a', tm==YCAM_TRIG_EXT ? 1 : 0);
-		ret = uart_cmd( 'a' , tm==YCAM_TRIG_EXT ? 1 : 0 );
-//2020/09/25 modified by hato --------------------  end  --------------------
+		//2020/11/05 comment out by hato --------------------  end  --------------------
+////2020/09/25 modified by hato -------------------- start --------------------
+//		//ret = uart_write('a', tm==YCAM_TRIG_EXT ? 1 : 0);
+//		ret = uart_cmd( 'a' , tm==YCAM_TRIG_EXT ? 1 : 0 );
+////2020/09/25 modified by hato --------------------  end  --------------------
+		//2020/11/05 comment out by hato --------------------  end  --------------------
+		
 	}
 	else{
 		ret = reg_write(REG_EXTERNAL_TRIGGER, tm==YCAM_TRIG_EXT ? 1 : 0);
@@ -966,7 +966,7 @@ bool Aravis::setTriggerMode(YCAM_TRIG tm)
 }
 //2020/10/09 modified by hato -------------------- start --------------------
 //bool Aravis::trigger(YCAM_PROJ_MODE mode)
-bool Aravis::trigger(YCAM_PROJ_MODE mode,const bool projectorOn)
+bool Aravis::trigger(YCAM_PROJ_MODE mode)
 //2020/10/09 modified by hato --------------------  end  --------------------
 {
 	if (trigger_mode_ == YCAM_TRIG_INT){
@@ -976,10 +976,12 @@ bool Aravis::trigger(YCAM_PROJ_MODE mode,const bool projectorOn)
 	frame_index_ = 0;
 	bool ret;
 	if (isAsync()){	//非同期ver
-//2020/09/25 modified by hato -------------------- start --------------------
-		//uart_write('a', 1);	//プロジェクターON
-		ret = uart_cmd( 'a' , projectorOn ? 1 : 0);
-//2020/09/25 modified by hato --------------------  end  --------------------
+//2020/11/05 modified by hato -------------------- start --------------------
+////2020/09/25 modified by hato -------------------- start --------------------
+//		//uart_write('a', 1);	//プロジェクターON
+//		ret = uart_cmd( 'a' , projectorOn ? 1 : 0);
+////2020/09/25 modified by hato --------------------  end  --------------------
+//2020/11/05 modified by hato --------------------  end  --------------------
 		int num = (mode == YCAM_PROJ_MODE_CONT) ? PHSFT_CAP_NUM : 1;
 		ret = reg_write(REG_STREAM_NUM, num);
 	}
@@ -991,6 +993,23 @@ bool Aravis::trigger(YCAM_PROJ_MODE mode,const bool projectorOn)
 	}
 	return ret;
 }
+
+//2020/11/05 modified by hato -------------------- start --------------------
+/*
+bool Aravis::setProjectorEnabled(const bool enabled){
+	if( ! enabled ){
+		pset_stopgo(Proj_Disabled);
+	}else{
+		int vres=1;
+		do {
+			vres=pset_validate();
+		} while(vres);
+		pset_stopgo(Proj_Enabled);
+	}
+	return true;
+}
+*/
+//2020/11/05 modified by hato --------------------  end  --------------------
 
 /*** 診断メッセージ　dコマンドで以下フォ－マット
 	//cmd:diag
@@ -1098,6 +1117,8 @@ int Aravis::projector_value(const char *key_str, std::string *str)
 	return ret;
 }
 
+//2020/11/05 modified by hato -------------------- start --------------------
+/*
 int Aravis::projectorBrightness()
 {
 	string str;
@@ -1109,15 +1130,21 @@ int Aravis::projectorBrightness()
 		break;
 	}
 	return ret;
-}
+}*/
+//2020/11/05 modified by hato --------------------  end  --------------------
+	
 
 bool Aravis::setProjectorBrightness(int value)
 {
+	//2020/11/05 modified by hato -------------------- start --------------------
+	cur_proj_brightness_=value;
+	//2020/11/05 modified by hato --------------------  end  --------------------
+	
 	char d[16];
 	snprintf(d, sizeof(d), "%02X%02X%02X", value, value, value);
 	//2020/09/25 modified by hato -------------------- start --------------------
 	//return uart_write('i', d);
-	return uart_cmd( 'i' , d );
+	return uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
 	//2020/09/25 modified by hato --------------------  end  --------------------
 }
 
@@ -1125,22 +1152,33 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 {
 	bool ret = false;
 	if (isAsync()){	//非同期ver
-		for (;;){
-//2020/09/25 modified by hato -------------------- start --------------------
-#if 0
-			if (!uart_write('a', 0)) break;			//外部トリガ発行を受付しない
-			if (!uart_write('z', ptn)) break;		//パターン切り替え
-			Sleep(3000);
-			if (!uart_write('a', 1)) break;			//外部トリガ発行を受付する(cam->proj)
-#endif
-			if ( ! uart_cmd('a', 0) ) break;			//外部トリガ発行を受付しない
-			if ( ! uart_cmd('z', ptn) ) break;		//パターン切り替え
-			Sleep(3000);
-			if ( ! uart_cmd('a', 1) ) break;			//外部トリガ発行を受付する(cam->proj)
-//2020/09/25 modified by hato --------------------  end  --------------------
-			ret = true;
-			break;
-		}
+		//2020/11/05 modified by hato -------------------- start --------------------
+//		for (;;){
+////2020/09/25 modified by hato -------------------- start --------------------
+//#if 0
+//			if (!uart_write('a', 0)) break;			//外部トリガ発行を受付しない
+//			if (!uart_write('z', ptn)) break;		//パターン切り替え
+//			Sleep(3000);
+//			if (!uart_write('a', 1)) break;			//外部トリガ発行を受付する(cam->proj)
+//#endif
+//			if ( ! uart_cmd('a', 0) ) break;			//外部トリガ発行を受付しない
+//			if ( ! uart_cmd('z', ptn) ) break;		//パターン切り替え
+//			Sleep(3000);
+//			if ( ! uart_cmd('a', 1) ) break;			//外部トリガ発行を受付する(cam->proj)
+////2020/09/25 modified by hato --------------------  end  --------------------
+//			ret = true;
+//			break;
+//		}
+		
+		pset_stopgo(Proj_Disabled);
+		int vres=1;
+		do {
+			uart_cmd('z', ptn);
+			vres=pset_validate();
+		} while(vres);
+		pset_stopgo(Proj_Enabled);
+		ret=true;
+		//2020/11/05 modified by hato --------------------  end  --------------------
 	}
 	else{
 //2020/09/25 modified by hato -------------------- start --------------------
@@ -1150,6 +1188,13 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 			ret = projector_wait();
 		}
 	}
+	
+	//2020/11/05 modified by hato -------------------- start --------------------
+	if(ret){
+		cur_proj_ptn_ = ptn;
+	}
+	//2020/11/05 modified by hato --------------------  end  --------------------
+	
 	return ret;
 }
 
@@ -1175,7 +1220,7 @@ bool Aravis::setProjectorExposureTime(int value)
 	//return false;
 	if( ! uart_cmd( 'x' , value) ){
 		dprintf("error: setProjectorExposureTime failed. value=%d",value);
-	}
+	}	
 	return true;
 //2020/09/25 modified by hato --------------------  end  --------------------
 }
@@ -1185,7 +1230,7 @@ bool Aravis::setProjectorFlashInterval(int value)
 {
 //2020/09/25 modified by hato -------------------- start --------------------
 	//return uart_write('p', value);
-	return uart_cmd( 'p', value );
+	return uart_cmd( 'p', value ,PROJ_FLASH_INTERVAL_WAIT);
 //2020/09/25 modified by hato --------------------  end  --------------------
 }
 
@@ -1197,7 +1242,29 @@ int Aravis::projectorFlashInterval()
 	return val;
 }
 
-
+//2020/11/05 modified by hato -------------------- start --------------------
+/* validate setting - execute after changing parameter */
+int Aravis::pset_validate(void) {
+	uart_write("v\n");
+	usleep(200000);
+	usleep(400000);
+	return atoi(uart_read().c_str());
+}
+	
+/* stop(0)/go(2) execute after validating */ 
+void Aravis::pset_stopgo(ProjectorEnabled n) {
+	char cmd[8];
+	sprintf(cmd,"q%d\n",n);
+	uart_write(cmd);
+	usleep(200000);
+	usleep(200000);
+	uart_read();
+	//cur_proj_enabled_=n;
+	//printf(" !!!!!!!!!!!  projector enabled=%d !!!!!!!!!!!!!\n",n);
+}
+		
+//2020/11/05 modified by hato --------------------  end  --------------------
+	
 //////////////////////////////////////////////////////////
 //yamlテンプレート
 const std::string yaml_tmpl =

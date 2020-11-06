@@ -121,12 +121,15 @@ class Aravis
 	int64_t packet_delay_;
 	uint16_t version_;
 	YCAM_TRIG trigger_mode_;
-	
-	
+		
 	//2020/09/16 add by hato -------------------- start --------------------
 	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting;
 	int m_expsr_tm_lv;
 	//2020/09/16 add by hato --------------------  end  --------------------
+	
+	//2020/11/05 add by hato -------------------- start --------------------
+	YCAM_PROJ_PTN cur_proj_ptn_;
+	//2020/11/05 add by hato --------------------  end  --------------------
 
 	//Aravis control
 	static void on_new_buffer(ArvStream *stream, void *arg);
@@ -140,8 +143,8 @@ class Aravis
 	int projector_value(const char *key_str, std::string *str = 0);	//診断メッセージから値を取得
 	bool projector_wait();
 	//2020/09/25 add by hato -------------------- start --------------------
-	bool uart_cmd(const char command,const int val,const int slee_ms = 0);
-	bool uart_cmd(const char command,const char *val,const int slee_ms = 0);
+	bool uart_cmd(const char command,const int val,const int slee_ms = 300);
+	bool uart_cmd(const char command,const char *val,const int slee_ms = 300);
 	std::string uart_read();
 	//2020/09/25 add by hato --------------------  end  --------------------
 	
@@ -160,7 +163,20 @@ class Aravis
 	OnRecvImage *on_image_;
 	uint8_t *out_;
 	OnLostCamera *on_lost_;
-
+	
+	//2020/11/05 modified by hato -------------------- start --------------------
+	enum ProjectorEnabled{
+		Proj_Disabled = 0,
+		Proj_Enabled = 2
+	};
+	//ProjectorEnabled cur_proj_enabled_;
+	int cur_proj_brightness_;
+	
+	int pset_validate(void);
+	void pset_stopgo(ProjectorEnabled n);
+	
+	//2020/11/05 modified by hato --------------------  end  --------------------
+	
 public:
 	Aravis(YCAM_RES res = YCAM_RES_SXGA, int ncam = 1);
 	~Aravis();
@@ -204,20 +220,37 @@ public:
 	bool setTriggerMode(YCAM_TRIG tm);
 	//2020/10/09 modified by hato -------------------- start --------------------
 	//bool trigger(YCAM_PROJ_MODE mode);
-	bool trigger(YCAM_PROJ_MODE mode,const  bool projectorOn=true);
+	bool trigger(YCAM_PROJ_MODE mode);
 	//2020/10/09 modified by hato --------------------  end  --------------------
 	//
+	
+	YCAM_PROJ_PTN getProjectorPattern() const{
+		return cur_proj_ptn_;
+	}
+	
 	bool setProjectorPattern(YCAM_PROJ_PTN ptn);
 
 	bool setProjectorBrightness(int value);
-	int projectorBrightness();
+	//2020/11/05 modified by hato -------------------- start --------------------
+	//int projectorBrightness();
+	int projectorBrightness()const {
+		return cur_proj_brightness_;
+	}
+	//2020/11/05 modified by hato --------------------  end --------------------
 
 	bool setProjectorExposureTime(int value);
 	int projectorExposureTime();
 
 	bool setProjectorFlashInterval(int value);
 	int projectorFlashInterval();
-
+	
+	//2020/11/05 modified by hato -------------------- start --------------------
+	//bool isProjectorEnabled()const{
+	//	return cur_proj_enabled_== Proj_Enabled;
+	//}
+	//bool setProjectorEnabled(const bool enabled);
+	//2020/11/05 modified by hato --------------------  end  --------------------
+	
 	//utilities
 	std::string uart_dump();
 	bool upload_camparam(YCAM_RES reso, YCAM_SIDE side, const char *yaml_path);

@@ -100,7 +100,8 @@ int expsr_tm_lv_ui_min = -1;
 int expsr_tm_lv_ui_max = -1;
 	
 //**********DEBUG
-//int debug_pre_strobe = 0;
+int debug_pre_strobe = 0;
+int debug_pre_expsr_lv = 0;
 	
 template<typename T>
 T get_param(const std::string &key,const T default_val){
@@ -298,15 +299,16 @@ void mode_monitor_task(const ros::TimerEvent& e){
 		}else{
 			//ROS_WARN(LOG_HEADER"live capture start.");
 			int strobe=0;
+			bool doStrobe=false;
 			if(nh->getParam("ycam/Strobe",strobe) && strobe != 0){
-				camera_ptr->capture_strobe();
-			}else{
-				camera_ptr->capture();
+				doStrobe=true;
 			}
-			//debug_pre_strobe = strobe;
+			camera_ptr->capture(doStrobe);
+			debug_pre_strobe = strobe;
+			debug_pre_expsr_lv = get_param<int>(PRM_EXPOSURE_TIME_LEVEL, expsr_tm_lv_ui_default);
 		}
 	}else{
-		//todo ******************* pending *******************
+		
 	}
 	
 	//監視周期変更
@@ -457,16 +459,43 @@ sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point 
 	return outputImg;
 }
 
+int debug_capt_watch_count = 0;
 	
-void on_capture_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
-	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, proc_tm=%d ms, timeout=%d imgs_l: result=%d size=%d x %d, imgs_r: result=%d size=%d x %d",
-	//	(result?"OK":"NG"), proc_tm, timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+void on_capture_image_received(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
+	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, timeout=%d img_l: result=%d size=%d x %d, img_r: result=%d size=%d x %d",
+	//	(result?"OK":"NG"), timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
 	
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
 		return;
 	}
 	
+	sensor_msgs::Image ros_img_l;
+	img_l.to_ros_img(ros_img_l,FRAME_ID);
+	
+	sensor_msgs::Image ros_img_r;
+	img_r.to_ros_img(ros_img_r,FRAME_ID);
+	
+	pub_img_raws[0].publish(ros_img_l);
+	pub_img_raws[1].publish(ros_img_r);
+	
+	/*debug
+	const int brightAvg=std::accumulate(std::begin(ros_img_l.data), std::end(ros_img_l.data), 0.0) / ros_img_l.data.size();
+	ROS_WARN(LOG_HEADER"[%6d] bright=%d, strobe=%d, expsr_lv=%d",debug_capt_watch_count++, brightAvg,debug_pre_strobe, debug_pre_expsr_lv);
+	if(! debug_pre_strobe){
+		if(debug_pre_expsr_lv== 2 && (brightAvg < 10 || 40 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}
+	}else{
+		if(debug_pre_expsr_lv== 2 && (brightAvg < 140 || 180 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}
+	}*/
+
+	
+	/*
 	const ros::Time now = ros::Time::now();
 	
 	ElapsedTimer tmr;
@@ -532,7 +561,7 @@ void on_capture_image_received(const bool result,const int proc_tm,const std::ve
 		const sensor_msgs::Image diff_img = to_diff_img(remap_img_dark,remap_img_bright);
 		pub_diffs[i].publish(diff_img);
 	}
-	
+	*/
 }
 
 void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
@@ -557,6 +586,11 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	// ********** ptn_capt_wait_cv NOTIFY **********
 }
 
+void save_ros_img(sensor_msgs::Image &img,const std::string &path){
+	
+	cv::Mat grayImg = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8)->image;
+	cv::imwrite(path,grayImg);
+}
 
 bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res){
 	ROS_INFO("exec_point_cloud_generation");
@@ -567,6 +601,12 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		ROS_WARN(LOG_HEADER"genpc is busy");
 		return true;
 	}
+	int mode=get_param<int>(PRM_MODE,(int)Mode_StandBy);
+	if( Mode_StandBy != mode){
+		ROS_WARN(LOG_HEADER"standby wait.mode=%d",mode);
+		usleep(1000 * 1000);
+	}
+	
 	ptn_imgs_l.clear();
 	ptn_imgs_r.clear();
 	
@@ -621,7 +661,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					
 				}else{
 					ROS_INFO(LOG_HEADER"all pattern image received. elapsed=%d ms", tmr.elapsed_ms());
-					
 					rovi::GenPC genpc_msg;
 					genpc_msg.request.imgL = ros_ptn_imgs_l;
 					genpc_msg.request.imgR = ros_ptn_imgs_r;
@@ -638,6 +677,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							ROS_WARN(LOG_HEADER"The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
 						}
 						result=true;
+						
+						if( genpc_msg.response.pc_cnt  < 900000 ){
+							ROS_ERROR(LOG_HEADER"!!!!!");
+							//exit(-1);
+						}
 					}
 					
 					
@@ -649,7 +693,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					//画像を配信するよ
 					for( int camno = 0 ; camno < 2 ; ++camno ){
 						pub_img_raws[camno].publish(ros_imgs[camno][1]);
-						
 						sensor_msgs::Image remap_ros_img_ptn_0;
 						{
 							rovi::ImageFilter remap_img_filter;
@@ -724,7 +767,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							//cv::imwrite(path,img);
 						}*/
 					}
-					
 				}
 			}
 		}
@@ -744,17 +786,16 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 
 
 void exec_point_cloud_generation_sub(const std_msgs::Bool::ConstPtr &req){
-	
+		
 	if( ! camera_ptr || ! camera_ptr->is_open() ){
 		ROS_ERROR(LOG_HEADER"camera is not open");
 		publish_bool(pub_Y1,false);
 		return;
 	}
-	
 	std_srvs::TriggerRequest trig_req;
 	std_srvs::TriggerResponse trig_res;
-	bool ret=exec_point_cloud_generation(trig_req,trig_res);
-	
+	const bool ret=exec_point_cloud_generation(trig_req,trig_res);
+	ROS_INFO(LOG_HEADER"<subscribe> point cloud generation finished. ret=%d",ret);
 }
 	
 //============================================= 無名名前空間  end  =============================================

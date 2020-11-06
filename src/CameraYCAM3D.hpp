@@ -143,7 +143,7 @@ namespace camera{
 		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
 		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout)>;
-		//using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout)>;
+		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout)>;
 
 	}
 }
@@ -155,7 +155,7 @@ protected:
 	
 	enum CaptureStatus {
 		CaptStat_Ready,
-		//CaptStat_Single, //îpé~
+		CaptStat_Single,
 		CaptStat_Pattern
 	};
 	
@@ -195,8 +195,7 @@ private:
 	
 	camera::ycam3d::f_camera_open_finished m_callback_cam_open_finished;
 	camera::ycam3d::f_camera_closed m_callback_cam_closed;
-	//camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
-	camera::ycam3d::f_pattern_img_received m_callback_capt_img_recv;
+	camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
 	
 	bool reset_image_buffer();
@@ -238,9 +237,9 @@ public:
 	
 	void set_trigger_timeout_period(const int timeout);
 	
-	bool capture();
+	bool capture(const bool strobe);
 	
-	bool capture_strobe();
+	//bool capture_strobe();
 	
 	bool capture_pattern();
 	
@@ -269,6 +268,7 @@ public:
 	
 	//bool get_projector_interval(int *val);
 	//bool set_projector_interval(const int val);
+	//void ser_projector_pattern(int val);
 
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	
@@ -276,8 +276,7 @@ public:
 	
 	void set_callback_camera_closed(camera::ycam3d::f_camera_closed callback);
 	
-	//void set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback);
-	void set_callback_capture_img_received(camera::ycam3d::f_pattern_img_received callback);
-
+	void set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback);
+	
 	void set_callback_pattern_img_received(camera::ycam3d::f_pattern_img_received callback);
 };
