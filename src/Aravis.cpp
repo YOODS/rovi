@@ -1248,7 +1248,7 @@ int Aravis::pset_validate(void) {
 	uart_write("v\n");
 	usleep(200000);
 	usleep(400000);
-	return atoi(uart_read().c_str());
+	return 0x1F & atoi(uart_read().c_str());
 }
 	
 /* stop(0)/go(2) execute after validating */ 
