@@ -16,6 +16,13 @@ namespace camera{
 
 namespace {
 	const std::map<std::string,YCAM_RES> YCAM_RES_MAP = { {"SXGA",YCAM_RES_SXGA},{"VGA",YCAM_RES_VGA} };
+	std::map<YCAM_PROJ_PTN,std::string> PROJ_PTN_MAP = {
+		{YCAM_PROJ_PTN_FIXED,"Fixed"},
+		{YCAM_PROJ_PTN_PHSFT,"PhaseShift"},
+		{YCAM_PROJ_PTN_STROBE,"Strobe"},
+		{YCAM_PROJ_PTN_FOCUS,"Focus"},
+		{YCAM_PROJ_PTN_PHSFT_3,"PhaseShift3"}
+	};
 	
 	//接続試行して次のトライまでの時間。open処理の時間があるので一定間隔にはならない
 	const int CAMERA_AUTO_CONNECT_WAIT_TM = 1000 * 1000;//1sec
@@ -40,30 +47,36 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 #ifdef DEBUG_DETAIL
 	fprintf(stderr,LOG_HEADER"on camera image received. camno=%d frmidx=%d lr_width=%d height=%d color=%d\n",camno,frmidx,lr_width, height, color);
 #endif
-	
-	if( m_self->m_camno != camno ){
-		fprintf(stderr,LOG_HEADER"#%d different camera no image received. camno=%d\n",m_self->m_camno,camno);
-		return;
-	}else if( color != 0 ){
-		fprintf(stderr,LOG_HEADER"#%d error: unsupported image format. color=%d\n",m_self->m_camno,color);
-		return;
-	}else if( lr_width  == m_self->width() * 2 || height != m_self->height() ){
-		fprintf(stderr,LOG_HEADER"#%d error: unsupported image size. width=%d height=%d\n",m_self->m_camno,lr_width,height);
-		return;
-	}else if( frmidx < 0 || PHSFT_CAP_NUM <= frmidx -1 ){
-		fprintf(stderr,LOG_HEADER"#%d error: frame index is out of range. frmidx=%d\n",m_self->m_camno,frmidx);
-		return;
-	}else if( m_self->m_capt_stat.load() == CaptStat_Ready ){
-		fprintf(stderr,LOG_HEADER"#%d received untarget capture image. ignored. frmidx=%d\n",m_self->m_camno,frmidx);
-		return;
-	}
-	
 	//デバッグ:raw画像保存
 	//cv::Mat img(cv::Size(lr_width, height), CV_8UC1,mem );
 	//char path[256];
 	//sprintf(path,"/tmp/raw%02d.pgm",frmidx);
 	//cv::imwrite(path,img);
 	
+	const int captNum=m_self->m_imgs_left.size();
+
+	if( m_self->m_camno != camno ){
+		fprintf(stderr,LOG_HEADER"#%d different camera no image received. camno=%d\n",m_self->m_camno,camno);
+		return;
+		
+	}else if( color != 0 ){
+		fprintf(stderr,LOG_HEADER"#%d error: unsupported image format. color=%d\n",m_self->m_camno,color);
+		return;
+		
+	}else if( lr_width  == m_self->width() * 2 || height != m_self->height() ){
+		fprintf(stderr,LOG_HEADER"#%d error: unsupported image size. width=%d height=%d\n",m_self->m_camno,lr_width,height);
+		return;
+		
+	}else if( frmidx < 0 || captNum <= frmidx - 1 ){
+		fprintf(stderr,LOG_HEADER"#%d error: frame index is out of range. frmidx=%d capt_num=%d\n",m_self->m_camno,frmidx,captNum);
+		return;
+		
+	}else if( m_self->m_capt_stat.load() == CaptStat_Ready ){
+		fprintf(stderr,LOG_HEADER"#%d received untarget capture image. ignored. frmidx=%d\n",m_self->m_camno,frmidx);
+		return;
+		
+	}
+
 #if 0
 //************debug ***************
 	camera::ycam3d::CameraImage debugImg(lr_width,height,lr_width);
@@ -117,7 +130,7 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		const int img_step = lr_img_step / 2;
 		
 		if( img_step != img_buf_l->step ){
-			fprintf(stderr,LOG_HEADER"error: image step size wrong. img_step=%d\n",img_step);
+			fprintf(stderr,LOG_HEADER"error: image step size wrong. img_step=%d, img_buf_l_step=%d\n",img_step,img_buf_l->step);
 			return;
 			// ********** m_img_update_mutex UNLOCKED **********
 		}
@@ -131,6 +144,7 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 			memcpy(img_buf_r->data.data() + y * img_step , pmem + img_step  ,img_step);
 		}
 	
+		/*
 #ifdef DEBUG_DETAIL
 		//fprintf(stdout,LOG_HEADER"#%d copy ros image. frmidx=%d tm=%d\n",frmidx,tmr.elapsed_ms(),m_self->m_camno);
 #endif
@@ -146,15 +160,34 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 			for( int i = 0 ; i < m_self->m_img_recv_flags.size() ; ++i ){
 				recv_flags_str << (m_self->m_img_recv_flags[i]?"*":"_");
 			}
-			//fprintf(stdout,LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms, recv_flags=%s\n",
-			//	m_self->m_camno,frmidx, tmr.elapsed_ms(), recv_flags_str.str().c_str() );
+			fprintf(stdout,LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms, recv_flags=%s\n",
+				m_self->m_camno,frmidx, tmr.elapsed_ms(), recv_flags_str.str().c_str() );
 #endif
+			
 			if(std::count( m_self->m_img_recv_flags.begin(), m_self->m_img_recv_flags.end(), true ) ==  PHSFT_CAP_NUM ){
 #ifdef DEBUG_DETAIL
 				fprintf(stdout,LOG_HEADER"#%d pattern image all received.\n",m_self->m_camno);
 #endif
 				capt_wait_done=true;
 			}
+		}
+		*/
+		m_self->m_img_recv_flags[frmidx]=true;
+		
+#ifdef DEBUG_DETAIL
+		std::stringstream recv_flags_str;
+		for( int i = 0 ; i < m_self->m_img_recv_flags.size() ; ++i ){
+			recv_flags_str << (m_self->m_img_recv_flags[i]?"*":"_");
+		}
+		fprintf(stdout,LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms,capt_num=%d, recv_flags=%s\n",
+			m_self->m_camno,frmidx, tmr.elapsed_ms(), captNum, recv_flags_str.str().c_str() );
+#endif
+		
+		if( std::count( m_self->m_img_recv_flags.begin(), m_self->m_img_recv_flags.end(), true ) ==  captNum ){
+#ifdef DEBUG_DETAIL
+			fprintf(stdout,LOG_HEADER"#%d pattern image all received.\n",m_self->m_camno);
+#endif
+			capt_wait_done=true;
 		}
 		// ********** m_img_update_mutex UNLOCKED **********
 	}
@@ -232,14 +265,14 @@ void CameraYCAM3D::set_trigger_timeout_period(const int timeout){
 	m_trigger_timeout_period = timeout;
 }
 
-bool CameraYCAM3D::reset_image_buffer(){
+bool CameraYCAM3D::reset_image_buffer(const int capt_num){
 	std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
 	// ********** m_img_update_mutex LOCKED **********
 	
 	if(width() < 0 || height() < 0 ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera image buffer allocate failed. unkown image size.", m_camno);
 	}else{
-		m_img_recv_flags.assign(PHSFT_CAP_NUM,false);
+		m_img_recv_flags.assign(capt_num,false);
 	
 		camera::ycam3d::CameraImage defaultVal;
 		defaultVal.result=false;
@@ -251,8 +284,8 @@ bool CameraYCAM3D::reset_image_buffer(){
 		if( ! defaultVal.alloc() ){
 			ROS_ERROR(LOG_HEADER"#%d error:camera image buffer allocate failed. unknown image size.", m_camno);
 		}else{
-			m_imgs_left.assign(PHSFT_CAP_NUM,defaultVal);
-			m_imgs_right.assign(PHSFT_CAP_NUM,defaultVal);
+			m_imgs_left.assign(capt_num,defaultVal);
+			m_imgs_right.assign(capt_num,defaultVal);
 		}
 	}
 	
@@ -347,7 +380,7 @@ void CameraYCAM3D::open() {
 				m_arv_ptr->addCallbackLost(&m_on_disconnect);
 			}
 			
-			reset_image_buffer();
+			reset_image_buffer(0);
 			m_open_stat.store(true);
 		}
 	}
@@ -489,7 +522,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 	m_capt_stat.store(CaptStat_Single);
 	
 	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool strobe_l){
-		reset_image_buffer();
+		
 #ifdef DEBUG_DETAIL
 		ROS_INFO(LOG_HEADER"#%d capture start. timeout=%d sec, strobe=%d", m_camno,m_capture_timeout_period,strobe);
 #endif
@@ -501,7 +534,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 		if( m_arv_ptr->getProjectorPattern() != YCAM_PROJ_PTN_STROBE ){
 			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=strobe",m_camno);
 			if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_STROBE)){
-				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=strobe", m_camno);
+				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s)", m_camno,YCAM_PROJ_PTN_STROBE, PROJ_PTN_MAP[YCAM_PROJ_PTN_STROBE].c_str() );
 			}
 		}
 		
@@ -510,6 +543,8 @@ bool CameraYCAM3D::capture(const bool strobe){
 		if( ! strobe_l ){
 			m_arv_ptr->setProjectorBrightness(0);
 		}
+		const int captNum=m_arv_ptr->getCaptureNum();
+		reset_image_buffer(captNum);
 		
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CAPT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
@@ -538,7 +573,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 			{
 				std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
 				// ********** m_img_update_mutex LOCKED **********
-				if( m_imgs_left.size() == m_imgs_right.size() && m_imgs_left.size() == PHSFT_CAP_NUM){
+				if( m_imgs_left.size() == m_imgs_right.size() && m_imgs_left.size() == captNum ){
 					img_l = m_imgs_left.at(0);
 					img_r = m_imgs_right.at(0);
 					if( ! img_l.valid() ){
@@ -692,7 +727,7 @@ bool CameraYCAM3D::capture_strobe(){
 }
 */
 
-bool CameraYCAM3D::capture_pattern(){
+bool CameraYCAM3D::capture_pattern(const bool multi){
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
 		return false;
@@ -715,8 +750,7 @@ bool CameraYCAM3D::capture_pattern(){
 	
 	m_capt_stat.store(CaptStat_Pattern);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr){
-		reset_image_buffer();
+	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti){
 		
 		ROS_INFO(LOG_HEADER"#%d pattern capture start. timeout=%d sec", m_camno, m_trigger_timeout_period);
 		
@@ -724,17 +758,26 @@ bool CameraYCAM3D::capture_pattern(){
 		// ********** m_capt_finish_wait_mutex LOCKED **********
 		
 		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
+		YCAM_PROJ_PTN ptn=YCAM_PROJ_PTN_PHSFT;
+		if(pcgenModeMulti){
+			ptn = YCAM_PROJ_PTN_PHSFT_3;
+		}
 		
-		if( m_arv_ptr->getProjectorPattern() != YCAM_PROJ_PTN_PHSFT ){
-			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=phsft",m_camno);
-			if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_PHSFT)){
-				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=phsft", m_camno);
+		if( m_arv_ptr->getProjectorPattern() != ptn ){
+			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=%d (%s)",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
+			
+			if( ! m_arv_ptr->setProjectorPattern(ptn) ){
+				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s)", m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
 			}
 		}
-			//
+		
+		//
 		//}else if( ! m_arv_ptr->isProjectorEnabled() ){
 		//	m_arv_ptr->setProjectorEnabled(true);
 		//}
+		
+		const int captNum = m_arv_ptr->getCaptureNum();
+		reset_image_buffer(captNum);
 		
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CONT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
@@ -755,7 +798,7 @@ bool CameraYCAM3D::capture_pattern(){
 				imgs_l = m_imgs_left;
 				imgs_r = m_imgs_right;
 				int validImgNum = 0;
-				if( imgs_l.size() == imgs_r.size() && imgs_l.size() == PHSFT_CAP_NUM){
+				if( imgs_l.size() == imgs_r.size() && imgs_l.size() == captNum ){
 					
 					result=true;
 					
@@ -792,7 +835,7 @@ bool CameraYCAM3D::capture_pattern(){
 		ROS_INFO(LOG_HEADER"#%d pattern capture finished. elapsed=%d ms", m_camno, capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr);
+	},tmr,multi);
 	m_capture_thread.detach();
 	
 	return true;
@@ -980,6 +1023,12 @@ bool CameraYCAM3D::set_projector_brightness(const int val){
 	return true;
 }
 
+bool CameraYCAM3D::get_temperature(int *val){
+	return get_camera_param_int("led_temperature",[&](int *l_val) {
+		*l_val =  m_arv_ptr->getTemperature();
+		return *l_val >= 0;
+	},val);
+}
 //void CameraYCAM3D::ser_projector_pattern(int val){
 //	m_arv_ptr->setProjectorPattern((YCAM_PROJ_PTN)val);
 //}

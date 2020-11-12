@@ -30,6 +30,9 @@ typedef union tagUART_DATA_FIELD {
 
 #define VER_ACAP		20		//このversionから非同期撮影を行う
 #define PHSFT_CAP_NUM	13		//位相シフト撮影回数
+//2020/11/06 add by hato ------------------ start ------------------
+#define PHSFT3_CAP_NUM	14		//位相シフト(3位相)撮影回数
+//2020/11/06 add by hato ------------------  end  ------------------
 
 typedef union IPADDR{
 	uint32_t a;
@@ -67,7 +70,10 @@ enum YCAM_PROJ_PTN
 	YCAM_PROJ_PTN_PHSFT,	//位相シフト用
 	YCAM_PROJ_PTN_STROBE,	//ストロボ撮影用
 	YCAM_PROJ_PTN_FOCUS,	//ピント合わせ用
-	YCAM_PROJ_PTN_STEREO,	//相関用
+//2020/11/06 modified by hato ------------------ start ------------------
+	//YCAM_PROJ_PTN_STEREO,	//相関用
+	YCAM_PROJ_PTN_PHSFT_3,	//位相シフト(3位相パターン 14枚)
+//2020/11/06 modified by hato ------------------  end  ------------------
 	nYCAM_PROJ_PTN			//count
 };
 

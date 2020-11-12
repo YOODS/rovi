@@ -15,14 +15,15 @@ pshift_genpc:
     bw_diff: 16
     brightness: 256
     darkness: 16
-    phase_wd_min: 8
-    phase_wd_thr: 3
-    gcode_variation: 2
     max_ph_diff: 1.0
     max_parallax: 300
     min_parallax: -200
     ls_points: 3
     interpolation: 0
+    pcgen_mode: 1
+    phase_wd_min: 8
+    phase_wd_thr: 3
+    gcode_variation: 2
 
 live:
   camera:

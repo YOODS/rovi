@@ -34,7 +34,7 @@ namespace ycam3d{
 	constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
 	constexpr int PROJ_FLASH_INTERVAL_MAX = 999;//?
 	
-	constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
+	//constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
 	
 	struct ExposureTimeLevelSetting {
 		const int min_lv;
@@ -120,7 +120,10 @@ class Aravis
 	char name_[64];
 	int64_t packet_delay_;
 	uint16_t version_;
-	YCAM_TRIG trigger_mode_;
+	
+	//2020/11/09 comment by hato -------------------- start --------------------
+	//YCAM_TRIG trigger_mode_;
+	//2020/11/09 comment by hato --------------------  end  --------------------
 		
 	//2020/09/16 add by hato -------------------- start --------------------
 	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting;
@@ -174,7 +177,6 @@ class Aravis
 	
 	int pset_validate(void);
 	void pset_stopgo(ProjectorEnabled n);
-	
 	//2020/11/05 modified by hato --------------------  end  --------------------
 	
 public:
@@ -205,24 +207,32 @@ public:
 	bool set_exposure_time_level(const int val);
 	//2020/09/16 add by hato --------------------  end  --------------------
 	
-	//
+	
 	int exposureTime();
 	int gainA();
 	int gainD();
-	bool setExposureTime(int value);
+	
+	//2020/11/09 comment by hato -------------------- start --------------------
+	//bool setExposureTime(int value);
+	//2020/11/09 comment by hato --------------------  end  --------------------
 	bool setGainA(int value);
 	bool setGainD(int value);
 	//
 	bool isLost(){return lost_;}
 	bool isAsync(){ return (VER_ACAP <= version_); }
-	//
-	YCAM_TRIG triggerMode(){ return trigger_mode_; }
-	bool setTriggerMode(YCAM_TRIG tm);
+	
+	//2020/11/09 comment by hato -------------------- start --------------------
+	//YCAM_TRIG triggerMode(){ return trigger_mode_; }
+	//bool setTriggerMode(YCAM_TRIG tm);
+	//2020/11/09 comment by hato --------------------  end  --------------------
+	
 	//2020/10/09 modified by hato -------------------- start --------------------
 	//bool trigger(YCAM_PROJ_MODE mode);
 	bool trigger(YCAM_PROJ_MODE mode);
 	//2020/10/09 modified by hato --------------------  end  --------------------
 	//
+	
+	int getCaptureNum()const;
 	
 	YCAM_PROJ_PTN getProjectorPattern() const{
 		return cur_proj_ptn_;
@@ -250,6 +260,10 @@ public:
 	//}
 	//bool setProjectorEnabled(const bool enabled);
 	//2020/11/05 modified by hato --------------------  end  --------------------
+	
+	//2020/11/10 add by hato -------------------- start --------------------
+	int getTemperature();
+	//2020/11/10 add by hato --------------------  end  --------------------
 	
 	//utilities
 	std::string uart_dump();

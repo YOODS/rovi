@@ -43,7 +43,7 @@ namespace camera{
 		constexpr int PROJ_FLASH_INTERVAL_MAX     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MAX;
 		
 		
-		constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;
+		//constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;
 		
 		struct CameraImage {
 			bool result =false;
@@ -148,8 +148,6 @@ namespace camera{
 	}
 }
 
-
-
 class CameraYCAM3D {
 protected:
 	
@@ -198,7 +196,7 @@ private:
 	camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
 	
-	bool reset_image_buffer();
+	bool reset_image_buffer(const int capt_num);
 	
 	bool get_camera_param_int(const std::string &label,std::function<bool(int*)> func,int *val);
 	bool set_camera_param_int(const std::string &label,std::function<bool(int)> func,const int val);
@@ -241,7 +239,7 @@ public:
 	
 	//bool capture_strobe();
 	
-	bool capture_pattern();
+	bool capture_pattern(const bool multi);
 	
 	void start_auto_connect();
 	
@@ -269,7 +267,9 @@ public:
 	//bool get_projector_interval(int *val);
 	//bool set_projector_interval(const int val);
 	//void ser_projector_pattern(int val);
-
+	
+	bool get_temperature(int *val);
+	
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	
 	void set_callback_camera_disconnect(camera::ycam3d::f_camera_disconnect callback);

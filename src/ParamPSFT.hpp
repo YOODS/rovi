@@ -2,6 +2,7 @@
 #include "ParamPhaseMatching.hpp"
 #include <map>
 
+#if 0
 #ifndef _USE_MATH_DEFINES
 #define _USE_MATH_DEFINES
 #include <math.h>
@@ -9,6 +10,7 @@
 
 #ifndef M_PI_2
 #define M_PI_2	(0.5 * M_PI)
+#endif
 #endif
 
 #ifdef YAML_PARAM
@@ -29,12 +31,14 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 	int phase_wd_thr;		///< ゴミとして捨てる区間の最大幅. この値以下の区間は捨てられる.無効にしたい場合は0にすること.
 	int gcode_variation;	///< 一区間に含まれるグレイコード種類数の最大値. 1以上3以下
 
-	GPhaseDecodeParameter() : PhaseMatchingParameter(), datatype(0),
-		bw_diff(12), brightness(256), darkness(15), 
-		phase_wd_min(5), phase_wd_thr(2), gcode_variation(3) {}
-
-	GPhaseDecodeParameter(const GPhaseDecodeParameter &obj) : PhaseMatchingParameter(obj)
+	GPhaseDecodeParameter() 
+		: PhaseMatchingParameter(), datatype(0),
+		bw_diff(16), brightness(256), darkness(15),
+		phase_wd_min(8), phase_wd_thr(3), gcode_variation(3)
 	{
+	}
+
+	GPhaseDecodeParameter(const GPhaseDecodeParameter &obj) {
 		this->datatype = obj.datatype;
 
 		this->bw_diff = obj.bw_diff;
@@ -46,8 +50,7 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 		this->gcode_variation = obj.gcode_variation;
 	}
 
-	GPhaseDecodeParameter operator=(const GPhaseDecodeParameter &obj) 
-	{
+	GPhaseDecodeParameter operator=(const GPhaseDecodeParameter &obj) {
 		PhaseMatchingParameter::operator=(obj);
 
 		this->datatype = obj.datatype;
@@ -62,8 +65,7 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 		return *this;
 	}
 
-	void set(std::map<std::string, double> &params) 
-	{
+	void set(std::map<std::string, double> &params) {
 		reinterpret_cast<PhaseMatchingParameter*>(this)->set(params);
 
 		if (params.count("datatype")) this->datatype = (int)params["datatype"];
@@ -89,7 +91,7 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 
 		if (params["phase_wd_min"]) this->phase_wd_min = params["phase_wd_min"].as<int>();
 		if (params["phase_wd_thr"]) this->phase_wd_thr = params["phase_wd_thr"].as<int>();
-		if (params["gcode_variation"]) this->gcode_variation = params["gcode_variation"].as<int>();		
+		if (params["gcode_variation"]) this->gcode_variation = params["gcode_variation"].as<int>();
 	}
 #endif
 
@@ -99,7 +101,7 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 	 */
 	bool check(void) const {
 		if (!PhaseMatchingParameter::check()) return false;
-		
+
 		// 画像か位相データか指定されていなければ駄目
 		if (datatype != 0 && datatype != 1) return false;
 
@@ -107,7 +109,7 @@ struct GPhaseDecodeParameter : public PhaseMatchingParameter {
 		if (phase_wd_min < 0) return false;
 		if (phase_wd_thr < 0) return false;
 		if (gcode_variation < 1) return false;
-		
+
 		return true;
 	}
 };
