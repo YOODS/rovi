@@ -739,7 +739,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						}
 					}
 					
-					
+					/*
 					if( debug_pre_expsr_lv == 0 && genpc_msg.response.pc_cnt < 320000 ){
 						ROS_WARN(LOG_HEADER"[0] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
 						//exit(-1);
@@ -755,7 +755,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					}else if( debug_pre_expsr_lv == 4 && genpc_msg.response.pc_cnt < 870000 ){
 						ROS_WARN(LOG_HEADER"[4] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
 						//exit(-1);
-					}
+					}*/
 				}
 			}
 		}
