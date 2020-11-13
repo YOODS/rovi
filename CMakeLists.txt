@@ -108,7 +108,7 @@ add_dependencies(remap_node rovi_gencpp)
 
 #2020/09/17 modified by hato ----------------- start ------------------
 #add_executable(genpc_node src/genpc_node.cpp)
-add_executable(genpc_node src/genpc_node.cpp src/YPCGenerator.cpp src/YPCGeneratorUnix.cpp src/YPCData.cpp src/ElapsedTimer.cpp)
+add_executable(genpc_node src/genpc_node.cpp src/YPCData.cpp src/ElapsedTimer.cpp)
 #target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d yaml-cpp ${OpenCV_LIBRARIES})
 #2020/09/17 modified by hato -----------------  end ------------------
