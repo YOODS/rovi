@@ -66,12 +66,11 @@ namespace ycam3d{
      * };
 	*/
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_SXGA = 
-		{ 0, 4, 1, { { 4000, 8333,  60 }, { 8000, 8333,  60 }, { 16000, 16000, 60 }, { 24000, 24000, 40 }, { 32000, 32000, 30 }} };
+		{ 0, 5, 1, { { 4000, 8333,  60 }, { 8000, 8333,  60 }, { 16000, 16000, 60 }, { 24000, 24000, 40 }, { 32000, 32000, 30 }, { 49000, 50000,  20 }} };
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_VGA  = 
-		{ 0, 4, 1, { { 4000, 8333, 116 }, { 8000, 8333, 116 }, { 16000, 16000, 60 }, { 24000, 24000, 40 }, { 32000, 32000, 30 }} };
+		{ 0, 5, 1, { { 4000, 8333, 116 }, { 8000, 8333, 116 }, { 16000, 16000, 60 }, { 24000, 24000, 40 }, { 32000, 32000, 30 }, { 49000, 50000,  20 }} };
 }
 }
-
 using namespace aravis::ycam3d;
 //2020/10/21 add by hato --------------------  end  --------------------
 
@@ -1326,3 +1325,4 @@ bool Aravis::upload_camparam(YCAM_RES reso, YCAM_SIDE side, const char *yaml_pat
 	}
 	return ret;
 }
+
