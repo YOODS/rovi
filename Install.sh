@@ -38,10 +38,6 @@ then
     sudo ldconfig
 fi
 
-#installing ros::camera_aravis
-cd $CATKIN_WS/src
-git clone https://github.com/YOODS/camera_aravis.git
-
 #installing Eigen
 sudo apt-get install libeigen3-dev
 
@@ -52,16 +48,8 @@ sudo apt-get install nodejs
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
-npm install shm-typed-array
 npm install terminate --save
 npm install ping
-
-#patching rosnodejs
-cd ~
-git clone https://github.com/RethinkRobotics-opensource/rosnodejs
-cd ~/node_modules/rosnodejs
-rm -rf dist
-cp -a ~/rosnodejs/src/ dist
 
 #installing python package
 sudo apt install python-pip
@@ -72,6 +60,14 @@ pip install wheel --user
 pip install ipython==5.7 --user
 pip install ipykernel==4.10 --user
 pip install open3d-python --user
+
+#installing X-Tile
+cd ~
+git clone https://github.com/YOODS/x-tile.git
+cd x-tile
+./create_debian_package.sh
+cd ..
+sudo dpkg -i x-tile_3.3-0_all.deb
 
 #checkout rovi_utils
 cd $CATKIN_WS/src
