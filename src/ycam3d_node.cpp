@@ -61,6 +61,7 @@ const std::string PRM_MODE                    = "ycam/Mode";
 const std::string PRM_CAM_OPEN_STAT           = "ycam/stat";
 const std::string PRM_SW_TRIG_RATE            = "ycam/SoftwareTriggerRate";
 const std::string PRM_EXPOSURE_TIME_LEVEL     = "ycam/ExposureTimeLevel";
+const std::string PRM_TEMP_MON_INTERVAL       = "ycam/TemperatureMonitorInterval";
 const std::string PRM_DRAW_CAMERA_ORIGIN      = "ycam/DrawCameraOrigin";
 //const std::string PRM_CAM_EXPSR_TM          = "ycam/camera/ExposureTime";
 const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
@@ -68,12 +69,14 @@ const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
 //const std::string PRM_PROJ_EXPSR_TM         = "ycam/projector/ExposureTime";
 const std::string PRM_PROJ_INTENSITY          = "ycam/projector/Intensity";
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
-	
+
 constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
 constexpr int PRM_SW_TRIG_RATE_MAX = 6; //Hz
 constexpr int PRM_SW_TRIG_RATE_MIN = 1; //Hz
 
 constexpr int YCAM_STAND_BY_MODE_CYCLE = 3; //Hz
+
+constexpr int TEMP_MON_INTERVAL_DEFAULT = 5; //Sec
 	
 int pre_ycam_mode = (int)Mode_StandBy;
 
@@ -84,6 +87,11 @@ ros::Timer mode_mon_timer;
 int cur_mode_mon_cyc = YCAM_STAND_BY_MODE_CYCLE; //Hz
 
 ros::Timer cam_open_mon_timer;
+
+ros::Timer temp_mon_timer;
+int cur_temp_mon_interval = -1;
+
+void exec_get_ycam_temperature(const ros::TimerEvent& e);
 
 bool cam_params_refreshed=false;
 
@@ -111,7 +119,8 @@ std::map<PcGenMode,std::string> PCGEN_MODE_MAP = {
 //**********DEBUG
 int debug_pre_strobe = 0;
 int debug_pre_expsr_lv = 0;
-	
+int debug_capt_watch_count = 0;
+
 template<typename T>
 T get_param(const std::string &key,const T default_val){
 	T val = default_val;
@@ -271,6 +280,21 @@ void update_camera_params(){
 		}
 	}
 	
+	const int tempMonInterval = get_param<int>(PRM_TEMP_MON_INTERVAL,TEMP_MON_INTERVAL_DEFAULT);
+	if( tempMonInterval == cur_temp_mon_interval ){
+		//ROS_INFO("temperature monitor interval no change.");
+	}else{
+		if( temp_mon_timer.isValid() ){
+			ROS_INFO("temperature monitor interval changed. befor=%d sec, after=%d sec",cur_temp_mon_interval,tempMonInterval);
+			
+			temp_mon_timer.stop();
+			temp_mon_timer.setPeriod(ros::Duration(tempMonInterval));
+			temp_mon_timer.start();
+			
+			cur_temp_mon_interval = tempMonInterval;
+		}
+	}
+	
 	//ROS_INFO(LOG_HEADER"camera parameter updated. elapsed=%d ms",tmr.elapsed_ms());
 }
 
@@ -309,7 +333,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 	update_camera_params();
 	
 	if( cur_ycam_mode == Mode_Streaming ){
-		if(camera_ptr->is_busy()){
+		if( camera_ptr->is_busy() ){
 			ROS_WARN(LOG_HEADER"camera is busy.!!!!");
 		}else{
 			//ROS_WARN(LOG_HEADER"live capture start.");
@@ -401,6 +425,23 @@ void on_camera_open_finished(const bool result){
 	}else{
 		publish_string(pub_info,"YCAM ready.");
 	}
+	
+	if(result){
+		const int tempMonInterval = get_param<int>(PRM_TEMP_MON_INTERVAL,TEMP_MON_INTERVAL_DEFAULT);
+		cur_temp_mon_interval = tempMonInterval;
+		if( tempMonInterval <= 0 ){
+			ROS_INFO("temperature monitor timer disabled.");
+			temp_mon_timer.stop();
+		}else{
+			ROS_INFO("temperature monitor timer restart.");
+			temp_mon_timer.stop();
+			temp_mon_timer.setPeriod(ros::Duration(tempMonInterval));
+			temp_mon_timer.start();
+		}
+	}else{
+		ROS_WARN("temperature monitor timer stop.");
+		temp_mon_timer.stop();
+	}
 }
 
 void on_camera_disconnect(){
@@ -409,6 +450,9 @@ void on_camera_disconnect(){
 	
 	publish_bool(pub_stat,false);
 	publish_string(pub_error,"YCAM disconected");
+	
+	temp_mon_timer.stop();
+	ROS_WARN("temp mon timer stop.");
 }
 	
 void on_camera_closed(){
@@ -474,7 +518,6 @@ sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point 
 	return outputImg;
 }
 
-int debug_capt_watch_count = 0;
 	
 void on_capture_image_received(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
 	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, timeout=%d img_l: result=%d size=%d x %d, img_r: result=%d size=%d x %d",
@@ -738,24 +781,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							pub_diffs[camno].publish(diff_img);
 						}
 					}
-					
-					/*
-					if( debug_pre_expsr_lv == 0 && genpc_msg.response.pc_cnt < 320000 ){
-						ROS_WARN(LOG_HEADER"[0] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						//exit(-1);
-					}else if( debug_pre_expsr_lv == 1 && genpc_msg.response.pc_cnt < 750000 ){
-						ROS_WARN(LOG_HEADER"[1] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						//exit(-1);
-					}else if( debug_pre_expsr_lv == 2 && genpc_msg.response.pc_cnt < 870000 ){
-						ROS_WARN(LOG_HEADER"[2] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						//exit(-1);
-					}else if( debug_pre_expsr_lv == 3 && genpc_msg.response.pc_cnt < 880000 ){
-						ROS_WARN(LOG_HEADER"[3] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						//exit(-1);
-					}else if( debug_pre_expsr_lv == 4 && genpc_msg.response.pc_cnt < 870000 ){
-						ROS_WARN(LOG_HEADER"[4] The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						//exit(-1);
-					}*/
 				}
 			}
 		}
@@ -787,14 +812,14 @@ void sub_exec_point_cloud_generation(const std_msgs::Bool::ConstPtr &req){
 	ROS_INFO(LOG_HEADER"<subscribe> point cloud generation finished. ret=%d",ret);
 }
 
-void sub_get_ycam_temperature(const std_msgs::Bool::ConstPtr &req){
+void exec_get_ycam_temperature(){
 	if( ! camera_ptr || ! camera_ptr->is_open() ){
 		ROS_ERROR(LOG_HEADER"camera is not open");
 		publish_bool(pub_Y1,false);
 		return;
-	}
-	if( ! req->data ){
-		return;
+	//}else if( camera_ptr->is_busy() ){
+	//	ROS_WARN(LOG_HEADER"temperature get skipped. camera is busy.!!!!");
+	//	return;
 	}
 	
 	float tempF=NAN;
@@ -806,9 +831,21 @@ void sub_get_ycam_temperature(const std_msgs::Bool::ConstPtr &req){
 	}
 	
 	publish_float32(pub_temperature, tempF);
-	
-	ROS_INFO(LOG_HEADER"<subscribe> ycam temperature . temperature=%4.1f",tempF);
+	//ROS_INFO(LOG_HEADER"<subscribe> ycam temperature . temperature=%4.1f",tempF);
 }
+	
+void sub_get_ycam_temperature(const std_msgs::Bool::ConstPtr &req){
+	if( ! req->data ){
+		return;
+	}
+	
+	exec_get_ycam_temperature();
+}
+
+void get_ycam_temperature_task(const ros::TimerEvent& e){
+	exec_get_ycam_temperature();
+}
+
 //============================================= –³–¼–¼‘O‹óŠÔ  end  =============================================
 }
 
@@ -881,6 +918,8 @@ int main(int argc, char **argv)
 	//timers
 	mode_mon_timer = n.createTimer(ros::Duration(1/(float)cur_mode_mon_cyc), mode_monitor_task);
 	cam_open_mon_timer = n.createTimer(ros::Duration(1), cam_open_monitor_task);
+	temp_mon_timer = n.createTimer(ros::Duration(TEMP_MON_INTERVAL_DEFAULT), get_ycam_temperature_task);
+	temp_mon_timer.stop();
 	
 	camera_ptr->start_auto_connect();
 	

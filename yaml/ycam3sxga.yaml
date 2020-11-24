@@ -102,6 +102,7 @@ ycam:
   Strobe: 0
   SoftwareTriggerRate: 1
   ExposureTimeLevel: 1
+  TemperatureMonitorInterval: 1
   DrawCameraOrigin : Off
   camera:
     Gain: 0

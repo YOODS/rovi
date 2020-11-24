@@ -146,8 +146,9 @@ class Aravis
 	int projector_value(const char *key_str, std::string *str = 0);	//診断メッセージから値を取得
 	bool projector_wait();
 	//2020/09/25 add by hato -------------------- start --------------------
-	bool uart_cmd(const char command,const int val,const int slee_ms = 300);
-	bool uart_cmd(const char command,const char *val,const int slee_ms = 300);
+	bool uart_cmd(const char *cmd,const int sleep_ms = 0);
+	bool uart_cmd(const char command,const int val,const int slee_ms = 0);
+	bool uart_cmd(const char command,const char *val,const int slee_ms = 0);
 	std::string uart_read();
 	//2020/09/25 add by hato --------------------  end  --------------------
 	

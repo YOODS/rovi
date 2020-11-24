@@ -18,6 +18,7 @@ typedef std::vector<std::string> STRLIST;
 
 #define Sleep(ms) usleep(ms*1e3)
 
+
 //2020/09/25 add by hato -------------------- start --------------------
 //#define DEBUG_DETAIL
 //2020/09/25 add by hato --------------------  end  --------------------
@@ -761,6 +762,35 @@ bool Aravis::uart_write(char command, const char *data)
 	snprintf(cmd, sizeof(cmd), "%c%s\r", command, data);
 	return uart_write(cmd);
 }
+//2020/11/17 add by hato -------------------- start --------------------
+bool Aravis::uart_cmd(const char *cmd,const int sleep_ms){
+	bool ret=false;
+#ifdef DEBUG_DETAIL
+	std::string cmd_str(cmd);
+	cmd_str.erase(cmd_str.size()-1,1);
+	//cmd_str.append("\\n");
+	dprintf(">>> uart_cmd start. cmd='%s'",cmd_str.c_str());
+#endif
+	uart_flush();
+	
+	if( ! uart_write( cmd ) ){
+		dprintf("error: uart_cmd failed. cmd=%s", cmd);
+	}else{
+		if( sleep_ms > 0){
+#ifdef DEBUG_DETAIL
+			dprintf("uart_cmd wait. %d msec",sleep_ms);
+#endif
+			usleep(sleep_ms * 1000);
+		}
+		ret=true;
+	}
+#ifdef DEBUG_DETAIL
+
+	dprintf("<<< uart_cmd end. cmd='%s' ret=%s",cmd_str.c_str(),(ret?"OK":"NG"));
+#endif
+	return ret;
+}
+//2020/11/17 add by hato --------------------  end  --------------------
 //2020/09/25 add by hato -------------------- start --------------------
 bool Aravis::uart_cmd(const char command,const char *val,const int sleep_ms){
 	bool ret=false;
@@ -772,6 +802,8 @@ bool Aravis::uart_cmd(const char command,const char *val,const int sleep_ms){
 	if( ! uart_write( command, val ) ){
 		dprintf("error: uart_cmd failed. cmd=%c val=%d", command, val);
 	}else{
+		//2020/11/17 uart_read不要になった為
+		/*
 #ifdef DEBUG_DETAIL
 		std::string reply=uart_read();
 		dprintf("---------------- cmd=%c val=%d reply start -----------------",command,val);
@@ -780,7 +812,12 @@ bool Aravis::uart_cmd(const char command,const char *val,const int sleep_ms){
 #else
 		uart_read();
 #endif
+		*/
+		
 		if( sleep_ms > 0){
+#ifdef DEBUG_DETAIL
+			dprintf("uart_cmd wait. %d msec",sleep_ms);
+#endif
 			usleep(sleep_ms * 1000);
 		}
 		ret=true;
@@ -802,6 +839,8 @@ bool Aravis::uart_cmd(const char command,const int val,const int sleep_ms){
 	if( ! uart_write( command, val ) ){
 		dprintf("error: uart_cmd failed. cmd=%c val=%d", command, val);
 	}else{
+		//2020/11/17 uart_read不要になった為
+		/*
 #ifdef DEBUG_DETAIL
 		std::string reply=uart_read();
 		dprintf("---------------- cmd=%c val=%d reply start -----------------",command,val);
@@ -810,7 +849,12 @@ bool Aravis::uart_cmd(const char command,const int val,const int sleep_ms){
 #else
 		uart_read();
 #endif
+		*/
+		
 		if( sleep_ms > 0){
+#ifdef DEBUG_DETAIL
+			dprintf("uart_cmd wait. %d msec",sleep_ms);
+#endif
 			usleep(sleep_ms * 1000);
 		}
 		ret=true;
@@ -1206,7 +1250,7 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 		pset_stopgo(Proj_Disabled);
 		int vres=1;
 		do {
-			uart_cmd('z', ptn);
+			uart_cmd('z', ptn , 300);
 			vres=pset_validate();
 		} while(vres);
 		pset_stopgo(Proj_Enabled);
@@ -1255,7 +1299,7 @@ bool Aravis::setProjectorExposureTime(int value)
 	//	return projector_wait();
 	//}
 	//return false;
-	if( ! uart_cmd( 'x' , value) ){
+	if( ! uart_cmd( 'x' , value, 100) ){
 		dprintf("error: setProjectorExposureTime failed. value=%d",value);
 	}	
 	return true;
@@ -1282,10 +1326,7 @@ int Aravis::projectorFlashInterval()
 //2020/11/05 modified by hato -------------------- start --------------------
 /* validate setting - execute after changing parameter */
 int Aravis::pset_validate(void) {
-	
-	uart_write("v\n");
-	usleep(200000);
-	usleep(400000);
+	uart_cmd("v\n",500);
 	return 0x1F & atoi(uart_read().c_str());
 }
 	
@@ -1293,11 +1334,16 @@ int Aravis::pset_validate(void) {
 void Aravis::pset_stopgo(ProjectorEnabled n) {
 	char cmd[8];
 	sprintf(cmd,"q%d\n",n);
-	uart_write(cmd);
-	usleep(200000);
-	usleep(200000);
-	uart_read();
+	uart_cmd(cmd,400);
+	//usleep(200000);
+	//usleep(200000);
+	
+	//ElapsedTimer tmr;
+	//std::string read_str= uart_read();
+	//dprintf("time=%d\n",tmr.elapsed_ms());
+	//dprintf("uart:[%s]\n",read_str.c_str());
 	//cur_proj_enabled_=n;
+
 }
 		
 //2020/11/05 modified by hato --------------------  end  --------------------
@@ -1309,9 +1355,9 @@ void Aravis::pset_stopgo(ProjectorEnabled n) {
 //}
 
 int Aravis::getTemperature(){
-	uart_write("g\n");
-	usleep(200000);
-	usleep(400000);
+	uart_cmd("g\n",100);
+	//usleep(200000);
+	//usleep(400000);
 	std::string ret=uart_read();
 	//fprintf(stderr,"[%s]\n",ret.c_str());
 	return atoi(ret.c_str());
