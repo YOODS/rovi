@@ -18,6 +18,7 @@ typedef std::vector<std::string> STRLIST;
 
 #define Sleep(ms) usleep(ms*1e3)
 
+#include "ElapsedTimer.hpp"
 
 //2020/09/25 add by hato -------------------- start --------------------
 //#define DEBUG_DETAIL
@@ -870,7 +871,10 @@ std::string Aravis::uart_read(){
 	const int RMAX = 2048;
 	ret.reserve(RMAX);
 	const string st = "//cmd:diag";
-	const string ed = "Dlp.X>";
+//2020/11/25 modified by hato -------------------- start  --------------------
+	//const string ed = "Dlp.X>";
+	const string ed = "\r\n";
+//2020/11/25 modified by hato --------------------  end  --------------------
 	const size_t nst = st.length();
 	const size_t ned = ed.length();
 	for (int i = 0; i < RMAX; ++i){
@@ -888,7 +892,6 @@ std::string Aravis::uart_read(){
 		}
 		usleep(100);
 	}
-	
 	return ret;
 }
 //2020/09/25 add by hato --------------------  end --------------------
@@ -1246,11 +1249,10 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 //			ret = true;
 //			break;
 //		}
-		
 		pset_stopgo(Proj_Disabled);
 		int vres=1;
 		do {
-			uart_cmd('z', ptn , 300);
+			uart_cmd('z', ptn );
 			vres=pset_validate();
 		} while(vres);
 		pset_stopgo(Proj_Enabled);
@@ -1299,7 +1301,7 @@ bool Aravis::setProjectorExposureTime(int value)
 	//	return projector_wait();
 	//}
 	//return false;
-	if( ! uart_cmd( 'x' , value, 100) ){
+	if( ! uart_cmd( 'x' , value) ){
 		dprintf("error: setProjectorExposureTime failed. value=%d",value);
 	}	
 	return true;
@@ -1326,7 +1328,7 @@ int Aravis::projectorFlashInterval()
 //2020/11/05 modified by hato -------------------- start --------------------
 /* validate setting - execute after changing parameter */
 int Aravis::pset_validate(void) {
-	uart_cmd("v\n",500);
+	uart_cmd("v\n",200);
 	return 0x1F & atoi(uart_read().c_str());
 }
 	

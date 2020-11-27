@@ -9,6 +9,7 @@ ElapsedTimer::ElapsedTimer()
 
 void ElapsedTimer::start(){
 	m_start=high_resolution_clock::now();
+	m_lap = high_resolution_clock::now();
 }
 
 void ElapsedTimer::restart(){
@@ -18,6 +19,15 @@ void ElapsedTimer::restart(){
 int ElapsedTimer::elapsed_ms() {
 	return duration_cast<milliseconds>(high_resolution_clock::now() - m_start).count();
 }
+
+void ElapsedTimer::save_lap(){
+	m_lap = high_resolution_clock::now();
+}
+
+int ElapsedTimer::lap_ms()const{
+	return duration_cast<milliseconds>(high_resolution_clock::now() - m_lap).count();
+}
+
 
 int ElapsedTimer::duration_ms(const std::chrono::system_clock::duration &duration){
 	return (int)std::chrono::duration_cast<std::chrono::milliseconds>(duration).count();

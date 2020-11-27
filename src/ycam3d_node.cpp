@@ -23,9 +23,12 @@
 #include "rovi/ImageFilter.h"
 
 
+//#define DEBUG_DETAIL
+
+//#define DEBUG_STRESS_TEST
+
 namespace {
 //============================================= –³–¼–¼‘O‹óŠÔ start =============================================
-//#define DEBUG_DETAIL
 #define LOG_HEADER "(ycam3d) "
 
 const std::string FRAME_ID = "camera";
@@ -117,10 +120,11 @@ std::map<PcGenMode,std::string> PCGEN_MODE_MAP = {
 };
 	
 //**********DEBUG
+#ifdef DEBUG_STRESS_TEST
 int debug_pre_strobe = 0;
-int debug_pre_expsr_lv = 0;
 int debug_capt_watch_count = 0;
-
+#endif
+	
 template<typename T>
 T get_param(const std::string &key,const T default_val){
 	T val = default_val;
@@ -282,10 +286,10 @@ void update_camera_params(){
 	
 	const int tempMonInterval = get_param<int>(PRM_TEMP_MON_INTERVAL,TEMP_MON_INTERVAL_DEFAULT);
 	if( tempMonInterval == cur_temp_mon_interval ){
-		//ROS_INFO("temperature monitor interval no change.");
+		//ROS_INFO(LOG_HEADER"temperature monitor interval no change.");
 	}else{
 		if( temp_mon_timer.isValid() ){
-			ROS_INFO("temperature monitor interval changed. befor=%d sec, after=%d sec",cur_temp_mon_interval,tempMonInterval);
+			ROS_INFO(LOG_HEADER"temperature monitor interval changed. befor=%d sec, after=%d sec",cur_temp_mon_interval,tempMonInterval);
 			
 			temp_mon_timer.stop();
 			temp_mon_timer.setPeriod(ros::Duration(tempMonInterval));
@@ -336,15 +340,19 @@ void mode_monitor_task(const ros::TimerEvent& e){
 		if( camera_ptr->is_busy() ){
 			ROS_WARN(LOG_HEADER"camera is busy.!!!!");
 		}else{
-			//ROS_WARN(LOG_HEADER"live capture start.");
+#ifdef DEBUG_STRESS_TEST
+			ROS_WARN(LOG_HEADER"live capture start.");
+#endif
 			int strobe=0;
 			bool doStrobe=false;
 			if(nh->getParam("ycam/Strobe",strobe) && strobe != 0){
 				doStrobe=true;
 			}
+			
 			camera_ptr->capture(doStrobe);
+#ifdef DEBUG_STRESS_TEST
 			debug_pre_strobe = strobe;
-			debug_pre_expsr_lv = get_param<int>(PRM_EXPOSURE_TIME_LEVEL, expsr_tm_lv_ui_default);
+#endif
 		}
 	}else{
 		//todo ******************* pending *******************
@@ -430,16 +438,16 @@ void on_camera_open_finished(const bool result){
 		const int tempMonInterval = get_param<int>(PRM_TEMP_MON_INTERVAL,TEMP_MON_INTERVAL_DEFAULT);
 		cur_temp_mon_interval = tempMonInterval;
 		if( tempMonInterval <= 0 ){
-			ROS_INFO("temperature monitor timer disabled.");
+			ROS_INFO(LOG_HEADER"temperature monitor timer disabled.");
 			temp_mon_timer.stop();
 		}else{
-			ROS_INFO("temperature monitor timer restart.");
+			ROS_INFO(LOG_HEADER"temperature monitor timer restart.");
 			temp_mon_timer.stop();
 			temp_mon_timer.setPeriod(ros::Duration(tempMonInterval));
 			temp_mon_timer.start();
 		}
 	}else{
-		ROS_WARN("temperature monitor timer stop.");
+		ROS_WARN(LOG_HEADER"temperature monitor timer stop.");
 		temp_mon_timer.stop();
 	}
 }
@@ -452,7 +460,7 @@ void on_camera_disconnect(){
 	publish_string(pub_error,"YCAM disconected");
 	
 	temp_mon_timer.stop();
-	ROS_WARN("temp mon timer stop.");
+	ROS_WARN(LOG_HEADER"temp mon timer stop.");
 }
 	
 void on_camera_closed(){
@@ -508,8 +516,6 @@ sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point 
 	cv::line(colorImg.image, cv::Point(cx - cross_len/2  , cy) , cv::Point(cx + cross_len/2, cy), cv::Scalar(255,0,0),cross_width , CV_AA);
 	cv::line(colorImg.image, cv::Point(cx, cy - cross_len/2),    cv::Point(cx, cy + cross_len/2)   , cv::Scalar(255,0,0),cross_width , CV_AA);
 	
-	cv::imwrite("/tmp/color.png",colorImg.image);
-	
 	sensor_msgs::Image outputImg;
 	outputImg=*colorImg.toImageMsg();
 	outputImg.header = inputImg.header;
@@ -518,16 +524,24 @@ sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point 
 	return outputImg;
 }
 
+
+void save_ros_img(sensor_msgs::Image &img,const std::string &path){
+	cv::Mat grayImg = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8)->image;
+	cv::imwrite(path,grayImg);
+}
+
+void on_capture_image_received(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout,const int expsr_lv){
 	
-void on_capture_image_received(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout){
-	//ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, timeout=%d img_l: result=%d size=%d x %d, img_r: result=%d size=%d x %d",
-	//	(result?"OK":"NG"), timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+#ifdef DEBUG_STRESS_TEST
+	ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, timeout=%d img_l: result=%d size=%d x %d, img_r: result=%d size=%d x %d",
+		(result?"OK":"NG"), timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
+#endif
 	
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
 		return;
 	}
-	/*
+	
 	sensor_msgs::Image ros_img_l;
 	img_l.to_ros_img(ros_img_l,FRAME_ID);
 	
@@ -536,22 +550,41 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 	
 	pub_img_raws[0].publish(ros_img_l);
 	pub_img_raws[1].publish(ros_img_r);
-	
+
+#ifdef DEBUG_STRESS_TEST
+	//debug *********
+	save_ros_img(ros_img_l,"/tmp/left.pgm");
+	save_ros_img(ros_img_r,"/tmp/right.pgm");
 	
 	const int brightAvg=std::accumulate(std::begin(ros_img_l.data), std::end(ros_img_l.data), 0.0) / ros_img_l.data.size();
-	ROS_WARN(LOG_HEADER"[%6d] bright=%d, strobe=%d, expsr_lv=%d",debug_capt_watch_count++, brightAvg,debug_pre_strobe, debug_pre_expsr_lv);
-	if(! debug_pre_strobe){
-		if(debug_pre_expsr_lv== 2 && (brightAvg < 10 || 40 < brightAvg ) ){
+	ROS_WARN(LOG_HEADER"[%6d] bright=%d, strobe=%d, expsr_lv=%d(%d)",debug_capt_watch_count++, brightAvg,debug_pre_strobe, expsr_lv,expsr_lv+1);
+	if(! debug_pre_strobe ){
+		if(expsr_lv== 3 && (brightAvg < 10 || 40 < brightAvg ) ){
 			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
-			exit(-1);
+			//exit(-1);
 		}
 	}else{
-		if(debug_pre_expsr_lv== 2 && (brightAvg < 140 || 180 < brightAvg ) ){
+		if( expsr_lv== 0 && (brightAvg < 20 || 40 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}else if( expsr_lv== 1 && (brightAvg < 40 || 70 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}else if( expsr_lv== 2 && (brightAvg < 90 || 130 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}else if( expsr_lv== 3 && (brightAvg < 140 || 210 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}else if( expsr_lv== 4 && (brightAvg < 190 || 240 < brightAvg ) ){
+			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
+			exit(-1);
+		}else if( expsr_lv== 5 && (brightAvg < 190 || 255 < brightAvg ) ){
 			ROS_ERROR(LOG_HEADER"error:wrong image captured.");
 			exit(-1);
 		}
-	}*/
-
+	}
+#endif
 	
 	const ros::Time now = ros::Time::now();
 	
@@ -621,7 +654,7 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 	}
 }
 
-void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout){
+void on_pattern_image_received(const bool result,const int proc_tm,const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout,const int expsr_lv){
 	ROS_INFO(LOG_HEADER"pattern image recevied. result=%s, proc_tm=%d ms, timeout=%d, imgs_l: num=%d, imgs_r: num=%d",
 		(result?"OK":"NG"), proc_tm, timeout, (int)imgs_l.size(),(int)imgs_r.size());
 	
@@ -643,11 +676,6 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	// ********** ptn_capt_wait_cv NOTIFY **********
 }
 
-void save_ros_img(sensor_msgs::Image &img,const std::string &path){
-	
-	cv::Mat grayImg = cv_bridge::toCvCopy(img, sensor_msgs::image_encodings::MONO8)->image;
-	cv::imwrite(path,grayImg);
-}
 
 bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::TriggerResponse &res){
 	ROS_INFO(LOG_HEADER"exec_point_cloud_generation");
@@ -658,11 +686,14 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		ROS_WARN(LOG_HEADER"genpc is busy");
 		return true;
 	}
+#ifdef DEBUG_STRESS_TEST
+	ROS_WARN(LOG_HEADER"exec_point_cloud_generation wait end.");
+#endif
 	int mode=get_param<int>(PRM_MODE,(int)Mode_StandBy);
-	if( Mode_StandBy != mode){
-		ROS_WARN(LOG_HEADER"standby wait. mode=%d",mode);
-		usleep(500 * 1000);
-	}
+	//if( Mode_StandBy != mode){
+	//	ROS_WARN(LOG_HEADER"standby wait. mode=%d",mode);
+	//	usleep(500 * 1000);
+	//}
 	
 	ptn_imgs_l.clear();
 	ptn_imgs_r.clear();
@@ -686,8 +717,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	}else if( ! camera_ptr->is_open() ){
 		ROS_ERROR(LOG_HEADER"camera is not open.");
 	} else {
-		debug_pre_expsr_lv = get_param<int>(PRM_EXPOSURE_TIME_LEVEL, expsr_tm_lv_ui_default) - 1;
 		std::unique_lock<std::mutex> lock(ptn_capt_wait_mutex);
+#ifdef DEBUG_STRESS_TEST
+		ROS_WARN(LOG_HEADER"pattern capture start.");
+#endif
+		
 		if( ! camera_ptr->capture_pattern( pc_gen_mode == PCGEN_MULTI ) ){
 			ROS_ERROR(LOG_HEADER"pattern catpture failed.");
 			
@@ -800,7 +834,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 
 
 void sub_exec_point_cloud_generation(const std_msgs::Bool::ConstPtr &req){
-		
 	if( ! camera_ptr || ! camera_ptr->is_open() ){
 		ROS_ERROR(LOG_HEADER"camera is not open");
 		publish_bool(pub_Y1,false);
