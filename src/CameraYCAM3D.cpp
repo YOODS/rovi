@@ -466,7 +466,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 		
 		if( m_arv_ptr->getProjectorPattern() != YCAM_PROJ_PTN_STROBE ){
 			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=strobe",m_camno);
-			if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_STROBE)){
+			if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_STROBE,true)){
 				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s)", m_camno,YCAM_PROJ_PTN_STROBE, PROJ_PTN_MAP[YCAM_PROJ_PTN_STROBE].c_str() );
 			}
 		}
@@ -547,7 +547,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 	return true;
 }
 
-bool CameraYCAM3D::capture_pattern(const bool multi){
+bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort){
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
 		return false;
@@ -570,7 +570,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 	
 	m_capt_stat.store(CaptStat_Pattern);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti,std::timed_mutex *camera_mutex){
+	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti,std::timed_mutex *camera_mutex,const bool aPtnChgShortWait){
 		
 		ROS_INFO(LOG_HEADER"#%d pattern capture start. timeout=%d sec", m_camno, m_trigger_timeout_period);
 		
@@ -585,7 +585,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 		
 		if( m_arv_ptr->getProjectorPattern() != ptn ){
 			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=%d (%s)",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
-			if( ! m_arv_ptr->setProjectorPattern(ptn) ){
+			if( ! m_arv_ptr->setProjectorPattern(ptn,aPtnChgShortWait) ){
 				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s) ",
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
 			}else{
@@ -662,7 +662,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 		ROS_INFO(LOG_HEADER"#%d pattern capture finished. elapsed=%d ms", m_camno, capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr,multi,&m_camera_mutex);
+	},tmr, multi, &m_camera_mutex, ptnCangeWaitShort);
 	m_capture_thread.detach();
 	
 	return true;

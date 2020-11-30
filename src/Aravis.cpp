@@ -71,6 +71,12 @@ namespace{
 	const int PROJ_FLASH_INTERVAL_WAIT = 100;
 	//const int PROJ_PTN_LOAD_WAIT = 500;
 	//2020/10/21 add by hato --------------------  end  --------------------
+	
+	//2020/11/30 add by hato -------------------- start --------------------
+	const int PROJ_STOP_GO_WAIT_TM_SHORT = 50;
+	const int PROJ_STOP_GO_WAIT_TM_NORMAL = 400;
+	//2020/11/30 add by hato --------------------  end  --------------------
+	
 	void dprintf(const char *fmt,...){
 		va_list args, args2;
 		va_start(args, fmt);
@@ -352,7 +358,7 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			//msleep(PROJ_FLASH_INTERVAL_WAIT);
 		}
 		{
-			const bool result_proj_ptn = setProjectorPattern(YCAM_PROJ_PTN_PHSFT);
+			const bool result_proj_ptn = setProjectorPattern(YCAM_PROJ_PTN_PHSFT,false);
 			dprintf(" setup projector pattern.       result=%s, set_val=%5d",
 				(result_proj_ptn?"OK":"NG"),YCAM_PROJ_PTN_PHSFT);
 			//msleep(PROJ_PTN_LOAD_WAIT);
@@ -1225,8 +1231,9 @@ bool Aravis::setProjectorBrightness(int value)
 	return uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
 	//2020/09/25 modified by hato --------------------  end  --------------------
 }
-
-bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
+//2020/11/30 modified by hato -------------------- start --------------------
+bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn,const bool shortWait)
+//2020/11/30 modified by hato --------------------  end  --------------------
 {
 	bool ret = false;
 //2020/11/09 comment by hato -------------------- start --------------------
@@ -1249,13 +1256,13 @@ bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn)
 //			ret = true;
 //			break;
 //		}
-		pset_stopgo(Proj_Disabled);
+		pset_stopgo(Proj_Disabled,shortWait);
 		int vres=1;
 		do {
 			uart_cmd('z', ptn );
 			vres=pset_validate();
 		} while(vres);
-		pset_stopgo(Proj_Enabled);
+		pset_stopgo(Proj_Enabled,shortWait);
 		ret=true;
 		//2020/11/05 modified by hato --------------------  end  --------------------
 //2020/11/09 comment by hato -------------------- start --------------------
@@ -1333,10 +1340,10 @@ int Aravis::pset_validate(void) {
 }
 	
 /* stop(0)/go(2) execute after validating */ 
-void Aravis::pset_stopgo(ProjectorEnabled n) {
+void Aravis::pset_stopgo(ProjectorEnabled n,const bool shortWait) {
 	char cmd[8];
 	sprintf(cmd,"q%d\n",n);
-	uart_cmd(cmd,400);
+	uart_cmd(cmd,shortWait?PROJ_STOP_GO_WAIT_TM_SHORT:PROJ_STOP_GO_WAIT_TM_NORMAL);
 	//usleep(200000);
 	//usleep(200000);
 	

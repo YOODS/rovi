@@ -239,7 +239,7 @@ public:
 	
 	//bool capture_strobe();
 	
-	bool capture_pattern(const bool multi);
+	bool capture_pattern(const bool multi,const bool ptnCangeWaitShort);
 	
 	void start_auto_connect();
 	

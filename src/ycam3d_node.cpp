@@ -24,7 +24,6 @@
 
 
 //#define DEBUG_DETAIL
-
 //#define DEBUG_STRESS_TEST
 
 namespace {
@@ -721,8 +720,8 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 #ifdef DEBUG_STRESS_TEST
 		ROS_WARN(LOG_HEADER"pattern capture start.");
 #endif
-		
-		if( ! camera_ptr->capture_pattern( pc_gen_mode == PCGEN_MULTI ) ){
+		const int cur_mode = get_param<int>(PRM_MODE,(int)Mode_StandBy);
+		if( ! camera_ptr->capture_pattern( pc_gen_mode == PCGEN_MULTI , cur_mode == Mode_Streaming ) ){
 			ROS_ERROR(LOG_HEADER"pattern catpture failed.");
 			
 		}else{

@@ -177,7 +177,7 @@ class Aravis
 	int cur_proj_brightness_;
 	
 	int pset_validate(void);
-	void pset_stopgo(ProjectorEnabled n);
+	void pset_stopgo(ProjectorEnabled n,const bool shortWait=false);
 	//2020/11/05 modified by hato --------------------  end  --------------------
 	
 	//2020/11/26 moved by hato -------------------- start --------------------
@@ -244,7 +244,9 @@ public:
 		return cur_proj_ptn_;
 	}
 	
-	bool setProjectorPattern(YCAM_PROJ_PTN ptn);
+	//2020/11/30 modified by hato -------------------- start --------------------
+	bool setProjectorPattern(YCAM_PROJ_PTN ptn,const bool shortWait);
+	//2020/11/30 modified by hato --------------------  end  --------------------
 
 	bool setProjectorBrightness(int value);
 	//2020/11/05 modified by hato -------------------- start --------------------
