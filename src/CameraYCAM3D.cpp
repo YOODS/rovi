@@ -76,23 +76,6 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		return;
 		
 	}
-
-#if 0
-//************debug ***************
-	camera::ycam3d::CameraImage debugImg(lr_width,height,lr_width);
-	debugImg.result=true;
-	debugImg.alloc();
-	memcpy(debugImg.data.data(),mem,debugImg.byte_count());
-	char debug_path[256];
-	sprintf(debug_path,"/tmp/capt_lr_%02d.pgm",frmidx);
-	cv::Mat img_debug;
-	if( ! debugImg.to_mat(img_debug) ){
-		ROS_ERROR(LOG_HEADER"#%d debug image save failed. frm=%d",m_self->m_camno,frmidx);
-	}else{
-		cv::imwrite(debug_path,img_debug);
-	}
-//************debug ***************
-#endif
 	
 	ElapsedTimer tmr;
 	bool capt_wait_done=false;
@@ -102,29 +85,6 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		camera::ycam3d::CameraImage *img_buf_l = m_self->m_imgs_left.data()+ frmidx;
 		camera::ycam3d::CameraImage *img_buf_r = m_self->m_imgs_right.data()+ frmidx;
 		img_buf_l->dt = img_buf_r->dt = std::chrono::system_clock::now(); 
-		
-		/*
-		char date[64];
-		time_t t = ros::Time::now().sec;
-    	strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
-		ROS_INFO("%s", date);
-		
-		const auto p0 = std::chrono::time_point<std::chrono::high_resolution_clock>{};
-		const auto p3 = img_buf_l->dt;
-
-		auto tstamp = p3 - p0;
-		int32_t sec = std::chrono::duration_cast<std::chrono::seconds>(tstamp).count();
-		int32_t nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(tstamp).count() % 1000000000UL;
-		std::cout << "sec: " << sec << " nsec: " << nsec << " since epoch: \n";
-		ros::Time n(sec, nsec);
-		t = n.sec;
-    	strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
-		ROS_INFO("2:%s", date);
-		*/
-		
-		//t = std::chrono::system_clock::to_time_t(img_buf_l->dt);
-		//strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
-		//ROS_INFO("chrono:%s", date);
 		
 		const int lr_img_step = lr_width;
 		const int img_step = lr_img_step / 2;
@@ -143,35 +103,7 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 			memcpy(img_buf_l->data.data() + y * img_step , pmem             ,img_step);
 			memcpy(img_buf_r->data.data() + y * img_step , pmem + img_step  ,img_step);
 		}
-	
-		/*
-#ifdef DEBUG_DETAIL
-		//fprintf(stdout,LOG_HEADER"#%d copy ros image. frmidx=%d tm=%d\n",frmidx,tmr.elapsed_ms(),m_self->m_camno);
-#endif
-		m_self->m_img_recv_flags[frmidx]=true;
-		if( m_self->m_capt_stat.load() == CameraYCAM3D::CaptStat_Single ){//single
-#ifdef DEBUG_DETAIL
-			fprintf(stdout,LOG_HEADER"#%d single capture image received.\n",m_self->m_camno);
-#endif
-			capt_wait_done=true;
-		}else{//pattern
-#ifdef DEBUG_DETAIL
-			std::stringstream recv_flags_str;
-			for( int i = 0 ; i < m_self->m_img_recv_flags.size() ; ++i ){
-				recv_flags_str << (m_self->m_img_recv_flags[i]?"*":"_");
-			}
-			fprintf(stdout,LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms, recv_flags=%s\n",
-				m_self->m_camno,frmidx, tmr.elapsed_ms(), recv_flags_str.str().c_str() );
-#endif
-			
-			if(std::count( m_self->m_img_recv_flags.begin(), m_self->m_img_recv_flags.end(), true ) ==  PHSFT_CAP_NUM ){
-#ifdef DEBUG_DETAIL
-				fprintf(stdout,LOG_HEADER"#%d pattern image all received.\n",m_self->m_camno);
-#endif
-				capt_wait_done=true;
-			}
-		}
-		*/
+		
 		m_self->m_img_recv_flags[frmidx]=true;
 		
 #ifdef DEBUG_DETAIL
@@ -504,6 +436,7 @@ bool CameraYCAM3D::is_busy(){
 }
 
 bool CameraYCAM3D::capture(const bool strobe){
+	
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
 		return false;
@@ -521,12 +454,12 @@ bool CameraYCAM3D::capture(const bool strobe){
 	
 	m_capt_stat.store(CaptStat_Single);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool strobe_l){
+	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool strobe_l,std::timed_mutex *camera_mutex){
 		
 #ifdef DEBUG_DETAIL
 		ROS_INFO(LOG_HEADER"#%d capture start. timeout=%d sec, strobe=%d", m_camno,m_capture_timeout_period,strobe);
 #endif
-		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
+		std::lock_guard<std::timed_mutex> locker(*camera_mutex,std::adopt_lock);
 		
 		m_capt_finish_wait_mutex.lock();
 		// ********** m_capt_finish_wait_mutex LOCKED **********
@@ -539,12 +472,19 @@ bool CameraYCAM3D::capture(const bool strobe){
 		}
 		
 		const int curProjBright = m_arv_ptr->projectorBrightness();
-		//ROS_WARN(LOG_HEADER"#%d projector bright=%d ",m_camno,curProjBright);
+#ifdef DEBUG_DETAIL
+		ROS_INFO(LOG_HEADER"#%d cur proj bright. val=%d",m_camno, curProjBright);
+#endif
 		if( ! strobe_l ){
 			m_arv_ptr->setProjectorBrightness(0);
 		}
+		
+		
 		const int captNum=m_arv_ptr->getCaptureNum();
 		reset_image_buffer(captNum);
+		
+		int curExpsrLv=-1;
+		m_arv_ptr->get_exposure_time_level(&curExpsrLv);
 		
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CAPT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
@@ -589,9 +529,9 @@ bool CameraYCAM3D::capture(const bool strobe){
 			
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:capture is timeouted.", m_camno);
-				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true);
+				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true,curExpsrLv);
 			}else{
-				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r, false);
+				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r, false,curExpsrLv);
 			}
 		}
 		
@@ -602,130 +542,10 @@ bool CameraYCAM3D::capture(const bool strobe){
 		ROS_INFO(LOG_HEADER"#%d capture finished. elapsed=%d ms", m_camno,capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr,strobe);
+	},tmr,strobe,&m_camera_mutex);
 	m_capture_thread.detach();
 	return true;
 }
-/*
-bool CameraYCAM3D::capture_strobe(){
-	if( ! m_arv_ptr ){
-		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
-		return false;
-	}else if( m_arv_img_buf.empty() ){
-		ROS_ERROR(LOG_HEADER"#%d error:camera image buffer is null.", m_camno);
-		return false;
-	}else if( ! is_open() ){
-		ROS_ERROR(LOG_HEADER"#%d error:camera is not opened", m_camno);
-		return false;
-	}
-	
-	//if ( m_capt_stat.load() != CaptStat_Ready ){
-	//	ROS_ERROR(LOG_HEADER"#%d error:capture status is not ready. strobe capture failed.", m_camno);
-	//	return false;
-	//}
-	
-	ElapsedTimer tmr;
-	m_camera_mutex.lock();
-	// ********** m_camera_mutex LOCKED **********
-	
-	m_capt_stat.store(CaptStat_Single);
-	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr){
-		reset_image_buffer();
-#ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d strobe capture start. timeout=%d sec", m_camno, m_trigger_timeout_period);
-#endif
-		m_capt_finish_wait_mutex.lock();
-		// ********** m_capt_finish_wait_mutex LOCKED **********
-		
-		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
-		if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_STROBE)){
-			ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=STROBE", m_camno);
-			
-		}else if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CAPT) ){
-			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
-			
-		}
-#ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d strobe capture image received wait start.", m_camno);
-#endif
-		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_trigger_timeout_period) );
-		// ********** m_capt_finish_wait_mutex LOCKED ?? **********
-		
-		if( ! m_arv_ptr->setProjectorPattern(YCAM_PROJ_PTN_PHSFT)){
-			ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=PHSFT", m_camno);
-		}
-		
-#ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d strobe capture image received wait finshed. timeout=%d, elapsed=%d ms",
-			m_camno,timeout_occured,capt_tmr.elapsed_ms());
-#endif
-		if( m_callback_capt_img_recv ){
-#if 0
-			camera::ycam3d::CameraImage img_l;
-			camera::ycam3d::CameraImage img_r;
-			{
-				std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
-				// ********** m_img_update_mutex LOCKED **********
-				if(m_imgs_left.size() > STROBE_CAPT_FRAME_INDEX ){
-					img_l=m_imgs_left.at(STROBE_CAPT_FRAME_INDEX);
-				}
-				if(m_imgs_right.size() > STROBE_CAPT_FRAME_INDEX){
-					img_r=m_imgs_right.at(STROBE_CAPT_FRAME_INDEX);
-				}
-				// ********** m_img_update_mutex UNLOCKED **********
-			}
-			
-			if( timeout_occured ){
-				ROS_ERROR(LOG_HEADER"#%d error:storobe capture is timeouted.", m_camno);
-				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true);
-			}else{
-				const bool result = img_l.result && img_r.result && img_l.valid() && img_r.valid();
-				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r,false);
-			}
-#endif
-			camera::ycam3d::CameraImage img_l;
-			camera::ycam3d::CameraImage img_r;
-			
-			bool result=false;
-			{
-				std::lock_guard<std::timed_mutex> locker(m_img_update_mutex);
-				// ********** m_img_update_mutex LOCKED **********
-				if( m_imgs_left.size() == m_imgs_right.size() && m_imgs_left.size() == PHSFT_CAP_NUM){
-					img_l = m_imgs_left.at(0);
-					img_r = m_imgs_right.at(0);
-					if( ! img_l.valid() ){
-						ROS_ERROR(LOG_HEADER"#%d error:left capture image is invalid.", m_camno);
-					}else if( ! img_r.valid() ){
-						ROS_ERROR(LOG_HEADER"#%d error:right capture image is invalid.", m_camno);
-					}else{
-						result=true;
-					}
-				}
-				// ********** m_img_update_mutex UNLOCKED **********
-			}
-			
-			if( timeout_occured ){
-				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
-				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true);
-			}else{
-				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r, false);
-			}
-		}
-		
-		m_capt_finish_wait_mutex.unlock();
-		// ********** m_capt_finish_wait_mutex UNLOCKED **********
-		m_capt_stat.store(CaptStat_Ready);
-#ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d strobe capture finished. elapsed=%d ms", m_camno,capt_tmr.elapsed_ms());
-#endif
-		
-		// ********** m_camera_mutex UNLOCKED **********
-	},tmr);
-	m_capture_thread.detach();
-	return true;
-}
-*/
 
 bool CameraYCAM3D::capture_pattern(const bool multi){
 	if( ! m_arv_ptr ){
@@ -750,14 +570,14 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 	
 	m_capt_stat.store(CaptStat_Pattern);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti){
+	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti,std::timed_mutex *camera_mutex){
 		
 		ROS_INFO(LOG_HEADER"#%d pattern capture start. timeout=%d sec", m_camno, m_trigger_timeout_period);
 		
 		m_capt_finish_wait_mutex.lock();
 		// ********** m_capt_finish_wait_mutex LOCKED **********
 		
-		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
+		std::lock_guard<std::timed_mutex> locker(*camera_mutex,std::adopt_lock);
 		YCAM_PROJ_PTN ptn=YCAM_PROJ_PTN_PHSFT;
 		if(pcgenModeMulti){
 			ptn = YCAM_PROJ_PTN_PHSFT_3;
@@ -765,9 +585,13 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 		
 		if( m_arv_ptr->getProjectorPattern() != ptn ){
 			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=%d (%s)",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
-			
 			if( ! m_arv_ptr->setProjectorPattern(ptn) ){
-				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s)", m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
+				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s) ",
+					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
+			}else{
+#ifdef DEBUG_DETAIL
+				ROS_INFO(LOG_HEADER"#%d projector pattern changed. ptn=%d (%s) elapsed=%d",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str(),ptnChangeTmr.elapsed_ms());
+#endif
 			}
 		}
 		
@@ -778,6 +602,9 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 		
 		const int captNum = m_arv_ptr->getCaptureNum();
 		reset_image_buffer(captNum);
+		
+		int curExpsrLv=-1;
+		m_arv_ptr->get_exposure_time_level(&curExpsrLv);
 		
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CONT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
@@ -821,9 +648,9 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 			
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
-				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true);
+				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true ,curExpsrLv);
 			}else{
-				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false);
+				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false ,curExpsrLv);
 			}
 		}
 		
@@ -835,7 +662,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi){
 		ROS_INFO(LOG_HEADER"#%d pattern capture finished. elapsed=%d ms", m_camno, capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr,multi);
+	},tmr,multi,&m_camera_mutex);
 	m_capture_thread.detach();
 	
 	return true;
@@ -852,7 +679,8 @@ bool CameraYCAM3D::get_camera_param_int(const std::string &label,std::function<b
 	
 	// ********** m_camera_mutex LOCKED **********
 	std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
-	return func(val);
+	bool ret= func(val);
+	return ret;
 	// ********** m_camera_mutex UNLOCKED **********
 }
 
@@ -867,7 +695,9 @@ bool CameraYCAM3D::set_camera_param_int(const std::string &label,std::function<b
 	
 	// ********** m_camera_mutex LOCKED **********
 	std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
-	return func(val);
+	//return func(val);
+	bool ret=func(val);
+	return ret;
 	// ********** m_camera_mutex UNLOCKED **********
 }
 

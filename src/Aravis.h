@@ -180,6 +180,11 @@ class Aravis
 	void pset_stopgo(ProjectorEnabled n);
 	//2020/11/05 modified by hato --------------------  end  --------------------
 	
+	//2020/11/26 moved by hato -------------------- start --------------------
+	bool setProjectorExposureTime(int value);
+	int projectorExposureTime();
+	//2020/11/26 moved by hato --------------------  end  --------------------
+	
 public:
 	Aravis(YCAM_RES res = YCAM_RES_SXGA, int ncam = 1);
 	~Aravis();
@@ -249,8 +254,10 @@ public:
 	}
 	//2020/11/05 modified by hato --------------------  end --------------------
 
-	bool setProjectorExposureTime(int value);
-	int projectorExposureTime();
+	//2020/11/26 moved by hato -------------------- start --------------------
+	//bool setProjectorExposureTime(int value);
+	//int projectorExposureTime();
+	//2020/11/26 moved by hato --------------------  end  --------------------
 
 	bool setProjectorFlashInterval(int value);
 	int projectorFlashInterval();
