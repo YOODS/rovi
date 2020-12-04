@@ -73,7 +73,7 @@ namespace{
 	//2020/10/21 add by hato --------------------  end  --------------------
 	
 	//2020/11/30 add by hato -------------------- start --------------------
-	const int PROJ_STOP_GO_WAIT_TM_SHORT = 50;
+	const int PROJ_STOP_GO_WAIT_TM_SHORT = 400;
 	const int PROJ_STOP_GO_WAIT_TM_NORMAL = 400;
 	//2020/11/30 add by hato --------------------  end  --------------------
 	
