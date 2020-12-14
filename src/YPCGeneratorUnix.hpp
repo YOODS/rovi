@@ -39,16 +39,15 @@ public:
 
 	/**
 	  点群生成してPLYファイル保存を行います
-	  @param [in] filelist 入力画像ファイル名リスト
+	  @param [in] texture_cam テクスチャとして使用するカメラ番号(0: 左(従来通り), 1: 右)
 	  @param [in] outpath PLYファイル名
-	  @param [in] is_interpo 補間を行うか否か
 	 */
-	bool generate_pointcloud(std::vector<std::string> &filelist, const char* outpath, const bool is_interpo);
+	bool generate_pointcloud(const int texture_cam, const char* outpath);
 
 	//2020/08/26 modified by hato ---------- start ----------
 	///< 視差計算にかかった時間
 	std::chrono::system_clock::duration get_elapsed_disparity(){
-		return this->elapsed_disparity;
+		return this->elapsed_preprocess;
 	}
 	
 	///< 点群計算にかかった時間

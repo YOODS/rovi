@@ -665,6 +665,13 @@ int Aravis::gainA()
 
 bool Aravis::setGainA(int value)
 {
+	if(value < CAM_DIGITAL_GAIN_MIN ){
+		dprintf("camera gain is under minimum value.");
+		return false;
+	}else if( CAM_DIGITAL_GAIN_MAX < value){
+		dprintf("camera gain is over maximum value.");
+		return false;
+	}
 	return reg_write(REG_ANALOG_GAIN, value);
 }
 
@@ -1220,17 +1227,28 @@ int Aravis::projectorBrightness()
 
 bool Aravis::setProjectorBrightness(int value)
 {
-	//2020/11/05 modified by hato -------------------- start --------------------
-	cur_proj_brightness_=value;
-	//2020/11/05 modified by hato --------------------  end  --------------------
+	//2020/12/10 add by hato -------------------- start --------------------
+	if(value < PROJ_BRIGHTNESS_MIN){
+		dprintf("projector brightness is under minimum value.");
+		return false;
+	}else if(PROJ_BRIGHTNESS_MAX < value ){
+		dprintf("projector brightness is over maximum value.");
+		return false;
+	}
+	//2020/12/10 add by hato -------------------- start --------------------
 	
 	char d[16];
 	snprintf(d, sizeof(d), "%02X%02X%02X", value, value, value);
-	//2020/09/25 modified by hato -------------------- start --------------------
+	//2020/12/10 modified by hato -------------------- start --------------------
 	//return uart_write('i', d);
-	return uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
-	//2020/09/25 modified by hato --------------------  end  --------------------
+	const bool ret= uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
+	if( ret ){
+		cur_proj_brightness_=value;
+	}
+	return ret;
+	//2020/12/10 modified by hato --------------------  end  --------------------
 }
+	
 //2020/11/30 modified by hato -------------------- start --------------------
 bool Aravis::setProjectorPattern(YCAM_PROJ_PTN ptn,const bool shortWait)
 //2020/11/30 modified by hato --------------------  end  --------------------

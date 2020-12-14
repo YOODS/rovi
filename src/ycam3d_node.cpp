@@ -266,7 +266,7 @@ void update_camera_params(){
 	}
 	
 	const int cur_proj_intensty = get_param<int>( PRM_PROJ_INTENSITY,
-		camera::ycam3d::PROJ_FLASH_INTERVAL_DEFAULT, camera::ycam3d::PROJ_FLASH_INTERVAL_MIN, camera::ycam3d::PROJ_FLASH_INTERVAL_MAX );	
+		camera::ycam3d::PROJ_BRIGHTNESS_DEFAULT, camera::ycam3d::PROJ_BRIGHTNESS_MIN, camera::ycam3d::PROJ_BRIGHTNESS_MAX );	
 	if( pre_proj_intensity != cur_proj_intensty ){
 		if( ! camera_ptr->set_projector_brightness(cur_proj_intensty) ){
 			int latest_val = 0;
@@ -421,7 +421,7 @@ void on_camera_open_finished(const bool result){
 		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
 	
 	pre_proj_intensity = get_param<int>( PRM_PROJ_INTENSITY,
-		camera::ycam3d::PROJ_FLASH_INTERVAL_DEFAULT, camera::ycam3d::PROJ_FLASH_INTERVAL_MIN, camera::ycam3d::PROJ_FLASH_INTERVAL_MAX );	
+		camera::ycam3d::PROJ_BRIGHTNESS_DEFAULT, camera::ycam3d::PROJ_BRIGHTNESS_MIN, camera::ycam3d::PROJ_BRIGHTNESS_MAX );	
 	
 	ROS_INFO(LOG_HEADER"camera digital gain = %d", pre_cam_gain_d);
 	ROS_INFO(LOG_HEADER"projector intensity = %d", pre_proj_intensity);
@@ -767,8 +767,11 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", tmr.elapsed_ms());
 						exit(-1);
 					}else{
-						res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count=" << genpc_msg.response.pc_cnt;
-						
+						if( genpc_msg.response.pc_cnt_r >= 0 ){
+						    res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count. Left=" << genpc_msg.response.pc_cnt << " Right=" << genpc_msg.response.pc_cnt_r;
+						}else{
+							res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count=" << genpc_msg.response.pc_cnt;
+						}
 						publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
 						if( genpc_msg.response.pc_cnt < 1000 ){
 							ROS_WARN(LOG_HEADER"The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);

@@ -19,7 +19,7 @@ pshift_genpc:
     max_parallax: 300
     min_parallax: -200
     ls_points: 3
-    pcgen_mode: 1
+    pcgen_mode: 2
     phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
@@ -89,21 +89,21 @@ genpc:
   voxelize:
     data_save: On
     leaf_size:
-      x: 0
-      y: 0
-      z: 0
-      v: 0
+      x: 1
+      y: 1
+      z: 1
+      v: 1
     recalc:
       enabled: On
       interval: 1
 ycam:
-  Mode: 2
+  Mode: 1
   Strobe: 1
-  SoftwareTriggerRate: 5
-  ExposureTimeLevel: 1
+  SoftwareTriggerRate: 1
+  ExposureTimeLevel: 3
   TemperatureMonitorInterval: 1
   DrawCameraOrigin : Off
   camera:
     Gain: 0
   projector:
-    Intensity: 150
+    Intensity: 255

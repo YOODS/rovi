@@ -38,9 +38,9 @@ namespace camera{
 		constexpr int PROJ_BRIGHTNESS_MIN         = aravis::ycam3d::PROJ_BRIGHTNESS_MIN;
 		constexpr int PROJ_BRIGHTNESS_MAX         = aravis::ycam3d::PROJ_BRIGHTNESS_MAX;
 		
-		constexpr int PROJ_FLASH_INTERVAL_DEFAULT = aravis::ycam3d::PROJ_FLASH_INTERVAL_DEFAULT;
-		constexpr int PROJ_FLASH_INTERVAL_MIN     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MIN;
-		constexpr int PROJ_FLASH_INTERVAL_MAX     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MAX;
+		//constexpr int PROJ_FLASH_INTERVAL_DEFAULT = aravis::ycam3d::PROJ_FLASH_INTERVAL_DEFAULT;
+		//constexpr int PROJ_FLASH_INTERVAL_MIN     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MIN;
+		//constexpr int PROJ_FLASH_INTERVAL_MAX     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MAX;
 		
 		
 		//constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;

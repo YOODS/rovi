@@ -145,9 +145,9 @@ public:
 	 * 点群を作成します.
 	 * @return なし.
 	 * @param [in] method 三次元座標値を計算する手法(Method3D参照)
-	 * @param [in] is_interpo 位相が復号出来なかった箇所でも補間を行い可能な限り点を計算する
+	 * @param [in] texture_cam 点群に張り付けるテクスチャをどちらのカメラからのものを使用するか?(0: 左カメラ(従来通り), 1: 右カメラ)
 	 */
-	virtual void genPC(const Method3D method = Method3D::QMatrix, const bool is_interpo = false) = 0;
+	virtual void genPC(const Method3D method = Method3D::QMatrix, const int texture_cam = 0) = 0;
 
 	/**
 	 * 作成された点群データを取得します.(OnRevcPointCloud.operator()を呼び出します)

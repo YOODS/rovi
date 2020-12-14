@@ -55,8 +55,9 @@ void YPCData::operator()(
 	const int width, const int height, 
 	std::vector<Point3d> &points, const int n_valid){
 	
-	//ROS_INFO(LOG_HEADER"point cloud data generated. step=%d, width=%d, height=%d, points_size=%d, n_valid=%d",
+	//ROS_WARN("pcgen callback. step=%d, width=%d, height=%d, points_size=%d, n_valid=%d",
 	//	(int)step,width,height,(int)points.size(),n_valid);
+		
 	this->image=image;
 	this->step=step;
 	this->width=width;
@@ -158,6 +159,7 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
 
 bool YPCData::make_depth_image(cv::Mat &img){
 	//fprintf(stderr,"width=%d height=%d\n",this->height,this->width);
+
 	const long base=DEPTH_BASE*256;
 	img=cv::Mat(this->height,this->width,CV_16UC1,cv::Scalar(std::numeric_limits<unsigned short>::max()));
 	
@@ -175,10 +177,38 @@ bool YPCData::make_depth_image(cv::Mat &img){
 			else if(d<65536L) dP[i]=d;
 		}
 	}
+#if 0
+
+// ‰œs‚«‚ÌÅ¬Å‘å‚ð‹‚ß‚é
+	float min_ = std::numeric_limits<float>::max();
+	float max_ = -min_;
+	for (auto p : points) {
+		if (std::isnan(p.x)) continue;
+		if (min_ > p.z) min_ = p.z;
+		if (max_ < p.z) max_ = p.z;
+	}
+
+	// ³‹K‰»—p‚ÌŒW”‚ð‹‚ß‚é. 255‚ÍA‘ª’è‚Å‚«‚È‚©‚Á‚½“_‚É“ü‚ê‚é
+	float scale = 254.0f / (max_ - min_);
+	
+	img = cv::Mat(this->height,this->width, CV_8U);
+	for (int j = 0, n = 0; j < height; j++) {
+		uchar *dP = img.ptr<uchar>(j);
+		for (int i = 0; i < width; i++, n++) {
+			if (std::isnan(points[n].x)) {
+				dP[i] = 255;
+				continue;
+			}
+			
+			dP[i] = ((int) (scale * (points[n].z - min_) + 0.5f));
+		}
+	}
+#endif
+	
 	return true;
 }
 
-bool YPCData::save_ply(const std::string &file_path){
+bool YPCData::save_ply(const std::string &file_path)const{
 	//PLYSaver saver(file_path);
 	//saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
 	//return saver.is_ok();
@@ -187,7 +217,7 @@ bool YPCData::save_ply(const std::string &file_path){
 	if ( ! ofs.is_open() ) {
 		return false;
 	}
-
+	
 	ofs << "ply\n";
 	ofs << "format binary_little_endian 1.0\n";
 	ofs << "comment VCGLIB generated\n";
@@ -201,9 +231,11 @@ bool YPCData::save_ply(const std::string &file_path){
 	ofs << "element face 0\n";
 	ofs << "end_header\n";
 
+	unsigned char *pimage=image;
+	
 	int count=0;
 	for (int j = 0, n = 0; j < height; j++) {
-		unsigned char *iP = image;
+		unsigned char *iP = pimage;
 		for (int i = 0; i < width; i++, n++) {
 			float pos[3] = {0, 0, 0};
 			unsigned char col[3] = {iP[i], iP[i], iP[i]};
@@ -218,7 +250,7 @@ bool YPCData::save_ply(const std::string &file_path){
 				count++;
 			}
 		}
-		image += step;
+		pimage += step;
 	}
 
 	ofs.close();

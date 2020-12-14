@@ -23,7 +23,7 @@ pshift_genpc:
     phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
-    calc_right_camera: Off
+
 live:
   camera:
     AcquisitionFrameRate: 30

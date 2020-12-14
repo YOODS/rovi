@@ -2,3 +2,4 @@ sensor_msgs/Image[] imgL
 sensor_msgs/Image[] imgR
 ---
 uint32 pc_cnt
+int32 pc_cnt_r

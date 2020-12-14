@@ -29,10 +29,13 @@
 namespace {
 //============================================= 無名名前空間 start =============================================
 
+#define GET_CAMERA_LABEL(camno) (camno==0?'L':(camno==1?'R':'?'))
+constexpr int CAMERA_NUM = 2;
+
 std::unique_ptr<YPCGeneratorUnix> pcgen_ptr;
 	
 YPCData pcdata;
-sensor_msgs::PointCloud pre_pts;
+std::vector<sensor_msgs::PointCloud> pre_ptss(CAMERA_NUM);
 
 int cur_cam_width = -1;
 int cur_cam_height = -1;
@@ -49,18 +52,19 @@ std::map<PcGenMode,std::string> PCGEN_MODE_MAP = {
 	{PCGEN_MULTI,"Multi"} 
 };
 
-bool is_interpo=false;
 std::string file_dump("/tmp/");
 bool isready = false;
 
 ros::NodeHandle *nh = nullptr;
-ros::Publisher pub_ps_pc;
-ros::Publisher pub_ps_floats;
-ros::Publisher pub_depth_img;
-ros::Publisher pub_ps_all;
-ros::Publisher pub_rep;
-ros::Publisher pub_pcount;
+//[0]左カメラ用、[1]右カメラ用
+ros::Publisher pub_ps_pointclouds[2];
+ros::Publisher pub_ps_floats[2];
+ros::Publisher pub_depth_imgs[2];
+ros::Publisher pub_ps_alls[2];
+ros::Publisher pub_pcounts[2];
 
+ros::Publisher pub_rep;
+	
 const bool STEREO_CAM_IMGS_DEFAULT_SAVE = true;
 const bool PC_DATA_DEFAULT_SAVE = true;
 const bool QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED = true;
@@ -187,11 +191,6 @@ bool load_phase_shift_params()
 	
 	for(std::map<std::string,double>::iterator it=params.begin();it!=params.end();++it){
 		ROS_INFO(LOG_HEADER"<phsft> %s=%g",it->first.c_str(),it->second);
-	}
-	if( ! params.count("interpolation") ){
-		is_interpo = false;
-	}else{
-		is_interpo = ((int)params["interpolation"]) ;
 	}
 	
 	if ( ! pcgen_ptr->init(params) ) {
@@ -556,21 +555,14 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 {
 	//leaf_sizeを個別に変えるとそのたびにpublishされるので一気に指定する方法
 	//$rosparam set genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
-	if( pre_pts.points.empty() ){
-		//ROS_WARN(LOG_HEADER"pre pcdata is empty.");
-		
-	}else if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
+	
+	if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
 		//pre_vx_leaf_size = VoxelLeafSize();
-		//ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
+		ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
 		
 	}else{
-		
 		VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
 		
-		//ROS_INFO("!!! pre(%f,%f,%f) cur(%f,%f,%f)",
-		//	pre_vx_leaf_size.x,pre_vx_leaf_size.y,pre_vx_leaf_size.z,
-		//	vx_leaf_size.x,vx_leaf_size.y,vx_leaf_size.z
-		//);
 		//再ボクセル化の際はボクセル化のサイズが異なる時だけ計算する。
 		if( pre_vx_leaf_size == vx_leaf_size ){
 			//ROS_INFO(LOG_HEADER"re-voxelization update is nothing.");
@@ -578,23 +570,34 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 			ROS_INFO(LOG_HEADER"re-voxelization start.");
 			ElapsedTimer tmr_voxel;
 			
-			sensor_msgs::PointCloud pts_vx;
-			
-			rovi::Floats pc_points;
-			if( ! exec_downsampling( pre_pts, vx_leaf_size, pre_quantize_points_count_enabled, pc_points ) ){
-				ROS_ERROR(LOG_HEADER"downsampling failed.");
-			}else{
-				//ROS_INFO(LOG_HEADER"point after downsampling. count=%d (%d)",(int)pc_points.data.size()/3,(int)pc_points.data.size()/3);
+			sensor_msgs::PointCloud *pre_pc=nullptr;
+			for(int camno = 0 ; camno < CAMERA_NUM ; ++camno ){
+				pre_pc = &pre_ptss[camno];
+				
+				ROS_INFO("camno %d",camno);
+				
+				if( pre_pc->points.empty() ){
+					//skip
+					continue;
+				}
+				
+				sensor_msgs::PointCloud pts_vx;
+				rovi::Floats pc_points;
+				if( ! exec_downsampling( *pre_pc, vx_leaf_size, pre_quantize_points_count_enabled, pc_points ) ){
+					ROS_ERROR(LOG_HEADER"[%c] downsampling failed.",GET_CAMERA_LABEL(camno));
+					continue;
+				}
+				ROS_INFO("camno %d after",camno);
+				const int N = pre_pc->points.size();
+				const int ds_point_count=pc_points.data.size()/3;
+				ROS_INFO(LOG_HEADER"[%c] re-voxelization finished. leaf_size=(%g, %g, %g), point_num=%d / %d (%.2f%%), proc_tm=%d ms",
+					GET_CAMERA_LABEL(camno),
+					vx_leaf_size.x, vx_leaf_size.y, vx_leaf_size.z,
+					ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
+					tmr_voxel.elapsed_ms());
+				pub_ps_floats[camno].publish(pc_points);
 			}
 			pre_vx_leaf_size = vx_leaf_size;
-			
-			const int N = pre_pts.points.size();
-			const int ds_point_count=pc_points.data.size()/3;
-			ROS_INFO(LOG_HEADER"re-voxelization finished. leaf_size=(%g, %g, %g), point_num=%d / %d (%.2f%%), proc_tm=%d ms",
-				vx_leaf_size.x, vx_leaf_size.y, vx_leaf_size.z,
-				ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
-				tmr_voxel.elapsed_ms());
-			pub_ps_floats.publish(pc_points);
 		}
 	}
 	
@@ -615,6 +618,14 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	ROS_INFO(LOG_HEADER"start: ptn_image_l_num=%d ptn_image_r_num=%d", (int)req.imgL.size(), (int)req.imgR.size());
 	
 	re_vx_monitor_timer.stop();
+		
+	res.pc_cnt = 0;
+	res.pc_cnt_r = -1;
+	
+	const bool calc_right_camera_flg =  get_param<bool>("pshift_genpc/calc/calc_right_camera",false);
+	if( calc_right_camera_flg ){
+		ROS_INFO(LOG_HEADER"calculate right camera");
+	}
 	
 	if( ! pcgen_ptr ){
 		pcgen_ptr.reset(new YPCGeneratorUnix());
@@ -628,8 +639,12 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			ROS_INFO(LOG_HEADER"Point Cloud Generator Created. mode=%d (%s)",pc_gen_mode,PCGEN_MODE_MAP[pc_gen_mode].c_str());
 		}
 	}
-	pcdata = YPCData();
-	pre_pts = sensor_msgs::PointCloud();
+	
+	std::vector<YPCData> yds_pcs(CAMERA_NUM);
+	pre_ptss.assign(CAMERA_NUM,{});
+	std::vector<sensor_msgs::PointCloud> cur_pts(CAMERA_NUM);
+
+	
 	pre_vx_leaf_size = VoxelLeafSize();
 	
 	const int width  = req.imgL[0].width;
@@ -647,12 +662,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		ROS_ERROR(LOG_HEADER"camera height has changed. old_height=%d cur_height=%d",cur_cam_height,height);
 		return false;
 	}
-	sensor_msgs::PointCloud pts;
-	pts.header.stamp = ros::Time::now();
-	pts.header.frame_id = "/camera";
-	rovi::Floats ds_points;
-	res.pc_cnt = 0;
-	rovi::Floats pc_points;
 	
 	if( ! load_phase_shift_params() ){
 		ROS_ERROR(LOG_HEADER"phase shift parameter load failed.");
@@ -670,9 +679,10 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	}
 	std::vector<cv::Mat> stereo_imgs;
 	std::vector<unsigned char*> stereo_img_pointers;
-	sensor_msgs::ImagePtr depthimg(new sensor_msgs::Image());
-	sensor_msgs::PointCloud pts_vx;
-	cv::Mat depthimg_mat;
+	std::vector<sensor_msgs::ImagePtr> depth_imgs;
+	depth_imgs.assign(CAMERA_NUM,sensor_msgs::ImagePtr(new sensor_msgs::Image));
+	std::vector<sensor_msgs::PointCloud> pts_vxs(CAMERA_NUM);
+	std::vector<cv::Mat> depthimg_mats(CAMERA_NUM);
 	
 	if( ! isready ){
 		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d ms", tmr_proc.elapsed_ms());
@@ -707,156 +717,245 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			}
 		}
 		
-		ROS_INFO(LOG_HEADER"point cloud generation start. interpolation=%s",is_interpo?"enabled":"disabled");
-		ElapsedTimer tmr_genpc;
-		const int N = pcgen_ptr->generate_pointcloud_raw(stereo_img_pointers,is_interpo,&pcdata);
-		
-	    std_msgs::Int32 pcnt;
-        pcnt.data=N;
-        pub_pcount.publish(pcnt);
-
-		ROS_INFO(LOG_HEADER"point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
-			N, ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_disparity()), ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_genpcloud()),
-			tmr_genpc.elapsed_ms(), tmr_proc.elapsed_ms());
-		
-		if( pcdata.is_empty() ){
-			ROS_INFO(LOG_HEADER"genpc point count 0. elapsed=%d ms", tmr_proc.elapsed_ms());
-			
+		if( ! pcgen_ptr->set_images(stereo_img_pointers) ){
+			ROS_ERROR(LOG_HEADER"point cloud data generation failed.");
 		}else{
-			//点群データ変換
-			ROS_INFO(LOG_HEADER"point cloud data convert start.");
-			ElapsedTimer tmr_pcgen_conv;
-			if( ! pcdata.make_point_cloud(pts) ){
-				ROS_ERROR(LOG_HEADER"point cloud data convert failed.");
-			}else{
-				pre_pts=pts;
-			}
+			ROS_INFO(LOG_HEADER"point cloud generation start.");
 			
-			ROS_INFO(LOG_HEADER"point cloud data convert finished. proc_tm=%d ms, elapsed=%d ms",
-				tmr_pcgen_conv.elapsed_ms(), tmr_proc.elapsed_ms());
+			const bool depthmap_enabled = get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED);
+			const bool quantize_count_enabled = get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED);
 			
-			//downsampling
-			{
-				VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
-				
-				const bool quantize_count_enabled=get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED);
-				pre_quantize_points_count_enabled = quantize_count_enabled;
-				
-				ElapsedTimer tmr_downsampling;
-				ROS_INFO(LOG_HEADER"downsampling start.");
-				if( ! exec_downsampling( pts, vx_leaf_size, quantize_count_enabled, ds_points,&pts_vx) ){
-					ROS_ERROR(LOG_HEADER"downsampling failed.");
-				}else{
-					//ROS_INFO(LOG_HEADER"point after downsampling. count=%d (%d)",(int)ds_points.data.size()/3,(int)ds_points.data.size());
+			for( int camno=0; camno < CAMERA_NUM; ++camno ){
+				if( camno == 1 && ! calc_right_camera_flg ){
+					continue;
 				}
 				
-				pre_vx_leaf_size = vx_leaf_size;
+				ElapsedTimer tmr_genpc;
+				sensor_msgs::PointCloud pts;
+				pts.header.stamp = ros::Time::now();
+				pts.header.frame_id = "/camera";
+				rovi::Floats ds_points;
+
+				rovi::Floats pc_points;
 				
-				const int N = pts.points.size();
-				const int ds_point_count=ds_points.data.size()/3;
-				ROS_INFO(LOG_HEADER"downsampling finished. count=%d / %d (%.2f%%), proc_tm=%d ms, elapsed=%d ms",
-					ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
-					tmr_downsampling.elapsed_ms(), tmr_proc.elapsed_ms());
-			}
-			
-			//depthmap making
-			if( ! get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
-				ROS_INFO(LOG_HEADER"depthmap image make skipped.");
-			}else{
-				ROS_INFO(LOG_HEADER"depthmap image make start.");
-				ElapsedTimer tmr_depthmap;
+				YPCData *ypcData=yds_pcs.data()+camno;
 				
-				if( ! pcdata.make_depth_image(depthimg_mat) ){
-					ROS_ERROR(LOG_HEADER"depthmap image make failed.");
+				if(! pcgen_ptr->execute(camno) ){
+					ROS_ERROR(LOG_HEADER"[%c] point cloud generate failed.",GET_CAMERA_LABEL(camno));
+					
+				}else if( ! pcgen_ptr->save_pointcloud(ypcData) ){
+					ROS_ERROR(LOG_HEADER"[%c] point cloud data make failed.",GET_CAMERA_LABEL(camno));
+					
+				}else if( ypcData->is_empty() ){
+					ROS_INFO(LOG_HEADER"[%c] genpc point count 0. elapsed=%d ms",GET_CAMERA_LABEL(camno), tmr_proc.elapsed_ms());
+					
 				}else{
-					try{
-						depthimg = cv_bridge::CvImage(std_msgs::Header(),"mono16",depthimg_mat).toImageMsg();
-					}catch (cv_bridge::Exception& e)	{
-						ROS_ERROR(LOG_HEADER"depthmap image cv_bridge:exception: %s", e.what());
+					
+					const int N = ypcData->count();
+					
+					ROS_INFO(LOG_HEADER"[%c] point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
+						GET_CAMERA_LABEL(camno),N, ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_disparity()), ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_genpcloud()),
+						tmr_genpc.elapsed_ms(), tmr_proc.elapsed_ms());
+					
+					//点群データ変換
+					ROS_INFO(LOG_HEADER"[%c] point cloud data convert start.",GET_CAMERA_LABEL(camno));
+					ElapsedTimer tmr_pcgen_conv;
+					if( ! ypcData->make_point_cloud(pts) ){
+						ROS_ERROR(LOG_HEADER"[%c] point cloud data convert failed.",GET_CAMERA_LABEL(camno));
+					}else{
+						
+						cur_pts[camno]=pts;
 					}
+					
+					ROS_INFO(LOG_HEADER"[%c] point cloud data convert finished. proc_tm=%d ms, elapsed=%d ms",
+						GET_CAMERA_LABEL(camno),tmr_pcgen_conv.elapsed_ms(), tmr_proc.elapsed_ms());
+					
+					//downsampling
+					{
+						VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
+						
+						pre_quantize_points_count_enabled = quantize_count_enabled;
+						
+						ElapsedTimer tmr_downsampling;
+						ROS_INFO(LOG_HEADER"[%c] downsampling start.",GET_CAMERA_LABEL(camno));
+						sensor_msgs::PointCloud * pts_vx=&pts_vxs[camno];
+						if( ! exec_downsampling( pts, vx_leaf_size, quantize_count_enabled, ds_points,pts_vx) ){
+							ROS_ERROR(LOG_HEADER"[%c] downsampling failed.",GET_CAMERA_LABEL(camno));
+						}else{
+							//ROS_INFO(LOG_HEADER"point after downsampling. count=%d (%d)",(int)ds_points.data.size()/3,(int)ds_points.data.size());
+						}
+						
+						pre_vx_leaf_size = vx_leaf_size;
+						
+						const int ds_point_count=ds_points.data.size()/3;
+						ROS_INFO(LOG_HEADER"[%c] downsampling finished. count=%d / %d (%.2f%%), proc_tm=%d ms, elapsed=%d ms",
+							GET_CAMERA_LABEL(camno),ds_point_count , N, N == 0 ? 0 : ds_point_count / (float)N *100,
+							tmr_downsampling.elapsed_ms(), tmr_proc.elapsed_ms());
+					}
+					
+					//depthmap making
+					if( ! depthmap_enabled ){
+						ROS_INFO(LOG_HEADER"[%c] depthmap image make skipped.",GET_CAMERA_LABEL(camno));
+					}else{
+						ROS_INFO(LOG_HEADER"[%c] depthmap image make start.",GET_CAMERA_LABEL(camno));
+						ElapsedTimer tmr_depthmap;
+						
+						cv::Mat *depthimg_mat=&depthimg_mats[camno];
+						if( ! ypcData->make_depth_image(*depthimg_mat) ){
+							ROS_ERROR(LOG_HEADER"[%c] depthmap image make failed.",GET_CAMERA_LABEL(camno));
+						}else{
+							try{
+								depth_imgs[camno] = cv_bridge::CvImage(std_msgs::Header(),"mono16",*depthimg_mat).toImageMsg();
+							}catch (cv_bridge::Exception& e)	{
+								ROS_ERROR(LOG_HEADER"[%c] depthmap image cv_bridge:exception: %s",GET_CAMERA_LABEL(camno), e.what());
+							}
+						}
+						ROS_INFO(LOG_HEADER"[%c] depthmap image make finished. proc_tm=%d ms",GET_CAMERA_LABEL(camno), tmr_depthmap.elapsed_ms());
+					}
+					if( camno ==0 ){
+						res.pc_cnt = N;
+					}else if( camno == 1 ){
+						res.pc_cnt_r = N;
+					}
+					
+					pc_points = ypcData->to_rg_floats();
+					
+					std_msgs::Int32 pcnt;
+					pcnt.data=N;
+					
+					pub_pcounts[camno].publish(pcnt);
+					pub_ps_pointclouds[camno].publish(pts);
+					pub_ps_floats[camno].publish(ds_points);
+					pub_depth_imgs[camno].publish(depth_imgs[camno]);
+					pub_ps_alls[camno].publish(pc_points);
 				}
-				ROS_INFO(LOG_HEADER"depthmap image make finished. proc_tm=%d ms", tmr_depthmap.elapsed_ms());
 			}
-			res.pc_cnt = N;
-			pc_points = pcdata.to_rg_floats();
+			
+			pre_ptss = cur_pts;
 		}
 	}
 	
-    double t03 = ros::Time::now().toSec();
 
-	pub_ps_pc.publish(pts);
-	pub_ps_floats.publish(ds_points);
-	pub_depth_img.publish(depthimg);
-	pub_ps_all.publish(pc_points);
-
-    char s[64];
-    sprintf(s,"{'T02':%lf, 'T03':%lf}", t02, t03);
-	std_msgs::String tnow;
-    tnow.data=s;
-    pub_rep.publish(tnow);
+	{
+	    const double t03 = ros::Time::now().toSec();
+	    char s[64];
+	    sprintf(s,"{'T02':%lf, 'T03':%lf}", t02, t03);
+		std_msgs::String tnow;
+	    tnow.data=s;
+	    pub_rep.publish(tnow);
+	}
 	
 	ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms", tmr_proc.elapsed_ms());
 	
 	//データ保存
 	if( ! file_dump.empty() ) {
+		const bool data_save_flg = get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE);
+		const bool voxel_save_flg = get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED);
+		const bool depthmap_save_flg = get_param<bool>("genpc/depthmap_img/img_save",DEPTH_MAP_IMG_DEFAULT_ENABELED);
 		
-		if( ! get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE) ){
-			ROS_INFO(LOG_HEADER"ply file save skipped.");
-		}else{
-			ElapsedTimer tmr_save_pcdata;
-			const std::string save_file_path=file_dump + "/test.ply";
-			if( ! pcdata.save_ply(save_file_path) ){
-				ROS_ERROR(LOG_HEADER"ply file save failed. proc_tm=%d ms, path=%s",
-					tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
-			}else{
-				ROS_INFO(LOG_HEADER"ply file save succeeded. proc_tm=%d ms, path=%s",
-					tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
-			}
-		}
-		//todo:************* pending *************
-		//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
-		//ROS_INFO("after  outPLY");
-		
-		if( pts_vx.points.empty() || ! get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED) ){
-			ROS_INFO(LOG_HEADER"voxelized point cloud data save skipped.");
-		}else{
-			ElapsedTimer tmr_save_voxel;
-			
-			const std::string save_file_path=file_dump + "/voxel.ply";
-			sensor_msgs::PointCloud2 pts2_vx;
-			sensor_msgs::convertPointCloudToPointCloud2(pts_vx,pts2_vx);
-			pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl;
-			pcl::fromROSMsg(pts2_vx, pts_vx_pcl);
-			
-			pcl::PLYWriter ply_writer;
-			int save_ret = 0;
-			if( save_ret =  ply_writer.write<pcl::PointXYZRGB> (save_file_path, pts_vx_pcl, true) ){
-				ROS_ERROR(LOG_HEADER"voxelized point cloud data save failed. ret=%d, proc_tm=%d ms, path=%s",
-					save_ret, tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
-			}else{
-				ROS_INFO(LOG_HEADER"voxelized point cloud data save succeeded. proc_tm=%d ms, path=%s",
-					tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
+		for( int camno=0; camno < CAMERA_NUM; ++camno ){
+			if( camno == 1 && ! calc_right_camera_flg ){
+				continue;
 			}
 			
-			//sample:将来的にはPointCloud2へ
-			/*
-			pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl2;
-			pcl::fromROSMsg(*pcdata.get_data(),pts_vx_pcl2);
-			ply_writer.write<pcl::PointXYZRGB> ("/tmp/zzzz.ply",pts_vx_pcl2 , true);
-			*/
-		}
-		
-		//depthmap image save
-		if( depthimg_mat.empty() || ! get_param<bool>("genpc/depthmap_img/img_save",DEPTH_MAP_IMG_DEFAULT_ENABELED) ){
-			ROS_INFO(LOG_HEADER"depthmap image save skipped.");
-		}else{
-			ElapsedTimer tmr_save_depthmap;
+			const YPCData *ypcData=yds_pcs.data()+camno;
 			
-			std::string save_file_path = file_dump + "/depth.png";
-			if( ! cv::imwrite(save_file_path,depthimg_mat) ){
-				ROS_ERROR(LOG_HEADER"depthmap image save failed. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
-			}else {
-				ROS_INFO(LOG_HEADER"depthmap image make succeeded. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
+			if( !  data_save_flg ){
+				ROS_INFO(LOG_HEADER"[%c] ply file save skipped.",GET_CAMERA_LABEL(camno));
+			}else{
+				ElapsedTimer tmr_save_pcdata;
+				std::string save_file_path;
+				if( camno == 0 ){
+					save_file_path = file_dump + "/test.ply";
+				}else if( camno == 1 ){
+					save_file_path = file_dump + "/test_r.ply";
+				}else{
+					ROS_ERROR(LOG_HEADER"[%c] ply data save failed. unknown camera no. ",GET_CAMERA_LABEL(camno));
+					break;
+				}
+				
+				/*
+				PLYSaver plysave(save_file_path);
+				if (pcgen_ptr->save_pointcloud(&plysave) == 0) {
+					fprintf(stderr, "no points.\n");
+					return EXIT_FAILURE;
+				}*/
+				
+				if( ! ypcData->save_ply(save_file_path) ){
+					ROS_ERROR(LOG_HEADER"[%c] ply file save failed. proc_tm=%d ms, path=%s",
+						GET_CAMERA_LABEL(camno),tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
+				}else{
+					ROS_INFO(LOG_HEADER"[%c] ply file save succeeded. proc_tm=%d ms, path=%s",
+						GET_CAMERA_LABEL(camno),tmr_save_pcdata.elapsed_ms(), save_file_path.c_str());
+				}
+			}
+			
+			//todo:************* pending *************
+			//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
+			//ROS_INFO("after  outPLY");
+			
+			sensor_msgs::PointCloud *pts_vx = &pts_vxs[camno];
+			
+			if( pts_vx->points.empty() || ! voxel_save_flg ){
+				ROS_INFO(LOG_HEADER"voxelized point cloud data save skipped.");
+			}else{
+				ElapsedTimer tmr_save_voxel;
+				
+				std::string save_file_path;
+				if( camno == 0 ){
+					save_file_path = file_dump + "/voxel.ply";
+				}else if( camno == 1 ){
+					save_file_path = file_dump + "/voxel_r.ply";
+				}else{
+					ROS_ERROR(LOG_HEADER"[%c] voxel data save failed. unknown camera no. ",GET_CAMERA_LABEL(camno));
+					break;
+				}
+				
+				sensor_msgs::PointCloud2 pts2_vx;
+				sensor_msgs::convertPointCloudToPointCloud2(*pts_vx,pts2_vx);
+				pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl;
+				pcl::fromROSMsg(pts2_vx, pts_vx_pcl);
+				
+				pcl::PLYWriter ply_writer;
+				int save_ret = 0;
+				if( save_ret =  ply_writer.write<pcl::PointXYZRGB> (save_file_path, pts_vx_pcl, true) ){
+					ROS_ERROR(LOG_HEADER"voxelized point cloud data save failed. ret=%d, proc_tm=%d ms, path=%s",
+						save_ret, tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
+				}else{
+					ROS_INFO(LOG_HEADER"voxelized point cloud data save succeeded. proc_tm=%d ms, path=%s",
+						tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
+				}
+				
+				//sample:将来的にはPointCloud2へ
+				/*
+				pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl2;
+				pcl::fromROSMsg(*pcdata.get_data(),pts_vx_pcl2);
+				ply_writer.write<pcl::PointXYZRGB> ("/tmp/zzzz.ply",pts_vx_pcl2 , true);
+				*/
+			}
+			
+			//depthmap image save
+			cv::Mat * depthimg_mat = &depthimg_mats[camno];
+			if( depthimg_mat->empty() || ! depthmap_save_flg ){
+				ROS_INFO(LOG_HEADER"depthmap image save skipped.");
+			}else{
+				ElapsedTimer tmr_save_depthmap;
+				
+				std::string save_file_path;
+				if( camno == 0 ){
+					save_file_path = file_dump + "/depth.png";
+				}else if( camno == 1 ){
+					save_file_path = file_dump + "/depth_r.png";
+				}else{
+					ROS_ERROR(LOG_HEADER"[%c] depthmap image save failed. unknown camera no. ",GET_CAMERA_LABEL(camno));
+					break;
+				}
+				
+				if( ! cv::imwrite(save_file_path,*depthimg_mat) ){
+					ROS_ERROR(LOG_HEADER"depthmap image save failed. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
+				}else {
+					ROS_INFO(LOG_HEADER"depthmap image make succeeded. proc_tm=%d ms, path=%s", tmr_save_depthmap.elapsed_ms(), save_file_path.c_str());
+				}
 			}
 		}
 	}
@@ -885,12 +984,19 @@ int main(int argc, char **argv)
 	
 	ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
 	
-	pub_ps_pc     = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
-	pub_ps_floats = n.advertise<rovi::Floats>("ps_floats", 1);
-	pub_depth_img = n.advertise<sensor_msgs::Image>("image_depth", 1);
-	pub_ps_all    = n.advertise<rovi::Floats>("ps_all", 1);
-	pub_pcount    = n.advertise<std_msgs::Int32>("pcount", 1);
-	pub_rep       = n.advertise<std_msgs::String>("/report", 1);
+	pub_ps_pointclouds[0]   = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
+	pub_ps_floats[0]        = n.advertise<rovi::Floats>("ps_floats", 1);
+	pub_depth_imgs[0]       = n.advertise<sensor_msgs::Image>("image_depth", 1);
+	pub_ps_alls[0]          = n.advertise<rovi::Floats>("ps_all", 1);
+	pub_pcounts[0]          = n.advertise<std_msgs::Int32>("pcount", 1);
+		
+	pub_ps_pointclouds[1]   = n.advertise<sensor_msgs::PointCloud>("ps_pc_r", 1);
+	pub_ps_floats[1]        = n.advertise<rovi::Floats>("ps_floats_r", 1);
+	pub_depth_imgs[1]       = n.advertise<sensor_msgs::Image>("image_depth_r", 1);
+	pub_ps_alls[1]          = n.advertise<rovi::Floats>("ps_all_r", 1);
+	pub_pcounts[1]          = n.advertise<std_msgs::Int32>("pcount_r", 1);
+	
+	pub_rep              = n.advertise<std_msgs::String>("/report", 1);
 	
 	re_vx_monitor_timer = nh->createTimer(ros::Duration(RE_VOXEL_DEFAULT_INTERVAL), re_voxelization_monitor);
 	re_vx_monitor_timer.stop();

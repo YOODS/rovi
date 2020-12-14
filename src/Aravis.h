@@ -15,7 +15,7 @@ namespace ycam3d{
 	constexpr int CAM_EXPOSURE_TIME_MIN       = 1000;
 	
 	constexpr int CAM_DIGITAL_GAIN_DEFAULT   = 0;
-	constexpr int CAM_DIGITAL_GAIN_MAX       = 255;
+	constexpr int CAM_DIGITAL_GAIN_MAX       = 100;
 	constexpr int CAM_DIGITAL_GAIN_MIN       = 0;
 	
 	constexpr int CAM_ANALOG_GAIN_DEFAULT   = 0;
@@ -26,13 +26,13 @@ namespace ycam3d{
 	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;      //?
 	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;//?
 	
-	constexpr int PROJ_BRIGHTNESS_DEFAULT = 100;   //?
-	constexpr int PROJ_BRIGHTNESS_MIN     = 0;     //?
-	constexpr int PROJ_BRIGHTNESS_MAX     = 9999;  //?
+	constexpr int PROJ_BRIGHTNESS_DEFAULT = 100;
+	constexpr int PROJ_BRIGHTNESS_MIN     = 0;
+	constexpr int PROJ_BRIGHTNESS_MAX     = 255;
 	
 	constexpr int PROJ_FLASH_INTERVAL_DEFAULT = 10;
-	constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
-	constexpr int PROJ_FLASH_INTERVAL_MAX = 999;//?
+	//constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
+	//constexpr int PROJ_FLASH_INTERVAL_MAX = 255;//?
 	
 	//constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
 	
