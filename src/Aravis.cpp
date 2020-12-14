@@ -393,7 +393,10 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			dprintf(" ip address        = %d.%d.%d.%d", v.b[3], v.b[2], v.b[1], v.b[0]);
 			v.a = reg_read(REG_FW_VERSION);
 			version_ = v.b[1] * 10 + v.b[0];
-			dprintf(" firmware          = MicroBlaze[%d.%d] FPGA[%d.%d]", v.b[3], v.b[2], v.b[1], v.b[0]);
+			//2020/12/14 modified by hato -------------------- start --------------------
+			//dprintf(" firmware          = MicroBlaze[%d.%d] FPGA[%d.%d]", v.b[3], v.b[2], v.b[1], v.b[0]);
+			dprintf(" firmware          = MicroBlaze[%X.%X] FPGA[%X.%X]", v.b[3], v.b[2], v.b[1], v.b[0]);
+			//2020/12/14 modified by hato --------------------  end  --------------------
 			//2020/09/25 add by hato -------------------- start --------------------
 			dprintf(" high_speed_version= %s", (isAsync()?"yes":"no"));
 			//2020/09/25 add by hato --------------------  end  --------------------
