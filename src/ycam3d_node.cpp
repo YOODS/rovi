@@ -41,7 +41,7 @@ ros::NodeHandle *nh = nullptr;
 
 ros::Publisher pub_img_raws[2];
 ros::Publisher pub_Y1;
-ros::Publisher pub_pcount;
+//ros::Publisher pub_pcount;
 ros::Publisher pub_stat;
 ros::Publisher pub_error;
 ros::Publisher pub_info;
@@ -713,8 +713,12 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		
 	}else */if( ! camera_ptr ){
 		ROS_ERROR(LOG_HEADER"camera is null");
+		res_msg_str << "camera is null";
+		
 	}else if( ! camera_ptr->is_open() ){
 		ROS_ERROR(LOG_HEADER"camera is not open.");
+		res_msg_str << "camera is not open";
+		
 	} else {
 		std::unique_lock<std::mutex> lock(ptn_capt_wait_mutex);
 #ifdef DEBUG_STRESS_TEST
@@ -723,6 +727,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		const int cur_mode = get_param<int>(PRM_MODE,(int)Mode_StandBy);
 		if( ! camera_ptr->capture_pattern( pc_gen_mode == PCGEN_MULTI , cur_mode == Mode_Streaming ) ){
 			ROS_ERROR(LOG_HEADER"pattern catpture failed.");
+			res_msg_str << "Capture failed";
 			
 		}else{
 			ptn_capt_wait_cv.wait(lock);
@@ -731,6 +736,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 			if( ptn_imgs_l.size() != ptn_imgs_l.size() ){
 				ROS_ERROR(LOG_HEADER"pattern capture num is different.");
 				
+				res_msg_str << "Failed to receive the image";
 			}else{
 				const int capt_num = ptn_imgs_l.size();
 				std::vector<sensor_msgs::Image> ros_ptn_imgs_l;
@@ -756,6 +762,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				}
 				if(  ! all_recevied ){
 					ROS_ERROR(LOG_HEADER"pattern image receive failed. elapsed=%d ms", tmr.elapsed_ms());
+					res_msg_str << "Failed to receive the image";
 					
 				}else{
 					ROS_INFO(LOG_HEADER"all pattern image received. elapsed=%d ms", tmr.elapsed_ms());
@@ -765,17 +772,15 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 					
 					if( ! svc_genpc.call(genpc_msg) ){
 						ROS_ERROR(LOG_HEADER"genpc exec failed. elapsed=%d ms", tmr.elapsed_ms());
-						exit(-1);
+						res_msg_str << "Failed to generate point cloud.";
+						
 					}else{
 						if( genpc_msg.response.pc_cnt_r >= 0 ){
 						    res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count. Left=" << genpc_msg.response.pc_cnt << " Right=" << genpc_msg.response.pc_cnt_r;
 						}else{
 							res_msg_str << ros_ptn_imgs_l.size() << " images scan complete. Generated PointCloud Count=" << genpc_msg.response.pc_cnt;
 						}
-						publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
-						if( genpc_msg.response.pc_cnt < 1000 ){
-							ROS_WARN(LOG_HEADER"The number of point clouds is small. count=%d",genpc_msg.response.pc_cnt);
-						}
+						//publish_int32(pub_pcount,genpc_msg.response.pc_cnt);
 						result=true;
 					}
 					
@@ -824,7 +829,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	
 	publish_bool(pub_Y1,result);
 	
-	res.success = true;
+	res.success = result;
 	res.message = res_msg_str.str();
 	
 	ROS_INFO(LOG_HEADER"point cloud generation finished. result=%d tmr=%d ms", result,  tmr.elapsed_ms());
@@ -919,7 +924,7 @@ int main(int argc, char **argv)
 	pub_img_raws[0] = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
 	pub_img_raws[1] = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
 	pub_Y1 = n.advertise<std_msgs::Bool>("Y1", 1);
-	pub_pcount = n.advertise<std_msgs::Int32>("pcount", 1);
+	//pub_pcount = n.advertise<std_msgs::Int32>("pcount", 1);
 	pub_stat = n.advertise<std_msgs::Bool>("stat", 1);
 	pub_error = n.advertise<std_msgs::String>("error", 1);
 	pub_info  = n.advertise<std_msgs::String>("message", 1);

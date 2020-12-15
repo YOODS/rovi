@@ -618,7 +618,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	ROS_INFO(LOG_HEADER"start: ptn_image_l_num=%d ptn_image_r_num=%d", (int)req.imgL.size(), (int)req.imgR.size());
 	
 	re_vx_monitor_timer.stop();
-		
+	
+	bool result=false;
 	res.pc_cnt = 0;
 	res.pc_cnt_r = -1;
 	
@@ -719,11 +720,14 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		
 		if( ! pcgen_ptr->set_images(stereo_img_pointers) ){
 			ROS_ERROR(LOG_HEADER"point cloud data generation failed.");
+			
 		}else{
 			ROS_INFO(LOG_HEADER"point cloud generation start.");
 			
 			const bool depthmap_enabled = get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_DEFAULT_ENABELED);
 			const bool quantize_count_enabled = get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_DEFAULT_ENABLED);
+			
+			result=true;
 			
 			for( int camno=0; camno < CAMERA_NUM; ++camno ){
 				if( camno == 1 && ! calc_right_camera_flg ){
@@ -742,20 +746,19 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				
 				if(! pcgen_ptr->execute(camno) ){
 					ROS_ERROR(LOG_HEADER"[%c] point cloud generate failed.",GET_CAMERA_LABEL(camno));
-					
-				}else if( ! pcgen_ptr->save_pointcloud(ypcData) ){
-					ROS_ERROR(LOG_HEADER"[%c] point cloud data make failed.",GET_CAMERA_LABEL(camno));
-					
-				}else if( ypcData->is_empty() ){
-					ROS_INFO(LOG_HEADER"[%c] genpc point count 0. elapsed=%d ms",GET_CAMERA_LABEL(camno), tmr_proc.elapsed_ms());
+					result=false;
 					
 				}else{
 					
-					const int N = ypcData->count();
+					const int N = pcgen_ptr->save_pointcloud(ypcData);
 					
 					ROS_INFO(LOG_HEADER"[%c] point cloud generation finished. point_num=%d, diparity_tm=%d ms, genpc_tm=%d ms, total_tm=%d ms, elapsed=%d ms",
 						GET_CAMERA_LABEL(camno),N, ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_disparity()), ElapsedTimer::duration_ms(pcgen_ptr->get_elapsed_genpcloud()),
 						tmr_genpc.elapsed_ms(), tmr_proc.elapsed_ms());
+					
+					if( N == 0  ){
+						ROS_WARN(LOG_HEADER"[%c] genpc point count 0. elapsed=%d ms",GET_CAMERA_LABEL(camno), tmr_proc.elapsed_ms());
+					}
 					
 					//点群データ変換
 					ROS_INFO(LOG_HEADER"[%c] point cloud data convert start.",GET_CAMERA_LABEL(camno));
@@ -969,7 +972,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		re_vx_monitor_timer.start();
 	}
 	ROS_INFO(LOG_HEADER "node end. elapsed=%d ms", tmr_proc.elapsed_ms());
-	return true;
+	return result;
 }
 
 
