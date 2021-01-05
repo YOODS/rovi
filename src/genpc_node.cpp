@@ -717,10 +717,12 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				ROS_INFO(LOG_HEADER"stereo camera images save finished. proc_tm=%d ms, path=%s",tmr_save_img.elapsed_ms(),file_dump.c_str());
 			}
 		}
+		pcgen_ptr->reset();
 		
 		if( ! pcgen_ptr->set_images(stereo_img_pointers) ){
 			ROS_ERROR(LOG_HEADER"point cloud data generation failed.");
-			
+		}else if ( ! pcgen_ptr->preprocess() ) {
+			ROS_ERROR(LOG_HEADER"point cloud data generator preprocess failed.");
 		}else{
 			ROS_INFO(LOG_HEADER"point cloud generation start.");
 			

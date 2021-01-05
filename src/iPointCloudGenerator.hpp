@@ -77,7 +77,6 @@ public:
 	 */
 	virtual bool convert_coordinate(std::vector<double> &RT) = 0;
 
-
 	/**
 	 * 点群生成に必要なパラメータをセットします.
 	 * @param [in] params パラメータ型へのポインタ
@@ -92,6 +91,12 @@ public:
 	 * @note 1はSGBMの場合. 位相シフトの場合は手法によって異なる
 	 */
 	virtual const size_t requiredframes() const { return 1; }
+
+
+	/**
+	 * 点群生成器をリセットします.(内部に残っているプロジェクタ画像を削除します.SGBMでは何もしません.)
+	 */
+	virtual bool reset() { return true; }
 
 	/**
 	 * 処理対象画像を点群生成器に渡します.
@@ -117,41 +122,60 @@ public:
 	virtual bool loadpict(std::string filename, const int cam, const int idx = 0) = 0;
 
 	/**
-	 * setpict or loadpictによって点群生成器に渡され、レクティファイされた画像を取り出します.
+	 * setpict or loadpictによって点群生成器に渡された画像を、レクティファイして返します.
 	 * @return 成功した場合はtrue, 失敗した場合はfalse.
 	 * @param top [out] 画像先頭アドレスを格納する変数へのポインタ(外で解放しないでください)
 	 * @param width [out] 画像横幅を格納する変数へのポインタ
 	 * @param height [out] 画像縦幅を格納する変数へのポインタ
 	 * @param step [out] 画像バッファの水平方向のバイト数
 	 * @param [in] cam カメラ番号(0: 左カメラ, 1: 右カメラ, 2: 連結画像)
-	 * @param [in] idx 画像番号(位相シフトの場合必ず必要).0 or 1 以外の値は与えないでください. 0が黒画像, 1が白画像です.
+	 * @param [in] idx 画像番号(位相シフトの場合のみ必要.SGBMでは無視されます). 0: 黒画像, 1: 白画像となる.
+	 * @warning setpict() or loadpict()呼び出し後、preprocess()呼び出し前に呼び出してください. 
 	 */
-	virtual bool getpict(unsigned char **top, int *width, int *height, size_t *step, const int cam, const int idx = 0) = 0;
+	virtual bool getpict(unsigned char **top, int *width, int *height, size_t *step, 
+		const int cam, const int idx = 0) = 0;
+
+	/**
+	 * 点群生成器に蓄えられた画像sからプロジェクタ座標画像を作成します.(SGBMでは何もしません)
+	 * @return 処理が成功した場合はtrue, 失敗した場合はfalse.
+	 * @warning this->requiredframes()から返される枚数分setpict() or loadpict()を呼び出した後に必ず
+	 * この関数を呼び出してください.
+	 */
+	virtual bool flushImageBuffer() { return true; }
+
 
 	/**
 	 * 点群生成のための前準備を行います.
 	 * @return なし.
 	 */
-	virtual bool exec() = 0;
+	virtual bool preprocess() = 0;
+
+	/**
+	 * 視差マップを作成します.
+	 * @return なし.
+	 * @param [in] texture_cam 点群に張り付けるテクスチャをどちらのカメラからのものを使用するか?
+	 * (0: 左カメラ(従来通り), 1: 右カメラ)
+	 */
+	virtual void make_disparitymap(const int texture_cam_ = 0) = 0;
 
 	/// 三次元座標値を計算する手法
 	enum Method3D {
 		QMatrix = 0,	///< Q行列
 		SVector,		///< 視線ベクトル方式
-		PMatrix,		///< P行列
+		PMatrix			///< P行列
 	};
 
 	/**
-	 * 点群を作成します.
-	 * @return なし.
+	 * 点群データを作成し、内部バッファに保存します.
 	 * @param [in] method 三次元座標値を計算する手法(Method3D参照)
-	 * @param [in] texture_cam 点群に張り付けるテクスチャをどちらのカメラからのものを使用するか?(0: 左カメラ(従来通り), 1: 右カメラ)
 	 */
-	virtual void genPC(const Method3D method = Method3D::QMatrix, const int texture_cam = 0) = 0;
+	virtual void generate_pointcloud(const Method3D method = Method3D::QMatrix) = 0;
+
 
 	/**
 	 * 作成された点群データを取得します.(OnRevcPointCloud.operator()を呼び出します)
 	 * @return 有効な点の数
+	 * @param [in] callback コールバック関数クラスインスタンスへのポインタ
 	 */
 	virtual int get_pointcloud(PointCloudCallback* callback) = 0;
 };
