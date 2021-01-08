@@ -139,6 +139,21 @@ namespace camera{
 				return diff;
 			}
 		};
+		
+		struct CaptureParameter{
+			int expsr_lv = -1;
+			int gain = -1;
+			int proj_brightness = -1;
+			
+			std::string to_string()const{
+				std::stringstream ss;
+				ss << "expsr_lv=" << expsr_lv;
+				ss << ",gain=" << gain;
+				ss << ",proj_brightness=" << proj_brightness;
+				return ss.str();
+			}
+		};
+		
 		using f_camera_open_finished = std::function<void(const bool result)>;
 		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
@@ -269,6 +284,9 @@ public:
 	//void ser_projector_pattern(int val);
 	
 	bool get_temperature(int *val);
+	
+	bool get_capture_param(camera::ycam3d::CaptureParameter *capt_param);
+	bool update_capture_param(const camera::ycam3d::CaptureParameter &capt_param);
 	
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	

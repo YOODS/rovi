@@ -1077,6 +1077,7 @@ bool Aravis::trigger(YCAM_PROJ_MODE mode)
 	return ret;
 }
 
+//2020/11/06 add by hato -------------------- start --------------------
 int Aravis::getCaptureNum()const{
 	int num = 1;
 	
@@ -1087,6 +1088,8 @@ int Aravis::getCaptureNum()const{
 	}
 	return num;
 }
+//2020/11/06 add by hato --------------------  end  --------------------
+
 
 //2020/11/05 modified by hato -------------------- start --------------------
 /*

@@ -238,7 +238,9 @@ public:
 	//2020/10/09 modified by hato --------------------  end  --------------------
 	//
 	
+	//2020/11/06 add by hato -------------------- start --------------------
 	int getCaptureNum()const;
+	//2020/11/06 add by hato --------------------  end  --------------------
 	
 	YCAM_PROJ_PTN getProjectorPattern() const{
 		return cur_proj_ptn_;

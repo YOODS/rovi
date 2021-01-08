@@ -9,9 +9,9 @@ public:
 	
 	void start();
 	void restart();
-	void save_lap();
-	int elapsed_ms();
-	int lap_ms()const;
+	void start_lap();
+	int elapsed_ms()const;
+	int elapsed_lap_ms()const;
 	
 	static int duration_ms(const std::chrono::system_clock::duration &duration);
 };

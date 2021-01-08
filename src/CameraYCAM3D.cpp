@@ -6,7 +6,7 @@
 
 //#define DEBUG_DETAIL
 
-#define LOG_HEADER "(ycam3d) "
+#define LOG_HEADER "(camera) "
 
 
 namespace camera{
@@ -417,7 +417,6 @@ void CameraYCAM3D::close(){
 		m_callback_cam_closed();
 	}
 }
-
 
 bool CameraYCAM3D::is_busy(){
 	bool busy=false;
@@ -859,6 +858,67 @@ bool CameraYCAM3D::get_temperature(int *val){
 		return *l_val >= 0;
 	},val);
 }
+
+bool CameraYCAM3D::get_capture_param(camera::ycam3d::CaptureParameter *capt_param){
+	bool ret=false;
+	if( ! get_exposure_time_level( &capt_param->expsr_lv ) ){
+		ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+		
+	}else if( ! get_gain_digital( &capt_param->gain ) ){
+		ROS_ERROR(LOG_HEADER"error:current camera gain get failed.");
+		
+	}else if( ! get_projector_brightness( &capt_param->proj_brightness )){
+		ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+		
+	}else{
+		ret=true;
+	}
+	
+	return ret;
+}
+
+bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &capt_param){
+	if( capt_param.expsr_lv >= 0 ){
+		int cur_expsr_lv = -1;
+		if( ! get_exposure_time_level( &cur_expsr_lv) ){
+			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			return false;
+		}else if( ! cur_expsr_lv != capt_param.expsr_lv && ! set_exposure_time_level(capt_param.expsr_lv) ){
+			ROS_ERROR(LOG_HEADER"error:current camera exposure time level set failed. value=%d",capt_param.expsr_lv);
+			return false;
+		}else{
+			ROS_INFO(LOG_HEADER"camera exposure time level updated. val=%d",capt_param.expsr_lv);
+		}
+	}
+	if( capt_param.gain >= 0 ){
+		int cur_gain = -1;
+		if( ! get_gain_digital( &cur_gain ) ){
+			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			return false;
+		}else if( ! cur_gain != capt_param.gain && ! set_gain_digital( capt_param.gain ) ){
+			ROS_ERROR(LOG_HEADER"error:current camera gain set failed. value=%d",capt_param.gain);
+			return false;
+		}else{
+			ROS_INFO(LOG_HEADER"camera gain updated. val=%d",capt_param.gain);
+		}
+	}
+	
+	if( capt_param.proj_brightness >= 0 ){
+		int cur_proj_brightness = -1;
+		if( ! get_projector_brightness( &cur_proj_brightness ) ){
+			ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+			return false;
+		}else if( ! cur_proj_brightness != capt_param.proj_brightness && ! set_projector_brightness(capt_param.proj_brightness) ){
+			ROS_ERROR(LOG_HEADER"error:current projector brightness set failed. value=%d",capt_param.proj_brightness );
+			return false;
+		}else{
+			ROS_INFO(LOG_HEADER"projector brightness updated. val=%d",capt_param.proj_brightness);
+		}
+	}
+	
+	return true;
+}
+
 //void CameraYCAM3D::ser_projector_pattern(int val){
 //	m_arv_ptr->setProjectorPattern((YCAM_PROJ_PTN)val);
 //}
