@@ -152,6 +152,19 @@ namespace camera{
 				ss << ",proj_brightness=" << proj_brightness;
 				return ss.str();
 			}
+			
+			bool operator!=(const CaptureParameter &param)const{
+				return ! (*this==param);
+			}
+			
+			bool operator==(const CaptureParameter &param)const{
+				if( this->expsr_lv == param.expsr_lv &&
+				    this->gain == param.gain && 
+				    this->proj_brightness == param.proj_brightness ){
+					
+				}
+				return false;
+			}
 		};
 		
 		using f_camera_open_finished = std::function<void(const bool result)>;

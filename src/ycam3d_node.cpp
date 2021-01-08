@@ -115,7 +115,7 @@ struct PatternImageData{
 };
 
 std::vector<PatternImageData> ptn_imgs;
-int patternCaptureNum = 1;
+//int patternCaptureNum = 1;
 
 struct RosPatternImageData{
 	std::vector<sensor_msgs::Image> imgs[2];
@@ -310,7 +310,81 @@ void update_camera_params(){
 			cur_temp_mon_interval = tempMonInterval;
 		}
 	}
-	
+
+	{
+		
+		XmlRpc::XmlRpcValue ros_hdr_params;
+		nh->getParam("ycam/hdr", ros_hdr_params);
+		
+		if( ! ros_hdr_params.valid()){
+			ROS_WARN(LOG_HEADER"hdr parameter is nothing");
+		}else{
+			if( ros_hdr_params["enabled"].valid() ){
+				const bool cur_hdr_enabled = static_cast<bool>(ros_hdr_params["enabled"]);
+				if( hdr_enabled != cur_hdr_enabled){
+					ROS_WARN(LOG_HEADER"hdr is %s.",cur_hdr_enabled?"enabled":"disabled");
+				}
+				hdr_enabled = cur_hdr_enabled;
+				
+				if( hdr_enabled ){
+					XmlRpc::XmlRpcValue ros_hdr_capt_params = ros_hdr_params["capture"];
+					std::vector<camera::ycam3d::CaptureParameter> cur_hdr_capt_params;
+					if( ! ros_hdr_capt_params.valid()){
+						ROS_WARN(LOG_HEADER"hdr capture parameter is nothing.");
+						hdr_enabled=false;
+					}else if( ros_hdr_capt_params.getType() != XmlRpc::XmlRpcValue::TypeArray ){
+						ROS_WARN(LOG_HEADER"hdr capture parameter is not array.");
+						hdr_enabled=false;
+					}else{
+						for ( int n = 0 ; n < ros_hdr_capt_params.size() ; ++n ){
+							const XmlRpc::XmlRpcValue val = ros_hdr_capt_params[n];
+							camera::ycam3d::CaptureParameter capt_param;
+							if( val.hasMember("ExposureTimeLevel")) {
+							    capt_param.expsr_lv = static_cast<int>(val["ExposureTimeLevel"]) -1;
+							}
+							if( val.hasMember("Gain")) {
+							    capt_param.gain = static_cast<int>(val["Gain"]);
+							}
+							if( val.hasMember("ProjectorIntensity")) {
+							    capt_param.proj_brightness = static_cast<int>(val["ProjectorIntensity"]);
+							}
+							
+							cur_hdr_capt_params.push_back(capt_param);
+							//ROS_WARN(LOG_HEADER"<%d> hdr capt param: %s",n, capt_param.to_string().c_str());
+						}
+						
+					}
+
+					
+					{
+						bool update_hdr_capt_params =true;
+						if(cur_hdr_capt_params.size() != hdr_capt_params.size() ){
+							//updated.
+						}else{
+							update_hdr_capt_params = true;
+							for(int i=0;i<cur_hdr_capt_params.size();++i){
+								if(cur_hdr_capt_params.at(i) != hdr_capt_params.at(i)){
+									update_hdr_capt_params = false;
+									break;
+								}
+							}
+						}
+						if(update_hdr_capt_params){
+							for(int i=0;i<cur_hdr_capt_params.size(); ++ i){
+								ROS_WARN(LOG_HEADER"<%d> hdr capt param updated. %s",i, cur_hdr_capt_params.at(i).to_string().c_str());
+							}
+						}
+					}
+					
+					hdr_capt_params = cur_hdr_capt_params;
+					if( hdr_enabled && hdr_capt_params.empty()){
+						hdr_enabled=false;
+						ROS_ERROR(LOG_HEADER"hdr capt params is empty.");
+					}
+				}
+			}
+		}
+	}
 	//ROS_INFO(LOG_HEADER"camera parameter updated. elapsed=%d ms",tmr.elapsed_ms());
 }
 
@@ -344,7 +418,6 @@ void mode_monitor_task(const ros::TimerEvent& e){
 	}else{
 		nh->setParam(PRM_CAM_OPEN_STAT,true);
 	}
-	
 	//ÉpÉâÉÅÅ[É^éÊìæ
 	update_camera_params();
 	
@@ -765,6 +838,8 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		}
 		
 		bool pattern_capture_success=true;
+		const int patternCaptureNum = hdr_enabled?hdr_capt_params.size():1;
+		
 		rovi::GenPC genpc_msg;
 		std::vector<RosPatternImageData> ros_ptn_imgs;
 		genpc_msg.request.ptn_capt_num = patternCaptureNum;
@@ -1076,47 +1151,6 @@ int main(int argc, char **argv)
 	temp_mon_timer.stop();
 	
 	camera_ptr->start_auto_connect();
-	
-	
-	//debug 
-	
-	XmlRpc::XmlRpcValue ros_hdr_params;
-	nh->getParam("ycam/hdr", ros_hdr_params);
-	
-	if( ! ros_hdr_params.valid()){
-		ROS_WARN(LOG_HEADER"hdr parameter is nothing");
-	}else{
-		if( ros_hdr_params["enabled"].valid() ){
-			hdr_enabled = static_cast<bool>(ros_hdr_params["enabled"]);
-			if( hdr_enabled ){
-				XmlRpc::XmlRpcValue ros_hdr_capt_params = ros_hdr_params["capture"];
-				if( ! ros_hdr_capt_params.valid()){
-					ROS_WARN(LOG_HEADER"hdr capture parameter is nothing.");
-				}else if( ros_hdr_capt_params.getType() != XmlRpc::XmlRpcValue::TypeArray ){
-					ROS_WARN(LOG_HEADER"hdr capture parameter is not array.");
-				}else{
-					for ( int n = 0 ; n < ros_hdr_capt_params.size() ; ++n ){
-						const XmlRpc::XmlRpcValue val = ros_hdr_capt_params[n];
-						camera::ycam3d::CaptureParameter capt_param;
-						if( val.hasMember("ExposureTimeLevel")) {
-						    capt_param.expsr_lv = static_cast<int>(val["ExposureTimeLevel"]) -1;
-						}
-						if( val.hasMember("Gain")) {
-						    capt_param.gain = static_cast<int>(val["Gain"]);
-						}
-						if( val.hasMember("ProjectorIntensity")) {
-						    capt_param.proj_brightness = static_cast<int>(val["ProjectorIntensity"]);
-						}
-						
-						hdr_capt_params.push_back(capt_param);
-						ROS_WARN(LOG_HEADER"<%d> hdr capt param: %s",n, capt_param.to_string().c_str());
-					}
-					
-					patternCaptureNum = hdr_capt_params.size();
-				}
-			}
-		}
-	}
 	
 	ros::spin();
 	

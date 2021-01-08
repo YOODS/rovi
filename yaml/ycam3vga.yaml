@@ -103,6 +103,6 @@ ycam:
   projector:
     Intensity: 150
   hdr:
-    enabled: On
+    enabled: Off
     capture: [{ExposureTimeLevel : 5, Gain: 0 , ProjectorIntensity: 255},
               {ExposureTimeLevel : 1, Gain: 0 , ProjectorIntensity:  32}]
