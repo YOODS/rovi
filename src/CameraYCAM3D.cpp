@@ -470,12 +470,12 @@ bool CameraYCAM3D::capture(const bool strobe){
 			}
 		}
 		
-		const int curProjBright = m_arv_ptr->projectorBrightness();
+		const int curProjIntensity = m_arv_ptr->projectorIntensity();
 #ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d cur proj bright. val=%d",m_camno, curProjBright);
+		ROS_INFO(LOG_HEADER"#%d cur proj intensity. val=%d",m_camno, curProjIntensity);
 #endif
 		if( ! strobe_l ){
-			m_arv_ptr->setProjectorBrightness(0);
+			m_arv_ptr->setProjectorIntensity(0);
 		}
 		
 		
@@ -498,7 +498,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_capture_timeout_period) );
 		// ********** m_capt_finish_wait_mutex LOCKED ?? **********		
 		if( ! strobe_l ){
-			m_arv_ptr->setProjectorBrightness(curProjBright);
+			m_arv_ptr->setProjectorIntensity(curProjIntensity);
 		}
 		
 #ifdef DEBUG_DETAIL
@@ -830,22 +830,22 @@ bool CameraYCAM3D::set_projector_exposure_time(const int val){
 }
 #endif
 
-bool CameraYCAM3D::get_projector_brightness(int *val){
-	return get_camera_param_int("proj_brightness",[&](int *l_val) {
-		*l_val =  m_arv_ptr->projectorBrightness();
+bool CameraYCAM3D::get_projector_intensity(int *val){
+	return get_camera_param_int("proj_intensity",[&](int *l_val) {
+		*l_val =  m_arv_ptr->projectorIntensity();
 		return *l_val >= 0;
 	},val);
 }
 
-bool CameraYCAM3D::set_projector_brightness(const int val){
-	const bool result = set_camera_param_int("proj_brightness",[&](const int l_val) {
-		return m_arv_ptr->setProjectorBrightness(l_val);
+bool CameraYCAM3D::set_projector_intensity(const int val){
+	const bool result = set_camera_param_int("proj_intensity",[&](const int l_val) {
+		return m_arv_ptr->setProjectorIntensity(l_val);
 	},val);
 	
 	/* 正しい値が返ってこないのでノーチェック。
 	bool ret=false;
 	int cval=-1;
-	if( result && get_projector_brightness(&cval) &&  cval == val){
+	if( result && get_projector_intensity(&cval) &&  cval == val){
 		ret=true;
 	}
 	return ret;
@@ -868,8 +868,8 @@ bool CameraYCAM3D::get_capture_param(camera::ycam3d::CaptureParameter *capt_para
 	}else if( ! get_gain_digital( &capt_param->gain ) ){
 		ROS_ERROR(LOG_HEADER"error:current camera gain get failed.");
 		
-	}else if( ! get_projector_brightness( &capt_param->proj_brightness )){
-		ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+	}else if( ! get_projector_intensity( &capt_param->proj_intensity )){
+		ROS_ERROR(LOG_HEADER"error:current projector intensity get failed.");
 		
 	}else{
 		ret=true;
@@ -908,18 +908,18 @@ bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &
 		}
 	}
 	
-	if( capt_param.proj_brightness >= 0 ){
-		int cur_proj_brightness = -1;
-		if( ! get_projector_brightness( &cur_proj_brightness ) ){
-			ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+	if( capt_param.proj_intensity >= 0 ){
+		int cur_proj_intensity = -1;
+		if( ! get_projector_intensity( &cur_proj_intensity ) ){
+			ROS_ERROR(LOG_HEADER"error:current projector intensity get failed.");
 			return false;
-		}else if( cur_proj_brightness == capt_param.proj_brightness ){
-			//ROS_WARN(LOG_HEADER"projector brightness is same. skipped.");
-		}else if( ! set_projector_brightness(capt_param.proj_brightness) ){
-			ROS_ERROR(LOG_HEADER"error:current projector brightness set failed. value=%d",capt_param.proj_brightness );
+		}else if( cur_proj_intensity == capt_param.proj_intensity ){
+			//ROS_WARN(LOG_HEADER"projector intensity is same. skipped.");
+		}else if( ! set_projector_intensity(capt_param.proj_intensity) ){
+			ROS_ERROR(LOG_HEADER"error:current projector intensity set failed. value=%d",capt_param.proj_intensity );
 			return false;
 		}else{
-			ROS_INFO(LOG_HEADER"projector brightness updated. val=%d",capt_param.proj_brightness);
+			ROS_INFO(LOG_HEADER"projector intensity updated. val=%d",capt_param.proj_intensity);
 		}
 	}
 	

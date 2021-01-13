@@ -244,14 +244,14 @@ bool validate_capt_param(camera::ycam3d::CaptureParameter &capt_param,const std:
 		ROS_ERROR(LOG_HEADER"%sCamera Gain is over maximum. cur=%d, max=%d",prefix.c_str(), capt_param.gain , camera::ycam3d::CAM_DIGITAL_GAIN_MAX );
 	}
 	
-	if( capt_param.proj_brightness < 0 ){
+	if( capt_param.proj_intensity < 0 ){
 		//skipped
-	}else if( capt_param.proj_brightness < camera::ycam3d::PROJ_BRIGHTNESS_MIN ){
+	}else if( capt_param.proj_intensity < camera::ycam3d::PROJ_INTENSITY_MIN ){
 		ret=false;
-		ROS_ERROR(LOG_HEADER"%sProjector Intensity is under minimum. cur=%d, min=%d", prefix.c_str(), capt_param.proj_brightness , camera::ycam3d::PROJ_BRIGHTNESS_MIN);
-	}else if( camera::ycam3d::PROJ_BRIGHTNESS_MAX < capt_param.proj_brightness ){
+		ROS_ERROR(LOG_HEADER"%sProjector Intensity is under minimum. cur=%d, min=%d", prefix.c_str(), capt_param.proj_intensity , camera::ycam3d::PROJ_INTENSITY_MIN);
+	}else if( camera::ycam3d::PROJ_INTENSITY_MAX < capt_param.proj_intensity ){
 		ret=false;
-		ROS_ERROR(LOG_HEADER"%sProjector Intensity is over maximum. cur=%d, max=%d", prefix.c_str(), capt_param.proj_brightness , camera::ycam3d::PROJ_BRIGHTNESS_MAX);
+		ROS_ERROR(LOG_HEADER"%sProjector Intensity is over maximum. cur=%d, max=%d", prefix.c_str(), capt_param.proj_intensity , camera::ycam3d::PROJ_INTENSITY_MAX);
 	}
 	
 	return ret;
@@ -325,11 +325,11 @@ void update_camera_params(){
 	}
 	
 	const int cur_proj_intensty = get_param<int>( PRM_PROJ_INTENSITY,
-		camera::ycam3d::PROJ_BRIGHTNESS_DEFAULT, camera::ycam3d::PROJ_BRIGHTNESS_MIN, camera::ycam3d::PROJ_BRIGHTNESS_MAX );	
+		camera::ycam3d::PROJ_INTENSITY_DEFAULT, camera::ycam3d::PROJ_INTENSITY_MIN, camera::ycam3d::PROJ_INTENSITY_MAX );	
 	if( pre_proj_intensity != cur_proj_intensty ){
-		if( ! camera_ptr->set_projector_brightness(cur_proj_intensty) ){
+		if( ! camera_ptr->set_projector_intensity(cur_proj_intensty) ){
 			int latest_val = 0;
-			if( ! camera_ptr->get_projector_brightness(&latest_val) ){
+			if( ! camera_ptr->get_projector_intensity(&latest_val) ){
 				ROS_ERROR(LOG_HEADER"error:'projector intensity' get failed.");
 			}else{
 				ROS_ERROR(LOG_HEADER"error:'projector intensity' set failed. set_val=%d cur_val=%d", cur_proj_intensty, latest_val);
@@ -372,7 +372,7 @@ void update_camera_params(){
 			}else{
 				capt_param.expsr_lv = expsr_tm_lv_ui -1;
 				capt_param.gain = get_param<int>(PRM_CAM_GAIN_D,-1);
-				capt_param.proj_brightness = get_param<int>(PRM_PROJ_INTENSITY,-1);
+				capt_param.proj_intensity = get_param<int>(PRM_PROJ_INTENSITY,-1);
 				if( ! validate_capt_param(capt_param) ){
 					capt_params_valid = false;
 				}else{
@@ -393,7 +393,7 @@ void update_camera_params(){
 			}else{
 				hdr_capt_param.expsr_lv = expsr_tm_lv_ui -1;
 				hdr_capt_param.gain = get_param<int>(PRM_HDR_CAM_GAIN_D,-1);
-				hdr_capt_param.proj_brightness = get_param<int>(PRM_HDR_PROJ_INTENSITY,-1);
+				hdr_capt_param.proj_intensity = get_param<int>(PRM_HDR_PROJ_INTENSITY,-1);
 				if( ! validate_capt_param(hdr_capt_param,"HDR ")){
 					capt_params_valid = false;
 				}else{
@@ -557,7 +557,7 @@ void on_camera_open_finished(const bool result){
 		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
 	
 	pre_proj_intensity = get_param<int>( PRM_PROJ_INTENSITY,
-		camera::ycam3d::PROJ_BRIGHTNESS_DEFAULT, camera::ycam3d::PROJ_BRIGHTNESS_MIN, camera::ycam3d::PROJ_BRIGHTNESS_MAX );	
+		camera::ycam3d::PROJ_INTENSITY_DEFAULT, camera::ycam3d::PROJ_INTENSITY_MIN, camera::ycam3d::PROJ_INTENSITY_MAX );	
 	
 	ROS_INFO(LOG_HEADER"camera digital gain = %d", pre_cam_gain_d);
 	ROS_INFO(LOG_HEADER"projector intensity = %d", pre_proj_intensity);
@@ -989,13 +989,18 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 			}else{
 				
 				if(ptn_capt_num > 1){
-					res_msg_str << "pattern capture completed. " << ptn_capt_num << " times. ";
+					res_msg_str << "capture " << ptn_capt_num << " times. ";
 				}
+				int ptnImgNum = 0;
+				for(const PatternImageData &ptnImgData:ptn_imgs){
+					ptnImgNum += ptnImgData.imgs_l.size();
+				}
+				res_msg_str << ptnImgNum << " images scan complete.";
 				
 				if( genpc_msg.response.pc_cnt_r >= 0 ){
-					res_msg_str << ptn_imgs.front().imgs_l.size() << " images scan complete. Generated PointCloud Count. Left=" << genpc_msg.response.pc_cnt << " Right=" << genpc_msg.response.pc_cnt_r;
+					res_msg_str << " Generated PointCloud Count. Left=" << genpc_msg.response.pc_cnt << " Right=" << genpc_msg.response.pc_cnt_r;
 				}else{
-					res_msg_str << ptn_imgs.front().imgs_l.size() << " images scan complete. Generated PointCloud Count=" << genpc_msg.response.pc_cnt;
+					res_msg_str << " Generated PointCloud Count=" << genpc_msg.response.pc_cnt;
 				}
 				result=true;
 			}
