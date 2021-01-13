@@ -612,7 +612,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_trigger_timeout_period) );
 		// ********** m_capt_finish_wait_mutex LOCKED ?? **********
 		ROS_INFO(LOG_HEADER"#%d pattern capture image received wait finshed. timeout=%d, elapsed=%d ms",
-			m_camno,timeout_occured,capt_tmr.elapsed_ms());
+			m_camno, timeout_occured, capt_tmr.elapsed_ms());
 		
 		if( m_callback_trig_img_recv ){
 			std::vector<camera::ycam3d::CameraImage> imgs_l;
@@ -708,6 +708,7 @@ bool CameraYCAM3D::get_exposure_time_level_default(int *val)const{
 	return m_arv_ptr->get_exposure_time_level_default(val);
 }
 
+//exposure_time_level_min/max‚¾‚¯ŠÖ”‚ÅŽæ“¾‚·‚é‚Ì‚Ísxga,vga‚ÅÝ’è‚Ì”‚ªˆÙ‚È‚é
 bool CameraYCAM3D::get_exposure_time_level_min(int *val)const{
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
@@ -881,21 +882,25 @@ bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &
 	if( capt_param.expsr_lv >= 0 ){
 		int cur_expsr_lv = -1;
 		if( ! get_exposure_time_level( &cur_expsr_lv) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			ROS_ERROR(LOG_HEADER"error:current exposure time level get failed.");
 			return false;
-		}else if( ! cur_expsr_lv != capt_param.expsr_lv && ! set_exposure_time_level(capt_param.expsr_lv) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level set failed. value=%d",capt_param.expsr_lv);
+		}else if( cur_expsr_lv == capt_param.expsr_lv ){
+			//ROS_WARN(LOG_HEADER"exposure time level is same. skipped.");
+		}else if( ! set_exposure_time_level(capt_param.expsr_lv) ){
+			ROS_ERROR(LOG_HEADER"error:current exposure time level set failed. value=%d",capt_param.expsr_lv);
 			return false;
 		}else{
-			ROS_INFO(LOG_HEADER"camera exposure time level updated. val=%d",capt_param.expsr_lv);
+			ROS_INFO(LOG_HEADER"exposure time level updated. val=%d",capt_param.expsr_lv);
 		}
 	}
 	if( capt_param.gain >= 0 ){
 		int cur_gain = -1;
 		if( ! get_gain_digital( &cur_gain ) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			ROS_ERROR(LOG_HEADER"error:current camera gain get failed.");
 			return false;
-		}else if( ! cur_gain != capt_param.gain && ! set_gain_digital( capt_param.gain ) ){
+		}else if( cur_gain == capt_param.gain ){
+			//ROS_WARN(LOG_HEADER"camera gain is same. skipped.");
+		}else if( ! set_gain_digital( capt_param.gain ) ){
 			ROS_ERROR(LOG_HEADER"error:current camera gain set failed. value=%d",capt_param.gain);
 			return false;
 		}else{
@@ -908,7 +913,9 @@ bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &
 		if( ! get_projector_brightness( &cur_proj_brightness ) ){
 			ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
 			return false;
-		}else if( ! cur_proj_brightness != capt_param.proj_brightness && ! set_projector_brightness(capt_param.proj_brightness) ){
+		}else if( cur_proj_brightness == capt_param.proj_brightness ){
+			//ROS_WARN(LOG_HEADER"projector brightness is same. skipped.");
+		}else if( ! set_projector_brightness(capt_param.proj_brightness) ){
 			ROS_ERROR(LOG_HEADER"error:current projector brightness set failed. value=%d",capt_param.proj_brightness );
 			return false;
 		}else{

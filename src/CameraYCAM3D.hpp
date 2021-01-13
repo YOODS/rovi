@@ -158,12 +158,40 @@ namespace camera{
 			}
 			
 			bool operator==(const CaptureParameter &param)const{
-				if( this->expsr_lv == param.expsr_lv &&
-				    this->gain == param.gain && 
-				    this->proj_brightness == param.proj_brightness ){
-					
+				if( this->expsr_lv != param.expsr_lv || 
+				    this->gain != param.gain || 
+				    this->proj_brightness != param.proj_brightness ){
+					return false;
 				}
-				return false;
+				return true;
+			}
+			bool is_different(const CaptureParameter &param){
+				
+				bool ret=false;
+				if(param.expsr_lv < 0 ){
+					//skipped
+				}else if( this->expsr_lv < 0){
+					ret=true;
+				}else if( this->expsr_lv != param.expsr_lv ){
+					ret=true;
+				}
+				
+				if(param.gain < 0 ){
+					//skipped
+				}else if( this->gain < 0){
+					ret=true;
+				}else if( this->gain != param.gain ){
+					ret=true;
+				}
+				
+				if(param.proj_brightness < 0 ){
+					//skipped
+				}else if( this->proj_brightness < 0){
+					ret=true;
+				}else if( this->proj_brightness != param.proj_brightness ){
+					ret=true;
+				}
+				return ret;
 			}
 		};
 		
@@ -272,8 +300,10 @@ public:
 	void start_auto_connect();
 	
 	bool get_exposure_time_level_default(int *val)const;
+	
 	bool get_exposure_time_level_min(int *val)const;
 	bool get_exposure_time_level_max(int *val)const;
+	
 	bool get_exposure_time_level(int *val);
 	bool set_exposure_time_level(const int val);
 	
