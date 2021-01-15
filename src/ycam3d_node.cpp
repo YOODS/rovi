@@ -386,20 +386,30 @@ void update_camera_params(){
 		if( capt_params_valid && hdr_enabled ){
 			camera::ycam3d::CaptureParameter hdr_capt_param;
 			
-			const int expsr_tm_lv_ui = get_param<int>(PRM_HDR_EXPOSURE_TIME_LEVEL,-1) ;
-			if( expsr_tm_lv_ui - 1 < expsr_tm_lv_min ){
-				capt_params_valid=false;
-				ROS_ERROR(LOG_HEADER"HDR Exposure Time Level is under minimum. val=%d min=%d",expsr_tm_lv_ui, expsr_tm_lv_min);
-			}else{
-				hdr_capt_param.expsr_lv = expsr_tm_lv_ui -1;
-				hdr_capt_param.gain = get_param<int>(PRM_HDR_CAM_GAIN_D,-1);
-				hdr_capt_param.proj_intensity = get_param<int>(PRM_HDR_PROJ_INTENSITY,-1);
-				if( ! validate_capt_param(hdr_capt_param,"HDR ")){
-					capt_params_valid = false;
+			if(nh->hasParam(PRM_HDR_EXPOSURE_TIME_LEVEL)){
+				const int expsr_tm_lv_ui = get_param<int>(PRM_HDR_EXPOSURE_TIME_LEVEL,-1) ;
+				if( expsr_tm_lv_ui - 1 < expsr_tm_lv_min ){
+					capt_params_valid=false;
+					ROS_ERROR(LOG_HEADER"HDR Exposure Time Level is under minimum. val=%d min=%d",expsr_tm_lv_ui, expsr_tm_lv_min);
 				}else{
-					capt_params.push_back(hdr_capt_param);
+					hdr_capt_param.expsr_lv = expsr_tm_lv_ui -1;
 				}
 			}
+			
+			if(nh->hasParam(PRM_HDR_CAM_GAIN_D)){
+				hdr_capt_param.gain = get_param<int>(PRM_HDR_CAM_GAIN_D,-1);
+			}
+			
+			if(nh->hasParam(PRM_HDR_PROJ_INTENSITY)){
+				hdr_capt_param.proj_intensity = get_param<int>(PRM_HDR_PROJ_INTENSITY,-1);
+			}
+				
+			if( ! validate_capt_param(hdr_capt_param,"HDR ")){
+				capt_params_valid = false;
+			}else{
+				capt_params.push_back(hdr_capt_param);
+			}
+			
 		}
 		
 		if( ! capt_params_valid ){
