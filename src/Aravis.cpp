@@ -67,7 +67,7 @@ namespace{
 	//2020/10/21 add by hato -------------------- start --------------------
 	//const int PROJ_TRIGGER_MODE_WAIT = 50;
 	//const int PROJ_EXPOSURE_TIME_WAIT = 50;
-	const int PROJ_BRIHGHTNESS_WAIT = 100;
+	const int PROJ_INTENSITY_WAIT = 0;
 	const int PROJ_FLASH_INTERVAL_WAIT = 100;
 	//const int PROJ_PTN_LOAD_WAIT = 500;
 	//2020/10/21 add by hato --------------------  end  --------------------
@@ -349,7 +349,7 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			const bool result_proj_intensity =  setProjectorIntensity(PROJ_INTENSITY_DEFAULT);
 			dprintf(" setup projector intensity.    result=%s, set_val=%5d",
 				"--",PROJ_INTENSITY_DEFAULT);
-			//msleep(PROJ_BRIHGHTNESS_WAIT);
+			//msleep(PROJ_INTENSITY_WAIT);
 		}
 		{
 			const bool result_proj_flash_interval= setProjectorFlashInterval(PROJ_FLASH_INTERVAL_DEFAULT);
@@ -1247,7 +1247,7 @@ bool Aravis::setProjectorIntensity(int value)
 	snprintf(d, sizeof(d), "%02X%02X%02X", value, value, value);
 	//2020/12/10 modified by hato -------------------- start --------------------
 	//return uart_write('i', d);
-	const bool ret= uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
+	const bool ret= uart_cmd( 'i' , d , PROJ_INTENSITY_WAIT);
 	if( ret ){
 		cur_proj_intensity_=value;
 	}

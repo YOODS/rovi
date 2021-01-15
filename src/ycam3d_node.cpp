@@ -810,6 +810,9 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	
 	ptn_capt_wait_cv.notify_one();
 	// ********** ptn_capt_wait_cv NOTIFY **********
+#ifdef DEBUG_DETAIL
+	ROS_INFO(LOG_HEADER"on pattern image recevied. finshed,proc_tm=%d ms",tmr.elapsed_ms());
+#endif
 }
 
 bool validate_patten_image_data(const PatternImageData &ptnImgData){
@@ -912,6 +915,9 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				break;
 			}else{
 				ptn_capt_wait_cv.wait(lock);
+#ifdef DEBUG_DETAIL
+				ROS_INFO(LOG_HEADER"<%d> ptn capt wait finished.",n);
+#endif
 				// ********** ptn_capt_wait_cv WAIT **********
 				const PatternImageData *ptn_img=ptn_imgs.data() + n;
 				
