@@ -145,7 +145,7 @@ namespace camera{
 			int gain = -1;
 			int proj_intensity = -1;
 			
-			std::string to_string()const{
+			virtual std::string to_string()const{
 				std::stringstream ss;
 				ss << "expsr_lv=" << expsr_lv;
 				ss << ",gain=" << gain;
@@ -153,11 +153,11 @@ namespace camera{
 				return ss.str();
 			}
 			
-			bool operator!=(const CaptureParameter &param)const{
+			virtual bool operator!=(const CaptureParameter &param)const{
 				return ! (*this==param);
 			}
 			
-			bool operator==(const CaptureParameter &param)const{
+			virtual bool operator==(const CaptureParameter &param)const{
 				if( this->expsr_lv != param.expsr_lv || 
 				    this->gain != param.gain || 
 				    this->proj_intensity != param.proj_intensity ){

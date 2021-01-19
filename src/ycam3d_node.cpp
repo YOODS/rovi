@@ -66,12 +66,14 @@ const std::string PRM_SW_TRIG_RATE            = "ycam/SoftwareTriggerRate";
 const std::string PRM_EXPOSURE_TIME_LEVEL     = "ycam/ExposureTimeLevel";
 const std::string PRM_TEMP_MON_INTERVAL       = "ycam/TemperatureMonitorInterval";
 const std::string PRM_DRAW_CAMERA_ORIGIN      = "ycam/DrawCameraOrigin";
+const std::string PRM_PCGEN_PUBLISH           = "ycam/pcgen_publish";
 //const std::string PRM_CAM_EXPSR_TM          = "ycam/camera/ExposureTime";
 const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
 //const std::string PRM_CAM_GAIN_A            = "ycam/camera/GainA";
 //const std::string PRM_PROJ_EXPSR_TM         = "ycam/projector/ExposureTime";
 const std::string PRM_PROJ_INTENSITY          = "ycam/projector/Intensity";
 const std::string PRM_HDR_ENABLED             = "ycam/hdr/enabled";
+const std::string PRM_HDR_PCGEN_PUBLISH       = "ycam/hdr/pcgen_publish";
 const std::string PRM_HDR_EXPOSURE_TIME_LEVEL = "ycam/hdr/ExposureTimeLevel";
 const std::string PRM_HDR_CAM_GAIN_D          = "ycam/hdr/camera/Gain";
 const std::string PRM_HDR_PROJ_INTENSITY      = "ycam/hdr/projector/Intensity";
@@ -113,7 +115,26 @@ std::condition_variable ptn_capt_wait_cv;
 std::thread pc_gen_thread;
 
 bool cur_hdr_enabled=false;
-std::vector<camera::ycam3d::CaptureParameter> cur_capt_params;
+	
+struct RosCaptureParameter: public camera::ycam3d::CaptureParameter{
+	bool pcgen_publish = true;
+	
+	std::string to_string()const{
+		std::stringstream ss;
+		ss << camera::ycam3d::CaptureParameter::to_string();
+		ss << ",pcgen_publish=" << pcgen_publish;
+		return ss.str();
+	}
+	
+	bool operator==(const RosCaptureParameter &param)const{
+		if( *this != param ||
+		    this->pcgen_publish != param.pcgen_publish ){
+			return false;
+		}
+		return true;
+	}
+};
+std::vector<RosCaptureParameter> cur_capt_params;
 	
 struct PatternImageData{
 	std::vector<camera::ycam3d::CameraImage> imgs_l;
@@ -269,80 +290,6 @@ void update_camera_params(){
 		return;
 	}
 	
-	/*
-	if( expsr_tm_lv_min < 0 || expsr_tm_lv_max < 0 ){
-		//skip
-	}else{
-		int cur_expsr_lv = -1;
-		
-		if( ! camera_ptr->get_exposure_time_level(&cur_expsr_lv) ){
-			ROS_ERROR(LOG_HEADER"error:current exposure time level get failed.");
-		}else{
-		
-			
-			const int prm_expsr_lv = get_param<int>(PRM_EXPOSURE_TIME_LEVEL, expsr_tm_lv_default) - 1;
-			if( prm_expsr_lv < expsr_tm_lv_min ){
-				ROS_ERROR(LOG_HEADER"error:'exposure time level' is below minimum value. val=%d min=%d",prm_expsr_lv+1,expsr_tm_lv_min+1);
-				nh->setParam(PRM_EXPOSURE_TIME_LEVEL, prm_expsr_lv + 1 );
-				
-			}else if( expsr_tm_lv_max < prm_expsr_lv ){
-				ROS_ERROR(LOG_HEADER"error:'exposure time level' is above maximum value. val=%d max=%d",prm_expsr_lv+1,expsr_tm_lv_max + 1);
-				nh->setParam(PRM_EXPOSURE_TIME_LEVEL, prm_expsr_lv + 1 );
-				
-			}else{
-				//ui用は1プラスされていると考える
-				if( cur_expsr_lv != prm_expsr_lv ){
-					//ROS_WARN(LOG_HEADER"exposure time level change start.");
-					if( ! camera_ptr->set_exposure_time_level( prm_expsr_lv ) ){
-						ROS_ERROR(LOG_HEADER"error:'exposure time level' set failed. val=%d",prm_expsr_lv + 1);
-						nh->setParam(PRM_EXPOSURE_TIME_LEVEL, cur_expsr_lv + 1 );
-					}else{
-						ROS_INFO(LOG_HEADER"'exposure time level' paramter changed. old=%d new=%d", cur_expsr_lv + 1 , prm_expsr_lv + 1);
-					}
-					//ROS_WARN(LOG_HEADER"exposure time level change end.");
-				}
-			}
-		}
-	}*/
-	
-	/*
-	const int cur_cam_gain_d = get_param<int>( PRM_CAM_GAIN_D,
-		camera::ycam3d::CAM_DIGITAL_GAIN_DEFAULT, camera::ycam3d::CAM_DIGITAL_GAIN_MIN, camera::ycam3d::CAM_DIGITAL_GAIN_MAX);
-	if( pre_cam_gain_d != cur_cam_gain_d ){
-		if( ! camera_ptr->set_gain_digital(cur_cam_gain_d) ){
-			int latest_val=0;
-			if( ! camera_ptr->get_gain_digital(&latest_val) ){
-				ROS_ERROR(LOG_HEADER"error:'camera digital gain' get failed.");
-			}else{
-				ROS_ERROR(LOG_HEADER"error:'camera digital gain' set failed. set_val=%d cur_val=%d", cur_cam_gain_d, latest_val);
-				nh->setParam(PRM_CAM_GAIN_D, latest_val);
-				pre_cam_gain_d = latest_val;
-			}
-		}else{
-			ROS_INFO(LOG_HEADER"'camera digital gain' paramter changed. old=%d new=%d", pre_cam_gain_d, cur_cam_gain_d);
-			pre_cam_gain_d = cur_cam_gain_d;
-		}
-	}
-	
-	const int cur_proj_intensty = get_param<int>( PRM_PROJ_INTENSITY,
-		camera::ycam3d::PROJ_INTENSITY_DEFAULT, camera::ycam3d::PROJ_INTENSITY_MIN, camera::ycam3d::PROJ_INTENSITY_MAX );	
-	if( pre_proj_intensity != cur_proj_intensty ){
-		if( ! camera_ptr->set_projector_intensity(cur_proj_intensty) ){
-			int latest_val = 0;
-			if( ! camera_ptr->get_projector_intensity(&latest_val) ){
-				ROS_ERROR(LOG_HEADER"error:'projector intensity' get failed.");
-			}else{
-				ROS_ERROR(LOG_HEADER"error:'projector intensity' set failed. set_val=%d cur_val=%d", cur_proj_intensty, latest_val);
-				nh->setParam(PRM_PROJ_INTENSITY, latest_val);
-				pre_proj_intensity = latest_val;
-			}
-		}else{
-			ROS_INFO(LOG_HEADER"'projector intensity' paramter changed. old=%d new=%d", pre_proj_intensity, cur_proj_intensty);
-			pre_proj_intensity = cur_proj_intensty;
-		}
-	}
-	*/
-	
 	const int tempMonInterval = get_param<int>(PRM_TEMP_MON_INTERVAL,TEMP_MON_INTERVAL_DEFAULT);
 	if( tempMonInterval == cur_temp_mon_interval ){
 		//ROS_INFO(LOG_HEADER"temperature monitor interval no change.");
@@ -361,10 +308,12 @@ void update_camera_params(){
 	//撮影パラメータ
 	{
 		bool capt_params_valid=true;
-		std::vector<camera::ycam3d::CaptureParameter> capt_params;
+		std::vector<RosCaptureParameter> capt_params;
+		RosCaptureParameter capt_param;
 		//first
 		{
-			camera::ycam3d::CaptureParameter capt_param;
+			capt_param.pcgen_publish = get_param<bool>(PRM_PCGEN_PUBLISH,true);
+			
 			const int expsr_tm_lv_ui = get_param<int>(PRM_EXPOSURE_TIME_LEVEL,-1) ;
 			if( expsr_tm_lv_ui - 1 < expsr_tm_lv_min ){
 				capt_params_valid=false;
@@ -384,8 +333,9 @@ void update_camera_params(){
 		//HDR
 		const bool hdr_enabled = get_param<bool>(PRM_HDR_ENABLED,false);
 		if( capt_params_valid && hdr_enabled ){
-			camera::ycam3d::CaptureParameter hdr_capt_param;
+			RosCaptureParameter hdr_capt_param;
 			
+			hdr_capt_param.pcgen_publish = get_param<bool>(PRM_HDR_PCGEN_PUBLISH,false);
 			if(nh->hasParam(PRM_HDR_EXPOSURE_TIME_LEVEL)){
 				const int expsr_tm_lv_ui = get_param<int>(PRM_HDR_EXPOSURE_TIME_LEVEL,-1) ;
 				if( expsr_tm_lv_ui - 1 < expsr_tm_lv_min ){
@@ -397,11 +347,33 @@ void update_camera_params(){
 			}
 			
 			if(nh->hasParam(PRM_HDR_CAM_GAIN_D)){
-				hdr_capt_param.gain = get_param<int>(PRM_HDR_CAM_GAIN_D,-1);
+				const float hdr_gain = get_param<float>(PRM_HDR_CAM_GAIN_D,-1);
+				if( 0 > hdr_gain ){
+				    hdr_capt_param.gain =-1;
+				}else if( 0 == hdr_gain ){
+					hdr_capt_param.gain = 0;
+				}else if( 1 > hdr_gain ){
+					if( capt_param.gain > 0){
+						hdr_capt_param.gain = (int)(capt_param.gain * hdr_gain);
+					}
+				}else{
+					hdr_capt_param.gain = (int)hdr_gain;
+				}
 			}
 			
 			if(nh->hasParam(PRM_HDR_PROJ_INTENSITY)){
-				hdr_capt_param.proj_intensity = get_param<int>(PRM_HDR_PROJ_INTENSITY,-1);
+				const float hdr_proj_intensity = get_param<float>(PRM_HDR_PROJ_INTENSITY,-1);
+				if( 0 > hdr_proj_intensity ){
+				    hdr_capt_param.proj_intensity =-1;
+				}else if( 0 == hdr_proj_intensity ){
+					hdr_capt_param.proj_intensity = 0;
+				}else if( 1 > hdr_proj_intensity ){
+					if( capt_param.proj_intensity > 0){
+						hdr_capt_param.proj_intensity = (int)(capt_param.proj_intensity * hdr_proj_intensity);
+					}
+				}else{
+					hdr_capt_param.proj_intensity = (int)hdr_proj_intensity;
+				}
 			}
 				
 			if( ! validate_capt_param(hdr_capt_param,"HDR ")){
@@ -419,8 +391,8 @@ void update_camera_params(){
 			if( cur_capt_params.size() != capt_params.size() ){
 				capt_params_changed_flg = true;
 			}else{
-				for( int i = 0 ; i < capt_params.size() ; ++i ){
-					if( cur_capt_params.at(i) != capt_params.at(i) ){
+				for( int i = 0 ; i < capt_params.size() ; ++i ){					
+					if(  ! ( cur_capt_params.at(i) == capt_params.at(i) ) ){
 						capt_params_changed_flg = true;
 						break;
 					}
@@ -438,7 +410,7 @@ void update_camera_params(){
 			
 			{
 				ElapsedTimer tt;
-				camera::ycam3d::CaptureParameter real_capt_param;
+				RosCaptureParameter real_capt_param;
 				if( ! camera_ptr->get_capture_param( &real_capt_param ) ){
 					ROS_WARN(LOG_HEADER"current capt param get failed.");
 				}else if( ! real_capt_param.is_different(capt_params.front()) ){
@@ -893,8 +865,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 		ROS_WARN(LOG_HEADER"pattern capture start.");
 #endif
 		const int cur_mode = get_param<int>(PRM_MODE,(int)Mode_StandBy);
-		
-		
 		bool ptn_capt_success=true;
 		const int ptn_capt_num = cur_capt_params.size();
 		
@@ -909,7 +879,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 			
 			std::unique_lock<std::mutex> lock(ptn_capt_wait_mutex);
 
-			const camera::ycam3d::CaptureParameter capt_prm = cur_capt_params[n];
+			const RosCaptureParameter capt_prm = cur_capt_params[n];
 			if( ! camera_ptr->update_capture_param(capt_prm) ){
 				ROS_ERROR(LOG_HEADER"<%d> error:capture parameter set failed. %s",n,capt_prm.to_string().c_str());
 				ptn_capt_success=false;
@@ -1025,8 +995,15 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				const RosPatternImageData *ros_ptn_img = ros_ptn_imgs.data() + n;
 				const std::vector<sensor_msgs::Image> *ros_imgs=&(ros_ptn_img->imgs[0]);
 				
-				ElapsedTimer tmr_remap;
+				if(cur_capt_params.size() > n){
+					if( ! cur_capt_params[n].pcgen_publish ){
+						ROS_INFO(LOG_HEADER"<%d> pcgen publish is skipped.",n);
+						continue;
+					}
+				}
+				ElapsedTimer tmr_pcgen_publish;
 				
+				ROS_INFO(LOG_HEADER"<%d> pcgen publish start.",n);
 				//画像を配信するよ
 				for( int camno = 0 ; camno < 2 ; ++camno ){
 					pub_img_raws[camno].publish(ros_imgs[camno][1]);
@@ -1035,7 +1012,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						rovi::ImageFilter remap_img_filter;
 						remap_img_filter.request.img = ros_imgs[camno][0];
 						if( ! svc_remap[camno].call(remap_img_filter) ){
-							ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d, ptn=0",camno);
+							ROS_ERROR(LOG_HEADER"<%d> error:camera image remap failed. camno=%d, ptn=0",n,camno);
 						}else{
 							remap_ros_img_ptn_0 = remap_img_filter.response.img;
 						}
@@ -1047,7 +1024,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						rovi::ImageFilter remap_img_filter;
 						remap_img_filter.request.img = ros_imgs[camno][1];
 						if( ! svc_remap[camno].call(remap_img_filter) ){
-							ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d, ptn=1",camno);
+							ROS_ERROR(LOG_HEADER"<%d> error:camera image remap failed. camno=%d, ptn=1",n,camno);
 						}else{
 							remap_ros_img_ptn_1 = remap_img_filter.response.img;
 						}
@@ -1059,6 +1036,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						pub_diffs[camno].publish(diff_img);
 					}
 				}
+				ROS_INFO(LOG_HEADER"<%d> pcgen publish finished. proc_tm=%d",n,tmr_pcgen_publish.elapsed_ms());
 			}
 		}
 	}
@@ -1071,7 +1049,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	ROS_INFO(LOG_HEADER"point cloud generation finished. result=%d tmr=%d ms", result,  tmr.elapsed_ms());
 
 	if( cur_capt_params.size() > 1 ){
-		camera::ycam3d::CaptureParameter rb_capt_param = cur_capt_params.front();
+		RosCaptureParameter rb_capt_param = cur_capt_params.front();
 		ROS_INFO(LOG_HEADER"capture parameter rollback start. %s",rb_capt_param.to_string().c_str());
 		if( ! camera_ptr->update_capture_param(rb_capt_param) ){
 			ROS_ERROR(LOG_HEADER"error: capture parameter rollback failed.");

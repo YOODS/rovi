@@ -347,7 +347,7 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 		}
 		{
 			const bool result_proj_intensity =  setProjectorIntensity(PROJ_INTENSITY_DEFAULT);
-			dprintf(" setup projector intensity.    result=%s, set_val=%5d",
+			dprintf(" setup projector intensity.     result=%s, set_val=%5d",
 				"--",PROJ_INTENSITY_DEFAULT);
 			//msleep(PROJ_INTENSITY_WAIT);
 		}

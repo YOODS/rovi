@@ -98,14 +98,13 @@ ycam:
   ExposureTimeLevel: 2
   TemperatureMonitorInterval: 1
   DrawCameraOrigin : Off
+  pcgen_publish: On
   camera:
     Gain: 0
   projector:
     Intensity: 150
   hdr:
     enabled: Off
-    ExposureTimeLevel: 2
-    camera:
-      Gain: 0
+    pcgen_publish: Off
     projector:
-      Intensity: 32
+      Intensity: 0.2
