@@ -102,7 +102,7 @@ ros::Timer cam_open_mon_timer;
 ros::Timer temp_mon_timer;
 int cur_temp_mon_interval = -1;
 int temp_acq_failure_count = 0;
-const int TEMP_ACQ_FAILURE_COUNT_MAX = 3;
+const int TEMP_ACQ_FAILURE_MSG_REPEAT_MAX = 3;
 
 void exec_get_ycam_temperature(const ros::TimerEvent& e);
 
@@ -1090,20 +1090,20 @@ void exec_get_ycam_temperature(){
 	
 	float tempF=NAN;
 	int temp=0;
-	if( temp_acq_failure_count >= TEMP_ACQ_FAILURE_COUNT_MAX ){
-		ROS_ERROR(LOG_HEADER"Temperature acquisition has stopped.");
-	}else{
-		if( ! camera_ptr->get_temperature(&temp) ){
-			ROS_ERROR(LOG_HEADER"Could not get the temperature.");
-			temp_acq_failure_count ++ ;
-			if( temp_acq_failure_count >= TEMP_ACQ_FAILURE_COUNT_MAX ){
-				ROS_ERROR(LOG_HEADER"Stop temperature acquisition.");
-				temp_mon_timer.stop();
-			}
+	if( ! camera_ptr->get_temperature(&temp) ){
+		if( temp_acq_failure_count > TEMP_ACQ_FAILURE_MSG_REPEAT_MAX ){
+			//skip
 		}else{
-			temp_acq_failure_count = 0;
-			tempF = temp;
+			if( temp_acq_failure_count < TEMP_ACQ_FAILURE_MSG_REPEAT_MAX ){
+				ROS_ERROR(LOG_HEADER"Could not get the temperature.");
+			}else{
+				ROS_ERROR(LOG_HEADER"Stops the output of the temperature acquisition failure message.");
+			}
 		}
+		temp_acq_failure_count++;
+	}else{
+		temp_acq_failure_count = 0;
+		tempF = temp;
 	}
 	
 	publish_float32(pub_temperature, tempF);
