@@ -204,7 +204,7 @@ roslaunch rovi ycam3vga_mm.launch
 <tr><td>/rovi/pshift_genpc/camera/ExposureTime<td>位相シフト時露光時間(&micro;s)<td>int<td>
 <tr><td>/rovi/pshift_genpc/camera/Gain<td>位相シフト時カメラゲイン<td>int<td>
 <tr><td>/rovi/pshift_genpc/projector/ExposureTime<td>発光時間(ms)<td>int<td>
-<tr><td>/rovi/pshift_genpc/projector/Intencity<td>発光強度<td>byte<td>
+<tr><td>/rovi/pshift_genpc/projector/Intensity<td>発光強度<td>byte<td>
 <tr><td>/rovi/pshift_genpc/projector/Interval<td>発光間隔(ms)<td>int<td>
 <tr><td>/rovi/right/genpc/D<td>右カメラキャリブレーション結果。Dマトリクス<td>float[5]<td>
 <tr><td>/rovi/right/genpc/D_Cols<td>右カメラキャリブレーション結果。Dマトリクス列数<td>int<td>
