@@ -19,7 +19,7 @@ pshift_genpc:
     max_parallax: 300
     min_parallax: -200
     ls_points: 3
-    pcgen_mode: 1
+    pcgen_mode: 2
     phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
