@@ -308,7 +308,7 @@ rqtから*/rovi/X1*で右クリックし**publish once**を選んでもよい
 <tr><td>/rovi/pshift_genpc/camera/ExposureTime<td>
 <tr><td>/rovi/pshift_genpc/camera/Gain<td>
 <tr><td>/rovi/pshift_genpc/projector/ExposureTime<td>
-<tr><td>/rovi/pshift_genpc/projector/Intencity<td>
+<tr><td>/rovi/pshift_genpc/projector/Intensity<td>
 <tr><td>/rovi/pshift_genpc/projector/Interval<td>
 <tr><td>/rovi/right/remap/D<td>
 <tr><td>/rovi/right/remap/K<td>

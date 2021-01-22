@@ -337,7 +337,7 @@ calc: {brightness: 256, bw_diff: 7, darkness: 5, ls_points: 3, max_parallax: 400
 max_ph_diff: 3.0, min_parallax: -300, right_cnt: 5, reject_diff: 1.5, search_div: 2,
 step_diff: 1.2}
 camera: {ExposureTime: 8400, Gain: 50}
-projector: {ExposureTime: 10, Intencity: 100, Interval: 100}
+projector: {ExposureTime: 10, Intensity: 100, Interval: 100}
 ~~~
 これらのパラメータを個別に設定することも可能。例えばカメラゲインを100に変更する場合は以下のコマンドを実行する。
 ~~~

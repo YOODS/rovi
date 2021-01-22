@@ -45,7 +45,7 @@ CameraYCAM3D::CameraImageReceivedCallback::CameraImageReceivedCallback(CameraYCA
 void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx, int lr_width, int height, int color, void *mem)
 {
 #ifdef DEBUG_DETAIL
-	fprintf(stderr,LOG_HEADER"on camera image received. camno=%d frmidx=%d lr_width=%d height=%d color=%d\n",camno,frmidx,lr_width, height, color);
+	ROS_WARN(LOG_HEADER"on camera image received. camno=%d frmidx=%d lr_width=%d height=%d color=%d\n",camno,frmidx,lr_width, height, color);
 #endif
 	//デバッグ:raw画像保存
 	//cv::Mat img(cv::Size(lr_width, height), CV_8UC1,mem );
@@ -111,13 +111,13 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		for( int i = 0 ; i < m_self->m_img_recv_flags.size() ; ++i ){
 			recv_flags_str << (m_self->m_img_recv_flags[i]?"*":"_");
 		}
-		fprintf(stdout,LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms,capt_num=%d, recv_flags=%s\n",
+		ROS_WARN(LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms,capt_num=%d, recv_flags=%s\n",
 			m_self->m_camno,frmidx, tmr.elapsed_ms(), captNum, recv_flags_str.str().c_str() );
 #endif
 		
 		if( std::count( m_self->m_img_recv_flags.begin(), m_self->m_img_recv_flags.end(), true ) ==  captNum ){
 #ifdef DEBUG_DETAIL
-			fprintf(stdout,LOG_HEADER"#%d pattern image all received.\n",m_self->m_camno);
+			ROS_WARN(LOG_HEADER"#%d pattern image all received.\n",m_self->m_camno);
 #endif
 			capt_wait_done=true;
 		}
@@ -126,7 +126,7 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 	
 	if(capt_wait_done){
 #ifdef DEBUG_DETAIL
-		fprintf(stdout,LOG_HEADER"#%d capture wait done.\n",m_self->m_camno);
+		ROS_WARN(LOG_HEADER"#%d capture wait done.\n",m_self->m_camno);
 #endif
 		m_self->m_capt_finish_wait_mutex.unlock();
 		// ********** m_capt_finish_wait_mutex UNLOCKED **********
@@ -470,12 +470,12 @@ bool CameraYCAM3D::capture(const bool strobe){
 			}
 		}
 		
-		const int curProjBright = m_arv_ptr->projectorBrightness();
+		const int curProjIntensity = m_arv_ptr->projectorIntensity();
 #ifdef DEBUG_DETAIL
-		ROS_INFO(LOG_HEADER"#%d cur proj bright. val=%d",m_camno, curProjBright);
+		ROS_INFO(LOG_HEADER"#%d cur proj intensity. val=%d",m_camno, curProjIntensity);
 #endif
 		if( ! strobe_l ){
-			m_arv_ptr->setProjectorBrightness(0);
+			m_arv_ptr->setProjectorIntensity(0);
 		}
 		
 		
@@ -498,7 +498,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_capture_timeout_period) );
 		// ********** m_capt_finish_wait_mutex LOCKED ?? **********		
 		if( ! strobe_l ){
-			m_arv_ptr->setProjectorBrightness(curProjBright);
+			m_arv_ptr->setProjectorIntensity(curProjIntensity);
 		}
 		
 #ifdef DEBUG_DETAIL
@@ -589,7 +589,8 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
 			}else{
 #ifdef DEBUG_DETAIL
-				ROS_INFO(LOG_HEADER"#%d projector pattern changed. ptn=%d (%s) elapsed=%d",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str(),ptnChangeTmr.elapsed_ms());
+				ROS_INFO(LOG_HEADER"#%d projector pattern changed. ptn=%d (%s) elapsed=%d",
+					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str(),capt_tmr.elapsed_ms());
 #endif
 			}
 		}
@@ -604,15 +605,17 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 		
 		int curExpsrLv=-1;
 		m_arv_ptr->get_exposure_time_level(&curExpsrLv);
-		
+
+		ROS_INFO(LOG_HEADER"#%d projector trigger start. elapsed=%d ms",m_camno,capt_tmr.elapsed_ms());
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CONT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
 		}
+		ROS_INFO(LOG_HEADER"#%d projector trigger finished. elapsed=%d ms",m_camno, capt_tmr.elapsed_ms());
 		
 		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_trigger_timeout_period) );
 		// ********** m_capt_finish_wait_mutex LOCKED ?? **********
 		ROS_INFO(LOG_HEADER"#%d pattern capture image received wait finshed. timeout=%d, elapsed=%d ms",
-			m_camno,timeout_occured,capt_tmr.elapsed_ms());
+			m_camno, timeout_occured, capt_tmr.elapsed_ms());
 		
 		if( m_callback_trig_img_recv ){
 			std::vector<camera::ycam3d::CameraImage> imgs_l;
@@ -644,13 +647,19 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 				}
 				// ********** m_img_update_mutex UNLOCKED **********
 			}
-			
+
+#ifdef DEBUG_DETAIL
+			ROS_INFO(LOG_HEADER"call back trig_img_recv start");
+#endif
 			if( timeout_occured ){
 				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
 				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true ,curExpsrLv);
 			}else{
 				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false ,curExpsrLv);
 			}
+#ifdef DEBUG_DETAIL
+			ROS_INFO(LOG_HEADER"call back trig_img_recv finished");
+#endif
 		}
 		
 		m_capt_finish_wait_mutex.unlock();
@@ -708,6 +717,7 @@ bool CameraYCAM3D::get_exposure_time_level_default(int *val)const{
 	return m_arv_ptr->get_exposure_time_level_default(val);
 }
 
+//exposure_time_level_min/maxだけ関数で取得するのはsxga,vgaで設定の数が異なる
 bool CameraYCAM3D::get_exposure_time_level_min(int *val)const{
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
@@ -829,22 +839,22 @@ bool CameraYCAM3D::set_projector_exposure_time(const int val){
 }
 #endif
 
-bool CameraYCAM3D::get_projector_brightness(int *val){
-	return get_camera_param_int("proj_brightness",[&](int *l_val) {
-		*l_val =  m_arv_ptr->projectorBrightness();
+bool CameraYCAM3D::get_projector_intensity(int *val){
+	return get_camera_param_int("proj_intensity",[&](int *l_val) {
+		*l_val =  m_arv_ptr->projectorIntensity();
 		return *l_val >= 0;
 	},val);
 }
 
-bool CameraYCAM3D::set_projector_brightness(const int val){
-	const bool result = set_camera_param_int("proj_brightness",[&](const int l_val) {
-		return m_arv_ptr->setProjectorBrightness(l_val);
+bool CameraYCAM3D::set_projector_intensity(const int val){
+	const bool result = set_camera_param_int("proj_intensity",[&](const int l_val) {
+		return m_arv_ptr->setProjectorIntensity(l_val);
 	},val);
 	
 	/* 正しい値が返ってこないのでノーチェック。
 	bool ret=false;
 	int cval=-1;
-	if( result && get_projector_brightness(&cval) &&  cval == val){
+	if( result && get_projector_intensity(&cval) &&  cval == val){
 		ret=true;
 	}
 	return ret;
@@ -867,8 +877,8 @@ bool CameraYCAM3D::get_capture_param(camera::ycam3d::CaptureParameter *capt_para
 	}else if( ! get_gain_digital( &capt_param->gain ) ){
 		ROS_ERROR(LOG_HEADER"error:current camera gain get failed.");
 		
-	}else if( ! get_projector_brightness( &capt_param->proj_brightness )){
-		ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+	}else if( ! get_projector_intensity( &capt_param->proj_intensity )){
+		ROS_ERROR(LOG_HEADER"error:current projector intensity get failed.");
 		
 	}else{
 		ret=true;
@@ -878,44 +888,65 @@ bool CameraYCAM3D::get_capture_param(camera::ycam3d::CaptureParameter *capt_para
 }
 
 bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &capt_param){
+	
+	ElapsedTimer tmr;
+#ifdef DEBUG_DETAIL
+	ROS_WARN(LOG_HEADER"update capture param start.");
+#endif
 	if( capt_param.expsr_lv >= 0 ){
+		tmr.start_lap();
 		int cur_expsr_lv = -1;
 		if( ! get_exposure_time_level( &cur_expsr_lv) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			ROS_ERROR(LOG_HEADER"error:current exposure time level get failed.");
 			return false;
-		}else if( ! cur_expsr_lv != capt_param.expsr_lv && ! set_exposure_time_level(capt_param.expsr_lv) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level set failed. value=%d",capt_param.expsr_lv);
+		}else if( cur_expsr_lv == capt_param.expsr_lv ){
+#ifdef DEBUG_DETAIL
+			ROS_WARN(LOG_HEADER"exposure time level is same. skipped.");
+#endif
+		}else if( ! set_exposure_time_level(capt_param.expsr_lv) ){
+			ROS_ERROR(LOG_HEADER"error:current exposure time level set failed. value=%d",capt_param.expsr_lv);
 			return false;
 		}else{
-			ROS_INFO(LOG_HEADER"camera exposure time level updated. val=%d",capt_param.expsr_lv);
+			ROS_INFO(LOG_HEADER"exposure time level updated. val=%d. proc_tm=%d",capt_param.expsr_lv,tmr.elapsed_lap_ms());
 		}
 	}
 	if( capt_param.gain >= 0 ){
+		tmr.start_lap();
 		int cur_gain = -1;
 		if( ! get_gain_digital( &cur_gain ) ){
-			ROS_ERROR(LOG_HEADER"error:current camera exposure time level get failed.");
+			ROS_ERROR(LOG_HEADER"error:current camera gain get failed.");
 			return false;
-		}else if( ! cur_gain != capt_param.gain && ! set_gain_digital( capt_param.gain ) ){
+		}else if( cur_gain == capt_param.gain ){
+#ifdef DEBUG_DETAIL
+		ROS_WARN(LOG_HEADER"camera gain is same. skipped.");
+#endif
+		}else if( ! set_gain_digital( capt_param.gain ) ){
 			ROS_ERROR(LOG_HEADER"error:current camera gain set failed. value=%d",capt_param.gain);
 			return false;
 		}else{
-			ROS_INFO(LOG_HEADER"camera gain updated. val=%d",capt_param.gain);
+			ROS_INFO(LOG_HEADER"camera gain updated. val=%d. proc_tm=%d",capt_param.gain,tmr.elapsed_lap_ms());
 		}
 	}
 	
-	if( capt_param.proj_brightness >= 0 ){
-		int cur_proj_brightness = -1;
-		if( ! get_projector_brightness( &cur_proj_brightness ) ){
-			ROS_ERROR(LOG_HEADER"error:current projector brightness get failed.");
+	if( capt_param.proj_intensity >= 0 ){
+		int cur_proj_intensity = -1;
+		if( ! get_projector_intensity( &cur_proj_intensity ) ){
+			ROS_ERROR(LOG_HEADER"error:current projector intensity get failed.");
 			return false;
-		}else if( ! cur_proj_brightness != capt_param.proj_brightness && ! set_projector_brightness(capt_param.proj_brightness) ){
-			ROS_ERROR(LOG_HEADER"error:current projector brightness set failed. value=%d",capt_param.proj_brightness );
+		}else if( cur_proj_intensity == capt_param.proj_intensity ){
+#ifdef DEBUG_DETAIL
+			ROS_WARN(LOG_HEADER"projector intensity is same. skipped.");
+#endif
+		}else if( ! set_projector_intensity(capt_param.proj_intensity) ){
+			ROS_ERROR(LOG_HEADER"error:current projector intensity set failed. value=%d",capt_param.proj_intensity );
 			return false;
 		}else{
-			ROS_INFO(LOG_HEADER"projector brightness updated. val=%d",capt_param.proj_brightness);
+			ROS_INFO(LOG_HEADER"projector intensity updated. val=%d. proc_tm=%d",capt_param.proj_intensity,tmr.elapsed_lap_ms());
 		}
 	}
-	
+#ifdef DEBUG_DETAIL
+	ROS_WARN(LOG_HEADER"update capture param finished. proc_tm=%d ms",tmr.elapsed_ms());
+#endif
 	return true;
 }
 

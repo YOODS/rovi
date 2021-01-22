@@ -67,7 +67,7 @@ namespace{
 	//2020/10/21 add by hato -------------------- start --------------------
 	//const int PROJ_TRIGGER_MODE_WAIT = 50;
 	//const int PROJ_EXPOSURE_TIME_WAIT = 50;
-	const int PROJ_BRIHGHTNESS_WAIT = 100;
+	const int PROJ_INTENSITY_WAIT = 0;
 	const int PROJ_FLASH_INTERVAL_WAIT = 100;
 	//const int PROJ_PTN_LOAD_WAIT = 500;
 	//2020/10/21 add by hato --------------------  end  --------------------
@@ -139,7 +139,7 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	//2020/11/05 add by hato -------------------- start --------------------
 	,cur_proj_ptn_(YCAM_PROJ_PTN_PHSFT)
 	//,cur_proj_enabled_(Proj_Disabled)
-	,cur_proj_brightness_(0)
+	,cur_proj_intensity_(0)
 	//2020/11/05 add by hato --------------------  end  --------------------
 {
 	camno_ = static_camno_++;
@@ -346,10 +346,10 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			//msleep(PROJ_EXPOSURE_TIME_WAIT);
 		}
 		{
-			const bool result_proj_bright =  setProjectorBrightness(PROJ_BRIGHTNESS_DEFAULT);
-			dprintf(" setup projector brightness.    result=%s, set_val=%5d",
-				"--",PROJ_BRIGHTNESS_DEFAULT);
-			//msleep(PROJ_BRIHGHTNESS_WAIT);
+			const bool result_proj_intensity =  setProjectorIntensity(PROJ_INTENSITY_DEFAULT);
+			dprintf(" setup projector intensity.     result=%s, set_val=%5d",
+				"--",PROJ_INTENSITY_DEFAULT);
+			//msleep(PROJ_INTENSITY_WAIT);
 		}
 		{
 			const bool result_proj_flash_interval= setProjectorFlashInterval(PROJ_FLASH_INTERVAL_DEFAULT);
@@ -1216,7 +1216,7 @@ int Aravis::projector_value(const char *key_str, std::string *str)
 
 //2020/11/05 modified by hato -------------------- start --------------------
 /*
-int Aravis::projectorBrightness()
+int Aravis::projectorIntensity()
 {
 	string str;
 	int ret = -1;
@@ -1231,14 +1231,14 @@ int Aravis::projectorBrightness()
 //2020/11/05 modified by hato --------------------  end  --------------------
 	
 
-bool Aravis::setProjectorBrightness(int value)
+bool Aravis::setProjectorIntensity(int value)
 {
 	//2020/12/10 add by hato -------------------- start --------------------
-	if(value < PROJ_BRIGHTNESS_MIN){
-		dprintf("projector brightness is under minimum value.");
+	if(value < PROJ_INTENSITY_MIN){
+		dprintf("projector intensity is under minimum value.");
 		return false;
-	}else if(PROJ_BRIGHTNESS_MAX < value ){
-		dprintf("projector brightness is over maximum value.");
+	}else if(PROJ_INTENSITY_MAX < value ){
+		dprintf("projector intensity is over maximum value.");
 		return false;
 	}
 	//2020/12/10 add by hato -------------------- start --------------------
@@ -1247,9 +1247,9 @@ bool Aravis::setProjectorBrightness(int value)
 	snprintf(d, sizeof(d), "%02X%02X%02X", value, value, value);
 	//2020/12/10 modified by hato -------------------- start --------------------
 	//return uart_write('i', d);
-	const bool ret= uart_cmd( 'i' , d , PROJ_BRIHGHTNESS_WAIT);
+	const bool ret= uart_cmd( 'i' , d , PROJ_INTENSITY_WAIT);
 	if( ret ){
-		cur_proj_brightness_=value;
+		cur_proj_intensity_=value;
 	}
 	return ret;
 	//2020/12/10 modified by hato --------------------  end  --------------------

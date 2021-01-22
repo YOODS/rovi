@@ -26,9 +26,9 @@ namespace ycam3d{
 	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;      //?
 	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;//?
 	
-	constexpr int PROJ_BRIGHTNESS_DEFAULT = 100;
-	constexpr int PROJ_BRIGHTNESS_MIN     = 0;
-	constexpr int PROJ_BRIGHTNESS_MAX     = 255;
+	constexpr int PROJ_INTENSITY_DEFAULT = 100;
+	constexpr int PROJ_INTENSITY_MIN     = 0;
+	constexpr int PROJ_INTENSITY_MAX     = 255;
 	
 	constexpr int PROJ_FLASH_INTERVAL_DEFAULT = 10;
 	//constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
@@ -174,7 +174,7 @@ class Aravis
 		Proj_Enabled = 2
 	};
 	//ProjectorEnabled cur_proj_enabled_;
-	int cur_proj_brightness_;
+	int cur_proj_intensity_;
 	
 	int pset_validate(void);
 	void pset_stopgo(ProjectorEnabled n,const bool shortWait=false);
@@ -250,11 +250,11 @@ public:
 	bool setProjectorPattern(YCAM_PROJ_PTN ptn,const bool shortWait);
 	//2020/11/30 modified by hato --------------------  end  --------------------
 
-	bool setProjectorBrightness(int value);
+	bool setProjectorIntensity(int value);
 	//2020/11/05 modified by hato -------------------- start --------------------
-	//int projectorBrightness();
-	int projectorBrightness()const {
-		return cur_proj_brightness_;
+	//int projectorIntensity();
+	int projectorIntensity()const {
+		return cur_proj_intensity_;
 	}
 	//2020/11/05 modified by hato --------------------  end --------------------
 
