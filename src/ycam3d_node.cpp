@@ -1199,7 +1199,10 @@ int main(int argc, char **argv)
 	
 	camera_ptr->start_auto_connect();
 	
-	ros::spin();
+	//ros::spin();
+	while( ros::ok() ){
+		ros::spinOnce();
+	}
 	
 	mode_mon_timer.stop();
 	ROS_INFO(LOG_HEADER"mode monitor timer stopped.");
