@@ -194,6 +194,11 @@ public:
 	int gainA();
 	int gainD();
 	bool setExposureTime(int value);
+	//2021/01/26 add by hato -------------------- start --------------------
+	int getHeartBeatTimeout();
+	bool setHeartBeatTimeout(const int val);
+	//2021/01/26 add by hato --------------------  end  --------------------
+	
 	bool setGainA(int value);
 	bool setGainD(int value);
 	//

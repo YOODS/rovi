@@ -670,7 +670,17 @@ bool Aravis::setGainD(int value)
 {
 	return reg_write(REG_DIGITAL_GAIN, value);
 }
+//2021/01/26 add by hato -------------------- start --------------------
+int Aravis::getHeartBeatTimeout(){
+	return reg_read(REG_HEAT_BEAT_TIMEOUT);
+}
 
+	bool Aravis::setHeartBeatTimeout(const int val){
+	return reg_write(REG_HEAT_BEAT_TIMEOUT,val);
+}
+
+//2021/01/26 add by hato --------------------  end  --------------------
+	
 void Aravis::on_new_buffer(ArvStream *stream, void *arg)
 {
 	Aravis *a=(Aravis*)arg;

@@ -106,3 +106,8 @@ ycam:
     Gain: 0
   projector:
     Intensity: 80
+  nw_delay_monitor:
+    enabled: Off
+    interval: 10
+    timeout: 500
+    ignore_update_failure: Off

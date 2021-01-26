@@ -64,6 +64,11 @@ const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
 //const std::string PRM_CAM_GAIN_A            = "ycam/camera/GainA";
 //const std::string PRM_PROJ_EXPSR_TM         = "ycam/projector/ExposureTime";
 const std::string PRM_PROJ_INTENSITY          = "ycam/projector/Intensity";
+
+const std::string PRM_NW_DELAY_MON_ENABLED       = "ycam/nw_delay_monitor/enabled";
+const std::string PRM_NW_DELAY_MON_INTERVAL      = "ycam/nw_delay_monitor/interval";
+const std::string PRM_NW_DELAY_MON_TIMEOUT       = "ycam/nw_delay_monitor/timeout";
+const std::string PRM_NW_DELAY_MON_IGN_UPD_FAIL  = "ycam/nw_delay_monitor/ignore_update_failure";
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 	
 constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
@@ -91,6 +96,8 @@ std::timed_mutex pc_gen_mutex;
 std::mutex ptn_capt_wait_mutex;
 std::condition_variable ptn_capt_wait_cv;
 std::thread pc_gen_thread;
+
+int g_node_exit_flg = 0;
 
 std::vector<camera::ycam3d::CameraImage> ptn_imgs_l;
 std::vector<camera::ycam3d::CameraImage> ptn_imgs_r;
@@ -829,8 +836,20 @@ int main(int argc, char **argv)
 	
 	camera_ptr->start_auto_connect();
 	
+	bool activeDelyMonitor=false;
+	if( get_param<bool>(PRM_NW_DELAY_MON_ENABLED,false) ){
+		const int delayMonInterval= get_param<int>(PRM_NW_DELAY_MON_INTERVAL,1);
+		const int delayMonTimeout= get_param<int>(PRM_NW_DELAY_MON_TIMEOUT,500);
+		const bool delayMonIgnUpdFail = get_param<bool>(PRM_NW_DELAY_MON_IGN_UPD_FAIL,false);
+		ROS_INFO("delay monistor start. interval=%d",delayMonInterval);
+		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[&](){
+			ROS_ERROR(LOG_HEADER"network delay occurred !!!");
+			g_node_exit_flg = 1;
+		},delayMonIgnUpdFail);
+		activeDelyMonitor = true;
+	}
 	//ros::spin();
-	while( ros::ok() ){
+	while( ros::ok() && g_node_exit_flg == 0 ){
 		ros::spinOnce();
 	}
 	
