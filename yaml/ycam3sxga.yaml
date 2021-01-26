@@ -113,3 +113,8 @@ ycam:
     pcgen_publish: Off
     projector:
       Intensity: 0.2
+  nw_delay_monitor:
+    enabled: Off
+    interval: 10
+    timeout: 500
+    ignore_update_failure: Off

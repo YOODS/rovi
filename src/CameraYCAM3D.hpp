@@ -200,7 +200,7 @@ namespace camera{
 		using f_camera_closed = std::function<void(void)>;
 		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout,const int expsrLv)>;
 		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout,const int expsrLv)>;
-
+		using f_network_delayed = std::function<void(void)>;
 	}
 }
 
@@ -247,10 +247,15 @@ private:
 	int m_trigger_timeout_period;
 	std::thread m_capture_thread;
 	
+	int m_pre_heart_beat_val;
+	bool m_cancel_delay_mon;
+	std::thread m_delay_mon;
+	
 	camera::ycam3d::f_camera_open_finished m_callback_cam_open_finished;
 	camera::ycam3d::f_camera_closed m_callback_cam_closed;
 	camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
+	camera::ycam3d::f_network_delayed m_callback_nw_delayed;
 	
 	bool reset_image_buffer(const int capt_num);
 	
@@ -269,7 +274,7 @@ protected:
 	std::vector<camera::ycam3d::CameraImage> m_imgs_right;
 	std::vector<bool> m_img_recv_flags;
 	
-	
+
 public:
 	CameraYCAM3D();
 	virtual ~CameraYCAM3D();
@@ -330,6 +335,9 @@ public:
 	
 	bool get_capture_param(camera::ycam3d::CaptureParameter *capt_param);
 	bool update_capture_param(const camera::ycam3d::CaptureParameter &capt_param);
+	
+	void start_nw_delay_monitor_task(const int sec,const int timeout,camera::ycam3d::f_network_delayed callback,const bool ignUpdFail);
+	void stop_nw_delay_monitor_task();
 	
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	

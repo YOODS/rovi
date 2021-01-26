@@ -126,14 +126,14 @@ class Aravis
 	//2020/11/09 comment by hato --------------------  end  --------------------
 		
 	//2020/09/16 add by hato -------------------- start --------------------
-	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting;
+	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting_;
 	int m_expsr_tm_lv;
 	//2020/09/16 add by hato --------------------  end  --------------------
 	
 	//2020/11/05 add by hato -------------------- start --------------------
 	YCAM_PROJ_PTN cur_proj_ptn_;
 	//2020/11/05 add by hato --------------------  end  --------------------
-
+	
 	//Aravis control
 	static void on_new_buffer(ArvStream *stream, void *arg);
 	static void on_control_lost(ArvGvDevice *gv_device, void *arg);
@@ -204,7 +204,6 @@ public:
 	int  bytesPerPixel(){payload_ / (width_ * height_);}
 	int cameraNo()const { return camno_; }
 	
-	
 	//2020/09/16 add by hato -------------------- start --------------------
 	bool get_exposure_time_level(int *val)const;
 	bool get_exposure_time_level_default(int *val)const;
@@ -212,11 +211,15 @@ public:
 	bool get_exposure_time_level_max(int *val)const;
 	bool set_exposure_time_level(const int val);
 	//2020/09/16 add by hato --------------------  end  --------------------
-	
-	
+		
 	int exposureTime();
 	int gainA();
 	int gainD();
+	
+	//2021/01/26 add by hato -------------------- start --------------------
+	int getHeartBeatTimeout();
+	bool setHeartBeatTimeout(const int val);
+	//2021/01/26 add by hato --------------------  end  --------------------
 	
 	//2020/11/09 comment by hato -------------------- start --------------------
 	//bool setExposureTime(int value);

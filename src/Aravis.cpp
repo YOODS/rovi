@@ -10,6 +10,7 @@
 #include <vector>
 #include <fstream>
 #include <math.h>
+
 #include "Aravis.h"
 
 using namespace std;
@@ -134,7 +135,7 @@ int Aravis::static_camno_ = 0;
 //ncam:ポートを共有するカメラ数(GevSCPD計算用)
 Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	//2020/09/18 add by hato -------------------- start --------------------
-	,m_expsr_tm_lv_setting(nullptr),m_expsr_tm_lv(-1)
+	,m_expsr_tm_lv_setting_(nullptr),m_expsr_tm_lv(-1)
 	//2020/09/18 add by hato --------------------  end --------------------
 	//2020/11/05 add by hato -------------------- start --------------------
 	,cur_proj_ptn_(YCAM_PROJ_PTN_PHSFT)
@@ -160,11 +161,11 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	if (res==YCAM_RES_VGA) {
 		width_=1280;
 		height_=480;
-		m_expsr_tm_lv_setting = &EXPOSURE_TIME_LV_SETTING_VGA;
+		m_expsr_tm_lv_setting_ = &EXPOSURE_TIME_LV_SETTING_VGA;
 	}else if (res==YCAM_RES_SXGA){
 		width_=2560,
 		height_=1024;
-		m_expsr_tm_lv_setting = &EXPOSURE_TIME_LV_SETTING_SXGA;
+		m_expsr_tm_lv_setting_ = &EXPOSURE_TIME_LV_SETTING_SXGA;
 	}
 	//2020/09/18 add by hato --------------------  end  --------------------
 	else dprintf("invalid resolution type:%d",res);
@@ -178,6 +179,7 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	pthread_cond_init(&cap_cond_, &attr);
 	//
 	pthread_mutex_init(&cap_mutex_, NULL);
+	
 }
 
 Aravis::~Aravis()
@@ -192,12 +194,12 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 	
 	//2020/09/18 add by hato -------------------- start --------------------
 	m_expsr_tm_lv = -1;
-	if( ! m_expsr_tm_lv_setting ){
+	if( ! m_expsr_tm_lv_setting_ ){
 		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
-	const int cur_expsr_tm_lv = m_expsr_tm_lv_setting->default_lv;
-	const ExposureTimeLevelSetting::Param * exp_tm_lv_param = m_expsr_tm_lv_setting->get_param(cur_expsr_tm_lv);
+	const int cur_expsr_tm_lv = m_expsr_tm_lv_setting_->default_lv;
+	const ExposureTimeLevelSetting::Param * exp_tm_lv_param = m_expsr_tm_lv_setting_->get_param(cur_expsr_tm_lv);
 	if( ! exp_tm_lv_param ){
 		dprintf("error: exposure time level param is null.");
 		return false;
@@ -567,7 +569,7 @@ void Aravis::imageSize(int *width, int *height)
 }
 //2020/09/16 add by hato -------------------- start --------------------
 bool Aravis::get_exposure_time_level(int *val)const{
-	if( ! m_expsr_tm_lv_setting ){
+	if( ! m_expsr_tm_lv_setting_ ){
 		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
@@ -576,35 +578,35 @@ bool Aravis::get_exposure_time_level(int *val)const{
 }
 
 bool Aravis::get_exposure_time_level_default(int *val)const{
-	if( ! m_expsr_tm_lv_setting ){
+	if( ! m_expsr_tm_lv_setting_ ){
 		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
-	*val = m_expsr_tm_lv_setting->default_lv;
+	*val = m_expsr_tm_lv_setting_->default_lv;
 	return *val >= 0;
 }
 
 bool Aravis::get_exposure_time_level_min(int *val)const{
-	if( ! m_expsr_tm_lv_setting ){
+	if( ! m_expsr_tm_lv_setting_ ){
 		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
-	*val = m_expsr_tm_lv_setting->min_lv;
+	*val = m_expsr_tm_lv_setting_->min_lv;
 	return *val >= 0 ;
 }
 
 bool Aravis::get_exposure_time_level_max(int *val)const{
-	if( ! m_expsr_tm_lv_setting ){
+	if( ! m_expsr_tm_lv_setting_ ){
 		dprintf("error: exposure time level setting is null.");
 		return false;
 	}
-	*val = m_expsr_tm_lv_setting->max_lv;
+	*val = m_expsr_tm_lv_setting_->max_lv;
 	return *val >= 0;
 }
 
 bool Aravis::set_exposure_time_level(const int lv){
 	const ExposureTimeLevelSetting::Param * exp_tm_lv_param = nullptr;
-	if( ! m_expsr_tm_lv_setting || ! ( exp_tm_lv_param = m_expsr_tm_lv_setting->get_param(lv)) ){
+	if( ! m_expsr_tm_lv_setting_ || ! ( exp_tm_lv_param = m_expsr_tm_lv_setting_->get_param(lv)) ){
 		dprintf("error: exposure time level param is null. lv=%d",lv);
 		return false;
 	}
@@ -687,7 +689,17 @@ bool Aravis::setGainD(int value)
 {
 	return reg_write(REG_DIGITAL_GAIN, value);
 }
+//2021/01/26 add by hato -------------------- start --------------------
+int Aravis::getHeartBeatTimeout(){
+	return reg_read(REG_HEAT_BEAT_TIMEOUT);
+}
 
+	bool Aravis::setHeartBeatTimeout(const int val){
+	return reg_write(REG_HEAT_BEAT_TIMEOUT,val);
+}
+
+//2021/01/26 add by hato --------------------  end  --------------------
+	
 void Aravis::on_new_buffer(ArvStream *stream, void *arg)
 {
 	Aravis *a=(Aravis*)arg;

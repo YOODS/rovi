@@ -164,13 +164,17 @@ CameraYCAM3D::CameraYCAM3D():
 	m_on_image_received(this),
 	m_on_disconnect(this),
 	m_capture_timeout_period(CAPTURE_TIMEOUT_PERIOD_DEFAULT),
-	m_trigger_timeout_period(TRIGGER_TIMEOUT_PERIOD_DEFAULT)
+	m_trigger_timeout_period(TRIGGER_TIMEOUT_PERIOD_DEFAULT),
+	m_cancel_delay_mon(false),
+	m_pre_heart_beat_val(0)
 {
 	
 }
 
 CameraYCAM3D::~CameraYCAM3D(){
+	printf(LOG_HEADER"destructor start.\n");
 	close();
+	printf(LOG_HEADER"destructor end.\n");
 }
 
 int CameraYCAM3D::width()const{
@@ -380,7 +384,9 @@ void CameraYCAM3D::start_auto_connect(){
 }
 
 void CameraYCAM3D::close(){
-
+	{
+		stop_nw_delay_monitor_task();
+	}
 	{
 		//自動接続
 		ROS_INFO(LOG_HEADER"#%d auto connect finish wait start.", m_camno);
@@ -395,7 +401,7 @@ void CameraYCAM3D::close(){
 		ROS_INFO(LOG_HEADER"#%d capture finish wait start.", m_camno);
 		std::lock_guard<std::timed_mutex> locker_capt(m_capt_finish_wait_mutex);
 		// ********** m_capt_finish_wait_mutex LOCKED **********
-		ROS_INFO(LOG_HEADER"#%d capture finish wait finished.", m_camno);
+		ROS_INFO(LOG_HEADER"#%d capture finish wait end.", m_camno);
 		
 		// ********** m_camera_mutex LOCKED **********
 		std::lock_guard<std::timed_mutex> locker_cam(m_camera_mutex);
@@ -405,7 +411,7 @@ void CameraYCAM3D::close(){
 		if( m_arv_ptr ){
 			ROS_INFO(LOG_HEADER"#%d camera destroy start.", m_camno);
 			m_arv_ptr->destroy();
-			ROS_INFO(LOG_HEADER"#%d camera destroy finished.", m_camno);
+			ROS_INFO(LOG_HEADER"#%d camera destroy end.", m_camno);
 		}
 		
 		// ********** m_auto_connect_mutex UNLOCKED **********
@@ -948,6 +954,91 @@ bool CameraYCAM3D::update_capture_param(const camera::ycam3d::CaptureParameter &
 	ROS_WARN(LOG_HEADER"update capture param finished. proc_tm=%d ms",tmr.elapsed_ms());
 #endif
 	return true;
+}
+
+void CameraYCAM3D::start_nw_delay_monitor_task(const int interval,const int timeout,camera::ycam3d::f_network_delayed callback,const bool ignUpdFail){
+	stop_nw_delay_monitor_task();
+	
+	m_cancel_delay_mon=true;
+	
+	m_callback_nw_delayed = callback;
+
+	m_delay_mon = std::thread([&](const int aInterval,const int aTimeout){
+		ROS_INFO(LOG_HEADER"network delay monitor task start.");
+		std::thread hb_swap_thread;
+		{
+			std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
+			m_pre_heart_beat_val = m_arv_ptr->getHeartBeatTimeout();
+			ROS_INFO(LOG_HEADER"network delay monitor: heart beat val=%d",m_pre_heart_beat_val);
+		}
+		
+		
+		bool ignore_callback=false;
+		while( m_cancel_delay_mon ){
+			
+			const int next_val =  m_pre_heart_beat_val ^ (1 << 0);
+			//ROS_INFO(LOG_HEADER"network delay monitor: heat beat write. cur=%d next=%d",m_pre_heart_beat_val,next_val);
+			ElapsedTimer tmr;
+			if( m_arv_ptr->isLost() ){
+				//ROS_INFO(LOG_HEADER"network delay monitor. camera is lost.");
+			}else{
+				
+				std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
+				//撮影や他の処理ですぐにロックが取得できないだろうからロック取得時間は考慮しない。
+				tmr.restart();
+				if( ! m_arv_ptr->setHeartBeatTimeout(next_val) ){
+					//遅延ではなく、接続が切れた場合でもありえるので無視
+					ROS_WARN(LOG_HEADER"network delay monitor: heart beat write failed.");
+				}else{
+					const int cur_val = m_arv_ptr->getHeartBeatTimeout();
+					if( next_val != cur_val ){
+						if( ignUpdFail ){
+						}else{
+							//callback!!!
+							if( ! ignore_callback ){
+							    ROS_ERROR(LOG_HEADER"network delay monitor: heart beat update failed. cur_val=%d, next_val=%d",cur_val,next_val);
+								ignore_callback=true;
+								m_callback_nw_delayed();
+							}
+						}
+					}else{
+						if( ignore_callback ){
+							ROS_INFO(LOG_HEADER"network delay monitor: heart beat update success. continue to monitor.");
+						}
+						ignore_callback=false;
+					}
+				}
+				
+				const int elapsed = tmr.elapsed_ms();
+				ROS_INFO(LOG_HEADER"network delay monitor: heart beat update finished. proc_tm=%d\n",elapsed);
+				if( elapsed > aTimeout){
+					//callback!!!
+					if( ! ignore_callback ){
+						ignore_callback=true;
+						ROS_ERROR(LOG_HEADER"network delay monitor: heart beat write delay occurred. elapsed=%d, timeout=%d",elapsed,aTimeout);
+						m_callback_nw_delayed();
+					}
+				}
+			}
+			std::this_thread::sleep_for(std::chrono::seconds(aInterval));
+	
+			m_pre_heart_beat_val = next_val;
+		}
+		if(hb_swap_thread.joinable()){
+			ROS_INFO(LOG_HEADER"delay monitor task thread wait start.\n");
+			hb_swap_thread.join();
+			ROS_INFO(LOG_HEADER"delay monitor task thread wait end.\n");
+		}
+	},interval,timeout);
+}
+
+void CameraYCAM3D::stop_nw_delay_monitor_task(){
+	fprintf(stdout,"network delay monitor task stop: start.\n");
+	if(m_delay_mon.joinable()){
+		m_cancel_delay_mon=false;
+		m_delay_mon.join();
+	}
+	fprintf(stdout,"network delay monitor task stop: end.\n");
 }
 
 //void CameraYCAM3D::ser_projector_pattern(int val){

@@ -78,7 +78,11 @@ const std::string PRM_HDR_EXPOSURE_TIME_LEVEL = "ycam/hdr/ExposureTimeLevel";
 const std::string PRM_HDR_CAM_GAIN_D          = "ycam/hdr/camera/Gain";
 const std::string PRM_HDR_PROJ_INTENSITY      = "ycam/hdr/projector/Intensity";
 
-	
+const std::string PRM_NW_DELAY_MON_ENABLED       = "ycam/nw_delay_monitor/enabled";
+const std::string PRM_NW_DELAY_MON_INTERVAL      = "ycam/nw_delay_monitor/interval";
+const std::string PRM_NW_DELAY_MON_TIMEOUT       = "ycam/nw_delay_monitor/timeout";
+const std::string PRM_NW_DELAY_MON_IGN_UPD_FAIL  = "ycam/nw_delay_monitor/ignore_update_failure";
+
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 
 constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
@@ -117,6 +121,8 @@ std::condition_variable ptn_capt_wait_cv;
 std::thread pc_gen_thread;
 
 bool cur_hdr_enabled=false;
+	
+int g_node_exit_flg = 0;
 	
 struct RosCaptureParameter: public camera::ycam3d::CaptureParameter{
 	bool pcgen_publish = true;
@@ -1061,7 +1067,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	}
 	
 	// ********** pc_gen_mutex UNLOCKED **********
-	
+
 	return true;
 }
 
@@ -1199,26 +1205,43 @@ int main(int argc, char **argv)
 	
 	camera_ptr->start_auto_connect();
 	
+	bool activeDelyMonitor=false;
+	if( get_param<bool>(PRM_NW_DELAY_MON_ENABLED,false) ){
+		const int delayMonInterval= get_param<int>(PRM_NW_DELAY_MON_INTERVAL,1);
+		const int delayMonTimeout= get_param<int>(PRM_NW_DELAY_MON_TIMEOUT,500);
+		const bool delayMonIgnUpdFail = get_param<bool>(PRM_NW_DELAY_MON_IGN_UPD_FAIL,false);
+		ROS_INFO("delay monistor start. interval=%d",delayMonInterval);
+		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[&](){
+			ROS_ERROR(LOG_HEADER"network delay occurred !!!");
+			g_node_exit_flg = 1;
+		},delayMonIgnUpdFail);
+		activeDelyMonitor = true;
+	}
 	//ros::spin();
-	while( ros::ok() ){
+	while( ros::ok() && g_node_exit_flg == 0){
 		ros::spinOnce();
 	}
 	
+	if( activeDelyMonitor ){
+		printf("delay monistor stop.\n");
+		camera_ptr->stop_nw_delay_monitor_task();
+	}
+	
 	mode_mon_timer.stop();
-	ROS_INFO(LOG_HEADER"mode monitor timer stopped.");
+	printf(LOG_HEADER"mode monitor timer stopped.\n");
 	
 	cam_open_mon_timer.stop();
-	ROS_INFO(LOG_HEADER"camera open monitor timer stopped.");
+	printf(LOG_HEADER"camera open monitor timer stopped.\n");
 	
 	//todo:******画像転送スレッドの終了待ち
-	ROS_INFO(LOG_HEADER"image transfer task wait start.");
+	printf(LOG_HEADER"image transfer task wait start.\n");
 
-	ROS_INFO(LOG_HEADER"image transfer task wait finished.");
-	
+	printf(LOG_HEADER"image transfer task wait finished.\n");
+		
 	if( camera_ptr ){
-		ROS_INFO(LOG_HEADER"camera close start.");
+		printf(LOG_HEADER"camera terminate start.\n");
 		camera_ptr.reset();
-		ROS_INFO(LOG_HEADER"camera close finished.");
+		printf(LOG_HEADER"camera terminate finished.\n");
 	}
 	return 0;
 }
