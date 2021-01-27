@@ -152,6 +152,7 @@ namespace camera{
 		//using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout)>;
 		using f_network_delayed = std::function<void(void)>;
 		using f_auto_con_limit_exceeded=std::function<void(void)>;
+		using f_ros_error_published=std::function<void(std::string)>;
 	}
 }
 
@@ -213,6 +214,7 @@ private:
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
 	camera::ycam3d::f_network_delayed m_callback_nw_delayed;
 	camera::ycam3d::f_auto_con_limit_exceeded m_callback_auto_lm_excd;
+	camera::ycam3d::f_ros_error_published m_ros_err_pub;
 	
 	bool reset_image_buffer();
 	
@@ -285,6 +287,7 @@ public:
 	//bool get_projector_interval(int *val);
 	//bool set_projector_interval(const int val);
 
+    void set_callback_ros_error_published(camera::ycam3d::f_ros_error_published callback);
 	void set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback);
 	void start_nw_delay_monitor_task(const int sec,const int timeout,camera::ycam3d::f_network_delayed callback,const bool ignUpdFail);
 	void stop_nw_delay_monitor_task();

@@ -498,11 +498,14 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 				ROS_WARN(LOG_HEADER"#%d camera is already connected. [2]", m_camno);
 			}else{
 				
+				if(m_ros_err_pub){ m_ros_err_pub("camera reset start.");}
+				
 				while( ! camera::ycam3d::reset_ycam3d(aIpaddr.c_str()) && ! m_auto_connect_abort ){
 						sleep(camera::ycam3d::YCAM3D_RESET_INTERVAL);
 				}
 				
 				if( ! m_auto_connect_abort ){
+					if(m_ros_err_pub){ m_ros_err_pub("camera reset success.");}
 					for(int i=camera::ycam3d::YCAM3D_RESET_AFTER_WAIT; i > 0  && ! m_auto_connect_abort ; --i){
 						ROS_INFO(LOG_HEADER"camera restarting ...  wait %2d sec",i);
 						sleep(1);
@@ -516,6 +519,7 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 					
 					ROS_WARN(LOG_HEADER"#%d trying to connect the camera... [%d]", m_camno, retry );
 					
+					if(m_ros_err_pub){ m_ros_err_pub("camera open try start.");}
 					open();
 					
 					
@@ -527,6 +531,7 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 						ROS_WARN(LOG_HEADER"#%d auto connect aborted.", m_camno);
 						break;
 					}else if( m_open_stat.load() ){
+						if(m_ros_err_pub){ m_ros_err_pub("camera opened.");}
 						break;
 					}else if( retry >= CAMERA_AUTO_CONNECT_RETRY_MAX ){
 						ROS_ERROR(LOG_HEADER"auto connect retry limit has been exceeded.");
@@ -1211,6 +1216,10 @@ void CameraYCAM3D::stop_nw_delay_monitor_task(){
 	fprintf(stdout,"network delay monitor task stop: end.\n");
 }
 
+void CameraYCAM3D::set_callback_ros_error_published(camera::ycam3d::f_ros_error_published callback){
+	m_ros_err_pub = callback;
+}
+	
 void CameraYCAM3D::set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback){
 	m_callback_auto_lm_excd=callback;
 }

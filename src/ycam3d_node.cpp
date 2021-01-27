@@ -838,7 +838,11 @@ int main(int argc, char **argv)
 	mode_mon_timer = n.createTimer(ros::Duration(1/(float)cur_mode_mon_cyc), mode_monitor_task);
 	cam_open_mon_timer = n.createTimer(ros::Duration(1), cam_open_monitor_task);
 	
+	camera_ptr->set_callback_ros_error_published([&](const std::string message){
+		publish_string(pub_error,message);
+	});
 	camera_ptr->set_callback_auto_con_limit_exceeded([&](){
+		publish_string(pub_error,"camera auto connect limit exceeded.");
 		g_node_exit_flg = 1;
 	});
 	camera_ptr->start_auto_connect(cam_ipaddr);
@@ -851,6 +855,7 @@ int main(int argc, char **argv)
 		ROS_INFO("delay monistor start. interval=%d",delayMonInterval);
 		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[&](){
 			ROS_ERROR(LOG_HEADER"network delay occurred !!!");
+			publish_string(pub_error,"network delay occurred.");
 			g_node_exit_flg = 1;
 		},delayMonIgnUpdFail);
 		activeDelyMonitor = true;
