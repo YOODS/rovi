@@ -97,7 +97,7 @@ genpc:
       enabled: On
       interval: 1
 ycam:
-  Mode: 2
+  Mode: 1
   Strobe: 1
   SoftwareTriggerRate: 5
   ExposureTimeLevel: 1
