@@ -195,12 +195,19 @@ namespace camera{
 			}
 		};
 		
+		extern const int YCAM3D_RESET_INTERVAL;
+		extern const int YCAM3D_RESET_AFTER_WAIT;
+		
+		void start_ycam3d_reset(const char *ipaddr);
+		bool reset_ycam3d(const char *ipaddr);
+		
 		using f_camera_open_finished = std::function<void(const bool result)>;
 		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
 		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout,const int expsrLv)>;
 		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout,const int expsrLv)>;
 		using f_network_delayed = std::function<void(void)>;
+		using f_auto_con_limit_exceeded=std::function<void(void)>;
 	}
 }
 
@@ -240,6 +247,8 @@ private:
 	
 	std::timed_mutex m_auto_connect_mutex;
 	
+	std::string m_auto_connect_ipaddr;
+	
 	CameraImageReceivedCallback m_on_image_received;
 	CameraDisconnectCallbck m_on_disconnect;
 	
@@ -256,6 +265,7 @@ private:
 	camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
 	camera::ycam3d::f_network_delayed m_callback_nw_delayed;
+	camera::ycam3d::f_auto_con_limit_exceeded m_callback_auto_lm_excd;
 	
 	bool reset_image_buffer(const int capt_num);
 	
@@ -302,7 +312,7 @@ public:
 	
 	bool capture_pattern(const bool multi,const bool ptnCangeWaitShort);
 	
-	void start_auto_connect();
+	void start_auto_connect(const std::string ipaddr="");
 	
 	bool get_exposure_time_level_default(int *val)const;
 	
@@ -330,6 +340,8 @@ public:
 	//bool get_projector_interval(int *val);
 	//bool set_projector_interval(const int val);
 	//void ser_projector_pattern(int val);
+	
+	void set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback);
 	
 	bool get_temperature(int *val);
 	

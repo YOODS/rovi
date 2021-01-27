@@ -1,6 +1,16 @@
 #include "CameraYCAM3D.hpp"
 
 #include <map>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+#include <sys/ioctl.h>
+#include <chrono>
+
 #include <ros/ros.h>
 #include "ElapsedTimer.hpp"
 
@@ -11,6 +21,99 @@
 
 namespace camera{
 	namespace ycam3d{
+		const unsigned char YCAM3D_RESET_CMD[]      = { 0xD7,0x00,0x40,0x00 };
+		const unsigned char YCAM3D_RESET_REPLY_OK[] = { 0xD7,0x01,0x41,0x00 };
+		const int YCAM3D_RESET_REPLY_WAIT_INTERVAL = 1000;
+		const int YCAM3D_RESET_UDP_PORT = 0xF000;
+		const int YCAM3D_RESET_INTERVAL = 5;
+		const int YCAM3D_RESET_AFTER_WAIT = 12;
+		const int YCAM3D_RESET_TIMEOUT = 1000;
+		
+		void start_ycam3d_reset(const char *ipaddr){
+			while( ! reset_ycam3d(ipaddr) ){
+				sleep(YCAM3D_RESET_INTERVAL);
+			}
+			
+			for(int i=YCAM3D_RESET_AFTER_WAIT;i>0;--i){
+				ROS_INFO(LOG_HEADER"camera restarting ...  wait %2d sec",i);
+				sleep(1);
+			}
+		}
+
+		bool reset_ycam3d(const char *ipaddr){
+			int sock;
+			struct sockaddr_in addr;
+			sock = socket(AF_INET, SOCK_DGRAM, 0);
+			addr.sin_family = AF_INET;
+			addr.sin_addr.s_addr = inet_addr(ipaddr);
+			addr.sin_port = htons(YCAM3D_RESET_UDP_PORT);
+
+			bind(sock, (const struct sockaddr *)&addr, sizeof(addr));
+			//printf("send sock=%d ipaddr=%s port=%d(%X) \n",sock, ipaddr, port, port);
+
+			ROS_INFO(LOG_HEADER"camera reset start. ipaddr=%s",ipaddr);
+			const int cmd_size=sizeof(YCAM3D_RESET_CMD);
+			const int slen=sendto(sock, YCAM3D_RESET_CMD, cmd_size, 0, (struct sockaddr *)&addr, sizeof(addr));
+			if( slen != cmd_size ){
+				ROS_ERROR(LOG_HEADER"camera reset command send failed.");
+				return false;
+			}
+			
+			//non-blocking
+			int val = 1;
+			ioctl(sock, FIONBIO, &val);
+			
+			const int reply_data_len = sizeof(YCAM3D_RESET_REPLY_OK);
+			
+			unsigned char reply[sizeof(YCAM3D_RESET_REPLY_OK)]={0};
+			
+			//printf("recv start. rsock=%d buf_size=%d\n",sock, reply_data_len);
+			
+			struct sockaddr_in from_addr;
+			socklen_t sin_size;
+			std::chrono::system_clock::time_point start_tm = std::chrono::system_clock::now();
+			int elapsed_ms = 0;
+			while( true ){
+				//const ssize_t rlen=recvfrom(sock, reply, sizeof(reply), 0,(struct sockaddr *)&from_addr, &sin_size);
+				const ssize_t rlen=recv(sock, reply, sizeof(reply), 0 );
+				//printf("rlen=%ld\n",rlen);
+				//for(int i=0;i<reply_data_len;++i){
+				//	printf("rbuf[%d] %2X\n",i,reply[i]);
+				//}
+				if( rlen != reply_data_len ){
+					usleep(YCAM3D_RESET_REPLY_WAIT_INTERVAL);
+				}else{
+					break;
+				}
+				elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - start_tm).count();
+				//printf("elapsed_ms=%d, timeout=%d\n",elapsed_ms,timeout);
+				if(elapsed_ms > YCAM3D_RESET_TIMEOUT ){
+					ROS_ERROR(LOG_HEADER"camera reset timeout occured.");
+					break;
+				}
+			}
+			int matchCount=0;
+			for(int i=0;i<reply_data_len;++i){
+				//printf("[%d] %2X %2X\n",i,YCAM3D_RESET_REPLY_OK[i],reply[i]);
+				if(YCAM3D_RESET_REPLY_OK[i] == reply[i]){
+					matchCount++;
+				}else{
+					break;
+				}
+			}
+			//printf("matchCount=%d reply_data_len=%d",matchCount,reply_data_len);
+			const bool result=matchCount == reply_data_len;
+			if( ! result ){
+				ROS_ERROR(LOG_HEADER"camera reset failed.");
+			}else{
+				ROS_INFO(LOG_HEADER"camera reset success.");
+			}
+			
+			//for(int i=0;i<sizeof(reply);++i){
+			//	printf("recv [%d] %3d (%2X)\n",i,0xFF & reply[i],0xFF & reply[i]);
+			//}
+			return result;
+		}
 	}
 }
 
@@ -27,6 +130,7 @@ namespace {
 	//接続試行して次のトライまでの時間。open処理の時間があるので一定間隔にはならない
 	const int CAMERA_AUTO_CONNECT_WAIT_TM = 1000 * 1000;//1sec
 	const int CAMERA_AUTO_CONNECT_INTERVAL = 5;//sec 
+	const int CAMERA_AUTO_CONNECT_RETRY_MAX = 10;
 	
 	const int CAMERA_STREAM_BUF_SIZE = 50;
 	
@@ -35,6 +139,8 @@ namespace {
 	const int TRIGGER_TIMEOUT_PERIOD_DEFAULT = 5; //sec
 	
 	const int STROBE_CAPT_FRAME_INDEX = 1;
+	
+	
 }
 
 CameraYCAM3D::CameraImageReceivedCallback::CameraImageReceivedCallback(CameraYCAM3D *obj):OnRecvImage(),
@@ -338,7 +444,12 @@ bool CameraYCAM3D::is_auto_connect_running(){
 }
 
 
-void CameraYCAM3D::start_auto_connect(){
+void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
+	
+	if( ! ipaddr.empty() ){
+		ROS_INFO("auto connect target ipaddr=%s",ipaddr.c_str());
+		m_auto_connect_ipaddr=ipaddr;
+	}
 	
 	if( m_open_stat.load() ){
 		ROS_WARN(LOG_HEADER"#%d camera is already connected. [1] ", m_camno);
@@ -352,15 +463,32 @@ void CameraYCAM3D::start_auto_connect(){
 		ROS_INFO(LOG_HEADER"#%d auto connect start.", m_camno);
 		
 		m_auto_connect_abort = false;
-		m_auto_connect_thread = std::thread([&](){
+		m_auto_connect_thread = std::thread([&](const std::string aIpaddr){
 			ROS_INFO(LOG_HEADER"#%d auto connect loop start.", m_camno);
 			if( m_open_stat.load() ){
 				ROS_WARN(LOG_HEADER"#%d camera is already connected. [2]", m_camno);
 			}else{
+				
+				while( ! camera::ycam3d::reset_ycam3d(aIpaddr.c_str()) && ! m_auto_connect_abort ){
+						sleep(camera::ycam3d::YCAM3D_RESET_INTERVAL);
+				}
+				
+				if( ! m_auto_connect_abort ){
+					for(int i=camera::ycam3d::YCAM3D_RESET_AFTER_WAIT; i > 0  && ! m_auto_connect_abort ; --i){
+						ROS_INFO(LOG_HEADER"camera restarting ...  wait %2d sec",i);
+						sleep(1);
+					}
+				}
+				
+				int retry=0;
 				while( ! m_auto_connect_abort ){
-					ROS_WARN(LOG_HEADER"#%d trying to connect the camera...", m_camno);
+					
+					retry++;
+					
+					ROS_WARN(LOG_HEADER"#%d trying to connect the camera... [%d]", m_camno, retry );
 					
 					open();
+					
 					
 					for(int i = 0 ; i < CAMERA_AUTO_CONNECT_INTERVAL && ! m_auto_connect_abort && ! m_open_stat.load() ; ++i ){
 						usleep(CAMERA_AUTO_CONNECT_WAIT_TM);
@@ -371,6 +499,12 @@ void CameraYCAM3D::start_auto_connect(){
 						break;
 					}else if( m_open_stat.load() ){
 						break;
+					}else if( retry >= CAMERA_AUTO_CONNECT_RETRY_MAX ){
+						ROS_ERROR(LOG_HEADER"auto connect retry limit has been exceeded.");
+						if(m_callback_auto_lm_excd){
+							m_callback_auto_lm_excd();
+						}
+						retry = 0;
 					}
 				}
 			}
@@ -378,7 +512,7 @@ void CameraYCAM3D::start_auto_connect(){
 			
 			m_auto_connect_mutex.unlock();
 			// ******** auto_connect_mutex UNLOCKED ******** 
-		});
+		},m_auto_connect_ipaddr);
 		m_auto_connect_thread.detach();
 	}
 }
@@ -752,6 +886,7 @@ bool CameraYCAM3D::set_exposure_time_level(const int val){
 	},val);
 }
 
+
 #if 0
 bool CameraYCAM3D::get_exposure_time(int *val){
 	return get_camera_param_int("exposure_time",[&](int *l_val) {
@@ -1041,6 +1176,9 @@ void CameraYCAM3D::stop_nw_delay_monitor_task(){
 	fprintf(stdout,"network delay monitor task stop: end.\n");
 }
 
+void CameraYCAM3D::set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback){
+	m_callback_auto_lm_excd=callback;
+}
 //void CameraYCAM3D::ser_projector_pattern(int val){
 //	m_arv_ptr->setProjectorPattern((YCAM_PROJ_PTN)val);
 //}
