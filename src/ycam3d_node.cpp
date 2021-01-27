@@ -51,6 +51,7 @@ ros::Publisher pub_views[2];
 ros::ServiceClient svc_genpc;
 ros::ServiceClient svc_remap[2];
 
+std::string cam_ipaddr;
 int cam_width = -1;
 int cam_height = -1;
 
@@ -158,7 +159,10 @@ void publish_string(ros::Publisher&pub, const std::string &val){
 	
 bool init(){
 	bool ret=false;
-	if( ! nh->getParam("camera/Width", cam_width) ){
+	if( ! nh->getParam("camera/address",cam_ipaddr) ){
+		ROS_ERROR(LOG_HEADER"error:camera ipaddr get failed.");
+		
+	}else if( ! nh->getParam("camera/Width", cam_width) ){
 		ROS_ERROR(LOG_HEADER"error:camera width get failed.");
 		
 	}else if( ! nh->getParam("camera/Height", cam_height) ){
@@ -834,7 +838,10 @@ int main(int argc, char **argv)
 	mode_mon_timer = n.createTimer(ros::Duration(1/(float)cur_mode_mon_cyc), mode_monitor_task);
 	cam_open_mon_timer = n.createTimer(ros::Duration(1), cam_open_monitor_task);
 	
-	camera_ptr->start_auto_connect();
+	camera_ptr->set_callback_auto_con_limit_exceeded([&](){
+		g_node_exit_flg = 1;
+	});
+	camera_ptr->start_auto_connect(cam_ipaddr);
 	
 	bool activeDelyMonitor=false;
 	if( get_param<bool>(PRM_NW_DELAY_MON_ENABLED,false) ){
