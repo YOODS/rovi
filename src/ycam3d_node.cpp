@@ -860,9 +860,11 @@ int main(int argc, char **argv)
 		},delayMonIgnUpdFail);
 		activeDelyMonitor = true;
 	}
+	ros::Rate rate(10*1000);
 	//ros::spin();
 	while( ros::ok() && g_node_exit_flg == 0 ){
 		ros::spinOnce();
+		rate.sleep();
 	}
 	
 	mode_mon_timer.stop();
