@@ -99,7 +99,7 @@ genpc:
 ycam:
   Mode: 1
   Strobe: 1
-  SoftwareTriggerRate: 5
+  SoftwareTriggerRate: 3
   ExposureTimeLevel: 1
   TemperatureMonitorInterval: 1
   DrawCameraOrigin : Off
