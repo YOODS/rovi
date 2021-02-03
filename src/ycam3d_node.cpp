@@ -1236,11 +1236,11 @@ int main(int argc, char **argv)
 		activeDelyMonitor = true;
 	}
 	
-	ros::Rate rate(10*1000);
+	ros::Duration interval(0.01);
 	//ros::spin();
 	while( ros::ok() && g_node_exit_flg == 0 ){
 		ros::spinOnce();
-		rate.sleep();
+		interval.sleep();
 	}
 	
 	
