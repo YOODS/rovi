@@ -954,7 +954,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 						ros_ptn_imgs_l[i] = img_l;
 						genpc_msg.request.imgL.push_back(img_l);
 						
-						ros_ptn_imgs_r[i] = img_l;
+						ros_ptn_imgs_r[i] = img_r;
 						genpc_msg.request.imgR.push_back(img_r);
 						
 #ifdef DEBUG_PTN_IMG_SAVE
@@ -1033,12 +1033,14 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 							remap_ros_img_ptn_0 = remap_img_filter.response.img;
 						}
 						pub_rects0[camno].publish(remap_ros_img_ptn_0);
+						pub_rects[camno].publish(remap_ros_img_ptn_0);
 					}
 					
 					sensor_msgs::Image remap_ros_img_ptn_1;
 					{
 						rovi::ImageFilter remap_img_filter;
 						remap_img_filter.request.img = ros_imgs[camno][1];
+						
 						if( ! svc_remap[camno].call(remap_img_filter) ){
 							ROS_ERROR(LOG_HEADER"<%d> error:camera image remap failed. camno=%d, ptn=1",n,camno);
 						}else{
