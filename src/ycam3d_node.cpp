@@ -1020,7 +1020,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				ElapsedTimer tmr_pcgen_publish;
 				
 				ROS_INFO(LOG_HEADER"<%d> pcgen publish start.",n);
-				//画像を配信するよ
+				//画像配信
 				for( int camno = 0 ; camno < 2 ; ++camno ){
 					pub_img_raws[camno].publish(ros_imgs[camno][1]);
 					sensor_msgs::Image remap_ros_img_ptn_0;
@@ -1215,10 +1215,10 @@ int main(int argc, char **argv)
 	temp_mon_timer = n.createTimer(ros::Duration(TEMP_MON_INTERVAL_DEFAULT), get_ycam_temperature_task);
 	temp_mon_timer.stop();
 
-	camera_ptr->set_callback_ros_error_published([&](const std::string message){
+	camera_ptr->set_callback_ros_error_published([](const std::string message){
 		publish_string(pub_error,message);
 	});
-	camera_ptr->set_callback_auto_con_limit_exceeded([&](){
+	camera_ptr->set_callback_auto_con_limit_exceeded([](){
 		publish_string(pub_error,"camera auto connect limit exceeded.");
 		g_node_exit_flg = 1;
 	});
@@ -1230,7 +1230,7 @@ int main(int argc, char **argv)
 		const int delayMonTimeout= get_param<int>(PRM_NW_DELAY_MON_TIMEOUT,500);
 		const bool delayMonIgnUpdFail = get_param<bool>(PRM_NW_DELAY_MON_IGN_UPD_FAIL,false);
 		ROS_INFO("delay monistor start. interval=%d",delayMonInterval);
-		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[&](){
+		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[](){
 			ROS_ERROR(LOG_HEADER"network delay occurred !!!");
 			publish_string(pub_error,"network delay occurred.");
 			g_node_exit_flg = 1;
