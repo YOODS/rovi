@@ -241,4 +241,4 @@ roslaunch rovi ycam3vga_mm.launch
 ## 動作確認済み環境  
 |OS|Desktop|ROS|STATUS|
 |:----|:----|:----|:----|
-|Ubuntu 20.04(focal fossa)|Gnome|noetic|OK|
+|Ubuntu 20.04(focal fossa)|GNOME|noetic|OK|

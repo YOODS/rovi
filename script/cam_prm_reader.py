@@ -27,7 +27,7 @@ print (LOG_HEADER + "arg[1] camera_id=" + camera_id)
 print (LOG_HEADER + "arg[2] camera_res=" + camera_res)
 camera_res = camera_res.upper()
 
-cam_xml_str = ""
+cam_xml = ""
 
 print(LOG_HEADER + "camera xml read start.")
 try:
@@ -37,16 +37,17 @@ try:
         cmds.append(camera_id)
     cmds.append("genicam")
     print(LOG_HEADER + "cmds=" + ' '.join(cmds))
-    cam_xml_str = subprocess.check_output(cmds)
+    cam_xml = subprocess.check_output(cmds)
     print(LOG_HEADER + "camera xml read finished.")
 except subprocess.CalledProcessError:
     print(LOG_HEADER + 'error: arravis call failed.')
     sys.exit(-1)
 
-if len(cam_xml_str) == 0:
+if len(cam_xml) == 0:
     print(LOG_HEADER + "error: xml data read failed.")
     sys.exit(-1)
 
+cam_xml_str = cam_xml.decode()
 pattern = "YOODS Co,LTD.-YCAM3D-III-.*-->\n(.*)"
 result = re.match(pattern, cam_xml_str, re.MULTILINE | re.DOTALL)
 if result:

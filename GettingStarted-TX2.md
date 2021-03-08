@@ -13,7 +13,7 @@
 
 - OSとしてUbuntu 16.04 LTSをインストール済み。
 - gitをインストール済み。
-- ROS Kineticをインストール済み。
+- ROS Noeticをインストール済み。
 - ROSワークスペースは~/catkin_wsとする。  
 (~/catkin_ws以外のROSワークスペースでも可。  
 その場合は以下の例を読み替えること。)
@@ -36,16 +36,16 @@ sudo ./flash.sh  jetson-tx2 mmcblk0p1
 sudo apt-get update
 ~~~
 
-### [参考2]ROS Kineticのインストール手順詳細
+### [参考2]ROS Noeticのインストール手順詳細
 ~~~
 mkdir ~/src
 cd ~/src
 git clone https://github.com/jetsonhacks/installROSTX2.git
 cd installROSTX2/
-./installROS.sh -p ros-kinetic-desktop-full
+./installROS.sh -p ros-noetic-desktop-full
 ./setupCatkinWorkspace.sh
 rosdep update
-echo "source /opt/ros/kinetic/setup.bash" >> ~/.bashrc
+echo "source /opt/ros/noetic/setup.bash" >> ~/.bashrc
 . ~/.bashrc
 ~~~
 
@@ -177,9 +177,9 @@ sudo apt-get update
 sudo apt-get -y install python-catkin-tools
 ~~~
 
-### 2-6. ros-kinetic-opencv3のインストール
+### 2-6. ros-noetic-opencv3のインストール
 ~~~
-sudo apt-get install ros-kinetic-opencv3
+sudo apt-get install ros-noetic-opencv3
 ~~~
 ※ TODO OpenCVはJetson nativeなものをビルドして入れるべき!
 

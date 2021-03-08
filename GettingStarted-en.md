@@ -19,7 +19,7 @@ I will explain YCAM D control software **RoVI** from environment construction to
 - LinuxMint 18.x
 
 ## ROS
-- Kinetic
+- Noetic
 
 ## Nodejs
 - Ver 8 or higher

@@ -89,7 +89,10 @@ link_directories(
   lib/${ARCH}
 )
 
-add_definitions("-std=c++11")
+#2021/03/05 add by hato ---------- start ----------
+#add_definitions("-std=c++11")
+add_definitions("-std=c++14")
+#2021/03/05 add by hato ----------  end  ----------
 
 #2020/08/25 add by hato ---------- start ----------
 add_definitions("-DYAML_PARAM")

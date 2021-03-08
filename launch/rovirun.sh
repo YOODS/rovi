@@ -2,7 +2,7 @@
 
 export NODE_PATH=/usr/lib/node_modules
 export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/noetic/setup.bash
 cd ~/*/src/rovi
 cd ../../devel
 source setup.bash

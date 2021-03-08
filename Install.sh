@@ -86,6 +86,9 @@ git clone -b noetic-devel https://github.com/YOODS/rtk_tools.git
 sudo apt install python-tk
 pip3 install tkfilebrowser --user
 
+
+sudo ln -s /usr/bin/python3 /usr/bin/python
+
 #build
 cd $CATKIN_WS
 catkin_make

@@ -19,7 +19,7 @@ YCAM3Dの制御ソフトウェア**RoVI**の環境構築から実行までの手
     deb http://packages.ros.org/ros/ubuntu xenial main
 
 ## ROS
-- Kinetic
+- Noetic
 ## Nodejs
 - Ver8以上
 
@@ -221,7 +221,7 @@ catkin_make
 ~~~
 #!/bin/bash
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/noetic/setup.bash
 source ~/catkin_ws/devel/setup.bash
 
 export ROS_NAMESPACE=/rovi
