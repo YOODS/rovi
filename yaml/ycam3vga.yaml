@@ -99,6 +99,7 @@ ycam:
   TemperatureMonitorInterval: 1
   DrawCameraOrigin : Off
   pcgen_publish: On
+  CaptureTimeoutReset: Off
   camera:
     Gain: 0
   projector:

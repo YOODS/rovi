@@ -14,10 +14,9 @@
 #include <ros/ros.h>
 #include "ElapsedTimer.hpp"
 
-//#define DEBUG_DETAIL
+#define DEBUG_DETAIL
 
 #define LOG_HEADER "(camera) "
-
 
 namespace camera{
 	namespace ycam3d{
@@ -29,6 +28,7 @@ namespace camera{
 		const int YCAM3D_RESET_AFTER_WAIT = 12;
 		const int YCAM3D_RESET_TIMEOUT = 1000;
 		
+		/*
 		void start_ycam3d_reset(const char *ipaddr){
 			while( ! reset_ycam3d(ipaddr) ){
 				sleep(YCAM3D_RESET_INTERVAL);
@@ -38,7 +38,7 @@ namespace camera{
 				ROS_INFO(LOG_HEADER"camera restarting ...  wait %2d sec",i);
 				sleep(1);
 			}
-		}
+		}*/
 
 		bool reset_ycam3d(const char *ipaddr){
 			int sock;
@@ -217,8 +217,8 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 		for( int i = 0 ; i < m_self->m_img_recv_flags.size() ; ++i ){
 			recv_flags_str << (m_self->m_img_recv_flags[i]?"*":"_");
 		}
-		ROS_WARN(LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms,capt_num=%d, recv_flags=%s\n",
-			m_self->m_camno,frmidx, tmr.elapsed_ms(), captNum, recv_flags_str.str().c_str() );
+		//ROS_WARN(LOG_HEADER"#%d camera img received. frmidx=%2d, proc_tm=%3d ms,capt_num=%d, recv_flags=%s\n",
+		//	m_self->m_camno,frmidx, tmr.elapsed_ms(), captNum, recv_flags_str.str().c_str() );
 #endif
 		
 		if( std::count( m_self->m_img_recv_flags.begin(), m_self->m_img_recv_flags.end(), true ) ==  captNum ){
@@ -274,7 +274,6 @@ CameraYCAM3D::CameraYCAM3D():
 	m_cancel_delay_mon(false),
 	m_pre_heart_beat_val(0)
 {
-	
 }
 
 CameraYCAM3D::~CameraYCAM3D(){
@@ -463,15 +462,15 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 		ROS_INFO(LOG_HEADER"#%d auto connect start.", m_camno);
 		
 		m_auto_connect_abort = false;
-		m_auto_connect_thread = std::thread([&](const std::string aIpaddr){
-			ROS_INFO(LOG_HEADER"#%d auto connect loop start.", m_camno);
+		m_auto_connect_thread = std::thread([this,ipaddr](){
+			ROS_INFO(LOG_HEADER"#%d auto connect loop start. %s", m_camno,ipaddr.c_str());
 			if( m_open_stat.load() ){
 				ROS_WARN(LOG_HEADER"#%d camera is already connected. [2]", m_camno);
 			}else{
 				
 				if(m_ros_err_pub){ m_ros_err_pub("camera reset start.");}
 				
-				while( ! camera::ycam3d::reset_ycam3d(aIpaddr.c_str()) && ! m_auto_connect_abort ){
+				while( ! camera::ycam3d::reset_ycam3d(ipaddr.c_str()) && ! m_auto_connect_abort ){
 						sleep(camera::ycam3d::YCAM3D_RESET_INTERVAL);
 				}
 				
@@ -517,7 +516,7 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 			
 			m_auto_connect_mutex.unlock();
 			// ******** auto_connect_mutex UNLOCKED ******** 
-		},m_auto_connect_ipaddr);
+		});
 		m_auto_connect_thread.detach();
 	}
 }
@@ -592,18 +591,18 @@ bool CameraYCAM3D::capture(const bool strobe){
 		return false;
 	}
 	
-	ElapsedTimer tmr;
+	ElapsedTimer capt_tmr;
 	m_camera_mutex.lock();
 	// ********** m_camera_mutex LOCKED **********
 	
 	m_capt_stat.store(CaptStat_Single);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool strobe_l,std::timed_mutex *camera_mutex){
+	m_capture_thread = std::thread([this,capt_tmr,strobe](){
 		
 #ifdef DEBUG_DETAIL
 		ROS_INFO(LOG_HEADER"#%d capture start. timeout=%d sec, strobe=%d", m_camno,m_capture_timeout_period,strobe);
 #endif
-		std::lock_guard<std::timed_mutex> locker(*camera_mutex,std::adopt_lock);
+		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
 		
 		m_capt_finish_wait_mutex.lock();
 		// ********** m_capt_finish_wait_mutex LOCKED **********
@@ -619,7 +618,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 #ifdef DEBUG_DETAIL
 		ROS_INFO(LOG_HEADER"#%d cur proj intensity. val=%d",m_camno, curProjIntensity);
 #endif
-		if( ! strobe_l ){
+		if( ! strobe ){
 			m_arv_ptr->setProjectorIntensity(0);
 		}
 		
@@ -642,7 +641,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 		
 		const bool timeout_occured = ! m_capt_finish_wait_mutex.try_lock_for( std::chrono::seconds(m_capture_timeout_period) );
 		// ********** m_capt_finish_wait_mutex LOCKED ?? **********		
-		if( ! strobe_l ){
+		if( ! strobe ){
 			m_arv_ptr->setProjectorIntensity(curProjIntensity);
 		}
 		
@@ -686,12 +685,12 @@ bool CameraYCAM3D::capture(const bool strobe){
 		ROS_INFO(LOG_HEADER"#%d capture finished. elapsed=%d ms", m_camno,capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr,strobe,&m_camera_mutex);
+	});
 	m_capture_thread.detach();
 	return true;
 }
 
-bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort){
+bool CameraYCAM3D::capture_pattern(const bool pcgenModeMulti,const bool ptnCangeWaitShort){
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
 		return false;
@@ -708,20 +707,20 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 	//	return false;
 	//}
 	
-	ElapsedTimer tmr;
+	ElapsedTimer capt_tmr;
 	m_camera_mutex.lock();
 	// ********** m_camera_mutex LOCKED **********
 	
 	m_capt_stat.store(CaptStat_Pattern);
 	
-	m_capture_thread = std::thread([&](ElapsedTimer capt_tmr,const bool pcgenModeMulti,std::timed_mutex *camera_mutex,const bool aPtnChgShortWait){
+	m_capture_thread = std::thread([this,capt_tmr,pcgenModeMulti,ptnCangeWaitShort](){
 		
-		ROS_INFO(LOG_HEADER"#%d pattern capture start. timeout=%d sec", m_camno, m_trigger_timeout_period);
+		ROS_INFO(LOG_HEADER"#%d pattern capture start. pcgenModeMulti=%d,timeout=%d sec", m_camno, pcgenModeMulti, m_trigger_timeout_period);
 		
 		m_capt_finish_wait_mutex.lock();
 		// ********** m_capt_finish_wait_mutex LOCKED **********
 		
-		std::lock_guard<std::timed_mutex> locker(*camera_mutex,std::adopt_lock);
+		std::lock_guard<std::timed_mutex> locker(m_camera_mutex,std::adopt_lock);
 		YCAM_PROJ_PTN ptn=YCAM_PROJ_PTN_PHSFT;
 		if(pcgenModeMulti){
 			ptn = YCAM_PROJ_PTN_PHSFT_3;
@@ -729,28 +728,23 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 		
 		if( m_arv_ptr->getProjectorPattern() != ptn ){
 			ROS_INFO(LOG_HEADER"#%d projector pattern change. ptn=%d (%s)",m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
-			if( ! m_arv_ptr->setProjectorPattern(ptn,aPtnChgShortWait) ){
+			if( ! m_arv_ptr->setProjectorPattern(ptn,ptnCangeWaitShort) ){
 				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s) ",
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
 			}else{
-#ifdef DEBUG_DETAIL
 				ROS_INFO(LOG_HEADER"#%d projector pattern changed. ptn=%d (%s) elapsed=%d",
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str(),capt_tmr.elapsed_ms());
-#endif
 			}
 		}
 		
-		//
-		//}else if( ! m_arv_ptr->isProjectorEnabled() ){
-		//	m_arv_ptr->setProjectorEnabled(true);
-		//}
-		
 		const int captNum = m_arv_ptr->getCaptureNum();
 		reset_image_buffer(captNum);
+		ROS_INFO(LOG_HEADER"#%d capture_num=%d",m_camno,captNum);
 		
 		int curExpsrLv=-1;
 		m_arv_ptr->get_exposure_time_level(&curExpsrLv);
-
+		ROS_INFO(LOG_HEADER"#%d cur expsr_lv=%d",m_camno,curExpsrLv);
+		
 		ROS_INFO(LOG_HEADER"#%d projector trigger start. elapsed=%d ms",m_camno,capt_tmr.elapsed_ms());
 		if( ! m_arv_ptr->trigger(YCAM_PROJ_MODE_CONT) ){
 			ROS_ERROR(LOG_HEADER"#%d error:trigger call failed.", m_camno);
@@ -815,7 +809,7 @@ bool CameraYCAM3D::capture_pattern(const bool multi,const bool ptnCangeWaitShort
 		ROS_INFO(LOG_HEADER"#%d pattern capture finished. elapsed=%d ms", m_camno, capt_tmr.elapsed_ms());
 #endif
 		// ********** m_camera_mutex UNLOCKED **********
-	},tmr, multi, &m_camera_mutex, ptnCangeWaitShort);
+	});
 	m_capture_thread.detach();
 	
 	return true;
@@ -1103,7 +1097,7 @@ void CameraYCAM3D::start_nw_delay_monitor_task(const int interval,const int time
 	
 	m_callback_nw_delayed = callback;
 
-	m_delay_mon = std::thread([&](const int aInterval,const int aTimeout){
+	m_delay_mon = std::thread([this,interval,timeout,ignUpdFail](){
 		ROS_INFO(LOG_HEADER"network delay monitor task start.");
 		std::thread hb_swap_thread;
 		{
@@ -1152,17 +1146,17 @@ void CameraYCAM3D::start_nw_delay_monitor_task(const int interval,const int time
 				
 				const int elapsed = tmr.elapsed_ms();
 				ROS_INFO(LOG_HEADER"network delay monitor: heart beat update finished. proc_tm=%d\n",elapsed);
-				if( elapsed > aTimeout){
+				if( elapsed > timeout ){
 					//callback!!!
 					if( ! ignore_callback ){
 						if(m_ros_err_pub){ m_ros_err_pub("network delay monitor: heart beat write delay occurred.");}
 						ignore_callback=true;
-						ROS_ERROR(LOG_HEADER"network delay monitor: heart beat write delay occurred. elapsed=%d, timeout=%d",elapsed,aTimeout);
+						ROS_ERROR(LOG_HEADER"network delay monitor: heart beat write delay occurred. elapsed=%d, timeout=%d",elapsed,timeout);
 						m_callback_nw_delayed();
 					}
 				}
 			}
-			std::this_thread::sleep_for(std::chrono::seconds(aInterval));
+			std::this_thread::sleep_for(std::chrono::seconds(interval));
 	
 			m_pre_heart_beat_val = next_val;
 		}
@@ -1171,7 +1165,7 @@ void CameraYCAM3D::start_nw_delay_monitor_task(const int interval,const int time
 			hb_swap_thread.join();
 			ROS_INFO(LOG_HEADER"delay monitor task thread wait end.\n");
 		}
-	},interval,timeout);
+	});
 }
 
 void CameraYCAM3D::stop_nw_delay_monitor_task(){

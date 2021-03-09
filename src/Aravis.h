@@ -201,10 +201,9 @@ public:
 	void imageSize(int *width, int *height);
 	int width(){return width_;}
 	int height(){return height_;}
-	//2021/03/08 modified by hato ------------------- start ---------------------
-	//int  bytesPerPixel(){payload_ / (width_ * height_);}
-	int  bytesPerPixel(){ return payload_ / (width_ * height_);}
-	//2021/03/08 modified by hato -------------------  end  ---------------------
+	//2021/03/08 add by hato -------------------- start --------------------
+	int  bytesPerPixel(){ return payload_ / (width_ * height_); }
+	//2021/03/08 add by hato --------------------  end  --------------------
 	int cameraNo()const { return camno_; }
 	
 	//2020/09/16 add by hato -------------------- start --------------------
