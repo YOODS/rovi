@@ -672,7 +672,7 @@ bool CameraYCAM3D::capture(const bool strobe){
 			}
 			
 			if( timeout_occured ){
-				ROS_ERROR(LOG_HEADER"#%d error:capture is timeouted.", m_camno);
+				ROS_ERROR(LOG_HEADER"#%d error:capture timeout.", m_camno);
 				m_callback_capt_img_recv(false, capt_tmr.elapsed_ms(), img_l, img_r, true,curExpsrLv);
 			}else{
 				m_callback_capt_img_recv(result, capt_tmr.elapsed_ms(), img_l, img_r, false,curExpsrLv);
@@ -799,7 +799,7 @@ bool CameraYCAM3D::capture_pattern(const bool pcgenModeMulti,const bool ptnCange
 			ROS_INFO(LOG_HEADER"call back trig_img_recv start");
 #endif
 			if( timeout_occured ){
-				ROS_ERROR(LOG_HEADER"#%d error:pattern capture is timeouted.", m_camno);
+				ROS_ERROR(LOG_HEADER"#%d error:pattern capture timeout.", m_camno);
 				m_callback_trig_img_recv(false, capt_tmr.elapsed_ms(), imgs_l, imgs_r, true ,curExpsrLv);
 			}else{
 				m_callback_trig_img_recv(result, capt_tmr.elapsed_ms(), imgs_l, imgs_r, false ,curExpsrLv);
