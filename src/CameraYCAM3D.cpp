@@ -1217,4 +1217,12 @@ bool CameraYCAM3D::set_projector_interval(const int val){
 	/* 正しい値が返ってこないのでノーチェック。
 	bool ret=false;
 	int cval=-1;
-	if( result && get_projector_interval(&cval) &&  cval =
+	if( result && get_projector_interval(&cval) &&  cval == val){
+		ret=true;
+	}
+	return ret;
+	*/
+	return true;
+}
+#endif
+
