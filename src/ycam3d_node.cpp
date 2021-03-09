@@ -52,7 +52,7 @@ ros::Publisher pub_rects[2];
 ros::Publisher pub_rects0[2];
 ros::Publisher pub_rects1[2];
 ros::Publisher pub_diffs[2];
-ros::Publisher pub_views[2];
+//ros::Publisher pub_views[2];
 ros::Publisher pub_temperature;
 
 ros::ServiceClient svc_genpc;
@@ -1202,13 +1202,13 @@ int main(int argc, char **argv)
 	pub_rects0[0] = n.advertise<sensor_msgs::Image>("left/image_rect0", 1);
 	pub_rects1[0] = n.advertise<sensor_msgs::Image>("left/image_rect1", 1);
 	pub_diffs[0] = n.advertise<sensor_msgs::Image>("left/diff_rect", 1);
-	pub_views[0] = n.advertise<sensor_msgs::Image>("left/view",1);
+	//pub_views[0] = n.advertise<sensor_msgs::Image>("left/view",1);
 	
 	pub_rects[1] = n.advertise<sensor_msgs::Image>("right/image_rect", 1);
 	pub_rects0[1] = n.advertise<sensor_msgs::Image>("right/image_rect0", 1);
 	pub_rects1[1] = n.advertise<sensor_msgs::Image>("right/image_rect1", 1);
 	pub_diffs[1] = n.advertise<sensor_msgs::Image>("right/diff_rect", 1);
-	pub_views[1] = n.advertise<sensor_msgs::Image>("right/view",1);
+	//pub_views[1] = n.advertise<sensor_msgs::Image>("right/view",1);
 	
 	pub_temperature = n.advertise<std_msgs::Float32>("ycam/temperature",1);
 	
