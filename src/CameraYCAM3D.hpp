@@ -198,7 +198,7 @@ namespace camera{
 		extern const int YCAM3D_RESET_INTERVAL;
 		extern const int YCAM3D_RESET_AFTER_WAIT;
 		
-		void start_ycam3d_reset(const char *ipaddr);
+		//void start_ycam3d_reset(const char *ipaddr);
 		bool reset_ycam3d(const char *ipaddr);
 		
 		using f_camera_open_finished = std::function<void(const bool result)>;
@@ -363,4 +363,5 @@ public:
 	void set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback);
 	
 	void set_callback_pattern_img_received(camera::ycam3d::f_pattern_img_received callback);
+	
 };

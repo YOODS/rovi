@@ -85,6 +85,8 @@ const std::string PRM_NW_DELAY_MON_INTERVAL      = "ycam/nw_delay_monitor/interv
 const std::string PRM_NW_DELAY_MON_TIMEOUT       = "ycam/nw_delay_monitor/timeout";
 const std::string PRM_NW_DELAY_MON_IGN_UPD_FAIL  = "ycam/nw_delay_monitor/ignore_update_failure";
 
+const std::string PRM_CAPT_TIMEOUT_RESET         = "ycam/CaptureTimeoutReset";
+
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 
 constexpr int PRM_SW_TRIG_RATE_DEFAULT = 2; //Hz
@@ -669,7 +671,13 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 	ROS_INFO(LOG_HEADER"capture image recevie start. result=%s, timeout=%d img_l: result=%d size=%d x %d, img_r: result=%d size=%d x %d",
 		(result?"OK":"NG"), timeout, img_l.result, img_l.width, img_l.height, img_r.result, img_r.width, img_r.height);
 #endif
-	
+	if( timeout ){
+		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
+		if(get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
+			ROS_WARN(LOG_HEADER"reset ycam3d.");
+			g_node_exit_flg = 1;
+		}
+	}
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
 		return;
@@ -801,9 +809,7 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 		//ptn_imgs_r = imgs_r;
 		ptn_imgs.push_back({imgs_l,imgs_r});
 	}
-	if( timeout ){
-		publish_string(pub_error,"Image streaming timeout");
-	}
+
 	//ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr.elapsed_ms());
 	
 	ptn_capt_wait_cv.notify_one();
@@ -811,6 +817,15 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 #ifdef DEBUG_DETAIL
 	ROS_INFO(LOG_HEADER"on pattern image recevied. finshed,proc_tm=%d ms",tmr.elapsed_ms());
 #endif
+	
+	if( timeout ){
+		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
+		publish_string(pub_error,"Image streaming timeout");
+		if( get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
+			ROS_WARN(LOG_HEADER"reset ycam3d.");
+			g_node_exit_flg = 1;
+		}
+	}
 }
 
 bool validate_patten_image_data(const PatternImageData &ptnImgData){

@@ -18,7 +18,6 @@
 
 #define LOG_HEADER "(camera) "
 
-
 namespace camera{
 	namespace ycam3d{
 		const unsigned char YCAM3D_RESET_CMD[]      = { 0xD7,0x00,0x40,0x00 };
@@ -29,6 +28,7 @@ namespace camera{
 		const int YCAM3D_RESET_AFTER_WAIT = 12;
 		const int YCAM3D_RESET_TIMEOUT = 1000;
 		
+		/*
 		void start_ycam3d_reset(const char *ipaddr){
 			while( ! reset_ycam3d(ipaddr) ){
 				sleep(YCAM3D_RESET_INTERVAL);
@@ -38,7 +38,7 @@ namespace camera{
 				ROS_INFO(LOG_HEADER"camera restarting ...  wait %2d sec",i);
 				sleep(1);
 			}
-		}
+		}*/
 
 		bool reset_ycam3d(const char *ipaddr){
 			int sock;
@@ -274,7 +274,6 @@ CameraYCAM3D::CameraYCAM3D():
 	m_cancel_delay_mon(false),
 	m_pre_heart_beat_val(0)
 {
-	
 }
 
 CameraYCAM3D::~CameraYCAM3D(){
@@ -733,17 +732,10 @@ bool CameraYCAM3D::capture_pattern(const bool pcgenModeMulti,const bool ptnCange
 				ROS_ERROR(LOG_HEADER"#%d error:projector pattern change failed. ptn=%d (%s) ",
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str());
 			}else{
-#ifdef DEBUG_DETAIL
 				ROS_INFO(LOG_HEADER"#%d projector pattern changed. ptn=%d (%s) elapsed=%d",
 					m_camno, ptn, PROJ_PTN_MAP[ptn].c_str(),capt_tmr.elapsed_ms());
-#endif
 			}
 		}
-		
-		//
-		//}else if( ! m_arv_ptr->isProjectorEnabled() ){
-		//	m_arv_ptr->setProjectorEnabled(true);
-		//}
 		
 		const int captNum = m_arv_ptr->getCaptureNum();
 		reset_image_buffer(captNum);
