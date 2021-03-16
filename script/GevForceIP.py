@@ -33,21 +33,39 @@ while (argq):
     arg = argq.popleft()
     if arg[0:2] == '-p':
         HOSTIP = argq.popleft() if len(arg) == 2 else arg[2:]
-        print "HostIP   :", HOSTIP
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        # print "HostIP   :", HOSTIP
+        print("HostIP   :", HOSTIP)
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
     elif arg[0:2] == '-c':
         CAMIP = argq.popleft() if len(arg) == 2 else arg[2:]
-        print "CAMERA IP:", CAMIP
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        # print "CAMERA IP:", CAMIP
+        print("CAMERA IP:", CAMIP)
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
     elif arg[0:2] == '-m':
         CAMMASK = argq.popleft() if len(arg) == 2 else arg[2:]
-        print "IP MASK  :", CAMMASK
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        # print "IP MASK  :", CAMMASK
+        print("IP MASK  :", CAMMASK)
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
     elif arg[0:2] == '-g':
         CAMGW = argq.popleft() if len(arg) == 2 else arg[2:]
-        print "GATEWAY  :", CAMGW
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        # print "GATEWAY  :", CAMGW
+        print("GATEWAY  :", CAMGW)
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
     elif arg[0:2] == '-h':
-        print "GevForceIP.py -p[HOSTIP] -c[CAMERA IP] -m[IP MASK] -g[GATEWAY]"
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        # print "GevForceIP.py -p[HOSTIP] -c[CAMERA IP] -m[IP MASK] -g[GATEWAY]"
+        print("GevForceIP.py -p[HOSTIP] -c[CAMERA IP] -m[IP MASK] -g[GATEWAY]")
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
         sys.exit(0)
     else:
-        print "Invarild Argument:", arg
+        # 2021/03/16 hato ------------------------------ start ------------------------------
+        #print "Invarild Argument:", arg
+        print("Invarild Argument:", arg)
+        # 2021/03/16 hato ------------------------------  end  ------------------------------
 
 sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 sock.setsockopt(socket.SOL_SOCKET, socket.SO_BROADCAST, 1)
@@ -67,21 +85,41 @@ dver   = struct.unpack(">32s", ack[144:176])
 msinfo = struct.unpack(">48s", ack[176:224])
 snum   = struct.unpack(">16s", ack[224:240])
 udname = struct.unpack(">16s", ack[240:256])
-print "DISCOVERY ACK", struct.unpack(">HHHH", ack[0:8])
-print "Ver(MAJ/MIN) ", struct.unpack(">HH", ack[8:12])
-print "MAC Address  ", CAMMAC
-print "Current IP   ", ip
-print " Subnet Mask ", subnet
-print " Gateway     ", gw 
-print "Manufacturer Name: ", mfname
-print "Model Name       : ", mdname
-print "Device Version   : ", dver
-print "Manufacturer info: ", msinfo
-print "Serial Number    : ", snum
-print "User-Defined Name: ", udname
+# 2021/03/16 hato ------------------------------ start ------------------------------
+# print "DISCOVERY ACK", struct.unpack(">HHHH", ack[0:8])
+# print "Ver(MAJ/MIN) ", struct.unpack(">HH", ack[8:12])
+# print "MAC Address  ", CAMMAC
+# print "Current IP   ", ip
+# print " Subnet Mask ", subnet
+# print " Gateway     ", gw 
+# print "Manufacturer Name: ", mfname
+# print "Model Name       : ", mdname
+# print "Device Version   : ", dver
+# print "Manufacturer info: ", msinfo
+# print "Serial Number    : ", snum
+# print "User-Defined Name: ", udname
+print("DISCOVERY ACK", struct.unpack(">HHHH", ack[0:8]))
+print("Ver(MAJ/MIN) ", struct.unpack(">HH", ack[8:12]))
+print("MAC Address  ", CAMMAC)
+print("Current IP   ", ip)
+print(" Subnet Mask ", subnet)
+print(" Gateway     ", gw )
+print("Manufacturer Name: ", mfname)
+print("Model Name       : ", mdname)
+print("Device Version   : ", dver)
+print("Manufacturer info: ", msinfo)
+print("Serial Number    : ", snum)
+print("User-Defined Name: ", udname)
+# 2021/03/16 hato ------------------------------  end  ------------------------------
 
 setup = forceip(CAMMAC, CAMIP, CAMMASK, CAMGW)
 sock.sendto(setup, ("255.255.255.255", GVCP))
-print "camera replies", struct.unpack(">HHHH", sock.recv(8))
+# 2021/03/16 hato ------------------------------ start ------------------------------
+# print "camera replies", struct.unpack(">HHHH", sock.recv(8))
+print("camera replies", struct.unpack(">HHHH", sock.recv(8)))
+# 2021/03/16 hato ------------------------------  end  ------------------------------
 os.system("ping -c 5 -s 32 %s" % CAMIP)
-print "You might have to run this script twice..."
+# 2021/03/16 hato ------------------------------ start ------------------------------
+# print "You might have to run this script twice..."
+print("You might have to run this script twice...")
+# 2021/03/16 hato ------------------------------  end  ------------------------------
