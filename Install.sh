@@ -63,7 +63,8 @@ pip3 install wheel --user
 pip3 install ipython --user
 #pip install ipykernel==4.10 --user
 pip3 install ipykernel --user
-pip3 install open3d-python --user
+#pip3 install open3d-python --user
+pip3 install open3d
 
 #installing X-Tile
 #cd ~
