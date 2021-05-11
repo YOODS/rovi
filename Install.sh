@@ -5,20 +5,6 @@ CATKIN_WS=${PWD%src*}
 source /opt/ros/kinetic/setup.bash
 source $CATKIN_WS/devel/setup.bash
 
-#arrange sysctl.conf
-if ! grep "net.core.rmem_max.*67108864" /etc/sysctl.conf
-then
-    echo "
-#Added by rovi/Install.sh
-net.ipv4.tcp_tw_recycle = 1
-net.ipv4.tcp_fin_timeout = 10
-net.core.rmem_max = 67108864
-net.core.rmem_default = 5000000
-net.core.netdev_max_backlog = 1000000
-net.core.netdev_budget = 600
-" | sudo tee -a /etc/sysctl.conf
-fi
-
 #installing aravis library
 sudo apt-get install automake intltool
 sudo apt-get install libgstreamer*-dev
@@ -60,25 +46,3 @@ pip install wheel --user
 pip install ipython==5.7 --user
 pip install ipykernel==4.10 --user
 pip install open3d-python --user
-
-#installing X-Tile
-cd ~
-git clone https://github.com/YOODS/x-tile.git
-cd x-tile
-./create_debian_package.sh
-cd ..
-sudo dpkg -i x-tile_3.3-0_all.deb
-
-#checkout rovi_utils
-cd $CATKIN_WS/src
-git clone -b devel https://github.com/YOODS/rovi_utils.git
-
-#checkout rqt_param
-cd $CATKIN_WS/src
-git clone https://github.com/YOODS/rtk_tools.git
-sudo apt install python-tk
-pip install tkfilebrowser --user
-
-#build
-cd $CATKIN_WS
-catkin_make
