@@ -14,7 +14,7 @@
 #include <ros/ros.h>
 #include "ElapsedTimer.hpp"
 
-#define DEBUG_DETAIL
+//#define DEBUG_DETAIL
 
 #define LOG_HEADER "(camera) "
 
