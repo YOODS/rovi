@@ -2,7 +2,7 @@
 
 CATKIN_WS=${PWD%src*}
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/melodic/setup.bash
 source $CATKIN_WS/devel/setup.bash
 
 #installing aravis library

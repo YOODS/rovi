@@ -1,6 +1,6 @@
 #!/bin/bash
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/melodic/setup.bash
 cd ~/*/src/rovi
 cd ../../
 source devel/setup.bash

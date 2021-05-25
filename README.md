@@ -45,7 +45,7 @@ pip install pip==9.0.3 --user
 ### ROSアカウントの初期設定  
 .bashrcの最後に以下を入れる(Linux環境。Winは違うかも・・・)
 ~~~
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/melodic/setup.bash
 source ~/catkin_ws/devel/setup.bash
 export ROS_HOSTNAME=localhost
 export ROS_MASTER_URI=http://localhost:11311
@@ -241,5 +241,5 @@ roslaunch rovi ycam3vga_mm.launch
 ## 動作確認済み環境  
 |OS|Desktop|ROS|STATUS|
 |:----|:----|:----|:----|
-|Ubuntu 16.04(xenial)|Unity|kinetic|OK|
-|LinuxMint 18.04(sonya)|Xfce|kinetic|OK|
+|Ubuntu 16.04(xenial)|Unity|melodic|OK|
+|LinuxMint 18.04(sonya)|Xfce|melodic|OK|

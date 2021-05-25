@@ -52,7 +52,7 @@ catkin_make
 ~~~
 #!/bin/bash
 
-source /opt/ros/kinetic/setup.bash
+source /opt/ros/melodic/setup.bash
 source ~/catkin_ws/devel/setup.bash
 
 export ROS_NAMESPACE=/rovi
