@@ -56,9 +56,9 @@ export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
 
 ## RoVIのインストール  
 
-ROSのソースディレクトリ(~/catkin_ws/srcなど)に、israfelブランチをcheckoutします。
+ROSのソースディレクトリ(~/catkin_ws/srcなど)に、melodicブランチをcheckoutします。
 ~~~
-git clone -b israfel --depth 1 https://github.com/YOODS/rovi.git
+git clone -b melodic --depth 1 https://github.com/YOODS/rovi.git
 ~~~
 GetingStarted.mdに記載のとおりです。この記載内容をInstall.shにて一括処理することも可能です(歓迎スクリプトの間違い指摘)。
 ~~~
