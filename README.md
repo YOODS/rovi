@@ -50,7 +50,7 @@ source ~/catkin_ws/devel/setup.bash
 export ROS_HOSTNAME=localhost
 export ROS_MASTER_URI=http://localhost:11311
 export NODE_PATH=/usr/lib/node_modules
-export PYTHONPATH=/usr/local/lib/python2.7/dist-packages:$PYTHONPATH
+export PYTHONPATH=/usr/local/lib/python3.8/dist-packages:$PYTHONPATH
 ~~~
 反映させるため、一旦ターミナルを閉じ、新しいターミナルを開く。
 
