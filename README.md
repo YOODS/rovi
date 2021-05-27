@@ -35,12 +35,9 @@ sudo apt-get install nodejs
 ### Pythonパッケージャ  
 pipがなければまずpipをインストール
 ~~~
-sudo apt install python-pip python-dev
+sudo apt install python3-pip python-dev
 ~~~
-pipのversionは9.0.1以上が必要になる。低い場合はアップデートする。
-~~~
-pip install pip==9.0.3 --user
-~~~
+
 
 ### ROSアカウントの初期設定  
 .bashrcの最後に以下を入れる(Linux環境。Winは違うかも・・・)
