@@ -787,7 +787,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			ElapsedTimer tmr_genpc;
 			sensor_msgs::PointCloud pts;
 			pts.header.stamp = ros::Time::now();
-			pts.header.frame_id = "/camera";
+			pts.header.frame_id = "camera";
 			rovi::Floats ds_points;
 
 			rovi::Floats pc_points;
