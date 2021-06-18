@@ -1,4 +1,8 @@
 # RoVIについて
+## ブランチ名変更について(2021/6/18)
+- default branchのdevelをkineticに改称しました。
+- melodicはPython2.7に対応したROS最終リリース対応版です。
+- noetic-develはnoeticに改称しました。noeticはPython3に対応したROS1最終リリース対応版です。
 
 RoVIは3Dビジョンセンサーを組み込んだロボットのアプリケーションを開発するための、ソフトウェア群を提供します。
 ## 構成
