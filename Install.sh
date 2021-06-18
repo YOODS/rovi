@@ -45,4 +45,5 @@ pip install scipy --user
 pip install wheel --user
 pip install ipython==5.7 --user
 pip install ipykernel==4.10 --user
+pip install pyrsistent==0.16.1 --user
 pip install open3d-python --user
