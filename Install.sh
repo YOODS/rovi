@@ -41,9 +41,11 @@ npm install ping
 sudo apt install python-pip
 pip install pip==9.0.3
 pip install numpy==1.15.0 --user
-pip install scipy --user
-pip install wheel --user
+pip install scipy==1.2.3 --user
+pip install wheel==0.30.0 --user
 pip install ipython==5.7 --user
 pip install ipykernel==4.10 --user
 pip install pyrsistent==0.16.1 --user
-pip install open3d-python --user
+pip install open3d-python==0.7.0.0 --user
+pip install pymsgbox==1.0.6 --user
+pip install tkfilebrowser==2.3.1 --user
