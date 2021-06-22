@@ -65,6 +65,7 @@ pip3 install ipython --user
 pip3 install ipykernel --user
 #pip3 install open3d-python --user
 pip3 install open3d==0.11.1
+pip3 install pymsgbox
 
 #installing X-Tile
 #cd ~
