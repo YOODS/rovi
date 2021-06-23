@@ -98,7 +98,8 @@ void find_marker(sensor_msgs::Image buf, int label){
 	}
 	
 	/** ‚RDÀ•W‚Ö‚Ì•ÏŠ· **/
-	
+		std::cout << "sequence" << label << buf.header.seq << std::endl;
+
 	
 }
 
