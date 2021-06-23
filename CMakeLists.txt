@@ -25,6 +25,7 @@ find_package(Eigen3 REQUIRED)
 #2020/09/09 add by hato ---------- start ----------
 find_package(Aravis REQUIRED)
 find_package(PkgConfig REQUIRED)
+find_package(Boost REQUIRED COMPONENTS system)
 
 pkg_check_modules(GLIB REQUIRED glib-2.0)
 #2020/09/09 add by hato ----------  end  ----------
@@ -123,6 +124,15 @@ add_executable(grid_node src/grid_node.cpp)
 target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES} ${OpenMP_LIBS})
 #2020/09/17 modified by hato -----------------  end  ------------------
 add_dependencies(grid_node rovi_gencpp)
+
+
+add_executable(kidzania_node src/tf_network.cpp)
+#2020/09/17 modified by hato ----------------- start ------------------
+#target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+target_link_libraries(kidzania_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES} ${OpenMP_LIBS})
+#2020/09/17 modified by hato -----------------  end  ------------------
+add_dependencies(kidzania_node rovi_gencpp)
+
 
 add_executable(floats2pc src/floats2pc.cpp)
 target_link_libraries(floats2pc ${catkin_LIBRARIES})

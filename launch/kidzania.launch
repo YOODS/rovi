@@ -1,0 +1,3 @@
+<launch>
+  <node name="kidzania" pkg="rovi" type="kidzania_node" output="screen" />
+</launch>
