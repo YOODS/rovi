@@ -11,7 +11,8 @@ static ros::Publisher *pubL, *pubR;
 
 //画像処理して３D座標を返す
 void find_marker(sensor_msgs::Image buf, int label){
-
+	const int threshold = 245;
+	
 	std::cout << "enter callback" << std::endl;	
 	/** 画像処理 **/
 	cv_bridge::CvImagePtr cv_ptr;	//OpenCV用のポインタを用意
@@ -50,7 +51,9 @@ void find_marker(sensor_msgs::Image buf, int label){
 	}
 
 	//二値化処理
-	cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//大津の二値化
+	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//大津の二値化
+	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//固定の閾値
+	
 	
 	//輪郭抽出
 	cv::Mat color_img;
