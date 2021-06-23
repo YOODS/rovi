@@ -99,6 +99,7 @@ void find_marker(sensor_msgs::Image buf, int label){
 	
 	/** ３D座標への変換 **/
 	
+	
 }
 
 void find_marker_L(sensor_msgs::Image buf){
@@ -121,8 +122,10 @@ int main(int argc, char** argv){
 	//トピックにsensor_msgs::Image型の画像を発行する準備
 	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);
 	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);
+	
 	pubL = &pL;
 	pubR = &pR;
+	
 	
 	//トピック（chatter）にsensor_msgs::Image型の画像を受信（コールバック関数処理）
 	ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
