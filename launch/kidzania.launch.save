@@ -1,0 +1,3 @@
+<launch>
+  <node name="kidzania_node" pkg="rovi" type= args="sxga mm" output="screen" />
+</launch>
