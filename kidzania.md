@@ -14,7 +14,7 @@ static ros::Publisher *pubL, *pubR;
     - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_outkidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
 4. 上で作成したインスタンスのアドレスを格納するグローバル変数（pubL, pubR）を初期化
 5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
-	- この際にコールバック関数（find_marker_L, find_marker_R）が呼び出される
+	- この際に**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
 
 ```
 int main(int argc, char** argv){
