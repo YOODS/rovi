@@ -10,7 +10,7 @@
 ```
 #include "ros/ros.h"	//rosの機能を使用
 #include "sensor_msgs/Image.h"	//画像をトピックに渡すために必要
-#include <sstream>	
+#include <sstream>	//文字列処理に使用するライブラリ（今回は不要かも）
 #include <cv_bridge/cv_bridge.h>  //画像の形式ををROSとOpenCV用に変換するために必要
 #include "boost/bind.hpp"	//これを使って、右カメラと左カメラのコールバック関数をまとめようとしたけど難しかったので不要
 #include <iostream>	//標準入出力に必要
@@ -26,7 +26,7 @@ static ros::Publisher *pubL, *pubR;
 1. kizania_nodeという名前のノードを作成（ros::init）
 2. ノードの初期化（ros::NodeHandle）
 3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
-    - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_outkidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
+    - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_out, kidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
 4. 上で作成したインスタンスのアドレスを格納するグローバル変数（pubL, pubR）を初期化
 5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
 	- この際に**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
