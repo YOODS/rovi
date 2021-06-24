@@ -8,9 +8,9 @@ static ros::Publisher *pubL, *pubR;
 ```
 
 ### main関数
-1. kizania_nodeという名前のノードを作成（ ⇐ ros::init）
-2. ノードの初期化（ ⇐ ros::init）
-3. トピックにsensor_msgs::Image型の画像を発行する準備（ ⇐ ros::Publisher）
+1. kizania_nodeという名前のノードを作成（ros::init）
+2. ノードの初期化（ros::NodeHandle）
+3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
     - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_outkidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
 4. 上で作成したインスタンスのアドレスを格納するグローバル変数（pubL, pubR）を初期化
 5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
