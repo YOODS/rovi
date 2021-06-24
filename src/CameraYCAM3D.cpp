@@ -445,7 +445,10 @@ bool CameraYCAM3D::is_auto_connect_running(){
 
 void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 	
-	if( ! ipaddr.empty() ){
+	std::string dst_ipaddr=ipaddr;
+	if( ipaddr.empty() ){
+		dst_ipaddr = m_auto_connect_ipaddr;
+	}else{
 		ROS_INFO("auto connect target ipaddr=%s",ipaddr.c_str());
 		m_auto_connect_ipaddr=ipaddr;
 	}
@@ -462,15 +465,15 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 		ROS_INFO(LOG_HEADER"#%d auto connect start.", m_camno);
 		
 		m_auto_connect_abort = false;
-		m_auto_connect_thread = std::thread([this,ipaddr](){
-			ROS_INFO(LOG_HEADER"#%d auto connect loop start. %s", m_camno,ipaddr.c_str());
+		m_auto_connect_thread = std::thread([this,dst_ipaddr](){
+			ROS_INFO(LOG_HEADER"#%d auto connect loop start. %s", m_camno,dst_ipaddr.c_str());
 			if( m_open_stat.load() ){
 				ROS_WARN(LOG_HEADER"#%d camera is already connected. [2]", m_camno);
 			}else{
 				
 				if(m_ros_err_pub){ m_ros_err_pub("camera reset start.");}
 				
-				while( ! camera::ycam3d::reset_ycam3d(ipaddr.c_str()) && ! m_auto_connect_abort ){
+				while( ! camera::ycam3d::reset_ycam3d(dst_ipaddr.c_str()) && ! m_auto_connect_abort ){
 						sleep(camera::ycam3d::YCAM3D_RESET_INTERVAL);
 				}
 				
