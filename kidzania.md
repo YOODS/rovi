@@ -1,8 +1,8 @@
 # tf_network.cpp
 **【役割】**　
-1. カメラから画像を入力（Subscribe）：main関数
-2. 画像処理：find_marker関数
-3. 処理結果を出力（publish）：main関数、find_marker関数
+1. **カメラから画像を入力（Subscribe）**：main関数
+2. **画像処理**：find_marker関数
+3. **処理結果を出力（publish）**：main関数、find_marker関数
 ※ find_marker_L, find_marker_Rは、main関数とfind_marker関数の仲介役
 
 ### ★ グローバル変数
