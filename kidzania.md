@@ -1,4 +1,7 @@
 # tf_network.cpp のマニュアル
+カメラからの入力画像から円を検出して出力するプログラム。
+画像処理により推定された輪郭はレモンイエロー、円とその中心座標はピンク色で描画される。
+
 **【役割】**　
 1. **カメラから画像を入力（Subscribe）**：main関数
 2. **画像処理**：find_marker関数
@@ -57,6 +60,7 @@ ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R
 ros::spin();
 ```
 
+
 ### ★ find_marker_L, find_marker_R 関数 （main関数とfind_marker関数の仲介）
 カメラからの入力画像（buf）と左右を区別するラベル（左：0, 右：1）を **find_marker関数**に渡す仲介役
 
@@ -69,6 +73,8 @@ void find_marker_R(sensor_msgs::Image buf){
 	find_marker(buf, 1);	//右カメラ用
 }	
 ```
+
+
 ### ★ find_marker 関数 （入力画像から円を検出、中心座標ともに描画）
 1. ROS形式の画像をOpenCV用に変換
 
