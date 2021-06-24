@@ -9,24 +9,24 @@
 static ros::Publisher *pubL, *pubR;
 
 
-//‰æ‘œˆ—‚µ‚Ä‚RDÀ•W‚ğ•Ô‚·
+//ç”»åƒå‡¦ç†ã—ã¦ï¼“Dåº§æ¨™ã‚’è¿”ã™
 void find_marker(sensor_msgs::Image buf, int label){
 	const int threshold = 245;
 	
 	std::cout << "enter callback" << std::endl;	
-	/** ‰æ‘œˆ— **/
-	cv_bridge::CvImagePtr cv_ptr;	//OpenCV—p‚Ìƒ|ƒCƒ“ƒ^‚ğ—pˆÓ
-	cv_ptr = cv_bridge::toCvCopy(buf, sensor_msgs::image_encodings::BGR8);	//ROS‚©‚çOpenCVŒ`®‚É•ÏŠ·Bcv_ptr->image‚ªcv::MatƒtƒH[ƒ}ƒbƒg
+	/** ç”»åƒå‡¦ç† **/
+	cv_bridge::CvImagePtr cv_ptr;	//OpenCVç”¨ã®ãƒã‚¤ãƒ³ã‚¿ã‚’ç”¨æ„
+	cv_ptr = cv_bridge::toCvCopy(buf, sensor_msgs::image_encodings::BGR8);	//ROSã‹ã‚‰OpenCVå½¢å¼ã«å¤‰æ›ã€‚cv_ptr->imageãŒcv::Matãƒ•ã‚©ãƒ¼ãƒãƒƒãƒˆ
 	
-	//‰æ‘œ‚Ì‘Oˆ—
+	//ç”»åƒã®å‰å‡¦ç†
 	cv::Mat image, gray_image, gaussian_image, thr_image, norm_img, g_img, normalized_int, normalized_image;
-	cv::cvtColor(cv_ptr->image, gray_image, cv::COLOR_BGR2GRAY);	//ƒOƒŒ[ƒXƒP[ƒ‹•ÏŠ·
-	cv::GaussianBlur(gray_image, gaussian_image, cv::Size(5, 5), 3, 3);	//•½ŠŠ‰»
+	cv::cvtColor(cv_ptr->image, gray_image, cv::COLOR_BGR2GRAY);	//ã‚°ãƒ¬ãƒ¼ã‚¹ã‚±ãƒ¼ãƒ«å¤‰æ›
+	cv::GaussianBlur(gray_image, gaussian_image, cv::Size(5, 5), 3, 3);	//å¹³æ»‘åŒ–
 
-	//‰æ‘f’l‚Ì³‹K‰»i•½‹Ï‚Æ•W€•Î·j
+	//ç”»ç´ å€¤ã®æ­£è¦åŒ–ï¼ˆå¹³å‡ã¨æ¨™æº–åå·®ï¼‰
 	cv::Scalar mean, stddev;
 	cv::meanStdDev(gaussian_image, mean, stddev);
-	int s = 90;	//•W€•Î·
+	int s = 90;	//æ¨™æº–åå·®
 	int m = 100;
 	int rows = gaussian_image.rows;
 	int cols = gaussian_image.cols;
@@ -34,7 +34,7 @@ void find_marker(sensor_msgs::Image buf, int label){
 	cv::Mat m_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * m;
 	gaussian_image.convertTo(g_img, CV_32FC1);
 	norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;
-	norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8S‚Í8bit(1byte) = charŒ^
+	norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8Sã¯8bit(1byte) = charå‹
 	normalized_image = cv::Mat::ones(rows, cols, CV_8UC1);
 	for (int i = 0; i < norm_img.rows; i++) {
 		int* nintP = normalized_int.ptr<int>(i);
@@ -50,54 +50,54 @@ void find_marker(sensor_msgs::Image buf, int label){
 		}
 	}
 
-	//“ñ’l‰»ˆ—
-	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//‘å’Ã‚Ì“ñ’l‰»
-	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//ŒÅ’è‚Ìè‡’l
+	//äºŒå€¤åŒ–å‡¦ç†
+	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//å¤§æ´¥ã®äºŒå€¤åŒ–
+	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//å›ºå®šã®é–¾å€¤
 	
 	
-	//—ÖŠs’Šo
+	//è¼ªéƒ­æŠ½å‡º
 	cv::Mat color_img;
 	std::vector<std::vector<cv::Point>> contours;
 	std::vector< cv::Vec4i > hierarchy;
 	cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
-	cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//ƒOƒŒ[ƒXƒP[ƒ‹‰æ‘œ‚ğRBG‚É•ÏŠ·
+	cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//ã‚°ãƒ¬ãƒ¼ã‚¹ã‚±ãƒ¼ãƒ«ç”»åƒã‚’RBGã«å¤‰æ›
 
-	//—ÖŠs‚Ì‚¤‚¿‰~Œ`“x‚Ì‚‚¢‚à‚Ì‚ğŒŸo•‰~‚ğ„’è
+	//è¼ªéƒ­ã®ã†ã¡å††å½¢åº¦ã®é«˜ã„ã‚‚ã®ã‚’æ¤œå‡ºï¼†å††ã‚’æ¨å®š
 	int idx = 0, flag = 0;
 	if (contours.size()) {
 		for (; idx >= 0; idx = hierarchy[idx][0]) {
-			drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i ”Ô–Ú‚Ì—ÖŠs‚ğ•`‚­B—ÖŠs‚ÌF‚ÍƒŒƒ‚ƒ“ƒCƒGƒ[
+			drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i ç•ªç›®ã®è¼ªéƒ­ã‚’æãã€‚è¼ªéƒ­ã®è‰²ã¯ãƒ¬ãƒ¢ãƒ³ã‚¤ã‚¨ãƒ­ãƒ¼
 			const std::vector<cv::Point>& c = contours[idx];
-			double area = fabs(cv::contourArea(cv::Mat(c)));	//—ÖŠs‚ÅˆÍ‚Ü‚ê‚½–ÊÏS
-			double perimeter = cv::arcLength(c, true); //—ÖŠs‚Ì’·‚³
+			double area = fabs(cv::contourArea(cv::Mat(c)));	//è¼ªéƒ­ã§å›²ã¾ã‚ŒãŸé¢ç©S
+			double perimeter = cv::arcLength(c, true); //è¼ªéƒ­ã®é•·ã•
 
-			//‰~Œ`“x(4ƒÎS / L^2)‚Ì‚‚¢—ÖŠs‚ğŒŸo
+			//å††å½¢åº¦(4Ï€S / L^2)ã®é«˜ã„è¼ªéƒ­ã‚’æ¤œå‡º
 			double circle_deg;
 			float radius;
 			cv::Point2f center;
 			circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
 
-			//‰~‚ğ„’è•‰~‚Æ’†SÀ•W‚ğ•`‰æ
+			//å††ã‚’æ¨å®šï¼†å††ã¨ä¸­å¿ƒåº§æ¨™ã‚’æç”»
 			if (circle_deg > 0.8 && area > 100) {
-				cv::minEnclosingCircle(c, center, radius);	//Å¬ŠOÚ‰~‚ğŒvZ
-				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 2);	//ŠOÚ‰~‚ğ•`‰æ
-				cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//’†SÀ•W‚ğ•`‰æ
+				cv::minEnclosingCircle(c, center, radius);	//æœ€å°å¤–æ¥å††ã‚’è¨ˆç®—
+				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 2);	//å¤–æ¥å††ã‚’æç”»
+				cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//ä¸­å¿ƒåº§æ¨™ã‚’æç”»
 			}
 		}
 	}
 	
-	//Œ‹‰Ê‰æ‘œ‚ğROS—pŒ`®‚É•ÏŠ·
+	//çµæœç”»åƒã‚’ROSç”¨å½¢å¼ã«å¤‰æ›
 	sensor_msgs::Image img;
 	cv_ptr->image = color_img;
 	cv_ptr->encoding="bgr8";	
-	cv_ptr->toImageMsg(img);	//toImageMsg()‚ÅOpenCV‚©‚çros‚ÌŒ^‚É•ÏŠ·
+	cv_ptr->toImageMsg(img);	//toImageMsg()ã§OpenCVã‹ã‚‰rosã®å‹ã«å¤‰æ›
 	if (label==0){
 		pubL->publish(img);
 	}else{
 		pubR->publish(img);
 	}
 	
-	/** ‚RDÀ•W‚Ö‚Ì•ÏŠ· **/
+	/** ï¼“Dåº§æ¨™ã¸ã®å¤‰æ› **/
 		std::cout << "sequence" << label << buf.header.seq << std::endl;
 
 	
@@ -114,13 +114,13 @@ void find_marker_R(sensor_msgs::Image buf){
 
 int main(int argc, char** argv){
 	
-	//V‚µ‚¢ƒm[ƒhikidzania_nodej‚Ìì¬
+	//æ–°ã—ã„ãƒãƒ¼ãƒ‰ï¼ˆkidzania_nodeï¼‰ã®ä½œæˆ
 	ros::init(argc, argv,"kidzania_node");
 	
-	//ƒm[ƒh‚Ö‚Ìƒnƒ“ƒhƒ‰‚Ìì¬iƒm[ƒh‚Ì‰Šú‰»j
+	//ãƒãƒ¼ãƒ‰ã¸ã®ãƒãƒ³ãƒ‰ãƒ©ã®ä½œæˆï¼ˆãƒãƒ¼ãƒ‰ã®åˆæœŸåŒ–ï¼‰
 	ros::NodeHandle n;
 	
-	//ƒgƒsƒbƒN‚Ésensor_msgs::ImageŒ^‚Ì‰æ‘œ‚ğ”­s‚·‚é€”õ
+	//ãƒˆãƒ”ãƒƒã‚¯ã«sensor_msgs::Imageå‹ã®ç”»åƒã‚’ç™ºè¡Œã™ã‚‹æº–å‚™
 	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);
 	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);
 	
@@ -128,7 +128,7 @@ int main(int argc, char** argv){
 	pubR = &pR;
 	
 	
-	//ƒgƒsƒbƒNichatterj‚Ésensor_msgs::ImageŒ^‚Ì‰æ‘œ‚ğóMiƒR[ƒ‹ƒoƒbƒNŠÖ”ˆ—j
+	//ãƒˆãƒ”ãƒƒã‚¯ï¼ˆchatterï¼‰ã«sensor_msgs::Imageå‹ã®ç”»åƒã‚’å—ä¿¡ï¼ˆã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°å‡¦ç†ï¼‰
 	ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
 	ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
 	
