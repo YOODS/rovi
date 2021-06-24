@@ -157,8 +157,11 @@ if (contours.size()) {
 		}
 	}
 }
-	
-//結果画像をROS用形式に変換
+```
+
+7. 結果画像をROS形式に変換してpublish
+```
+//結果画像をROS形式に変換
 sensor_msgs::Image img;
 cv_ptr->image = color_img;
 cv_ptr->encoding="bgr8";	
@@ -168,7 +171,10 @@ if (label==0){
 }else{
 	pubR->publish(img);
 }
-	
+```
+
+7. マーカーの座標をカメラ座標に変換してpublish（まだ実装していないが追加の必要あり）
+```
 /** ３D座標への変換 **/
 	std::cout << "sequence" << label << buf.header.seq << std::endl;	
 }	
