@@ -126,13 +126,13 @@ cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	/
 ```
 	
 5. 輪郭抽出
-	- cv::findContoursで輪郭を検出（contoursには、すべての輪郭が）
-	- 
+	- cv::findContoursで輪郭を検出（contoursには、すべての輪郭が格納されている（はず））
 ```
 cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
 ```
 
 6. カラー画像に変換
+	- 輪郭や検出した円をカラーで描くために、カラー画像に変換
 ```
 cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
 ```
@@ -140,6 +140,7 @@ cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケ
 7. 円検出
 ```
 int idx = 0, flag = 0;
+//各輪郭ごとの処理
 if (contours.size()) {
 	for (; idx >= 0; idx = hierarchy[idx][0]) {
 		drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i 番目の輪郭を描く。輪郭の色はレモンイエロー
@@ -165,7 +166,6 @@ if (contours.size()) {
 
 8. 結果画像をROS形式に変換してpublish
 ```
-//結果画像をROS形式に変換
 sensor_msgs::Image img;
 cv_ptr->image = color_img;
 cv_ptr->encoding="bgr8";	
