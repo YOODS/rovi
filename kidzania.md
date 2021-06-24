@@ -89,6 +89,9 @@ cv::GaussianBlur(gray_image, gaussian_image, cv::Size(5, 5), 3, 3);	//平滑化
 ```
 
 3. 画素値の分布を正規化
+- 画素値の分布の偏りを改善するために分布を正規化
+- 正規化後の分布のパラメータ（平均mと標準偏差s）は、マーカーなどに応じて手動で調節
+
 ```
 cv::meanStdDev(gaussian_image, mean, stddev);	//平滑化後の画素値の分布を計算
 
@@ -100,10 +103,10 @@ int cols = gaussian_image.cols;
 cv::Mat mean_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * mean[0];
 cv::Mat m_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * m;
 gaussian_image.convertTo(g_img, CV_32FC1);
-norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;
-norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8Sは8bit(1byte) = char型
+norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;   //画素値の正規化
+norm_img.convertTo(normalized_int, CV_32SC1);	
 normalized_image = cv::Mat::ones(rows, cols, CV_8UC1);
-for (int i = 0; i < norm_img.rows; i++) {
+for (int i = 0; i < norm_img.rows; i++) {   //正規化の結果、画素値が負の場合は0, 255以上のものは255に変更して配列に格納
 	int* nintP = normalized_int.ptr<int>(i);
 	uchar* nimgP = normalized_image.ptr<uchar>(i);
 	for (int j = 0; j < norm_img.cols; j++) {
@@ -129,42 +132,44 @@ cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	/
 cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
 cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
 ```
-	//輪郭のうち円形度の高いものを検出＆円を推定
-	int idx = 0, flag = 0;
-	if (contours.size()) {
-		for (; idx >= 0; idx = hierarchy[idx][0]) {
-			drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i 番目の輪郭を描く。輪郭の色はレモンイエロー
-			const std::vector<cv::Point>& c = contours[idx];
-			double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積S
-			double perimeter = cv::arcLength(c, true); //輪郭の長さ
 
-			//円形度(4πS / L^2)の高い輪郭を検出
-			double circle_deg;
-			float radius;
-			cv::Point2f center;
-			circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
+6. 円検出
+```
+int idx = 0, flag = 0;
+if (contours.size()) {
+	for (; idx >= 0; idx = hierarchy[idx][0]) {
+		drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i 番目の輪郭を描く。輪郭の色はレモンイエロー
+		const std::vector<cv::Point>& c = contours[idx];
+		double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積S
+		double perimeter = cv::arcLength(c, true); //輪郭の長さ
 
-			//円を推定＆円と中心座標を描画
-			if (circle_deg > 0.8 && area > 100) {
-				cv::minEnclosingCircle(c, center, radius);	//最小外接円を計算
-				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 2);	//外接円を描画
-				cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//中心座標を描画
-			}
+		//円形度(4πS / L^2)の高い輪郭を検出
+		double circle_deg;
+		float radius;
+		cv::Point2f center;
+		circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
+
+		//円を推定＆円と中心座標を描画
+		if (circle_deg > 0.8 && area > 100) {
+			cv::minEnclosingCircle(c, center, radius);	//最小外接円を計算
+			cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 2);	//外接円を描画
+			cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//中心座標を描画
 		}
 	}
+}
 	
-	//結果画像をROS用形式に変換
-	sensor_msgs::Image img;
-	cv_ptr->image = color_img;
-	cv_ptr->encoding="bgr8";	
-	cv_ptr->toImageMsg(img);	//toImageMsg()でOpenCVからrosの型に変換
-	if (label==0){
-		pubL->publish(img);
-	}else{
-		pubR->publish(img);
-	}
+//結果画像をROS用形式に変換
+sensor_msgs::Image img;
+cv_ptr->image = color_img;
+cv_ptr->encoding="bgr8";	
+cv_ptr->toImageMsg(img);	//toImageMsg()でOpenCVからrosの型に変換
+if (label==0){
+	pubL->publish(img);
+}else{
+	pubR->publish(img);
+}
 	
-	/** ３D座標への変換 **/
-		std::cout << "sequence" << label << buf.header.seq << std::endl;	
+/** ３D座標への変換 **/
+	std::cout << "sequence" << label << buf.header.seq << std::endl;	
 }	
 ```
