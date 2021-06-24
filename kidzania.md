@@ -5,13 +5,13 @@
 3. 処理結果を出力（publish）：main関数、find_marker関数
 ※ find_marker_L, find_marker_Rは、main関数とfind_marker関数の仲介役
 
-### グローバル変数
+### ★ グローバル変数
 トピックへのpublishに使用するクラスのポインタ変数（pubL, pubR）
 ```
 static ros::Publisher *pubL, *pubR;
 ```
 
-### main関数
+### ★ main関数
 1. kizania_nodeという名前のノードを作成（ros::init）
 2. ノードの初期化（ros::NodeHandle）
 3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
@@ -47,7 +47,7 @@ int main(int argc, char** argv){
 }
 ```
 
-### find_marker_L, find_marker_R 関数 
+### ★ find_marker_L, find_marker_R 関数 
 カメラからの入力画像（buf）と左右を区別するラベル（左：0, 右：1）を **find_marker関数**に渡す仲介役
 
 ```
@@ -59,5 +59,5 @@ void find_marker_R(sensor_msgs::Image buf){
 	find_marker(buf, 1);	//右カメラ用
 }	
 ```
-### find_marker 関数 
+### ★ find_marker 関数 
 
