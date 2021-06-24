@@ -52,7 +52,7 @@ ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L)
 ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
 ```
 
-6. aaa
+6. コールバック関数を呼ぶために必要なおまじない
 ```
 ros::spin();
 ```
