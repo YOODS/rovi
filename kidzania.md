@@ -25,7 +25,7 @@
 static ros::Publisher *pubL, *pubR;
 ```
 
-### ★ main関数（主にトピックのSubscribeとpublishの準備）
+### ★ main関数（Subscribeとpublishの準備など）
 1. kizania_nodeという名前のノードを作成（ros::init）
 ```
 ros::init(argc, argv,"kidzania_node");
