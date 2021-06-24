@@ -27,19 +27,19 @@ void find_marker(sensor_msgs::Image buf, int label){
 	cv::Scalar mean, stddev;
 	cv::meanStdDev(gaussian_image, mean, stddev);
 	int s = 90;	//標準偏差
-	int m = 100;
+	int m = 100;	//平均
 	int rows = gaussian_image.rows;
 	int cols = gaussian_image.cols;
 	cv::Mat mean_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * mean[0];
 	cv::Mat m_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * m;
 	gaussian_image.convertTo(g_img, CV_32FC1);
-	norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;
+	norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;	//正規化処理
 	norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8Sは8bit(1byte) = char型
 	normalized_image = cv::Mat::ones(rows, cols, CV_8UC1);
 	for (int i = 0; i < norm_img.rows; i++) {
 		int* nintP = normalized_int.ptr<int>(i);
 		uchar* nimgP = normalized_image.ptr<uchar>(i);
-		for (int j = 0; j < norm_img.cols; j++) {
+		for (int j = 0; j < norm_img.cols; j++) {	//画素値が負の場合は0, 255以上の場合は255に設定して格納
 			int value = nintP[j];
 			if (value < 0) {
 				value = 0;
@@ -51,8 +51,8 @@ void find_marker(sensor_msgs::Image buf, int label){
 	}
 
 	//二値化処理
-	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//大津の二値化
-	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//固定の閾値
+	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//大津の二値化（ボール用）
+	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//固定の閾値（電球用）
 	
 	
 	//輪郭抽出
@@ -78,9 +78,10 @@ void find_marker(sensor_msgs::Image buf, int label){
 			circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
 
 			//円を推定＆円と中心座標を描画
-			if (circle_deg > 0.8 && area > 100) {
+			if (circle_deg > 0.7 && area > 1000) {	//電球用
+			//if (circle_deg > 0.8 && area > 100) {	//ボール用				
 				cv::minEnclosingCircle(c, center, radius);	//最小外接円を計算
-				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 2);	//外接円を描画
+				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 5);	//外接円を描画
 				cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//中心座標を描画
 			}
 		}
@@ -114,21 +115,21 @@ void find_marker_R(sensor_msgs::Image buf){
 
 int main(int argc, char** argv){
 	
-	//新しいノード（kidzania_node）の作成
+	// 新しいノード（kidzania_node）の作成
 	ros::init(argc, argv,"kidzania_node");
 	
-	//ノードへのハンドラの作成（ノードの初期化）
+	// ノードへのハンドラの作成（ノードの初期化）
 	ros::NodeHandle n;
 	
-	//トピックにsensor_msgs::Image型の画像を発行する準備
+	// トピックにsensor_msgs::Image型の画像を発行する準備
 	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);
 	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);
 	
+	// アドレスを格納
 	pubL = &pL;
 	pubR = &pR;
 	
-	
-	//トピック（chatter）にsensor_msgs::Image型の画像を受信（コールバック関数処理）
+	// トピック（chatter）にsensor_msgs::Image型の画像を受信（コールバック関数処理）
 	ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
 	ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
 	
