@@ -30,7 +30,7 @@ static ros::Publisher *pubL, *pubR;
 3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
     - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_out, kidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
 
-4. 上で作成したインスタンスのアドレスを格納するグローバル変数（pubL, pubR）を初期化
+4. グローバル変数（pubL, pubR）に、上で作成したインスタンスのアドレスを格納
 
 5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
 	- この際に**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
@@ -75,61 +75,60 @@ void find_marker_R(sensor_msgs::Image buf){
 }	
 ```
 ### ★ find_marker 関数 
+1. ROS形式の画像をOpenCV用に変換
 
 ```
-//画像処理して３D座標を返す
-void find_marker(sensor_msgs::Image buf, int label){
-	const int threshold = 245;
-	
-	std::cout << "enter callback" << std::endl;	
-	/** 画像処理 **/
-	cv_bridge::CvImagePtr cv_ptr;	//OpenCV用のポインタを用意
-	cv_ptr = cv_bridge::toCvCopy(buf, sensor_msgs::image_encodings::BGR8);	//ROSからOpenCV形式に変換。cv_ptr->imageがcv::Matフォーマット
-	
-	//画像の前処理
-	cv::Mat image, gray_image, gaussian_image, thr_image, norm_img, g_img, normalized_int, normalized_image;
-	cv::cvtColor(cv_ptr->image, gray_image, cv::COLOR_BGR2GRAY);	//グレースケール変換
-	cv::GaussianBlur(gray_image, gaussian_image, cv::Size(5, 5), 3, 3);	//平滑化
+cv_bridge::CvImagePtr cv_ptr;	//OpenCV用のポインタを用意
+cv_ptr = cv_bridge::toCvCopy(buf, sensor_msgs::image_encodings::BGR8);	//ROSからOpenCV形式に変換。cv_ptr->imageがcv::Matフォーマット
+```
 
-	//画素値の正規化（平均と標準偏差）
-	cv::Scalar mean, stddev;
-	cv::meanStdDev(gaussian_image, mean, stddev);
-	int s = 90;	//標準偏差
-	int m = 100;
-	int rows = gaussian_image.rows;
-	int cols = gaussian_image.cols;
-	cv::Mat mean_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * mean[0];
-	cv::Mat m_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * m;
-	gaussian_image.convertTo(g_img, CV_32FC1);
-	norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;
-	norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8Sは8bit(1byte) = char型
-	normalized_image = cv::Mat::ones(rows, cols, CV_8UC1);
-	for (int i = 0; i < norm_img.rows; i++) {
-		int* nintP = normalized_int.ptr<int>(i);
-		uchar* nimgP = normalized_image.ptr<uchar>(i);
-		for (int j = 0; j < norm_img.cols; j++) {
-			int value = nintP[j];
-			if (value < 0) {
-				value = 0;
-			}else if (value > 255) {
-				value = 255;
-			}
-			nimgP[j] = value;
+2. グレースケール処理、平滑化
+```
+cv::cvtColor(cv_ptr->image, gray_image, cv::COLOR_BGR2GRAY);	//グレースケール変換
+cv::GaussianBlur(gray_image, gaussian_image, cv::Size(5, 5), 3, 3);	//平滑化
+```
+
+3. 画素値の分布を正規化
+```
+cv::meanStdDev(gaussian_image, mean, stddev);	//平滑化後の画素値の分布を計算
+
+//以下は正規化後の分布の形状を決定するパラメータ
+int s = 90;	//分布の標準偏差を設定するパラメータ
+int m = 100;	//分布の平均値を設定するパラメータ
+int rows = gaussian_image.rows;
+int cols = gaussian_image.cols;
+cv::Mat mean_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * mean[0];
+cv::Mat m_Mat = cv::Mat::ones(rows, cols, CV_32FC1) * m;
+gaussian_image.convertTo(g_img, CV_32FC1);
+norm_img = (g_img - mean_Mat) / stddev[0] * s + m_Mat;
+norm_img.convertTo(normalized_int, CV_32SC1);	// CV_8Sは8bit(1byte) = char型
+normalized_image = cv::Mat::ones(rows, cols, CV_8UC1);
+for (int i = 0; i < norm_img.rows; i++) {
+	int* nintP = normalized_int.ptr<int>(i);
+	uchar* nimgP = normalized_image.ptr<uchar>(i);
+	for (int j = 0; j < norm_img.cols; j++) {
+		int value = nintP[j];
+		if (value < 0) {
+			value = 0;
+		}else if (value > 255) {
+			value = 255;
 		}
+		nimgP[j] = value;
 	}
+}
+```
 
-	//二値化処理
-	//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//大津の二値化
-	cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//固定の閾値
+4. 二値化処理
+```
+//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//ボールを検出する場合は、このコメントを外して大津の二値化処理を使用
+cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//電球を検出する場合は、固定の閾値（const int threshold = 245）で二値化
+```
 	
-	
-	//輪郭抽出
-	cv::Mat color_img;
-	std::vector<std::vector<cv::Point>> contours;
-	std::vector< cv::Vec4i > hierarchy;
-	cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
-	cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
-
+5. 輪郭抽出
+```
+cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
+cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
+```
 	//輪郭のうち円形度の高いものを検出＆円を推定
 	int idx = 0, flag = 0;
 	if (contours.size()) {
