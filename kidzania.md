@@ -141,8 +141,12 @@ cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケ
 	- for文で各輪郭ごとの処理を行う
 	- idxは何番目の輪郭かを表す数字
 	- 各輪郭の長さ（L）と輪郭で囲まれた面積（S）から、各輪郭の円形度(4πS / L^2)を計算
-	- 電球の場合は円形度が0.7と面積が1000以上（ボールの場合は円形度0.8以上かつ100以上（にしたほうが良い）
-	- 
+	- 電球の場合は円形度が0.7と面積が1000以上（ボールの場合は円形度0.8以上かつ面積100以上にしたほうが良い）
+	- cv::minEnclosingCircle(c, center, radius)で、各輪郭の最小外接円を計算
+		- c : ある輪郭の点群リスト（入力）
+		- center : 円の中心座標（出力）
+		- radius : 円の半径（出力）
+	- 求めた最小外接円とその中心座標を描画
 ```
 int idx = 0, flag = 0;
 //各輪郭ごとの処理
@@ -152,7 +156,7 @@ if (contours.size()) {
 		const std::vector<cv::Point>& c = contours[idx];
 		double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積Sを計算
 		double perimeter = cv::arcLength(c, true); 	//輪郭の長さを計算	
-
+		
 		//円形度(4πS / L^2)の高い輪郭を検出
 		double circle_deg;
 		float radius;
