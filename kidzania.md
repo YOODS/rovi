@@ -19,42 +19,42 @@
 ### ★ グローバル変数
 トピックへのpublishに使用するクラスのポインタ変数（pubL, pubR）
 ```
-	static ros::Publisher *pubL, *pubR;
+static ros::Publisher *pubL, *pubR;
 ```
 
 ### ★ main関数
 1. kizania_nodeという名前のノードを作成（ros::init）
 ```
-	ros::init(argc, argv,"kidzania_node");
+ros::init(argc, argv,"kidzania_node");
 ```
 2. ノードの初期化（ros::NodeHandle）
 ```
-	ros::NodeHandle n;
+ros::NodeHandle n;
 ```
 
 3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
     - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_out, kidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
 ```
-	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);	//左カメラ用
-	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);	//右カメラ用
+ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);	//左カメラ用
+ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);	//右カメラ用
 ```
 
 4. グローバル変数（pubL, pubR）に、上で作成したインスタンスのアドレスを格納
 ```
-	pubL = &pL;	
-	pubR = &pR;
+pubL = &pL;	
+pubR = &pR;
 ```
 
 5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
 	- この際に**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
 ```
-	ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
-	ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
+ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
+ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
 ```
 
 6. aaa
 ```
-	ros::spin();
+ros::spin();
 ```
 
 ### ★ find_marker_L, find_marker_R 関数 
