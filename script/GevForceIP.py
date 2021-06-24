@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python3
 
 "Device Discovery & Set IP address utility for GigE cameras"
 
