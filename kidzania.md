@@ -45,14 +45,14 @@ pubL = &pL;
 pubR = &pR;
 ```
 
-5. トピック（/rovi/left/image_rect, kidzania/image_right_out）にsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
-	- この際に**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
+5. トピック（/rovi/left/image_rect, kidzania/image_right_out）とsensor_msgs::Image型の画像を受信するためのインスタンス（subL, subR）を作成
+	- トピックと入力画像を受信すると、**コールバック関数（find_marker_L, find_marker_R）** が呼び出される
 ```
 ros::Subscriber subL = n.subscribe("/rovi/left/image_rect", 1000, find_marker_L);
 ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R);
 ```
 
-6. コールバック関数を呼ぶために必要なおまじない
+6. コールバック関数を呼ぶために必要なおまじない（トピックの受信を常に待機状態にする）
 ```
 ros::spin();
 ```
