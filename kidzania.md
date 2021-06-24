@@ -19,19 +19,17 @@
 ### ★ グローバル変数
 トピックへのpublishに使用するクラスのポインタ変数（pubL, pubR）
 ```
-static ros::Publisher *pubL, *pubR;
+	static ros::Publisher *pubL, *pubR;
 ```
 
 ### ★ main関数
 1. kizania_nodeという名前のノードを作成（ros::init）
 ```
-ros::init(argc, argv,"kidzania_node");
-
+	ros::init(argc, argv,"kidzania_node");
 ```
 2. ノードの初期化（ros::NodeHandle）
 ```
-ros::NodeHandle n;
-
+	ros::NodeHandle n;
 ```
 
 3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
@@ -56,7 +54,7 @@ ros::NodeHandle n;
 
 6. aaa
 ```
-ros::spin();
+	ros::spin();
 ```
 
 ### ★ find_marker_L, find_marker_R 関数 
@@ -120,18 +118,26 @@ for (int i = 0; i < norm_img.rows; i++) {   //正規化の結果、画素値が�
 ```
 
 4. 二値化処理
+	- **ボール**を検出する場合は、大津の二値化処理を適用（１行目のコメントを解除して、２行目をコメントアウト）
+	- **電球**を検出する場合は、固定の閾値（const int threshold=245）を適用
 ```
 //cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//ボールを検出する場合は、こちらの大津の二値化処理を使用
 cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//電球を検出する場合は、固定の閾値（const int threshold = 245）で二値化
 ```
 	
 5. 輪郭抽出
+	- cv::findContoursで輪郭を検出（contoursには、すべての輪郭が）
+	- 
 ```
 cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX_SIMPLE);	
+```
+
+6. カラー画像に変換
+```
 cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
 ```
 
-6. 円検出
+7. 円検出
 ```
 int idx = 0, flag = 0;
 if (contours.size()) {
@@ -157,7 +163,7 @@ if (contours.size()) {
 }
 ```
 
-7. 結果画像をROS形式に変換してpublish
+8. 結果画像をROS形式に変換してpublish
 ```
 //結果画像をROS形式に変換
 sensor_msgs::Image img;
@@ -171,7 +177,7 @@ if (label==0){
 }
 ```
 
-7. マーカーの座標をカメラ座標に変換してpublish（まだ実装していないが追加の必要あり）
+9. マーカーの座標をカメラ座標に変換してpublish（まだ実装していないが追加の必要あり）
 ```
 /** ３D座標への変換 **/
 	std::cout << "sequence" << label << buf.header.seq << std::endl;	
