@@ -22,7 +22,7 @@
 static ros::Publisher *pubL, *pubR;
 ```
 
-### ★ main関数
+### ★ main関数（主にトピックのSubscribe）
 1. kizania_nodeという名前のノードを作成（ros::init）
 ```
 ros::init(argc, argv,"kidzania_node");
@@ -32,8 +32,8 @@ ros::init(argc, argv,"kidzania_node");
 ros::NodeHandle n;
 ```
 
-3. トピックにsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
-    - 左カメラと右カメラの結果画像をpublishするために、（kidzania/image_left_out, kidzania/image_right_out）という名前のトピックにsensor_msgs::Image型（rosの画像形式）の画像を発行に使うインスタンス（pL, pR）を作成＆初期化
+3. トピックとsensor_msgs::Image型の画像を発行する準備（ros::Publisher）
+    - トピック（kidzania/image_left_out, kidzania/image_right_out）とsensor_msgs::Image型（rosの画像形式）のカメラ画像を発行するためのインスタンス（pL, pR）を作成＆初期化
 ```
 ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);	//左カメラ用
 ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);	//右カメラ用
@@ -57,7 +57,7 @@ ros::Subscriber subR = n.subscribe("/rovi/right/image_rect", 1000, find_marker_R
 ros::spin();
 ```
 
-### ★ find_marker_L, find_marker_R 関数 
+### ★ find_marker_L, find_marker_R 関数 （main関数とfind_marker関数の仲介）
 カメラからの入力画像（buf）と左右を区別するラベル（左：0, 右：1）を **find_marker関数**に渡す仲介役
 
 ```
@@ -69,7 +69,7 @@ void find_marker_R(sensor_msgs::Image buf){
 	find_marker(buf, 1);	//右カメラ用
 }	
 ```
-### ★ find_marker 関数 
+### ★ find_marker 関数 （入力画像から円を検出、中心座標ともに描画）
 1. ROS形式の画像をOpenCV用に変換
 
 ```
@@ -174,6 +174,7 @@ if (contours.size()) {
 ```
 
 8. 結果画像をROS形式に変換してpublish
+	- 発行されたトピックはRvizのプログラムで受け取られ、トピックと一緒に送られてきた画像が描画されるようになっている
 ```
 sensor_msgs::Image img;
 cv_ptr->image = color_img;
