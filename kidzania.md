@@ -1,5 +1,9 @@
-## tf_network.cpp
-カメラから画像を入力（Subscribe）⇒　画像処理　⇒　処理結果を出力（publish）
+# tf_network.cpp
+**【役割】**　
+1. カメラから画像を入力（Subscribe）：main関数
+2. 画像処理：find_marker関数
+3. 処理結果を出力（publish）：main関数、find_marker関数
+※ find_marker_L, find_marker_Rは、main関数とfind_marker関数の仲介役
 
 ### グローバル変数
 トピックへのpublishに使用するクラスのポインタ変数（pubL, pubR）
@@ -26,11 +30,11 @@ int main(int argc, char** argv){
 	ros::NodeHandle n;
 	
 	// 3. トピックにsensor_msgs::Image型の画像を発行する準備
-	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);
-	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);
+	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);	//左カメラ用
+	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);	//右カメラ用
 	
 	// 4. アドレスを格納
-	pubL = &pL;
+	pubL = &pL;	
 	pubR = &pR;
 	
 	// 5. トピック（chatter）にsensor_msgs::Image型の画像を受信（コールバック関数処理）
