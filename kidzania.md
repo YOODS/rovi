@@ -137,22 +137,26 @@ cv::findContours(thr_image, contours, hierarchy, cv::RETR_LIST, cv::CHAIN_APPROX
 cv::cvtColor(normalized_image, color_img, cv::COLOR_GRAY2BGR);	//グレースケール画像をRBGに変換
 ```
 
-7. 円検出
+7. 輪郭の描画＆円検出
+	- for文で各輪郭ごとの処理を行う
+	- idxは何番目の輪郭かを表す数字
+	- 各輪郭の円形度と、輪郭の長さ、輪郭で囲まれた面積を計算
+	- 
 ```
 int idx = 0, flag = 0;
 //各輪郭ごとの処理
 if (contours.size()) {
 	for (; idx >= 0; idx = hierarchy[idx][0]) {
-		drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i 番目の輪郭を描く。輪郭の色はレモンイエロー
+		drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// 輪郭を描く。輪郭の色はレモンイエロー
 		const std::vector<cv::Point>& c = contours[idx];
-		double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積S
-		double perimeter = cv::arcLength(c, true); //輪郭の長さ
+		double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積Sを計算
+		double perimeter = cv::arcLength(c, true); 	//輪郭の長さを計算	
 
 		//円形度(4πS / L^2)の高い輪郭を検出
 		double circle_deg;
 		float radius;
 		cv::Point2f center;
-		circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
+		circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);	//円形度の計算
 
 		//円を推定＆円と中心座標を描画
 		if (circle_deg > 0.8 && area > 100) {
