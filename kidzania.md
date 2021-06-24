@@ -120,7 +120,7 @@ for (int i = 0; i < norm_img.rows; i++) {
 
 4. 二値化処理
 ```
-//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//ボールを検出する場合は、このコメントを外して大津の二値化処理を使用
+//cv::threshold(normalized_image, thr_image, 0, 255, cv::THRESH_BINARY | cv::THRESH_OTSU);	//ボールを検出する場合は、こちらの大津の二値化処理を使用
 cv::threshold(normalized_image, thr_image, threshold, 255, cv::THRESH_BINARY);	//電球を検出する場合は、固定の閾値（const int threshold = 245）で二値化
 ```
 	
