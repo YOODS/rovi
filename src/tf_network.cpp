@@ -2,12 +2,45 @@
 #include "sensor_msgs/Image.h"
 #include <sstream>
 #include <cv_bridge/cv_bridge.h>
-#include "boost/bind.hpp"
+// #include "boost/bind.hpp"
 #include <iostream>
+#include <std_msgs/Bool.h>
 
+#define GET_CAMERA_LABEL(camno) (camno==0?'L':(camno==1?'R':'?'))
+constexpr int CAMERA_NUM = 2;
+
+struct marker{
+    int seq;
+    double x;
+    double y;
+    void set_data(int seq, int x = -1, int y = -1){
+        this->seq = seq;
+        this->x = x;
+        this->y = y;
+        this->print_data();
+    }
+    void print_data()
+    {
+        ROS_INFO("test_node::print_data seq=%d x=%lf y=%lf", this->seq, this->x, this->y);
+    }
+    bool check_data()
+    {
+      	bool ret=false;
+        if ((this->x < 0) || (this->y < 0)) {
+	    	ROS_ERROR("test_node::check NG. (%lf, %lf)", this->x, this->y);
+    	}else{
+	    	ROS_INFO("test_node::check OK. (%lf, %lf)", this->x, this->y);
+            ret=true;
+	    }
+        return ret;    
+    }
+};
 
 static ros::Publisher *pubL, *pubR;
-
+ros::NodeHandle *nh;
+static marker makL,makR;
+static std::vector<std::string> paramP = {"test/left/P", "test/right/P"};
+static std::vector<double> pvec[CAMERA_NUM];
 
 //画像処理して３D座標を返す
 void find_marker(sensor_msgs::Image buf, int label){
@@ -64,8 +97,11 @@ void find_marker(sensor_msgs::Image buf, int label){
 
 	//輪郭のうち円形度の高いものを検出＆円を推定
 	int idx = 0, flag = 0;
-	if (contours.size()) {
-		for (; idx >= 0; idx = hierarchy[idx][0]) {
+	cv::Point2f center(-1.,-1.);
+	if (contours.size())
+	{
+		for (; idx >= 0; idx = hierarchy[idx][0])
+		{
 			drawContours(color_img, contours, idx, cv::Scalar(80, 244, 255), 2);	// i 番目の輪郭を描く。輪郭の色はレモンイエロー
 			const std::vector<cv::Point>& c = contours[idx];
 			double area = fabs(cv::contourArea(cv::Mat(c)));	//輪郭で囲まれた面積S
@@ -74,7 +110,7 @@ void find_marker(sensor_msgs::Image buf, int label){
 			//円形度(4πS / L^2)の高い輪郭を検出
 			double circle_deg;
 			float radius;
-			cv::Point2f center;
+			// cv::Point2f center(-1.,-1.);
 			circle_deg = 4 * M_PI*area / pow(perimeter, 2.0);
 
 			//円を推定＆円と中心座標を描画
@@ -83,8 +119,20 @@ void find_marker(sensor_msgs::Image buf, int label){
 				cv::minEnclosingCircle(c, center, radius);	//最小外接円を計算
 				cv::circle(color_img, center, radius, cv::Scalar(255, 0, 255), 5);	//外接円を描画
 				cv::drawMarker(color_img, center, cv::Scalar(255, 0, 255));	//中心座標を描画
+				break;
 			}
+
 		}
+	}
+	if (label==0)
+	{
+		makL.set_data(buf.header.seq,center.x,center.y);
+		std::cout << "set_data_L_label="<< label << std::endl;
+	}
+	else
+	{
+		makR.set_data(buf.header.seq,center.x,center.y);
+		std::cout << "set_data_R_label="<< label << std::endl;
 	}
 	
 	//結果画像をROS用形式に変換
@@ -99,9 +147,38 @@ void find_marker(sensor_msgs::Image buf, int label){
 	}
 	
 	/** ３D座標への変換 **/
-		std::cout << "sequence" << label << buf.header.seq << std::endl;
+	if (makL.seq == makR.seq)
+	{
+		if (makL.check_data() && makR.check_data())
+		{
+			// std::cout << "seq =" << buf.header.seq << std::endl;
 
+		}
+		
+	}
 	
+
+	// std::cout << "sequence" << label << buf.header.seq << std::endl;
+	// // printf("label=%d\n",label);
+	// std::cout << "label="<< label << makL.check_data() << std::endl;
+	// std::cout << "label="<< label << makR.check_data() << std::endl;
+	
+}
+void reload(std_msgs::Bool e)
+{
+	ROS_INFO("test_node LD_PATH=%s",getenv("LD_LIBRARY_PATH"));
+	
+	for( int camno=0; camno < CAMERA_NUM; ++camno ){
+    	if (! nh->getParam(paramP[camno].c_str(), pvec[camno])) {
+    		ROS_ERROR("test_node::parameter \"P(%c)\" not found",GET_CAMERA_LABEL(camno));
+    		return;
+    	}
+        std::cout << "test_node::parameter pvec(" << GET_CAMERA_LABEL(camno) << ")=";
+        for (size_t i = 0; i < pvec[camno].size(); ++i) {
+            std::cout << pvec[camno][i] << "; ";
+        }
+        std::cout << std::endl;
+	}
 }
 
 void find_marker_L(sensor_msgs::Image buf){
@@ -114,13 +191,29 @@ void find_marker_R(sensor_msgs::Image buf){
 	
 
 int main(int argc, char** argv){
-	
+	for (int i = 0; i < argc; i++)
+	{
+		std::cout << "argc :" << argc << "argv :" << argv[i] << std::endl;
+	}
+	for( int camno=0; camno < CAMERA_NUM; ++camno )
+	{
+		if (argc >= camno + 2)
+		{
+			paramP[camno] = argv[camno+1];
+		}
+		std::cout << "P(" << GET_CAMERA_LABEL(camno) << ")=" << paramP[camno] << "\n";
+	}
+
 	// 新しいノード（kidzania_node）の作成
 	ros::init(argc, argv,"kidzania_node");
 	
 	// ノードへのハンドラの作成（ノードの初期化）
 	ros::NodeHandle n;
+	nh = &n;
 	
+	//p行列取得
+	std_msgs::Bool msg;
+	reload(msg);
 	// トピックにsensor_msgs::Image型の画像を発行する準備
 	ros::Publisher pL = n.advertise<sensor_msgs::Image>("kidzania/image_left_out", 1000);
 	ros::Publisher pR = n.advertise<sensor_msgs::Image>("kidzania/image_right_out", 1000);

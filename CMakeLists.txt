@@ -144,6 +144,18 @@ target_link_libraries(ycam3d_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${ARAV
 add_dependencies(ycam3d_node rovi_gencpp)
 #2020/09/09 modified by hato -----------------  end  ------------------
 
+add_executable(test_pmat_node src/test_pmat.cpp)
+target_link_libraries(test_pmat_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+add_dependencies(test_pmat_node rovi_gencpp)
+
+add_executable(test_struct_node src/test_struct.cpp)
+target_link_libraries(test_struct_node ${catkin_LIBRARIES} yds3d)
+add_dependencies(test_struct_node rovi_gencpp)
+
+add_executable(test_tf_node src/test_tf.cpp)
+target_link_libraries(test_tf_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
+add_dependencies(test_tf_node rovi_gencpp)
+
 #############
 ## Install ##
 #############

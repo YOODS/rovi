@@ -1,3 +1,5 @@
 <launch>
-  <node name="kidzania" pkg="rovi" type="kidzania_node" output="screen" />
+  <node name="kidzania" pkg="rovi" type="kidzania_node" args="/rovi/left/remap/P /rovi/right/remap/P" output="screen" />
+  <!-- <node pkg="rovi" type="test_struct_node" name="test_struct_node" output="screen"/>
+  <node pkg="rovi" type="test_pmat_node" name="test_pmat_node" args="/rovi/left/remap/P /rovi/right/remap/P" output="screen"/> -->
 </launch>
