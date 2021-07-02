@@ -10,7 +10,7 @@ namespace {
 	const int DEPTH_BASE=400;
 	const int DEPTH_UNIT=1;
 	
-	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 	/*
 #pragma pack(1)
 	struct VertexXYZRGB{
@@ -43,7 +43,7 @@ int YPCData::count()const{
 	return n_valid;
 }
 
-//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 /*
 const sensor_msgs::PointCloud2 * YPCData::get_data() const{
 	return &pcdata;
@@ -95,12 +95,12 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
 			pts.points[n].y = org_point->y;
 			pts.points[n].z = org_point->z;
 			
-			//ƒOƒŒ[ƒXƒP[ƒ‹‚µ‚©‘Î‰‚µ‚Ä‚¢‚È‚¢
+			//ã‚°ãƒ¬ãƒ¼ã‚¹ã‚±ãƒ¼ãƒ«ã—ã‹å¯¾å¿œã—ã¦ã„ãªã„
 			pts.channels[0].values[n] = pts.channels[1].values[n] = pts.channels[2].values[n] =  *pixel / 255.0;
 			n++;
 		}
 	}
-	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 	/*
 	pcdata = sensor_msgs::PointCloud2();
 	pcdata.header.stamp = ros::Time::now();
@@ -179,7 +179,7 @@ bool YPCData::make_depth_image(cv::Mat &img){
 	}
 #if 0
 
-// ‰œs‚«‚ÌÅ¬Å‘å‚ğ‹‚ß‚é
+// å¥¥è¡Œãã®æœ€å°æœ€å¤§ã‚’æ±‚ã‚ã‚‹
 	float min_ = std::numeric_limits<float>::max();
 	float max_ = -min_;
 	for (auto p : points) {
@@ -188,7 +188,7 @@ bool YPCData::make_depth_image(cv::Mat &img){
 		if (max_ < p.z) max_ = p.z;
 	}
 
-	// ³‹K‰»—p‚ÌŒW”‚ğ‹‚ß‚é. 255‚ÍA‘ª’è‚Å‚«‚È‚©‚Á‚½“_‚É“ü‚ê‚é
+	// æ­£è¦åŒ–ç”¨ã®ä¿‚æ•°ã‚’æ±‚ã‚ã‚‹. 255ã¯ã€æ¸¬å®šã§ããªã‹ã£ãŸç‚¹ã«å…¥ã‚Œã‚‹
 	float scale = 254.0f / (max_ - min_);
 	
 	img = cv::Mat(this->height,this->width, CV_8U);

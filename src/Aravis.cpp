@@ -1120,7 +1120,7 @@ bool Aravis::setProjectorEnabled(const bool enabled){
 */
 //2020/11/05 modified by hato --------------------  end  --------------------
 
-/*** 診断メッセージ　dコマンドで以下フォ－マット
+/*** 診断メッセージ　dコマンドで以下フォ−マット
 	//cmd:diag
 	//diag.hardware status: 0x01
 	//diag.system status: 0x01

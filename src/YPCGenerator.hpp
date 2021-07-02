@@ -18,37 +18,37 @@ public:
 	}
 
 	/**
-	  “_ŒQ¶¬Ší‚ğì¬‚µ‚Ü‚·.
-	  @return ì¬‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse
-	  @param [in] pcgen_mode “_ŒQ¶¬ƒ‚[ƒh(iPointCloudGenerator.hpp‚ÌPcGenMode‚ğQÆ‚Ì–)
+	  ç‚¹ç¾¤ç”Ÿæˆå™¨ã‚’ä½œæˆã—ã¾ã™.
+	  @return ä½œæˆã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false
+	  @param [in] pcgen_mode ç‚¹ç¾¤ç”Ÿæˆãƒ¢ãƒ¼ãƒ‰(iPointCloudGenerator.hppã®PcGenModeã‚’å‚ç…§ã®äº‹)
 	 */
 	virtual bool create_pcgen(const PcGenMode pcgen_mode) = 0;
 
 	/**
-	  “_ŒQ¶¬ƒpƒ‰ƒ[ƒ^‚Ì“Ç‚İ‚İ‚ğs‚¢A“_ŒQ¶¬Ší‚Éƒpƒ‰ƒ[ƒ^‚ğ“n‚µ‚Ü‚·.
-	  @return “Ç‚İ‚İ‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	  @param [in] filename ƒpƒ‰ƒ[ƒ^ƒtƒ@ƒCƒ‹–¼
+	  ç‚¹ç¾¤ç”Ÿæˆãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã®èª­ã¿è¾¼ã¿ã‚’è¡Œã„ã€ç‚¹ç¾¤ç”Ÿæˆå™¨ã«ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’æ¸¡ã—ã¾ã™.
+	  @return èª­ã¿è¾¼ã¿ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	  @param [in] filename ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«å
 	 */
 	virtual bool init(const char *filename) = 0;
 
 	/**
-	  “_ŒQ¶¬‚É•K—v‚ÈƒXƒeƒŒƒIƒJƒƒ‰‚ğì¬‚µ‚Ü‚·.
-	  @return ì¬‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	  @param [in] dirname ƒJƒƒ‰ƒpƒ‰ƒ[ƒ^ƒtƒ@ƒCƒ‹‚ªŠi”[‚³‚ê‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠ–¼
+	  ç‚¹ç¾¤ç”Ÿæˆã«å¿…è¦ãªã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’ä½œæˆã—ã¾ã™.
+	  @return ä½œæˆã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	  @param [in] dirname ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå
 	 */
 	virtual bool create_camera(const char *dirname) = 0;
 
 	/**
-	  ƒJƒƒ‰‚ªHMat‚©‚ç\’z‚³‚ê‚½‚©”Û‚©‚ğ•Ô‚µ‚Ü‚·.À•WŒn•ÏŠ·Ï‚İ‚ÌHMat‚©‚çƒXƒeƒŒƒIƒJƒƒ‰‚ğ\’z‚µ‚Ä‚¢‚é‰Â”\«‚ª‚ ‚é‚½‚ß
+	  ã‚«ãƒ¡ãƒ©ãŒHMatã‹ã‚‰æ§‹ç¯‰ã•ã‚ŒãŸã‹å¦ã‹ã‚’è¿”ã—ã¾ã™.åº§æ¨™ç³»å¤‰æ›æ¸ˆã¿ã®HMatã‹ã‚‰ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’æ§‹ç¯‰ã—ã¦ã„ã‚‹å¯èƒ½æ€§ãŒã‚ã‚‹ãŸã‚
 	 */
 	const bool is_camera_from_hmat() const {
 		return (this->camtype == CamParamType::HMat) ? true : false;
 	}
 
 	/**
-	  “_ŒQ‚ÌÀ•W•ÏŠ·s—ñ‚ğƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚İ‚Ü‚·.
-	  @return “Ç‚İ‚İ‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	  @param [in] filename À•W•ÏŠ·s—ñ‚ª‹Lq‚³‚ê‚Ä‚¢‚éƒtƒ@ƒCƒ‹–¼
+	  ç‚¹ç¾¤ã®åº§æ¨™å¤‰æ›è¡Œåˆ—ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã¿ã¾ã™.
+	  @return èª­ã¿è¾¼ã¿ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	  @param [in] filename åº§æ¨™å¤‰æ›è¡Œåˆ—ãŒè¨˜è¿°ã•ã‚Œã¦ã„ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«å
 	 */
 	bool convert_coordinate(const char *filename) {
 		if (!pcgen) return false;
@@ -56,72 +56,72 @@ public:
 	}
 
 	/**
-	  “_ŒQ¶¬Ší‚É“n‚·ƒtƒ@ƒCƒ‹‚Ìƒtƒ‹ƒpƒX‚ÌƒŠƒXƒg‚ğì¬‚µ‚Ü‚·.
-	  @return ì¬‚³‚ê‚½ƒŠƒXƒg
-	  @param [in] dirname ‰æ‘œ‚ªŠi”[‚³‚ê‚Ä‚¢‚éƒfƒBƒŒƒNƒgƒŠ–¼
-	  @param [in] file_ptn ƒtƒ@ƒCƒ‹‚ÌŠg’£q(?)
-	  @note ¶‰E•ª—£‰æ‘œ‚©‚çƒŠƒXƒg‚ğì¬‚·‚éÛ‚É‚ÍA‰æ‘œ‚ª¶0, ‰E0, ¶1, ‰E1, ... ‚Ì‡‚É‚È‚é‚æ‚¤•À‚×‚Ä‚­‚¾‚³‚¢.
-	  @note ˜AŒ‹‰æ‘œ‚Í‰¡•À‚Ñ‚Å˜AŒ‹‚³‚ê‚Ä‚¢‚é‰æ‘œ‚Ì‚İ—LŒø‚Å‚·
+	  ç‚¹ç¾¤ç”Ÿæˆå™¨ã«æ¸¡ã™ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ãƒ«ãƒ‘ã‚¹ã®ãƒªã‚¹ãƒˆã‚’ä½œæˆã—ã¾ã™.
+	  @return ä½œæˆã•ã‚ŒãŸãƒªã‚¹ãƒˆ
+	  @param [in] dirname ç”»åƒãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒ‡ã‚£ãƒ¬ã‚¯ãƒˆãƒªå
+	  @param [in] file_ptn ãƒ•ã‚¡ã‚¤ãƒ«ã®æ‹¡å¼µå­(?)
+	  @note å·¦å³åˆ†é›¢ç”»åƒã‹ã‚‰ãƒªã‚¹ãƒˆã‚’ä½œæˆã™ã‚‹éš›ã«ã¯ã€ç”»åƒãŒå·¦0, å³0, å·¦1, å³1, ... ã®é †ã«ãªã‚‹ã‚ˆã†ä¸¦ã¹ã¦ãã ã•ã„.
+	  @note é€£çµç”»åƒã¯æ¨ªä¸¦ã³ã§é€£çµã•ã‚Œã¦ã„ã‚‹ç”»åƒã®ã¿æœ‰åŠ¹ã§ã™
 	 */
 	virtual std::vector<std::string> create_filelist(const char *dirname, const char *file_ptn) = 0;
 
 	/**
-	 * “_ŒQ¶¬Ší‚Éc‚Á‚Ä‚¢‚éƒf[ƒ^‚ğƒNƒŠƒA‚µ‚Ü‚·.“_ŒQ¶¬‘O‚Éˆê‰ñ•K‚¸ŒÄ‚Ño‚µ‚Ä‚­‚¾‚³‚¢.
+	 * ç‚¹ç¾¤ç”Ÿæˆå™¨ã«æ®‹ã£ã¦ã„ã‚‹ãƒ‡ãƒ¼ã‚¿ã‚’ã‚¯ãƒªã‚¢ã—ã¾ã™.ç‚¹ç¾¤ç”Ÿæˆå‰ã«ä¸€å›å¿…ãšå‘¼ã³å‡ºã—ã¦ãã ã•ã„.
 	 */
 	bool reset();
 
 	/**
-	  ƒtƒ@ƒCƒ‹‚©‚ç‰æ‘œ‚ğ“Ç‚İ‚ñ‚Å“_ŒQ¶¬Ší‚É“n‚µ‚Ü‚·.
-	  @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	  @param [in] filenames ƒtƒ@ƒCƒ‹‚Ìƒtƒ‹ƒpƒX‚ªŠi”[‚³‚ê‚Ä‚¢‚évector
+	  ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ç”»åƒã‚’èª­ã¿è¾¼ã‚“ã§ç‚¹ç¾¤ç”Ÿæˆå™¨ã«æ¸¡ã—ã¾ã™.
+	  @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	  @param [in] filenames ãƒ•ã‚¡ã‚¤ãƒ«ã®ãƒ•ãƒ«ãƒ‘ã‚¹ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹vector
 	 */
 	bool load_images(std::vector<std::string> &filenames);
 
 	/**
-	  ƒoƒbƒtƒ@‚©‚ç‰æ‘œ‚ğ“_ŒQ¶¬Ší‚É“n‚µ‚Ü‚·.
-	  @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	  @param [in] buffers ‰æ‘œ¶ã’[ƒAƒhƒŒƒX‚ªŠi”[‚³‚ê‚Ä‚¢‚évector
+	  ãƒãƒƒãƒ•ã‚¡ã‹ã‚‰ç”»åƒã‚’ç‚¹ç¾¤ç”Ÿæˆå™¨ã«æ¸¡ã—ã¾ã™.
+	  @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	  @param [in] buffers ç”»åƒå·¦ä¸Šç«¯ã‚¢ãƒ‰ãƒ¬ã‚¹ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹vector
 	 */
 	bool set_images(std::vector<unsigned char*> &buffers);
 
 	/**
-	  Œo‰ßŠÔ‚ğ•\¦‚µ‚Ü‚·.
-	  @return ‚È‚µ
+	  çµŒéæ™‚é–“ã‚’è¡¨ç¤ºã—ã¾ã™.
+	  @return ãªã—
 	 */
 	virtual void print_elapsed() {}
 
 public:
 	/**
-	 * 3Dƒ}ƒbƒ`ƒ“ƒO‚ğs‚¤‘O‚É•K—v‚È‘Oˆ—‚ğs‚¢‚Ü‚·.
-	 * @return ˆ—‚ª¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
+	 * 3Dãƒãƒƒãƒãƒ³ã‚°ã‚’è¡Œã†å‰ã«å¿…è¦ãªå‰å‡¦ç†ã‚’è¡Œã„ã¾ã™.
+	 * @return å‡¦ç†ãŒæˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
 	 */
 	bool preprocess();
 
 	/**
-	  ‹·‚ğ‹‚ßA“_ŒQ‚ğ¶¬‚µ‚Ü‚·.
-	  @return ˆ—‚ª¬Œ÷‚µ‚½‚©”Û‚©
-	  @param [in] texture_cam “_ŒQ‚É’£‚è•t‚¯‚éƒeƒNƒXƒ`ƒƒ‚ğ‚Ç‚¿‚ç‚ÌƒJƒƒ‰‚©‚ç‚Ì‰æ‘œ‚ğg—p‚·‚é‚©(0: ¶(]—ˆ’Ê‚è), 1: ‰E)
+	  è¦–å·®ã‚’æ±‚ã‚ã€ç‚¹ç¾¤ã‚’ç”Ÿæˆã—ã¾ã™.
+	  @return å‡¦ç†ãŒæˆåŠŸã—ãŸã‹å¦ã‹
+	  @param [in] texture_cam ç‚¹ç¾¤ã«å¼µã‚Šä»˜ã‘ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ã©ã¡ã‚‰ã®ã‚«ãƒ¡ãƒ©ã‹ã‚‰ã®ç”»åƒã‚’ä½¿ç”¨ã™ã‚‹ã‹(0: å·¦(å¾“æ¥é€šã‚Š), 1: å³)
 	 */
 	bool execute(const int texture_cam);
 	
 	/**
-	   “_ŒQ‚ğ•Û‘¶‚µ‚Ü‚·.
-	   @return ì¬‚³‚ê‚½“_‚Ì”
-	   @param [in] callback “_ŒQ¶¬Œã‚ÉŒÄ‚Ño‚³‚ê‚éƒR[ƒ‹ƒoƒbƒNŠÖ”
+	   ç‚¹ç¾¤ã‚’ä¿å­˜ã—ã¾ã™.
+	   @return ä½œæˆã•ã‚ŒãŸç‚¹ã®æ•°
+	   @param [in] callback ç‚¹ç¾¤ç”Ÿæˆå¾Œã«å‘¼ã³å‡ºã•ã‚Œã‚‹ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°
 	 */
 	int save_pointcloud(PointCloudCallback *callback) {
 		return pcgen->get_pointcloud(callback);
 	}
 
-	// ‰º‚Íexecute‚Æsave_pointcloud‚ğ‚Ü‚Æ‚ß‚Äs‚¤ŠÖ”
-	// generate_pointcloudŒÄ‚Ño‚µ‚Ì‘O‚É•K‚¸load_images or set_images‚É‚Ä‰æ‘œ‚ğpcgen‚É
-	// —^‚¦Apreprocess()‚ğŒÄ‚Ño‚µ‚Ä‚¨‚©‚È‚¯‚ê‚Î‚È‚ç‚È‚¢.
+	// ä¸‹ã¯executeã¨save_pointcloudã‚’ã¾ã¨ã‚ã¦è¡Œã†é–¢æ•°
+	// generate_pointcloudå‘¼ã³å‡ºã—ã®å‰ã«å¿…ãšload_images or set_imagesã«ã¦ç”»åƒã‚’pcgenã«
+	// ä¸ãˆã€preprocess()ã‚’å‘¼ã³å‡ºã—ã¦ãŠã‹ãªã‘ã‚Œã°ãªã‚‰ãªã„.
 
 	/**
-	  ‰æ‘œƒtƒ@ƒCƒ‹‚©‚ç‰æ‘œ‚ğ“Ç‚İ‚ñ‚Å“_ŒQ¶¬‚ğs‚¢‚Ü‚·.
-	  @return ì¬‚³‚ê‚½“_‚Ì”
-	  @param [in] texture_cam “_ŒQ‚É’£‚è•t‚¯‚éƒeƒNƒXƒ`ƒƒ‚ğ‚Ç‚¿‚ç‚ÌƒJƒƒ‰‚©‚ç‚Ì‰æ‘œ‚ğg—p‚·‚é‚©(0: ¶(]—ˆ’Ê‚è), 1: ‰E)
-	  @param [in] callback “_ŒQ¶¬Œã‚ÉŒÄ‚Ño‚³‚ê‚éƒR[ƒ‹ƒoƒbƒNŠÖ”
+	  ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰ç”»åƒã‚’èª­ã¿è¾¼ã‚“ã§ç‚¹ç¾¤ç”Ÿæˆã‚’è¡Œã„ã¾ã™.
+	  @return ä½œæˆã•ã‚ŒãŸç‚¹ã®æ•°
+	  @param [in] texture_cam ç‚¹ç¾¤ã«å¼µã‚Šä»˜ã‘ã‚‹ãƒ†ã‚¯ã‚¹ãƒãƒ£ã‚’ã©ã¡ã‚‰ã®ã‚«ãƒ¡ãƒ©ã‹ã‚‰ã®ç”»åƒã‚’ä½¿ç”¨ã™ã‚‹ã‹(0: å·¦(å¾“æ¥é€šã‚Š), 1: å³)
+	  @param [in] callback ç‚¹ç¾¤ç”Ÿæˆå¾Œã«å‘¼ã³å‡ºã•ã‚Œã‚‹ã‚³ãƒ¼ãƒ«ãƒãƒƒã‚¯é–¢æ•°
 	 */
 	int generate_pointcloud(const int texture_cam, PointCloudCallback *callback) {
 		if (!this->execute(texture_cam)) return false;
@@ -130,63 +130,63 @@ public:
 
 protected:
 	/**
-	  ƒŠƒ}ƒbƒvŒã‚Ì‰æ‘œ‰¡•‚ğ•Ô‚µ‚Ü‚·
-	  @return ƒŠƒ}ƒbƒvŒã‚Ì‰æ‘œ‰¡•
+	  ãƒªãƒãƒƒãƒ—å¾Œã®ç”»åƒæ¨ªå¹…ã‚’è¿”ã—ã¾ã™
+	  @return ãƒªãƒãƒƒãƒ—å¾Œã®ç”»åƒæ¨ªå¹…
 	 */
 	const int get_image_cols(void) const { return settings.output_cols; }
 
 	/**
-	  ƒŠƒ}ƒbƒvŒã‚Ì‰æ‘œc•‚ğ•Ô‚µ‚Ü‚·
-	  @return ƒŠƒ}ƒbƒvŒã‚Ì‰æ‘œc•
+	  ãƒªãƒãƒƒãƒ—å¾Œã®ç”»åƒç¸¦å¹…ã‚’è¿”ã—ã¾ã™
+	  @return ãƒªãƒãƒƒãƒ—å¾Œã®ç”»åƒç¸¦å¹…
 	 */
 	const int get_image_rows(void) const { return settings.output_rows; }
 
 	/**
-	  ƒJƒƒ‰‰æ‘œ‚Ì‰¡•‚ğİ’è‚µ‚Ü‚·
-	  @return ‚È‚µ
-	  @param [in] wd ƒJƒƒ‰‰æ‘œ‰¡•
+	  ã‚«ãƒ¡ãƒ©ç”»åƒã®æ¨ªå¹…ã‚’è¨­å®šã—ã¾ã™
+	  @return ãªã—
+	  @param [in] wd ã‚«ãƒ¡ãƒ©ç”»åƒæ¨ªå¹…
 	 */
 	void set_camera_cols(const int cols) {
 		settings.input_cols = cols;
 
-		// ¡‚ÌŠAƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œƒTƒCƒY == “ü—Í‰æ‘œƒTƒCƒY‚Æ‚µ‚Ä‚µ‚©‰^—p‚µ‚Ä‚¢‚È‚¢‚Ì‚Å
-		// o—Í‰æ‘œƒTƒCƒY‚à“¯‚¶’l‚ğİ’è‚·‚é.‚ªAˆá‚¤’l‚àİ’è‚Å‚«‚é‚Ì‚Å–Y‚ê‚È‚¢‚æ‚¤‚É...
+		// ä»Šã®æ‰€ã€ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒã‚µã‚¤ã‚º == å…¥åŠ›ç”»åƒã‚µã‚¤ã‚ºã¨ã—ã¦ã—ã‹é‹ç”¨ã—ã¦ã„ãªã„ã®ã§
+		// å‡ºåŠ›ç”»åƒã‚µã‚¤ã‚ºã‚‚åŒã˜å€¤ã‚’è¨­å®šã™ã‚‹.ãŒã€é•ã†å€¤ã‚‚è¨­å®šã§ãã‚‹ã®ã§å¿˜ã‚Œãªã„ã‚ˆã†ã«...
 		settings.output_cols = cols;
 	}
 
 	/**
-	  ƒJƒƒ‰‰æ‘œ‚Ìc•‚ğİ’è‚µ‚Ü‚·
-	  @return ‚È‚µ
-	  @param [in] ht ƒJƒƒ‰‰æ‘œc•
+	  ã‚«ãƒ¡ãƒ©ç”»åƒã®ç¸¦å¹…ã‚’è¨­å®šã—ã¾ã™
+	  @return ãªã—
+	  @param [in] ht ã‚«ãƒ¡ãƒ©ç”»åƒç¸¦å¹…
 	 */
 	void set_camera_rows(const int rows) {
 		settings.input_rows = rows;
 
-		// ¡‚ÌŠAƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œƒTƒCƒY == “ü—Í‰æ‘œƒTƒCƒY‚Æ‚µ‚Ä‚µ‚©‰^—p‚µ‚Ä‚¢‚È‚¢‚Ì‚Å
-		// o—Í‰æ‘œƒTƒCƒY‚à“¯‚¶’l‚ğİ’è‚·‚é.‚ªAˆá‚¤’l‚àİ’è‚Å‚«‚é‚Ì‚Å–Y‚ê‚È‚¢‚æ‚¤‚É...
+		// ä»Šã®æ‰€ã€ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒã‚µã‚¤ã‚º == å…¥åŠ›ç”»åƒã‚µã‚¤ã‚ºã¨ã—ã¦ã—ã‹é‹ç”¨ã—ã¦ã„ãªã„ã®ã§
+		// å‡ºåŠ›ç”»åƒã‚µã‚¤ã‚ºã‚‚åŒã˜å€¤ã‚’è¨­å®šã™ã‚‹.ãŒã€é•ã†å€¤ã‚‚è¨­å®šã§ãã‚‹ã®ã§å¿˜ã‚Œãªã„ã‚ˆã†ã«...
 		settings.output_rows = rows;
 	}
 
 protected:
-	/// ƒJƒƒ‰ƒ^ƒCƒv
+	/// ã‚«ãƒ¡ãƒ©ã‚¿ã‚¤ãƒ—
 	CamParamType camtype;
 
-	/// ƒXƒeƒŒƒIƒJƒƒ‰
+	/// ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©
 	iStereoCamera *stereo;
 
-	/// ƒXƒeƒŒƒIƒJƒƒ‰ì¬‚Ì‚½‚ß‚Ìİ’è
+	/// ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ä½œæˆã®ãŸã‚ã®è¨­å®š
 	StereoCameraSettings settings;
 
-	/// “_ŒQ¶¬Ší
+	/// ç‚¹ç¾¤ç”Ÿæˆå™¨
 	iPointCloudGenerator *pcgen;
 
-	/// “_ŒQŒvZ•û–@
+	/// ç‚¹ç¾¤è¨ˆç®—æ–¹æ³•
 	iPointCloudGenerator::Method3D method3d;
 
-	std::chrono::system_clock::duration elapsed_phsdecode;	///< ˆÊ‘Š•œ†
-	std::chrono::system_clock::duration elapsed_preprocess;	///< ‘Oˆ—‚É‚©‚©‚Á‚½ŠÔ(ˆÊ‘ŠÚ‘±ƒ`ƒFƒbƒN•ƒŒƒNƒeƒBƒtƒ@ƒC)
-	std::chrono::system_clock::duration elapsed_makedisp;	///< ‹·ŒvZ‚É‚©‚©‚Á‚½ŠÔ
-	std::chrono::system_clock::duration elapsed_genpcloud;	///< “_ŒQŒvZ‚É‚©‚©‚Á‚½ŠÔ
+	std::chrono::system_clock::duration elapsed_phsdecode;	///< ä½ç›¸å¾©å·
+	std::chrono::system_clock::duration elapsed_preprocess;	///< å‰å‡¦ç†ã«ã‹ã‹ã£ãŸæ™‚é–“(ä½ç›¸æ¥ç¶šãƒã‚§ãƒƒã‚¯ï¼†ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤)
+	std::chrono::system_clock::duration elapsed_makedisp;	///< è¦–å·®è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
+	std::chrono::system_clock::duration elapsed_genpcloud;	///< ç‚¹ç¾¤è¨ˆç®—ã«ã‹ã‹ã£ãŸæ™‚é–“
 
 	void time_start() { time_beg = std::chrono::system_clock::now(); }
 	std::chrono::system_clock::duration get_elapsed() { 
@@ -198,7 +198,7 @@ protected:
 
 
 
-// PLY ƒtƒ@ƒCƒ‹‚É“_ŒQƒf[ƒ^‚ğ•Û‘¶‚·‚écallback
+// PLY ãƒ•ã‚¡ã‚¤ãƒ«ã«ç‚¹ç¾¤ãƒ‡ãƒ¼ã‚¿ã‚’ä¿å­˜ã™ã‚‹callback
 class PLYSaver : public PointCloudCallback {
 	std::string filename;
 	bool status;
@@ -210,15 +210,15 @@ public:
 	const std::string get_filename() const { return filename; }
 
 	/**
-	  get_pointcloud‚É“n‚µ‚½‚Æ‚«‚ÉŒÄ‚Ño‚³‚ê‚écallbackŠÖ”(PLY‚É•Û‘¶‚µ‚Ü‚·. –³Œø‚È“_‚ÍœŠO‚µ‚Ü‚·.)
-	  @note •Û‘¶‚É¬Œ÷‚µ‚½‚©”Û‚©‚Ístatus‚É•Û‘¶‚³‚ê‚Ü‚·.
+	  get_pointcloudã«æ¸¡ã—ãŸã¨ãã«å‘¼ã³å‡ºã•ã‚Œã‚‹callbacké–¢æ•°(PLYã«ä¿å­˜ã—ã¾ã™. ç„¡åŠ¹ãªç‚¹ã¯é™¤å¤–ã—ã¾ã™.)
+	  @note ä¿å­˜ã«æˆåŠŸã—ãŸã‹å¦ã‹ã¯statusã«ä¿å­˜ã•ã‚Œã¾ã™.
 	 */
 	void operator()(unsigned char *image, const size_t step, const int width, const int height,
 		std::vector<Point3d> &points, const int n_valid);
 };
 
 
-// Depthƒf[ƒ^‚ğ•Û‘¶‚·‚écallback
+// Depthãƒ‡ãƒ¼ã‚¿ã‚’ä¿å­˜ã™ã‚‹callback
 class DepthSaver : public PointCloudCallback {
 	std::string filename;
 	bool status;
@@ -230,8 +230,8 @@ public:
 	const std::string get_filename() const { return filename; }
 
 	/**
-	   get_pointcloud‚É“n‚µ‚½‚Æ‚«‚ÉŒÄ‚Ño‚³‚ê‚écallbackŠÖ”(Depthƒf[ƒ^(Å¬-Å‘å‚Å³‹K‰»)‚ğ•Û‘¶‚µ‚Ü‚·.)
-	   @note •Û‘¶‚É¬Œ÷‚µ‚½‚©”Û‚©‚Ístatus‚É•Û‘¶‚³‚ê‚Ü‚·.
+	   get_pointcloudã«æ¸¡ã—ãŸã¨ãã«å‘¼ã³å‡ºã•ã‚Œã‚‹callbacké–¢æ•°(Depthãƒ‡ãƒ¼ã‚¿(æœ€å°-æœ€å¤§ã§æ­£è¦åŒ–)ã‚’ä¿å­˜ã—ã¾ã™.)
+	   @note ä¿å­˜ã«æˆåŠŸã—ãŸã‹å¦ã‹ã¯statusã«ä¿å­˜ã•ã‚Œã¾ã™.
 	 */
 	void operator()(unsigned char *image, const size_t step, const int width, const int height,
 		std::vector<Point3d> &points, const int n_valid);

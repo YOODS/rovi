@@ -18,7 +18,7 @@ private:
 	std::vector<Point3d> points;
 	int n_valid;
 	
-	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 	//sensor_msgs::PointCloud2 pcdata;
 public:
 	
@@ -29,7 +29,7 @@ public:
 	
 	int count()const;
 		
-	//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+	//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 	//const sensor_msgs::PointCloud2 *get_data() const;
 	
 	void operator()(unsigned char *image, const size_t step,const int width, const int height,std::vector<Point3d> &points, const int n_valid);

@@ -4,12 +4,12 @@
 #include "iCalibBoardRecognizer.hpp"
 
 
-/// ƒJƒƒ‰ƒLƒƒƒŠƒuƒpƒ‰ƒ[ƒ^Œ^
+/// ã‚«ãƒ¡ãƒ©ã‚­ãƒ£ãƒªãƒ–ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å‹
 struct CameraCalibParam {
-	double leng;	///< Å“_‹——£
-	double cell;	///< ƒZƒ“ƒT[ƒZƒ‹ƒTƒCƒY
-	double F;				///< ƒJƒƒ‰ƒpƒ‰ƒ[ƒ^F’l
-	int calibration_flags;	///< cv::cameraCalibrate‚Ìƒtƒ‰ƒO’l
+	double leng;	///< ç„¦ç‚¹è·é›¢
+	double cell;	///< ã‚»ãƒ³ã‚µãƒ¼ã‚»ãƒ«ã‚µã‚¤ã‚º
+	double F;				///< ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿Få€¤
+	int calibration_flags;	///< cv::cameraCalibrateã®ãƒ•ãƒ©ã‚°å€¤
 
 	CameraCalibParam() :
 		leng(0.0), cell(0.0), F(0.0), calibration_flags(0) {}
@@ -21,9 +21,9 @@ struct CameraCalibParam {
 		}
 	}
 
-	/// ƒpƒ‰ƒ[ƒ^«‘‚©‚ç’l‚ğƒZƒbƒg‚·‚é. ƒL[‚Ì–¼‘O‚Íƒƒ“ƒo•Ï”‚Æ“¯‚¶(‚¾‚ªAcalibration_flags‚¾‚¯‚Í‚¿‚å‚Á‚Æˆá‚¤)
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¾æ›¸ã‹ã‚‰å€¤ã‚’ã‚»ãƒƒãƒˆã™ã‚‹. ã‚­ãƒ¼ã®åå‰ã¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã¨åŒã˜(ã ãŒã€calibration_flagsã ã‘ã¯ã¡ã‚‡ã£ã¨é•ã†)
 	void set(std::map<std::string, double> &params) {
-		// ƒtƒ‰ƒO’lì¬
+		// ãƒ•ãƒ©ã‚°å€¤ä½œæˆ
 		int cflags = 0;
 		if (params.count("CV_CALIB_USE_INTRINSIC_GUESS") && params["CV_CALIB_USE_INTRINSIC_GUESS"] == 1.0)
 			cflags += cv::CALIB_USE_INTRINSIC_GUESS;
@@ -61,80 +61,80 @@ public:
 	virtual ~iCameraCalibrator() {}
 	
 	/**
-	 * ƒfƒXƒgƒ‰ƒNƒ^ŒÄ‚Ño‚µ
+	 * ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿å‘¼ã³å‡ºã—
 	 */
 	virtual void destroy() = 0;
 
 	/**
-	 * ƒpƒ‰ƒ[ƒ^‚ğİ’è‚µ‚Ü‚·.
-	 * @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] prcp ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ì‘Oˆ——pƒpƒ‰ƒ[ƒ^
-	 * @param [in] mrkp ‰~ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ìƒpƒ‰ƒ[ƒ^
-	 * @param [in] brdp ƒLƒƒƒŠƒuƒ{[ƒh‚Ìƒpƒ‰ƒ[ƒ^
+	 * ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¨­å®šã—ã¾ã™.
+	 * @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] prcp ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®å‰å‡¦ç†ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] mrkp å††ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] brdp ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 	 */
 	virtual bool set_parameters(PreProcParam &prcp, CircleMarkerParam &mrkp, CalibBoardParam &brdp) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ^[ƒQƒbƒg‰æ‘œ‚ğˆê–‡’Ç‰Á‚µ‚Ü‚·.
-	 * @return 0‚ª¬Œ÷. -1‚ªƒ}[ƒJŒŸoŠí‚ªì¬‚³‚ê‚Ä‚¢‚È‚¢. ‚»‚Ì‘¼‚Íƒ}[ƒJŒŸoó‘Ô’l.
-	 * @param [in] image ‰æ‘œ¶ã’[ƒAƒhƒŒƒX
-	 * @param [in] width ‰æ‘œ‰¡•
-	 * @param [in] height ‰æ‘œc•
-	 * @param [in] step ‰æ‘œƒoƒbƒtƒ@‚Ì…•½•ûŒü‚ÌƒoƒCƒg”
-	 * @param [in] show_result ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚·‚é(true)‚©”Û(false)‚©
-	 * @param [in] filename ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ•Û‘¶æƒtƒ@ƒCƒ‹–¼(string()‚ğ—^‚¦‚½ê‡‚Í•Û‘¶‚µ‚È‚¢)
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”»åƒã‚’ä¸€æšè¿½åŠ ã—ã¾ã™.
+	 * @return 0ãŒæˆåŠŸ. -1ãŒãƒãƒ¼ã‚«æ¤œå‡ºå™¨ãŒä½œæˆã•ã‚Œã¦ã„ãªã„. ãã®ä»–ã¯ãƒãƒ¼ã‚«æ¤œå‡ºçŠ¶æ…‹å€¤.
+	 * @param [in] image ç”»åƒå·¦ä¸Šç«¯ã‚¢ãƒ‰ãƒ¬ã‚¹
+	 * @param [in] width ç”»åƒæ¨ªå¹…
+	 * @param [in] height ç”»åƒç¸¦å¹…
+	 * @param [in] step ç”»åƒãƒãƒƒãƒ•ã‚¡ã®æ°´å¹³æ–¹å‘ã®ãƒã‚¤ãƒˆæ•°
+	 * @param [in] show_result ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã™ã‚‹(true)ã‹å¦(false)ã‹
+	 * @param [in] filename ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å(string()ã‚’ä¸ãˆãŸå ´åˆã¯ä¿å­˜ã—ãªã„)
 	 */
 	virtual int put_image(unsigned char *image, const int width, const int height, const size_t step, const bool show_result = true, const std::string filename = std::string()) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ^[ƒQƒbƒg‰æ‘œ‚ğƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚ñ‚Åˆê–‡’Ç‰Á‚µ‚Ü‚·.
-	 * @return 0‚ª¬Œ÷. -1‚ªƒ}[ƒJŒŸoŠí‚ªì¬‚³‚ê‚Ä‚¢‚È‚¢. -2‚ª‰æ‘œ‚ª“Ç‚İ‚ß‚È‚¢. ‚»‚Ì‘¼‚Íƒ}[ƒJŒŸoó‘Ô’l.
-	 * @param [in] i_filename “ü—Í‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @param [in] show_result ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚·‚é(true)‚©”Û(false)‚©
-	 * @param [in] o_filename ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ•Û‘¶æƒtƒ@ƒCƒ‹–¼(string()‚ğ—^‚¦‚½ê‡‚Í•Û‘¶‚µ‚È‚¢)
-	 * @warning ˜AŒ‹‰æ‘œ‚É‚Í–¢‘Î‰‚Å‚·.
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”»åƒã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚“ã§ä¸€æšè¿½åŠ ã—ã¾ã™.
+	 * @return 0ãŒæˆåŠŸ. -1ãŒãƒãƒ¼ã‚«æ¤œå‡ºå™¨ãŒä½œæˆã•ã‚Œã¦ã„ãªã„. -2ãŒç”»åƒãŒèª­ã¿è¾¼ã‚ãªã„. ãã®ä»–ã¯ãƒãƒ¼ã‚«æ¤œå‡ºçŠ¶æ…‹å€¤.
+	 * @param [in] i_filename å…¥åŠ›ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] show_result ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã™ã‚‹(true)ã‹å¦(false)ã‹
+	 * @param [in] o_filename ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å(string()ã‚’ä¸ãˆãŸå ´åˆã¯ä¿å­˜ã—ãªã„)
+	 * @warning é€£çµç”»åƒã«ã¯æœªå¯¾å¿œã§ã™.
 	 */
 	virtual int put_image(const std::string i_filename, const bool show_result = true, const std::string o_filename = std::string()) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“‚ğÀs‚µ‚Ü‚·.
-	 * @return ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] camp ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒpƒ‰ƒ[ƒ^
-	 * @param [out] reprojerr Ä“Š‰eŒë·
-	 * @param [out] camerr ƒJƒƒ‰Œë·
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å®Ÿè¡Œã—ã¾ã™.
+	 * @return ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] camp ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [out] reprojerr å†æŠ•å½±èª¤å·®
+	 * @param [out] camerr ã‚«ãƒ¡ãƒ©èª¤å·®
 	 */
 	virtual bool do_calibrate(CameraCalibParam &camp, std::vector<double>* reprojerr = 0, double *camerr = 0) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“Œ‹‰Ê‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return •Û‘¶‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] filename •Û‘¶æƒtƒ@ƒCƒ‹–¼.
-	 * @param [in] cam_name ƒJƒƒ‰–¼(ƒpƒ‰ƒ[ƒ^ƒtƒ@ƒCƒ‹‚ğ“Ç‚İ‚ñ‚ÅƒJƒƒ‰‚ğì¬‚·‚é‚Æ‚«‚ÉA“¯‚¶ƒJƒƒ‰–¼‚Å‚È‚¢‚Æ³‚µ‚­“Ç‚İ‚ß‚Ü‚¹‚ñ.)
-	 * @warning ƒtƒ@ƒCƒ‹–¼‚ÌŠg’£q‚ğ".xml"‚Æ‚·‚ê‚ÎXMLŒ`®‚ÅA".yaml"‚Æ‚·‚ê‚ÎYAMLŒ`®‚Å•Û‘¶‚³‚ê‚Ü‚·.
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³çµæœã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ä¿å­˜ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] filename ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å.
+	 * @param [in] cam_name ã‚«ãƒ¡ãƒ©å(ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ•ã‚¡ã‚¤ãƒ«ã‚’èª­ã¿è¾¼ã‚“ã§ã‚«ãƒ¡ãƒ©ã‚’ä½œæˆã™ã‚‹ã¨ãã«ã€åŒã˜ã‚«ãƒ¡ãƒ©åã§ãªã„ã¨æ­£ã—ãèª­ã¿è¾¼ã‚ã¾ã›ã‚“.)
+	 * @warning ãƒ•ã‚¡ã‚¤ãƒ«åã®æ‹¡å¼µå­ã‚’".xml"ã¨ã™ã‚Œã°XMLå½¢å¼ã§ã€".yaml"ã¨ã™ã‚Œã°YAMLå½¢å¼ã§ä¿å­˜ã•ã‚Œã¾ã™.
 	 */
 	virtual bool save_calibfile(const std::string filename, const std::string cam_name = std::string()) = 0;
 };
 
 
-/// ƒŒƒNƒeƒBƒtƒ@ƒCƒpƒ‰ƒ[ƒ^Œ^
+/// ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å‹
 struct RectifyParam {
-	double alpha;	///< ƒXƒP[ƒŠƒ“ƒOƒpƒ‰ƒ[ƒ^
-	int flags;		///< ƒŒƒNƒeƒBƒtƒ@ƒCƒtƒ‰ƒO
-	int new_width;	///< ƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œ‰¡•
-	int new_height;	///< ƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œc•
-	int nopL;		///< ¶ƒJƒƒ‰—p”wŒi‰æ‘f’l
-	int nopR;		///< ‰EƒJƒƒ‰—p”wŒi‰æ‘f’l
+	double alpha;	///< ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	int flags;		///< ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒ•ãƒ©ã‚°
+	int new_width;	///< ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒæ¨ªå¹…
+	int new_height;	///< ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒç¸¦å¹…
+	int nopL;		///< å·¦ã‚«ãƒ¡ãƒ©ç”¨èƒŒæ™¯ç”»ç´ å€¤
+	int nopR;		///< å³ã‚«ãƒ¡ãƒ©ç”¨èƒŒæ™¯ç”»ç´ å€¤
 
 	RectifyParam() :
-		alpha(-1.0),	///< ƒXƒP[ƒŠƒ“ƒOƒpƒ‰ƒ[ƒ^.-1ˆÈŠO‚Ì’l‚Å‚ ‚ê‚Î0`1‚ÌŠÔ‚Ì’l.0‚¾‚Æ—LŒø‚È”ÍˆÍ‚Ì‚İ‰æ‘œ‚Éc‚é‚æ‚¤‚ÉŠg‘å‚³‚êA1‚¾‚ÆŒ³‚Ì‰æ‘œ‚ª‘S‚Äû‚Ü‚é‚æ‚¤‚Ék¬‚³‚ê‚é
-		flags(0),		///< ˆ—ƒtƒ‰ƒO.å“_‚ğ¶‰E‚Å‚¸‚ç‚·
-		new_width(0),	///< ƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œ‰¡•(0‚Ìê‡‚Í“ü—Í‚Æ“¯‚¶)
-		new_height(0),	///< ƒŒƒNƒeƒBƒtƒ@ƒCŒã‚Ì‰æ‘œc•(0‚Ìê‡‚Í“ü—Í‚Æ“¯‚¶)
-		nopL(0),		///< ¶‰æ‘œ‚Ì–³Œø‚È‰æ‘f‚É‘Î‚µ‚Ä—^‚¦‚ç‚ê‚é’l(0`255)
-		nopR(0) 		///< ‰E‰æ‘œ‚Ì–³Œø‚È‰æ‘f‚É‘Î‚µ‚Ä—^‚¦‚ç‚ê‚é’l(0`255)
+		alpha(-1.0),	///< ã‚¹ã‚±ãƒ¼ãƒªãƒ³ã‚°ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿.-1ä»¥å¤–ã®å€¤ã§ã‚ã‚Œã°0ã€œ1ã®é–“ã®å€¤.0ã ã¨æœ‰åŠ¹ãªç¯„å›²ã®ã¿ç”»åƒã«æ®‹ã‚‹ã‚ˆã†ã«æ‹¡å¤§ã•ã‚Œã€1ã ã¨å…ƒã®ç”»åƒãŒå…¨ã¦åã¾ã‚‹ã‚ˆã†ã«ç¸®å°ã•ã‚Œã‚‹
+		flags(0),		///< å‡¦ç†ãƒ•ãƒ©ã‚°.ä¸»ç‚¹ã‚’å·¦å³ã§ãšã‚‰ã™
+		new_width(0),	///< ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒæ¨ªå¹…(0ã®å ´åˆã¯å…¥åŠ›ã¨åŒã˜)
+		new_height(0),	///< ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤å¾Œã®ç”»åƒç¸¦å¹…(0ã®å ´åˆã¯å…¥åŠ›ã¨åŒã˜)
+		nopL(0),		///< å·¦ç”»åƒã®ç„¡åŠ¹ãªç”»ç´ ã«å¯¾ã—ã¦ä¸ãˆã‚‰ã‚Œã‚‹å€¤(0ã€œ255)
+		nopR(0) 		///< å³ç”»åƒã®ç„¡åŠ¹ãªç”»ç´ ã«å¯¾ã—ã¦ä¸ãˆã‚‰ã‚Œã‚‹å€¤(0ã€œ255)
 	{}
 
-	/// ƒpƒ‰ƒ[ƒ^«‘‚©‚ç’l‚ğƒZƒbƒg‚·‚é. ƒL[‚Ì–¼‘O‚Íƒƒ“ƒo•Ï”‚Æ“¯‚¶
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¾æ›¸ã‹ã‚‰å€¤ã‚’ã‚»ãƒƒãƒˆã™ã‚‹. ã‚­ãƒ¼ã®åå‰ã¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã¨åŒã˜
 	void set(std::map<std::string, double> &params) {
 		if (params.count("alpha")) this->alpha = params["alpha"];
 		if (params.count("flags")) this->flags = (params["flags"] == 0.0) ? 0 : cv::CALIB_ZERO_DISPARITY;
@@ -151,135 +151,135 @@ public:
 	virtual ~iStereoCalibrator() {}
 	
 	/**
-	 * ƒfƒXƒgƒ‰ƒNƒ^ŒÄ‚Ño‚µ
+	 * ãƒ‡ã‚¹ãƒˆãƒ©ã‚¯ã‚¿å‘¼ã³å‡ºã—
 	 */
 	virtual void destroy() = 0;
 
 	/**
-	 * ƒpƒ‰ƒ[ƒ^‚ğİ’è‚µ‚Ü‚·.
-	 * @return ˆ—‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] prcp ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ì‘Oˆ——pƒpƒ‰ƒ[ƒ^
-	 * @param [in] mrkp ‰~ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ìƒpƒ‰ƒ[ƒ^
-	 * @param [in] brdp ƒLƒƒƒŠƒuƒ{[ƒh‚Ìƒpƒ‰ƒ[ƒ^
+	 * ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¨­å®šã—ã¾ã™.
+	 * @return å‡¦ç†ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] prcp ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®å‰å‡¦ç†ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] mrkp å††ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] brdp ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 	 */
 	virtual bool set_parameters(PreProcParam &prcp, CircleMarkerParam &mrkp, CalibBoardParam &brdp) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ^[ƒQƒbƒg‰æ‘œ‚ğˆê–‡’Ç‰Á‚µ‚Ü‚·.
-	 * @return 0‚ª¬Œ÷.-1‚ªƒ}[ƒJŒŸoŠí‚ªì¬‚³‚ê‚Ä‚¢‚È‚¢. -2‚ªƒJƒƒ‰”Ô†‚ª•s³. ‚»‚Ì‘¼‚Íƒ}[ƒJŒŸoó‘Ô’l.
-	 * @param [in] cid ƒJƒƒ‰”Ô†
-	 * @param [in] image ‰æ‘œ¶ã’[ƒAƒhƒŒƒX
-	 * @param [in] width ‰æ‘œ‰¡•
-	 * @param [in] height ‰æ‘œc•
-	 * @param [in] step ‰æ‘œƒoƒbƒtƒ@‚Ì…•½•ûŒü‚ÌƒoƒCƒg”
-	 * @param [in] show_result ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚·‚é(true)‚©”Û(false)‚©
-	 * @param [in] filename ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ•Û‘¶æƒtƒ@ƒCƒ‹–¼(string()‚ğ—^‚¦‚½ê‡‚Í•Û‘¶‚µ‚È‚¢)
-	 * @warning ’Ç‰Á‚³‚ê‚é‰æ‘œ‚Í¶‰E‚Å‡”Ô‚ğ•Ï‚¦‚È‚¢‚Å‚­‚¾‚³‚¢. (¶ƒJƒƒ‰n”Ô–Ú‚Ì‰æ‘œ‚Æ‰EƒJƒƒ‰n”Ô–Ú‚Ì‰æ‘œ‚Í•K‚¸“¯‚¶ƒV[ƒ“‚ğ
-	 * ¶‰EƒJƒƒ‰‚ÅB‰e‚µ‚½‚à‚Ì‚Æ‚µ‚Ä‚­‚¾‚³‚¢).
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”»åƒã‚’ä¸€æšè¿½åŠ ã—ã¾ã™.
+	 * @return 0ãŒæˆåŠŸ.-1ãŒãƒãƒ¼ã‚«æ¤œå‡ºå™¨ãŒä½œæˆã•ã‚Œã¦ã„ãªã„. -2ãŒã‚«ãƒ¡ãƒ©ç•ªå·ãŒä¸æ­£. ãã®ä»–ã¯ãƒãƒ¼ã‚«æ¤œå‡ºçŠ¶æ…‹å€¤.
+	 * @param [in] cid ã‚«ãƒ¡ãƒ©ç•ªå·
+	 * @param [in] image ç”»åƒå·¦ä¸Šç«¯ã‚¢ãƒ‰ãƒ¬ã‚¹
+	 * @param [in] width ç”»åƒæ¨ªå¹…
+	 * @param [in] height ç”»åƒç¸¦å¹…
+	 * @param [in] step ç”»åƒãƒãƒƒãƒ•ã‚¡ã®æ°´å¹³æ–¹å‘ã®ãƒã‚¤ãƒˆæ•°
+	 * @param [in] show_result ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã™ã‚‹(true)ã‹å¦(false)ã‹
+	 * @param [in] filename ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å(string()ã‚’ä¸ãˆãŸå ´åˆã¯ä¿å­˜ã—ãªã„)
+	 * @warning è¿½åŠ ã•ã‚Œã‚‹ç”»åƒã¯å·¦å³ã§é †ç•ªã‚’å¤‰ãˆãªã„ã§ãã ã•ã„. (å·¦ã‚«ãƒ¡ãƒ©nç•ªç›®ã®ç”»åƒã¨å³ã‚«ãƒ¡ãƒ©nç•ªç›®ã®ç”»åƒã¯å¿…ãšåŒã˜ã‚·ãƒ¼ãƒ³ã‚’
+	 * å·¦å³ã‚«ãƒ¡ãƒ©ã§æ’®å½±ã—ãŸã‚‚ã®ã¨ã—ã¦ãã ã•ã„).
 	 */
 	virtual int put_image(const int cid, unsigned char *image, const int width, const int height, const size_t step, const bool show_result = true, const std::string filename = std::string()) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ^[ƒQƒbƒg‰æ‘œ‚ğƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚ñ‚Åˆê–‡’Ç‰Á‚µ‚Ü‚·.
-	 * @return 0‚ª¬Œ÷.-1‚ªƒ}[ƒJŒŸoŠí‚ªì¬‚³‚ê‚Ä‚¢‚È‚¢. -2‚ªƒJƒƒ‰”Ô†‚ª•s³. -3‚ª‰æ‘œ‚ª“Ç‚İ‚ß‚È‚¢. ‚»‚Ì‘¼‚Íƒ}[ƒJŒŸoó‘Ô’l.
-	 * @param [in] cid ƒJƒƒ‰”Ô†
-	 * @param [in] i_filename “ü—Í‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @param [in] show_result ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚·‚é(true)‚©”Û(false)‚©
-	 * @param [in] o_filename ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ•Û‘¶æƒtƒ@ƒCƒ‹–¼(string()‚ğ—^‚¦‚½ê‡‚Í•Û‘¶‚µ‚È‚¢)
-	 * @warning ’Ç‰Á‚³‚ê‚é‰æ‘œ‚Í¶‰E‚Å‡”Ô‚ğ•Ï‚¦‚È‚¢‚Å‚­‚¾‚³‚¢. (¶ƒJƒƒ‰n”Ô–Ú‚Ì‰æ‘œ‚Æ‰EƒJƒƒ‰n”Ô–Ú‚Ì‰æ‘œ‚Í•K‚¸“¯‚¶ƒV[ƒ“‚ğ
-	 * ¶‰EƒJƒƒ‰‚ÅB‰e‚µ‚½‚à‚Ì‚Æ‚µ‚Ä‚­‚¾‚³‚¢).
-	 * @warning •ª—£‰æ‘œ—p‚Å‚·.
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”»åƒã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚“ã§ä¸€æšè¿½åŠ ã—ã¾ã™.
+	 * @return 0ãŒæˆåŠŸ.-1ãŒãƒãƒ¼ã‚«æ¤œå‡ºå™¨ãŒä½œæˆã•ã‚Œã¦ã„ãªã„. -2ãŒã‚«ãƒ¡ãƒ©ç•ªå·ãŒä¸æ­£. -3ãŒç”»åƒãŒèª­ã¿è¾¼ã‚ãªã„. ãã®ä»–ã¯ãƒãƒ¼ã‚«æ¤œå‡ºçŠ¶æ…‹å€¤.
+	 * @param [in] cid ã‚«ãƒ¡ãƒ©ç•ªå·
+	 * @param [in] i_filename å…¥åŠ›ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] show_result ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã™ã‚‹(true)ã‹å¦(false)ã‹
+	 * @param [in] o_filename ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å(string()ã‚’ä¸ãˆãŸå ´åˆã¯ä¿å­˜ã—ãªã„)
+	 * @warning è¿½åŠ ã•ã‚Œã‚‹ç”»åƒã¯å·¦å³ã§é †ç•ªã‚’å¤‰ãˆãªã„ã§ãã ã•ã„. (å·¦ã‚«ãƒ¡ãƒ©nç•ªç›®ã®ç”»åƒã¨å³ã‚«ãƒ¡ãƒ©nç•ªç›®ã®ç”»åƒã¯å¿…ãšåŒã˜ã‚·ãƒ¼ãƒ³ã‚’
+	 * å·¦å³ã‚«ãƒ¡ãƒ©ã§æ’®å½±ã—ãŸã‚‚ã®ã¨ã—ã¦ãã ã•ã„).
+	 * @warning åˆ†é›¢ç”»åƒç”¨ã§ã™.
 	 */
 	virtual int put_image(const int cid, const std::string i_filename, const bool show_result = true, const std::string filename = std::string()) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ^[ƒQƒbƒg‰æ‘œ(¶‰E˜AŒ‹‰æ‘œ)‚ğƒtƒ@ƒCƒ‹‚©‚ç“Ç‚İ‚ñ‚Å’Ç‰Á‚µ‚Ü‚·.
-	 * @return 0‚ª¬Œ÷.-1‚ªƒ}[ƒJŒŸoŠí‚ªì¬‚³‚ê‚Ä‚¢‚È‚¢. -2‚ª‰æ‘œ‚ª“Ç‚İ‚ß‚È‚¢. ‚»‚Ì‘¼‚Íƒ}[ƒJŒŸoó‘Ô’l(ã4bit¶ƒJƒƒ‰, ‰º4bit‰EƒJƒƒ‰).
-	 * @param [in] i_filename “ü—Í‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @param [in] show_result ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚·‚é(true)‚©”Û(false)‚©
-	 * @param [in] o_filename ƒ}[ƒJŒŸoŒ‹‰Ê‰æ‘œ•Û‘¶æƒtƒ@ƒCƒ‹–¼(string()‚ğ—^‚¦‚½ê‡‚Í•Û‘¶‚µ‚È‚¢)
-	 * @warning ˜AŒ‹‰æ‘œ(‰¡˜AŒ‹)‰æ‘œ—p‚Å‚·.
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ãƒ¼ã‚²ãƒƒãƒˆç”»åƒ(å·¦å³é€£çµç”»åƒ)ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã‹ã‚‰èª­ã¿è¾¼ã‚“ã§è¿½åŠ ã—ã¾ã™.
+	 * @return 0ãŒæˆåŠŸ.-1ãŒãƒãƒ¼ã‚«æ¤œå‡ºå™¨ãŒä½œæˆã•ã‚Œã¦ã„ãªã„. -2ãŒç”»åƒãŒèª­ã¿è¾¼ã‚ãªã„. ãã®ä»–ã¯ãƒãƒ¼ã‚«æ¤œå‡ºçŠ¶æ…‹å€¤(ä¸Š4bitå·¦ã‚«ãƒ¡ãƒ©, ä¸‹4bitå³ã‚«ãƒ¡ãƒ©).
+	 * @param [in] i_filename å…¥åŠ›ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] show_result ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã™ã‚‹(true)ã‹å¦(false)ã‹
+	 * @param [in] o_filename ãƒãƒ¼ã‚«æ¤œå‡ºçµæœç”»åƒä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å(string()ã‚’ä¸ãˆãŸå ´åˆã¯ä¿å­˜ã—ãªã„)
+	 * @warning é€£çµç”»åƒ(æ¨ªé€£çµ)ç”»åƒç”¨ã§ã™.
 	 */
 	virtual int put_image(const std::string i_filename, const bool show_result = true, const std::string filename = std::string()) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“‚ğÀs‚µ‚Ü‚·.
-	 * @return ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] camp ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒpƒ‰ƒ[ƒ^
-	 * @param [out] reprojerr Ä“Š‰eŒë·
-	 * @param [out] camerr ƒJƒƒ‰Œë·
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚’å®Ÿè¡Œã—ã¾ã™.
+	 * @return ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] camp ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [out] reprojerr å†æŠ•å½±èª¤å·®
+	 * @param [out] camerr ã‚«ãƒ¡ãƒ©èª¤å·®
 	 */
 	virtual bool do_calibrate(CameraCalibParam &camp, std::vector<std::vector<double>>* reprojerr = 0, double *camerr = 0) = 0;
 
 	/**
-	 * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“Œ‹‰Ê(˜c‚İ—LƒJƒƒ‰‚ÌƒJƒƒ‰ƒpƒ‰ƒ[ƒ^)‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return •Û‘¶‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] cam0_filename Šî€ƒJƒƒ‰(¶ƒJƒƒ‰)‚Ìƒpƒ‰ƒ[ƒ^•Û‘¶æƒtƒ@ƒCƒ‹–¼.
-	 * @param [in] cam1_filename •â•ƒJƒƒ‰(‰EƒJƒƒ‰)‚Ìƒpƒ‰ƒ[ƒ^•Û‘¶æƒtƒ@ƒCƒ‹–¼.
-	 * @warning ƒtƒ@ƒCƒ‹–¼‚ÌŠg’£q‚ğ".xml"‚Æ‚·‚ê‚ÎXMLŒ`®‚ÅA".yaml"‚Æ‚·‚ê‚ÎYAMLŒ`®‚Å•Û‘¶‚³‚ê‚Ü‚·.
+	 * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³çµæœ(æ­ªã¿æœ‰ã‚«ãƒ¡ãƒ©ã®ã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿)ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ä¿å­˜ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] cam0_filename åŸºæº–ã‚«ãƒ¡ãƒ©(å·¦ã‚«ãƒ¡ãƒ©)ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å.
+	 * @param [in] cam1_filename è£œåŠ©ã‚«ãƒ¡ãƒ©(å³ã‚«ãƒ¡ãƒ©)ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å.
+	 * @warning ãƒ•ã‚¡ã‚¤ãƒ«åã®æ‹¡å¼µå­ã‚’".xml"ã¨ã™ã‚Œã°XMLå½¢å¼ã§ã€".yaml"ã¨ã™ã‚Œã°YAMLå½¢å¼ã§ä¿å­˜ã•ã‚Œã¾ã™.
 	 */
 	virtual bool save_calibfile(const std::string cam0_filename, const std::string cam1_filename) = 0;
 
 	/**
-	 * ƒŒƒNƒeƒBƒtƒ@ƒC‚ğÀs‚µAƒXƒeƒŒƒIƒJƒƒ‰‚ğì¬‚µ‚Ü‚·.
-	 * @return ì¬‚É¬Œ÷‚µ‚½ê‡‚ÍŠîü’·‚ªA¸”s‚µ‚½ê‡‚Í-1‚ª•Ô‚è‚Ü‚·.
-	 * @param [in] rp ƒŒƒNƒeƒBƒtƒ@ƒCƒpƒ‰ƒ[ƒ^
-	 * @param [out] roiL ¶ƒJƒƒ‰‚ÌŒ³‰æ‘œ‚É‚¨‚¯‚é—LŒø”ÍˆÍ(x, y, w, h)‚ğŠi”[‚·‚é”z—ñ(4ŒÂ•ª‚Ìint‚ª•K—v)
-	 * @param [out] roiR ‰EƒJƒƒ‰‚ÌŒ³‰æ‘œ‚É‚¨‚¯‚é—LŒø”ÍˆÍ(x, y, w, h)‚ğŠi”[‚·‚é”z—ñ(4ŒÂ•ª‚Ìint‚ª•K—v)
+	 * ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ã‚’å®Ÿè¡Œã—ã€ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚’ä½œæˆã—ã¾ã™.
+	 * @return ä½œæˆã«æˆåŠŸã—ãŸå ´åˆã¯åŸºç·šé•·ãŒã€å¤±æ•—ã—ãŸå ´åˆã¯-1ãŒè¿”ã‚Šã¾ã™.
+	 * @param [in] rp ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [out] roiL å·¦ã‚«ãƒ¡ãƒ©ã®å…ƒç”»åƒã«ãŠã‘ã‚‹æœ‰åŠ¹ç¯„å›²(x, y, w, h)ã‚’æ ¼ç´ã™ã‚‹é…åˆ—(4å€‹åˆ†ã®intãŒå¿…è¦)
+	 * @param [out] roiR å³ã‚«ãƒ¡ãƒ©ã®å…ƒç”»åƒã«ãŠã‘ã‚‹æœ‰åŠ¹ç¯„å›²(x, y, w, h)ã‚’æ ¼ç´ã™ã‚‹é…åˆ—(4å€‹åˆ†ã®intãŒå¿…è¦)
 	 */
 	virtual double create_stereo_camera(RectifyParam &rp, int *roiL = 0, int *roiR = 0) = 0;		
 
 	/**
-	 * ƒ{[ƒhÀ•WŒn‚Ö‚Ì•ÏŠ·s—ñ‚ğì¬‚µ‚Ü‚·.
-	 * @return ¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] imageL ¶ƒJƒƒ‰QÆ‰æ‘œ
-	 * @param [in] imageR ‰EƒJƒƒ‰QÆ‰æ‘œ
+	 * ãƒœãƒ¼ãƒ‰åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—ã‚’ä½œæˆã—ã¾ã™.
+	 * @return æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] imageL å·¦ã‚«ãƒ¡ãƒ©å‚ç…§ç”»åƒ
+	 * @param [in] imageR å³ã‚«ãƒ¡ãƒ©å‚ç…§ç”»åƒ
 	 */
 	virtual bool create_stereo_brdcrd(unsigned char *imageL, const size_t stepL, unsigned char *imageR, const size_t stepR) = 0;
 
 	/**
-	 * ƒ{[ƒhÀ•WŒn‚Ö‚Ì•ÏŠ·s—ñ‚ğì¬‚µ‚Ü‚·.
-	 * @return ¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] filenameL ¶ƒJƒƒ‰QÆ‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @param [in] filenameR ‰EƒJƒƒ‰QÆ‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @warning •ªŠ„‰æ‘œ—p‚Å‚·.
+	 * ãƒœãƒ¼ãƒ‰åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—ã‚’ä½œæˆã—ã¾ã™.
+	 * @return æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] filenameL å·¦ã‚«ãƒ¡ãƒ©å‚ç…§ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] filenameR å³ã‚«ãƒ¡ãƒ©å‚ç…§ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @warning åˆ†å‰²ç”»åƒç”¨ã§ã™.
 	 */
 	virtual bool create_stereo_brdcrd(const std::string filenameL, const std::string filenameR) = 0;
 
 	/**
-	 * ƒ{[ƒhÀ•WŒn‚Ö‚Ì•ÏŠ·s—ñ‚ğì¬‚µ‚Ü‚·.
-	 * @return ¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] filename ¶‰EƒJƒƒ‰QÆ‰æ‘œƒtƒ@ƒCƒ‹–¼
-	 * @warning ˜AŒ‹‰æ‘œ—p‚Å‚·.
+	 * ãƒœãƒ¼ãƒ‰åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—ã‚’ä½œæˆã—ã¾ã™.
+	 * @return æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] filename å·¦å³ã‚«ãƒ¡ãƒ©å‚ç…§ç”»åƒãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @warning é€£çµç”»åƒç”¨ã§ã™.
 	 */
 	virtual bool create_stereo_brdcrd(const std::string filename) = 0;
 
 	/**
-	 * ì¬‚³‚ê‚½ƒXƒeƒŒƒIƒJƒƒ‰ƒpƒ‰ƒ[ƒ^‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return •Û‘¶‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] filename ƒXƒeƒŒƒIƒJƒƒ‰ƒpƒ‰ƒ[ƒ^•Û‘¶æƒtƒ@ƒCƒ‹–¼
-	 * @param [in] lname ¶ƒJƒƒ‰‚ÌƒŒƒNƒeƒBƒtƒ@ƒCƒ}ƒbƒv•Û‘¶æƒtƒ@ƒCƒ‹–¼
-	 * @param [in] rname ‰EƒJƒƒ‰‚ÌƒŒƒNƒeƒBƒtƒ@ƒCƒ}ƒbƒv•Û‘¶æƒtƒ@ƒCƒ‹–¼
-	 * @warning ƒtƒ@ƒCƒ‹–¼‚ÌŠg’£q‚ğ".xml"‚Æ‚·‚ê‚ÎXMLŒ`®‚ÅA".yaml"‚Æ‚·‚ê‚ÎYAMLŒ`®‚Å•Û‘¶‚³‚ê‚Ü‚·.
-	 * @warning lname, rname‚ğw’è‚µ‚È‚¢ê‡AƒŒƒNƒeƒBƒtƒ@ƒCƒ}ƒbƒv‚Í•Û‘¶‚³‚ê‚Ü‚¹‚ñ.
+	 * ä½œæˆã•ã‚ŒãŸã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ä¿å­˜ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] filename ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] lname å·¦ã‚«ãƒ¡ãƒ©ã®ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒãƒƒãƒ—ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] rname å³ã‚«ãƒ¡ãƒ©ã®ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒãƒƒãƒ—ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @warning ãƒ•ã‚¡ã‚¤ãƒ«åã®æ‹¡å¼µå­ã‚’".xml"ã¨ã™ã‚Œã°XMLå½¢å¼ã§ã€".yaml"ã¨ã™ã‚Œã°YAMLå½¢å¼ã§ä¿å­˜ã•ã‚Œã¾ã™.
+	 * @warning lname, rnameã‚’æŒ‡å®šã—ãªã„å ´åˆã€ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒãƒƒãƒ—ã¯ä¿å­˜ã•ã‚Œã¾ã›ã‚“.
 	 */
 	virtual bool save_stereofile(const std::string filename, 
 		const std::string lname = std::string(), const std::string rname = std::string()) = 0;
 
 	/**
-	 * HMatŒ`®‚ÅƒXƒeƒŒƒIƒJƒƒ‰ƒpƒ‰ƒ[ƒ^‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return •Û‘¶‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] hmat0_name ¶ƒJƒƒ‰PPM(Hmat)—p‚Ìƒtƒ@ƒCƒ‹–¼
-	 * @param [in] hmat1_name ‰EƒJƒƒ‰PPM(Hmat)—p‚Ìƒtƒ@ƒCƒ‹–¼
-	 * @param [in] rectmap_name ƒŒƒNƒeƒBƒtƒ@ƒCƒe[ƒuƒ‹—p‚Ìƒtƒ@ƒCƒ‹–¼
-	 * @param [in] isbrd ƒ{[ƒhÀ•WŒn‚É•ÏŠ·‚µ‚Ä‚©‚ço—Í‚·‚é‚©”Û‚©
+	 * HMatå½¢å¼ã§ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ä¿å­˜ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] hmat0_name å·¦ã‚«ãƒ¡ãƒ©PPM(Hmat)ç”¨ã®ãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] hmat1_name å³ã‚«ãƒ¡ãƒ©PPM(Hmat)ç”¨ã®ãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] rectmap_name ãƒ¬ã‚¯ãƒ†ã‚£ãƒ•ã‚¡ã‚¤ãƒ†ãƒ¼ãƒ–ãƒ«ç”¨ã®ãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] isbrd ãƒœãƒ¼ãƒ‰åº§æ¨™ç³»ã«å¤‰æ›ã—ã¦ã‹ã‚‰å‡ºåŠ›ã™ã‚‹ã‹å¦ã‹
 	 */
 	virtual bool save_stereohmat(const std::string hmat0_name, const std::string hmat1_name, const std::string rectmap_name, const bool isbrd = false) = 0;
 
 	/**
-	 * ƒ{[ƒhÀ•WŒn‚Ö‚Ì•ÏŠ·s—ñ‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return •Û‘¶‚É¬Œ÷‚µ‚½ê‡‚Ítrue, ¸”s‚µ‚½ê‡‚Ífalse.
-	 * @param [in] filename •Û‘¶æƒtƒ@ƒCƒ‹–¼
+	 * ãƒœãƒ¼ãƒ‰åº§æ¨™ç³»ã¸ã®å¤‰æ›è¡Œåˆ—ã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ä¿å­˜ã«æˆåŠŸã—ãŸå ´åˆã¯true, å¤±æ•—ã—ãŸå ´åˆã¯false.
+	 * @param [in] filename ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
 	 */
 	virtual bool save_boardRT(const std::string filename) = 0;
 };
@@ -296,15 +296,15 @@ public:
 
 
 /**
- * ’P‘ÌƒJƒƒ‰ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒXì¬ŠÖ”
- * @return ƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒX‚ÌƒAƒhƒŒƒX
+ * å˜ä½“ã‚«ãƒ¡ãƒ©ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ä½œæˆé–¢æ•°
+ * @return ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
  */
 extern "C" EXPORT_CALIB iCameraCalibrator* CreateCameraCalibrator();
 typedef iCameraCalibrator *(*pCreateCameraCalibrator)();
 
 /**
- * ƒXƒeƒŒƒIƒJƒƒ‰ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒXì¬ŠÖ”
- * @return ƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒX‚ÌƒAƒhƒŒƒX
+ * ã‚¹ãƒ†ãƒ¬ã‚ªã‚«ãƒ¡ãƒ©ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ä½œæˆé–¢æ•°
+ * @return ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
  */
 extern "C" EXPORT_CALIB iStereoCalibrator* CreateStereoCalibrator();
 typedef iStereoCalibrator *(*pCreateStereoCalibrator)();
