@@ -29,7 +29,7 @@
 //#define DEBUG_PTN_IMG_SAVE
 
 namespace {
-//============================================= –³–¼–¼‘O‹óŠÔ start =============================================
+//============================================= ç„¡ååå‰ç©ºé–“ start =============================================
 #define LOG_HEADER "(ycam3d) "
 
 const std::string FRAME_ID = "camera";
@@ -323,7 +323,7 @@ void update_camera_params(){
 		}
 	}
 
-	//B‰eƒpƒ‰ƒ[ƒ^
+	//æ’®å½±ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 	{
 		bool capt_params_valid=true;
 		std::vector<RosCaptureParameter> capt_params;
@@ -476,7 +476,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 	}else{
 		nh->setParam(PRM_CAM_OPEN_STAT,true);
 	}
-	//ƒpƒ‰ƒ[ƒ^æ“¾
+	//ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿å–å¾—
 	update_camera_params();
 	
 	if( cur_ycam_mode == Mode_Streaming ){
@@ -501,7 +501,7 @@ void mode_monitor_task(const ros::TimerEvent& e){
 		//todo ******************* pending *******************
 	}
 	
-	//ŠÄ‹üŠú•ÏX
+	//ç›£è¦–å‘¨æœŸå¤‰æ›´
 	if( pre_ycam_mode != cur_ycam_mode){
 		ROS_INFO(LOG_HEADER"switched. pre=%d => cur=%d",pre_ycam_mode,cur_ycam_mode);
 		
@@ -1035,7 +1035,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				ElapsedTimer tmr_pcgen_publish;
 				
 				ROS_INFO(LOG_HEADER"<%d> pcgen publish start.",n);
-				//‰æ‘œ”zM
+				//ç”»åƒé…ä¿¡
 				for( int camno = 0 ; camno < 2 ; ++camno ){
 					pub_img_raws[camno].publish(ros_imgs[camno][1]);
 					sensor_msgs::Image remap_ros_img_ptn_0;
@@ -1155,7 +1155,7 @@ void get_ycam_temperature_task(const ros::TimerEvent& e){
 
 
 
-//============================================= –³–¼–¼‘O‹óŠÔ  end  =============================================
+//============================================= ç„¡ååå‰ç©ºé–“  end  =============================================
 }
 
 
@@ -1272,7 +1272,7 @@ int main(int argc, char **argv)
 	cam_open_mon_timer.stop();
 	printf(LOG_HEADER"camera open monitor timer stopped.\n");
 	
-	//todo:******‰æ‘œ“]‘—ƒXƒŒƒbƒh‚ÌI—¹‘Ò‚¿
+	//todo:******ç”»åƒè»¢é€ã‚¹ãƒ¬ãƒƒãƒ‰ã®çµ‚äº†å¾…ã¡
 	printf(LOG_HEADER"image transfer task wait start.\n");
 
 	printf(LOG_HEADER"image transfer task wait finished.\n");

@@ -23,16 +23,16 @@ namespace ycam3d{
 	constexpr int CAM_ANALOG_GAIN_MIN       = 0;
 	
 	constexpr int PROJ_EXPOSURE_TIME_DEFAULT = 8333;
-	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;      //?
-	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;//?
+	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;
+	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;
 	
 	constexpr int PROJ_INTENSITY_DEFAULT = 100;
 	constexpr int PROJ_INTENSITY_MIN     = 0;
 	constexpr int PROJ_INTENSITY_MAX     = 255;
 	
 	constexpr int PROJ_FLASH_INTERVAL_DEFAULT = 10;
-	//constexpr int PROJ_FLASH_INTERVAL_MIN = 0;  //?
-	//constexpr int PROJ_FLASH_INTERVAL_MAX = 255;//?
+	//constexpr int PROJ_FLASH_INTERVAL_MIN = 0;
+	//constexpr int PROJ_FLASH_INTERVAL_MAX = 255;
 	
 	//constexpr int PATTERN_CAPTURE_NUM  = PHSFT_CAP_NUM;
 	

@@ -1,12 +1,12 @@
 /*
  * @file iCalibBoardRecognizer.hpp
- * @breif ƒLƒƒƒŠƒuƒ{[ƒh”F¯Ší‚ÌƒCƒ“ƒ^[ƒtƒF[ƒX 
+ * @breif ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰èªè­˜å™¨ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹ 
  * @date 2019/09/21
  *
- * @note ƒLƒƒƒŠƒuƒ{[ƒh‚Í, uZƒ}[ƒJvAuƒOƒŠƒbƒhó‚Éƒ}[ƒJ‚ª”z’uvAuŠî€ƒ}[ƒJ‚Í“ñdŠÛv‚ÌğŒ‚ğ–‚½‚µ‚Ä‚¢‚é‚Æ
- * ‰¼’è‚µ‚Ä‚¢‚é. ‚»‚êˆÈŠO‚Í¡‚Ì‚Æ‚±‚ë‘z’è‚µ‚Ä‚¢‚È‚¢.
- * @note ƒLƒƒƒŠƒuƒ{[ƒh‚Í‰¡’·‚Ì‹éŒ`‚ÅA’·•Ó‚Ì¶•ûŒü‚ªY²‚Ì³‚ÌŒü‚«A’Z•Ó‚Ìã•ûŒü‚ªX²‚Ì³‚ÌŒü‚«‚Æ‚·‚éB
- * @note Œ´“_ˆÊ’u‚Í•K‚¸Šî€ƒ}[ƒJ‚Æ‚µ‚Ä—^‚¦‚ç‚ê‚Ä‚¢‚È‚¯‚ê‚Î‚È‚ç‚È‚¢.
+ * @note ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã¯, ã€Œã€‡ãƒãƒ¼ã‚«ã€ã€ã€Œã‚°ãƒªãƒƒãƒ‰çŠ¶ã«ãƒãƒ¼ã‚«ãŒé…ç½®ã€ã€ã€ŒåŸºæº–ãƒãƒ¼ã‚«ã¯äºŒé‡ä¸¸ã€ã®æ¡ä»¶ã‚’æº€ãŸã—ã¦ã„ã‚‹ã¨
+ * ä»®å®šã—ã¦ã„ã‚‹. ãã‚Œä»¥å¤–ã¯ä»Šã®ã¨ã“ã‚æƒ³å®šã—ã¦ã„ãªã„.
+ * @note ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã¯æ¨ªé•·ã®çŸ©å½¢ã§ã€é•·è¾ºã®å·¦æ–¹å‘ãŒYè»¸ã®æ­£ã®å‘ãã€çŸ­è¾ºã®ä¸Šæ–¹å‘ãŒXè»¸ã®æ­£ã®å‘ãã¨ã™ã‚‹ã€‚
+ * @note åŸç‚¹ä½ç½®ã¯å¿…ãšåŸºæº–ãƒãƒ¼ã‚«ã¨ã—ã¦ä¸ãˆã‚‰ã‚Œã¦ã„ãªã‘ã‚Œã°ãªã‚‰ãªã„.
  */
 
 #pragma once
@@ -20,19 +20,19 @@
 #include <map>
 
 
-/* •K—v‚Èƒpƒ‰ƒ[ƒ^‚Æ‚»‚ÌƒfƒtƒHƒ‹ƒg’l */
+/* å¿…è¦ãªãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã¨ãã®ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ */
 
- /// ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ì‘Oˆ——pƒpƒ‰ƒ[ƒ^
+ /// ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®å‰å‡¦ç†ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 struct PreProcParam {
-	bool reverse_bw;		///< ”’•”½“]‚ğs‚¤‚©H
-	bool equalize_hist;	///< ƒqƒXƒgƒOƒ‰ƒ€‹Ïˆê‰»‚ğs‚¤‚©?
-	bool smoothing;		///< ƒXƒ€[ƒWƒ“ƒO‚ğs‚¤‚©?
-	int bin_type;	///< “ñ’l‰»ƒ^ƒCƒv(0: ’Êí“ñ’l‰», 1: ”»•Ê•ªÍ“ñ’l‰», 2: “K‰“ñ’l‰»)
-	int bin_param0;	///< “ñ’l‰»è‡’l0(bin_type==0‚Ìê‡è‡’l, bin_type==2‚Ìê‡ƒuƒƒbƒNƒTƒCƒY, ‚»‚Ì‘¼‚Ìê‡‚Íg—p‚µ‚È‚¢)
-	int bin_param1;	///< “ñ’l‰»è‡’l1(bin_type==2‚Ìê‡•½‹Ï’l‚©‚ç‚ÌƒIƒtƒZƒbƒg’l, ‚»‚Ì‘¼‚Ìê‡‚Íg‚í‚ê‚È‚¢)
-	double gamma_correction;	///< gamma•â³’l
+	bool reverse_bw;		///< ç™½é»’åè»¢ã‚’è¡Œã†ã‹ï¼Ÿ
+	bool equalize_hist;	///< ãƒ’ã‚¹ãƒˆã‚°ãƒ©ãƒ å‡ä¸€åŒ–ã‚’è¡Œã†ã‹?
+	bool smoothing;		///< ã‚¹ãƒ ãƒ¼ã‚¸ãƒ³ã‚°ã‚’è¡Œã†ã‹?
+	int bin_type;	///< äºŒå€¤åŒ–ã‚¿ã‚¤ãƒ—(0: é€šå¸¸äºŒå€¤åŒ–, 1: åˆ¤åˆ¥åˆ†æäºŒå€¤åŒ–, 2: é©å¿œäºŒå€¤åŒ–)
+	int bin_param0;	///< äºŒå€¤åŒ–é–¾å€¤0(bin_type==0ã®å ´åˆé–¾å€¤, bin_type==2ã®å ´åˆãƒ–ãƒ­ãƒƒã‚¯ã‚µã‚¤ã‚º, ãã®ä»–ã®å ´åˆã¯ä½¿ç”¨ã—ãªã„)
+	int bin_param1;	///< äºŒå€¤åŒ–é–¾å€¤1(bin_type==2ã®å ´åˆå¹³å‡å€¤ã‹ã‚‰ã®ã‚ªãƒ•ã‚»ãƒƒãƒˆå€¤, ãã®ä»–ã®å ´åˆã¯ä½¿ã‚ã‚Œãªã„)
+	double gamma_correction;	///< gammaè£œæ­£å€¤
 
-	/// ƒRƒ“ƒXƒgƒ‰ƒNƒ^. ƒfƒtƒHƒ‹ƒg’l‚ğİ’è
+	/// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿. ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã‚’è¨­å®š
 	PreProcParam() :
 		reverse_bw(false),
 		equalize_hist(false),
@@ -43,7 +43,7 @@ struct PreProcParam {
 		gamma_correction(1.0)
 	{}
 
-	/// ƒpƒ‰ƒ[ƒ^«‘‚©‚ç’l‚ğƒZƒbƒg‚·‚é.ƒL[‚Ì–¼‘O‚Íƒƒ“ƒo•Ï”‚Æ“¯‚¶
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¾æ›¸ã‹ã‚‰å€¤ã‚’ã‚»ãƒƒãƒˆã™ã‚‹.ã‚­ãƒ¼ã®åå‰ã¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã¨åŒã˜
 	void set(std::map<std::string, double> &params) {
 		if (params.count("reverse_bw")) this->reverse_bw = (params["reverse_bw"] == 0.0) ? false : true;
 		if (params.count("equalize_hist")) this->equalize_hist = (params["equalize_hist"] == 0.0) ? false : true;
@@ -56,21 +56,21 @@ struct PreProcParam {
 };
 
 
-/// ‰~ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ìƒpƒ‰ƒ[ƒ^
+/// å††ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 struct CircleMarkerParam {
-	// ŠO‚©‚çw’è‚µ‚Ä–á‚í‚È‚¢‚Æ‚È‚ç‚È‚¢‚ªA•Ê‚ÉƒfƒtƒHƒ‹ƒg’l‚Å‚à–â‘è‚È‚¢‚Æv‚í‚ê‚éƒpƒ‰ƒ[ƒ^
-	double fitscore;	///< —ÖŠsü‚©‚ç‹ß—‚³‚ê‚½‘È‰~ã‚Éæ‚Á‚Ä‚¢‚é—ÖŠsü“_‚ÌŠ„‡‚Ì‰ºŒÀ’l(‚±‚ê‚æ‚è’á‚¯‚ê‚Î‚»‚Ì—ÖŠsü‚Í‘È‰~‚Å‚Í‚È‚¢‚Æ”»’f‚·‚é)
-	int n_circles_minimum;		///< Å’áŒÀ‚±‚êˆÈã‚ÍŒ©‚Â‚©‚Á‚Ä‚­‚ê‚È‚¯‚ê‚Î¢‚éƒ}[ƒJ‚Ì”
-	double max_radius;	///< ‹ß—‘È‰~‚Ì’·”¼Œa‚ÌãŒÀ’l(•K‚¸—ëˆÈã‚Ì’l)
-	double min_radius;	///< ‹ß—‘È‰~‚Ì’Z”¼Œa‚Ì‰ºŒÀ’l(•K‚¸—ëˆÈã‚Ì’l)
+	// å¤–ã‹ã‚‰æŒ‡å®šã—ã¦è²°ã‚ãªã„ã¨ãªã‚‰ãªã„ãŒã€åˆ¥ã«ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã§ã‚‚å•é¡Œãªã„ã¨æ€ã‚ã‚Œã‚‹ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	double fitscore;	///< è¼ªéƒ­ç·šã‹ã‚‰è¿‘ä¼¼ã•ã‚ŒãŸæ¥•å††ä¸Šã«ä¹—ã£ã¦ã„ã‚‹è¼ªéƒ­ç·šç‚¹ã®å‰²åˆã®ä¸‹é™å€¤(ã“ã‚Œã‚ˆã‚Šä½ã‘ã‚Œã°ãã®è¼ªéƒ­ç·šã¯æ¥•å††ã§ã¯ãªã„ã¨åˆ¤æ–­ã™ã‚‹)
+	int n_circles_minimum;		///< æœ€ä½é™ã“ã‚Œä»¥ä¸Šã¯è¦‹ã¤ã‹ã£ã¦ãã‚Œãªã‘ã‚Œã°å›°ã‚‹ãƒãƒ¼ã‚«ã®æ•°
+	double max_radius;	///< è¿‘ä¼¼æ¥•å††ã®é•·åŠå¾„ã®ä¸Šé™å€¤(å¿…ãšé›¶ä»¥ä¸Šã®å€¤)
+	double min_radius;	///< è¿‘ä¼¼æ¥•å††ã®çŸ­åŠå¾„ã®ä¸‹é™å€¤(å¿…ãšé›¶ä»¥ä¸Šã®å€¤)
 
-	// ŠO‚©‚çw’è‚µ‚Ä–á‚í‚È‚¢‚Æ‚Ç‚¤‚µ‚æ‚¤‚à‚È‚¢ƒpƒ‰ƒ[ƒ^‚¾‚¯‚Ç‚È‚­‚Ä‚à—Ç‚¢(debug_show_scale!=0‚Ì‚Æ‚«‚¾‚¯•K—v)
-	int image_width;	///< ‰æ‘œ‰¡•
-	int image_height;	///< ‰æ‘œc•
-	double debug_show_scale;	///< ƒfƒoƒbƒO‰æ‘œ‚ğ•\¦‚·‚é‚Æ‚«‚É‰½”{‚Å•\¦‚·‚é‚©(0.0‚É‚µ‚Ä‚¨‚­‚Æ•\¦‚µ‚È‚¢)
+	// å¤–ã‹ã‚‰æŒ‡å®šã—ã¦è²°ã‚ãªã„ã¨ã©ã†ã—ã‚ˆã†ã‚‚ãªã„ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã ã‘ã©ãªãã¦ã‚‚è‰¯ã„(debug_show_scale!=0ã®ã¨ãã ã‘å¿…è¦)
+	int image_width;	///< ç”»åƒæ¨ªå¹…
+	int image_height;	///< ç”»åƒç¸¦å¹…
+	double debug_show_scale;	///< ãƒ‡ãƒãƒƒã‚°ç”»åƒã‚’è¡¨ç¤ºã™ã‚‹ã¨ãã«ä½•å€ã§è¡¨ç¤ºã™ã‚‹ã‹(0.0ã«ã—ã¦ãŠãã¨è¡¨ç¤ºã—ãªã„)
 
 	/**
-	 * ƒRƒ“ƒXƒgƒ‰ƒNƒ^. ƒfƒtƒHƒ‹ƒg’l‚ğİ’è
+	 * ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿. ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã‚’è¨­å®š
 	 */
 	CircleMarkerParam() :
 		fitscore(0.9),
@@ -78,7 +78,7 @@ struct CircleMarkerParam {
 		image_width(0), image_height(0), debug_show_scale(0.0) {}
 
 
-	/// ƒpƒ‰ƒ[ƒ^«‘‚©‚ç’l‚ğƒZƒbƒg‚·‚é.ƒL[‚Ì–¼‘O‚Íƒƒ“ƒo•Ï”‚Æ“¯‚¶
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¾æ›¸ã‹ã‚‰å€¤ã‚’ã‚»ãƒƒãƒˆã™ã‚‹.ã‚­ãƒ¼ã®åå‰ã¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã¨åŒã˜
 	void set(std::map<std::string, double> &params) {
 		if (params.count("fitscore")) this->fitscore = params["fitscore"];
 		if (params.count("n_circles_minimum")) this->n_circles_minimum = (int)params["n_circles_minimum"];
@@ -88,22 +88,22 @@ struct CircleMarkerParam {
 	}
 };
 
-/// ƒLƒƒƒŠƒuƒ{[ƒh‚Ìƒpƒ‰ƒ[ƒ^
+/// ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 struct CalibBoardParam {
-	double unitleng;	///< ‰~ƒ}[ƒJdSŠÔ‹——£
-	int n_circles_x;	///< X²•ûŒü‚Ìƒ}[ƒJ”
-	int n_circles_y;	///< Y²•ûŒü‚Ìƒ}[ƒJ”
-	int origin_x;	///< X²‚Ì{•ûŒü‚©‚çŒ´“_‚Ü‚Å‚Ìƒ}[ƒJ”(0ƒXƒ^[ƒg‚Å”‚¦‚é)
-	int origin_y;	///< Y²‚Ì{•ûŒü‚©‚çŒ´“_‚Ü‚Å‚Ìƒ}[ƒJ”(0ƒXƒ^[ƒg‚Å”‚¦‚é)
-	double distance_between_circles;	///< dSŠÔ‹——£‚Ì‰~‚Ì’¼Œa‚É‘Î‚·‚é”ä—¦(¬”“_‘æˆêˆÊ‚Ü‚Å—LŒø)
+	double unitleng;	///< å††ãƒãƒ¼ã‚«é‡å¿ƒé–“è·é›¢
+	int n_circles_x;	///< Xè»¸æ–¹å‘ã®ãƒãƒ¼ã‚«æ•°
+	int n_circles_y;	///< Yè»¸æ–¹å‘ã®ãƒãƒ¼ã‚«æ•°
+	int origin_x;	///< Xè»¸ã®ï¼‹æ–¹å‘ã‹ã‚‰åŸç‚¹ã¾ã§ã®ãƒãƒ¼ã‚«æ•°(0ã‚¹ã‚¿ãƒ¼ãƒˆã§æ•°ãˆã‚‹)
+	int origin_y;	///< Yè»¸ã®ï¼‹æ–¹å‘ã‹ã‚‰åŸç‚¹ã¾ã§ã®ãƒãƒ¼ã‚«æ•°(0ã‚¹ã‚¿ãƒ¼ãƒˆã§æ•°ãˆã‚‹)
+	double distance_between_circles;	///< é‡å¿ƒé–“è·é›¢ã®å††ã®ç›´å¾„ã«å¯¾ã™ã‚‹æ¯”ç‡(å°æ•°ç‚¹ç¬¬ä¸€ä½ã¾ã§æœ‰åŠ¹)
 
-	// ƒRƒ“ƒXƒgƒ‰ƒNƒ^. ƒfƒtƒHƒ‹ƒg’l‚ğİ’è
+	// ã‚³ãƒ³ã‚¹ãƒˆãƒ©ã‚¯ã‚¿. ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆå€¤ã‚’è¨­å®š
 	CalibBoardParam() :
 		unitleng(0.0), n_circles_x(0), n_circles_y(0), origin_x(0), origin_y(0),
 		distance_between_circles(1.2)
 	{}
 
-	/// ƒpƒ‰ƒ[ƒ^«‘‚©‚ç’l‚ğƒZƒbƒg‚·‚é.ƒL[‚Ì–¼‘O‚Íƒƒ“ƒo•Ï”‚Æ“¯‚¶
+	/// ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¾æ›¸ã‹ã‚‰å€¤ã‚’ã‚»ãƒƒãƒˆã™ã‚‹.ã‚­ãƒ¼ã®åå‰ã¯ãƒ¡ãƒ³ãƒå¤‰æ•°ã¨åŒã˜
 	bool set(std::map<std::string, double> &params) {
 		if (params.count("unitleng")) this->unitleng = params["unitleng"];
 		if (params.count("n_circles_x")) this->n_circles_x = (int)params["n_circles_x"];
@@ -120,77 +120,77 @@ struct CalibBoardParam {
 
 
 
-/// ƒLƒƒƒŠƒuƒ{[ƒh”F¯Ší‚ÌƒCƒ“ƒ^[ƒtƒF[ƒX
+/// ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰èªè­˜å™¨ã®ã‚¤ãƒ³ã‚¿ãƒ¼ãƒ•ã‚§ãƒ¼ã‚¹
 class iCalibBoardRecognizer {
 public:
 	virtual void destroy() = 0;
 	virtual ~iCalibBoardRecognizer() {}
 
 	/**
-	 * ƒpƒ‰ƒ[ƒ^‚ğİ’è‚µ‚Ü‚·.
-	 * @return ƒpƒ‰ƒ[ƒ^İ’è‚É–â‘è‚ª‚ ‚ê‚Îfalse, –³‚¯‚ê‚Îtrue.
-	 * @param [in] pp ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ì‘Oˆ——pƒpƒ‰ƒ[ƒ^
-	 * @param [in] mp ‰~ƒ}[ƒJŒŸo‚Ì‚½‚ß‚Ìƒpƒ‰ƒ[ƒ^
-	 * @param [in] cp ƒLƒƒƒŠƒuƒ{[ƒh‚Ìƒpƒ‰ƒ[ƒ^
+	 * ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ã‚’è¨­å®šã—ã¾ã™.
+	 * @return ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿è¨­å®šã«å•é¡ŒãŒã‚ã‚Œã°false, ç„¡ã‘ã‚Œã°true.
+	 * @param [in] pp ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®å‰å‡¦ç†ç”¨ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] mp å††ãƒãƒ¼ã‚«æ¤œå‡ºã®ãŸã‚ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
+	 * @param [in] cp ã‚­ãƒ£ãƒªãƒ–ãƒœãƒ¼ãƒ‰ã®ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿
 	 */
 	virtual bool set_parameters(PreProcParam &pp, CircleMarkerParam &mp, CalibBoardParam &cp) = 0;
 
 	/**
-	 * ƒ}[ƒJ‚ÌˆÊ’uŠÖŒW‚ğ¯•Ê‚µ‚Ü‚·.
-	 * @return ó‘Ô’l(¬Œ÷‚µ‚½ê‡‚Íƒ[ƒ, ¸”s‚µ‚½ê‡‚Í”ñƒ[ƒ‚ÌƒGƒ‰[”Ô†)
-	 * @param [in] image ˆ—‘ÎÛ‰æ‘œ
-	 * @param [out] point2d ƒ}[ƒJ‚Ì‰æ‘œ“àÀ•W’l‚ªŠi”[‚³‚ê‚Ä‚éƒoƒbƒtƒ@
+	 * ãƒãƒ¼ã‚«ã®ä½ç½®é–¢ä¿‚ã‚’è­˜åˆ¥ã—ã¾ã™.
+	 * @return çŠ¶æ…‹å€¤(æˆåŠŸã—ãŸå ´åˆã¯ã‚¼ãƒ­, å¤±æ•—ã—ãŸå ´åˆã¯éã‚¼ãƒ­ã®ã‚¨ãƒ©ãƒ¼ç•ªå·)
+	 * @param [in] image å‡¦ç†å¯¾è±¡ç”»åƒ
+	 * @param [out] point2d ãƒãƒ¼ã‚«ã®ç”»åƒå†…åº§æ¨™å€¤ãŒæ ¼ç´ã•ã‚Œã¦ã‚‹ãƒãƒƒãƒ•ã‚¡
 	 */
 	virtual int recognize(cv::Mat &image, std::vector<cv::Point2f> &point2d) = 0;
 
 	/**
-	 * ã‹L‚Ìó‘Ô’l‚ÌƒGƒ‰[ƒƒbƒZ[ƒW‚Ì–¼‘O‚ğ•Ô‚µ‚Ü‚·.
-	 * @return ƒGƒ‰[ƒƒbƒZ[ƒW
-	 * @param [in] status ó‘Ô’l
+	 * ä¸Šè¨˜ã®çŠ¶æ…‹å€¤ã®ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸ã®åå‰ã‚’è¿”ã—ã¾ã™.
+	 * @return ã‚¨ãƒ©ãƒ¼ãƒ¡ãƒƒã‚»ãƒ¼ã‚¸
+	 * @param [in] status çŠ¶æ…‹å€¤
 	 */
 	virtual std::string get_error_name(const int status = -1) = 0;
 
 	/**
-	 * ˆ—‘ÎÛ‰æ‘œ‚Ì‰æ‘œƒTƒCƒY‚ğ•Ô‚µ‚Ü‚·.
-	 * @return ˆ—‘ÎÛ‰æ‘œ‚Ì‰æ‘œƒTƒCƒY
-	 * @warning ’A‚µAˆê–‡‚Å‚àƒ}[ƒJŒŸo‚ğs‚Á‚½Œã‚Å‚È‚¯‚ê‚Î—LŒø‚É‚È‚ç‚È‚¢
+	 * å‡¦ç†å¯¾è±¡ç”»åƒã®ç”»åƒã‚µã‚¤ã‚ºã‚’è¿”ã—ã¾ã™.
+	 * @return å‡¦ç†å¯¾è±¡ç”»åƒã®ç”»åƒã‚µã‚¤ã‚º
+	 * @warning ä½†ã—ã€ä¸€æšã§ã‚‚ãƒãƒ¼ã‚«æ¤œå‡ºã‚’è¡Œã£ãŸå¾Œã§ãªã‘ã‚Œã°æœ‰åŠ¹ã«ãªã‚‰ãªã„
 	 */
 	virtual cv::Size image_size() = 0;
 
 	/**
-	 * ƒ}[ƒJÀ•W‚Ì”ÍˆÍ‚ğ•Ô‚µ‚Ü‚·
-	 * @return ƒ}[ƒJÀ•W‚Ì”ÍˆÍ(cv::Rect(X²•ûŒü‚ÌÅ¬’lAY²•ûŒü‚ÌÅ¬’l, X‚Ì”ÍˆÍ, Y‚Ì”ÍˆÍ)
+	 * ãƒãƒ¼ã‚«åº§æ¨™ã®ç¯„å›²ã‚’è¿”ã—ã¾ã™
+	 * @return ãƒãƒ¼ã‚«åº§æ¨™ã®ç¯„å›²(cv::Rect(Xè»¸æ–¹å‘ã®æœ€å°å€¤ã€Yè»¸æ–¹å‘ã®æœ€å°å€¤, Xã®ç¯„å›², Yã®ç¯„å›²)
 	 */
 	virtual const cv::Rect get_marker_range() const = 0;
 
 	/**
-	 * ƒ}[ƒJ‚Ìc‰¡‚ÌˆÊ’u‚©‚çA‚»‚ÌÀ•W’l‚ªŠi”[‚³‚ê‚Ä‚¢‚éƒoƒbƒtƒ@‚É‚¨‚¯‚éƒCƒ“ƒfƒbƒNƒX‚ğ•Ô‚µ‚Ü‚·.
-	 * @return ƒCƒ“ƒfƒbƒNƒX’l
-	 * @param [in] pos ƒ}[ƒJ‚Ì(x,y)ˆÊ’u
+	 * ãƒãƒ¼ã‚«ã®ç¸¦æ¨ªã®ä½ç½®ã‹ã‚‰ã€ãã®åº§æ¨™å€¤ãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹ãƒãƒƒãƒ•ã‚¡ã«ãŠã‘ã‚‹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹ã‚’è¿”ã—ã¾ã™.
+	 * @return ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹å€¤
+	 * @param [in] pos ãƒãƒ¼ã‚«ã®(x,y)ä½ç½®
 	 */
 	virtual const int get_marker_index(cv::Point pos) const = 0;
 
 	/**
-	 * ‰æ‘œã‚Å‚Ìƒ}[ƒJˆÊ’u‚ªæ“¾o—ˆ‚Ä‚¢‚é“_‚¾‚¯‚ğæ‚èo‚µ‚ÄAimgPoints‚É•Û‘¶‚·‚éB“¯‚¶‡˜‚É‚È‚é‚æ‚¤
-	 * ‚ÉobjPoints‚É‚»‚ÌOŸŒ³ˆÊ’u‚ğŠi”[‚·‚é.
-	 * @return ˆÊ’u‚ªæ“¾‚³‚ê‚½ƒ}[ƒJ”
-	 * @param [in] point2d ƒ}[ƒJˆÊ’u
-	 * @param [out] imgPoints ã‹L‚Ìƒ}[ƒJˆÊ’u‚Ì“àA“Ç‚İæ‚ê‚½ˆÊ’u‚Ì‚İæ‚èo‚µ‚½‚à‚Ì
-	 * @param [out] objPoints imgPoints[i]‚É‘Î‰‚·‚éOŸŒ³ˆÊ’u
+	 * ç”»åƒä¸Šã§ã®ãƒãƒ¼ã‚«ä½ç½®ãŒå–å¾—å‡ºæ¥ã¦ã„ã‚‹ç‚¹ã ã‘ã‚’å–ã‚Šå‡ºã—ã¦ã€imgPointsã«ä¿å­˜ã™ã‚‹ã€‚åŒã˜é †åºã«ãªã‚‹ã‚ˆã†
+	 * ã«objPointsã«ãã®ä¸‰æ¬¡å…ƒä½ç½®ã‚’æ ¼ç´ã™ã‚‹.
+	 * @return ä½ç½®ãŒå–å¾—ã•ã‚ŒãŸãƒãƒ¼ã‚«æ•°
+	 * @param [in] point2d ãƒãƒ¼ã‚«ä½ç½®
+	 * @param [out] imgPoints ä¸Šè¨˜ã®ãƒãƒ¼ã‚«ä½ç½®ã®å†…ã€èª­ã¿å–ã‚ŒãŸä½ç½®ã®ã¿å–ã‚Šå‡ºã—ãŸã‚‚ã®
+	 * @param [out] objPoints imgPoints[i]ã«å¯¾å¿œã™ã‚‹ä¸‰æ¬¡å…ƒä½ç½®
 	 */
 	virtual size_t corresponding_points(const std::vector<cv::Point2f> &point2d,
 		std::vector<cv::Point2f> &imgPoints,
 		std::vector<cv::Point3f> &objPoints) = 0;
 
 	/**
-	 * ¶‰E‰æ‘œã‚Å‚Ìƒ}[ƒJˆÊ’u‚ªæ“¾o—ˆ‚Ä‚¢‚é“_‚¾‚¯‚ğæ‚èo‚µ‚ÄAimgPointsL, imgPointsR‚É•Û‘¶‚·‚éB
-	 * “¯‚¶‡˜‚É‚È‚é‚æ‚¤‚ÉApobjPoints‚É‚»‚ÌOŸŒ³ˆÊ’u‚ğŠi”[‚·‚é.
-	 * @return ˆÊ’u‚ªæ“¾‚³‚ê‚½ƒ}[ƒJ”
-	 * @param [in] point2dL ¶ƒJƒƒ‰‚Ìƒ}[ƒJˆÊ’u
-	 * @param [in] point2dR ‰EƒJƒƒ‰‚Ìƒ}[ƒJˆÊ’u
-	 * @param [out] imgPointsL ¶ƒJƒƒ‰ƒ}[ƒJˆÊ’u‚Ì“àA“Ç‚İæ‚ê‚½ˆÊ’u‚Ì‚İæ‚èo‚µ‚½‚à‚Ì
-	 * @param [out] imgPointsR ‰EƒJƒƒ‰ƒ}[ƒJˆÊ’u‚Ì“àA“Ç‚İæ‚ê‚½ˆÊ’u‚Ì‚İæ‚èo‚µ‚½‚à‚Ì
-	 * @param [out] objPoints imgPoints*[i]‚É‘Î‰‚·‚éOŸŒ³ˆÊ’u
+	 * å·¦å³ç”»åƒä¸Šã§ã®ãƒãƒ¼ã‚«ä½ç½®ãŒå–å¾—å‡ºæ¥ã¦ã„ã‚‹ç‚¹ã ã‘ã‚’å–ã‚Šå‡ºã—ã¦ã€imgPointsL, imgPointsRã«ä¿å­˜ã™ã‚‹ã€‚
+	 * åŒã˜é †åºã«ãªã‚‹ã‚ˆã†ã«ã€pobjPointsã«ãã®ä¸‰æ¬¡å…ƒä½ç½®ã‚’æ ¼ç´ã™ã‚‹.
+	 * @return ä½ç½®ãŒå–å¾—ã•ã‚ŒãŸãƒãƒ¼ã‚«æ•°
+	 * @param [in] point2dL å·¦ã‚«ãƒ¡ãƒ©ã®ãƒãƒ¼ã‚«ä½ç½®
+	 * @param [in] point2dR å³ã‚«ãƒ¡ãƒ©ã®ãƒãƒ¼ã‚«ä½ç½®
+	 * @param [out] imgPointsL å·¦ã‚«ãƒ¡ãƒ©ãƒãƒ¼ã‚«ä½ç½®ã®å†…ã€èª­ã¿å–ã‚ŒãŸä½ç½®ã®ã¿å–ã‚Šå‡ºã—ãŸã‚‚ã®
+	 * @param [out] imgPointsR å³ã‚«ãƒ¡ãƒ©ãƒãƒ¼ã‚«ä½ç½®ã®å†…ã€èª­ã¿å–ã‚ŒãŸä½ç½®ã®ã¿å–ã‚Šå‡ºã—ãŸã‚‚ã®
+	 * @param [out] objPoints imgPoints*[i]ã«å¯¾å¿œã™ã‚‹ä¸‰æ¬¡å…ƒä½ç½®
 	 */
 	virtual size_t corresponding_points(const std::vector<cv::Point2f> &point2dL, const std::vector<cv::Point2f> &point2dR,
 		std::vector<cv::Point2f> &imgPointsL,
@@ -198,26 +198,26 @@ public:
 		std::vector<cv::Point3f> &objPoints) = 0;
 
 	/**
-	 * ƒ}[ƒJ¯•ÊŒ‹‰Ê‰æ‘œ‚ğƒtƒ@ƒCƒ‹‚É•Û‘¶‚µ‚Ü‚·.
-	 * @return ‚È‚µ
-	 * @parma [in] filename •Û‘¶æƒtƒ@ƒCƒ‹–¼
-	 * @param [in] ret iCalibBoardRecognizer::recognize()‚Ì–ß‚è’l
+	 * ãƒãƒ¼ã‚«è­˜åˆ¥çµæœç”»åƒã‚’ãƒ•ã‚¡ã‚¤ãƒ«ã«ä¿å­˜ã—ã¾ã™.
+	 * @return ãªã—
+	 * @parma [in] filename ä¿å­˜å…ˆãƒ•ã‚¡ã‚¤ãƒ«å
+	 * @param [in] ret iCalibBoardRecognizer::recognize()ã®æˆ»ã‚Šå€¤
 	 */
 	virtual void save_result_image(std::string filename, const int ret = -1) = 0;
 
 
 	/**
-	 * ƒ}[ƒJ¯•ÊŒ‹‰Ê‰æ‘œ‚ğƒRƒs[‚µ‚Ü‚·.
-	 * @return ‚È‚µ
-	 * @param [in] image ƒRƒs[æ‰æ‘œ
-	 * @param [in] ret iCalibBoardRecognizer::recognize()‚Ì–ß‚è’l
+	 * ãƒãƒ¼ã‚«è­˜åˆ¥çµæœç”»åƒã‚’ã‚³ãƒ”ãƒ¼ã—ã¾ã™.
+	 * @return ãªã—
+	 * @param [in] image ã‚³ãƒ”ãƒ¼å…ˆç”»åƒ
+	 * @param [in] ret iCalibBoardRecognizer::recognize()ã®æˆ»ã‚Šå€¤
 	 */
 	virtual void copy_result_image(cv::Mat &image, const int ret = -1) = 0;
 	
 	/**
-	 * ƒ}[ƒJ¯•ÊŒ‹‰Ê‰æ‘œ‚ğ‰æ–Ê‚É•\¦‚µ‚Ü‚·.
-	 * @return ‚È‚µ
-	 * @param [in] ret iCalibBoardRecognizer::recognize()‚Ì–ß‚è’l
+	 * ãƒãƒ¼ã‚«è­˜åˆ¥çµæœç”»åƒã‚’ç”»é¢ã«è¡¨ç¤ºã—ã¾ã™.
+	 * @return ãªã—
+	 * @param [in] ret iCalibBoardRecognizer::recognize()ã®æˆ»ã‚Šå€¤
 	 */
 	virtual void show_result_image(const int ret = -1) = 0;
 };
@@ -234,8 +234,8 @@ public:
 
 
 /**
- * ƒLƒƒƒŠƒuƒŒ[ƒVƒ‡ƒ“ƒ{[ƒh”F¯ŠíƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒXì¬
- * @return ƒNƒ‰ƒXƒCƒ“ƒXƒ^ƒ“ƒX‚ÌƒAƒhƒŒƒX
+ * ã‚­ãƒ£ãƒªãƒ–ãƒ¬ãƒ¼ã‚·ãƒ§ãƒ³ãƒœãƒ¼ãƒ‰èªè­˜å™¨ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ä½œæˆ
+ * @return ã‚¯ãƒ©ã‚¹ã‚¤ãƒ³ã‚¹ã‚¿ãƒ³ã‚¹ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
  */
 extern "C" EXPORT_BOARD iCalibBoardRecognizer* CreateCalibBoardRecognizer();
 
