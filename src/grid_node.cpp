@@ -40,7 +40,7 @@ void solve(sensor_msgs::Image src)
 	std::vector<cv::Point2f> imagePoints;
 	int stat = cboard->recognize(cv_ptr1->image, imagePoints);
 
-	// Success‚Å‚È‚­‚Ä‚àŒ‹‰Ê‰æ‘œ‚ªo‚Ä—ˆ‚é‚æ‚¤‚É‚È‚Á‚½‚Ì‚Åó‘Ô‚ÉS‚í‚ç‚¸•\Ž¦
+	// Successã§ãªãã¦ã‚‚çµæžœç”»åƒãŒå‡ºã¦æ¥ã‚‹ã‚ˆã†ã«ãªã£ãŸã®ã§çŠ¶æ…‹ã«æ‹˜ã‚ã‚‰ãšè¡¨ç¤º
 	cv::Mat mat(cv_ptr1->image.size(), CV_8UC3);  
 	sensor_msgs::Image img;
 	cboard->copy_result_image(mat,stat);

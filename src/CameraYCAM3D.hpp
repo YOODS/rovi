@@ -281,7 +281,7 @@ protected:
 	std::atomic<CaptureStatus> m_capt_stat;
 	std::timed_mutex m_capt_finish_wait_mutex;
 	
-	std::timed_mutex m_img_update_mutex; //m_imgs_left, m_imgs_right, m_img_recv_flags ‘ÎÛ
+	std::timed_mutex m_img_update_mutex; //m_imgs_left, m_imgs_right, m_img_recv_flags å¯¾è±¡
 	std::vector<camera::ycam3d::CameraImage> m_imgs_left;
 	std::vector<camera::ycam3d::CameraImage> m_imgs_right;
 	std::vector<bool> m_img_recv_flags;

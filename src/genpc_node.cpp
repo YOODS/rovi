@@ -27,7 +27,7 @@
 
 
 namespace {
-//============================================= –³–¼–¼‘O‹óŠÔ start =============================================
+//============================================= ç„¡ååå‰ç©ºé–“ start =============================================
 
 #define GET_CAMERA_LABEL(camno) (camno==0?'L':(camno==1?'R':'?'))
 constexpr int CAMERA_NUM = 2;
@@ -42,8 +42,8 @@ int cur_cam_height = -1;
 	
 /** 
  * PCGEN_SGBM = 0,  ///< SGBM
- * PCGEN_GRAYPS4,   ///< ˆÊ‘ŠƒVƒtƒg: Gray + 4step PS
- * PCGEN_MULTI,     ///< ˆÊ‘ŠƒVƒtƒg: ƒ}ƒ‹ƒ`
+ * PCGEN_GRAYPS4,   ///< ä½ç›¸ã‚·ãƒ•ãƒˆ: Gray + 4step PS
+ * PCGEN_MULTI,     ///< ä½ç›¸ã‚·ãƒ•ãƒˆ: ãƒãƒ«ãƒ
  **/
 //PcGenMode cur_pc_gen_mode = PCGEN_GRAYPS4;
 std::map<PcGenMode,std::string> PCGEN_MODE_MAP = {
@@ -56,7 +56,7 @@ std::string file_dump("/tmp/");
 bool isready = false;
 
 ros::NodeHandle *nh = nullptr;
-//[0]¶ƒJƒƒ‰—pA[1]‰EƒJƒƒ‰—p
+//[0]å·¦ã‚«ãƒ¡ãƒ©ç”¨ã€[1]å³ã‚«ãƒ¡ãƒ©ç”¨
 ros::Publisher pub_ps_pointclouds[2];
 ros::Publisher pub_ps_floats[2];
 ros::Publisher pub_depth_imgs[2];
@@ -387,7 +387,7 @@ bool load_pattern_images(const rovi::GenPC::Request &req){
 			ROS_INFO(LOG_HEADER"<%d> pattern image convert finished. proc_tm=%d ms",n,tmr.elapsed_lap_ms());
 		}
 		
-		//B‰e‰æ‘œ•Û‘¶
+		//æ’®å½±ç”»åƒä¿å­˜
 		if( ! file_dump.empty() ) {
 			if( ptn_image_save_flg ){
 				tmr.start_lap();
@@ -628,7 +628,7 @@ bool exec_downsampling (const sensor_msgs::PointCloud &pts,const VoxelLeafSize &
 
 void re_voxelization_monitor(const ros::TimerEvent& e)
 {
-	//leaf_size‚ğŒÂ•Ê‚É•Ï‚¦‚é‚Æ‚»‚Ì‚½‚Ñ‚Épublish‚³‚ê‚é‚Ì‚Åˆê‹C‚Éw’è‚·‚é•û–@
+	//leaf_sizeã‚’å€‹åˆ¥ã«å¤‰ãˆã‚‹ã¨ãã®ãŸã³ã«publishã•ã‚Œã‚‹ã®ã§ä¸€æ°—ã«æŒ‡å®šã™ã‚‹æ–¹æ³•
 	//$rosparam set genpc/voxelize/leaf_size '{"x":3,"y":3,"z":3}'
 	
 	if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_DEFAULT_ENABLED) ){
@@ -638,7 +638,7 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 	}else{
 		VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
 		
-		//Äƒ{ƒNƒZƒ‹‰»‚ÌÛ‚Íƒ{ƒNƒZƒ‹‰»‚ÌƒTƒCƒY‚ªˆÙ‚È‚é‚¾‚¯ŒvZ‚·‚éB
+		//å†ãƒœã‚¯ã‚»ãƒ«åŒ–ã®éš›ã¯ãƒœã‚¯ã‚»ãƒ«åŒ–ã®ã‚µã‚¤ã‚ºãŒç•°ãªã‚‹æ™‚ã ã‘è¨ˆç®—ã™ã‚‹ã€‚
 		if( pre_vx_leaf_size == vx_leaf_size ){
 			//ROS_INFO(LOG_HEADER"re-voxelization update is nothing.");
 		}else{
@@ -705,7 +705,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	if( ! pcgen_ptr ){
 		pcgen_ptr.reset(new YPCGeneratorUnix());
-		//“r’†‚Å•Ï‚¦‚È‚¢‚±‚Æ
+		//é€”ä¸­ã§å¤‰ãˆãªã„ã“ã¨
 		const PcGenMode pc_gen_mode = (PcGenMode)get_param<int>("pshift_genpc/calc/pcgen_mode",(int)PCGEN_GRAYPS4);
 		
 		if( ! pcgen_ptr->create_pcgen(pc_gen_mode) ){
@@ -810,7 +810,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 					ROS_WARN(LOG_HEADER"[%c] genpc point count 0. elapsed=%d ms",GET_CAMERA_LABEL(camno), tmr_proc.elapsed_ms());
 				}
 				
-				//“_ŒQƒf[ƒ^•ÏŠ·
+				//ç‚¹ç¾¤ãƒ‡ãƒ¼ã‚¿å¤‰æ›
 				ROS_INFO(LOG_HEADER"[%c] point cloud data convert start.",GET_CAMERA_LABEL(camno));
 				ElapsedTimer tmr_pcgen_conv;
 				if( ! ypcData->make_point_cloud(pts) ){
@@ -899,7 +899,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	ROS_INFO(LOG_HEADER "publish finished. elapsed=%d ms", tmr_proc.elapsed_ms());
 	
-	//ƒf[ƒ^•Û‘¶
+	//ãƒ‡ãƒ¼ã‚¿ä¿å­˜
 	if( ! file_dump.empty() ) {
 		const bool data_save_flg = get_param<bool>("genpc/point_cloud/data_save",PC_DATA_DEFAULT_SAVE);
 		const bool voxel_save_flg = get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_DEFAULT_ENABELED);
@@ -978,7 +978,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 						tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
 				}
 				
-				//sample:«—ˆ“I‚É‚ÍPointCloud2‚Ö
+				//sample:å°†æ¥çš„ã«ã¯PointCloud2ã¸
 				/*
 				pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl2;
 				pcl::fromROSMsg(*pcdata.get_data(),pts_vx_pcl2);
@@ -1012,7 +1012,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		}
 	}
 	
-	//Äƒ{ƒNƒZƒ‹‰»ŠÄ‹
+	//å†ãƒœã‚¯ã‚»ãƒ«åŒ–ç›£è¦–
 	{
 		cur_re_vx_interval = std::max(get_param<float>("genpc/voxelize/recalc/interval",RE_VOXEL_DEFAULT_INTERVAL),RE_VOXEL_MIN_INTERVAL);
 		
@@ -1025,7 +1025,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 }
 
 
-//============================================= –³–¼–¼‘O‹óŠÔ  end  =============================================
+//============================================= ç„¡ååå‰ç©ºé–“  end  =============================================
 }
 
 int main(int argc, char **argv)

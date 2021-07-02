@@ -127,7 +127,7 @@ namespace {
 		{YCAM_PROJ_PTN_PHSFT_3,"PhaseShift3"}
 	};
 	
-	//Ú‘±s‚µ‚ÄŸ‚Ìƒgƒ‰ƒC‚Ü‚Å‚ÌŠÔBopenˆ—‚ÌŠÔ‚ª‚ ‚é‚Ì‚Åˆê’èŠÔŠu‚É‚Í‚È‚ç‚È‚¢
+	//æ¥ç¶šè©¦è¡Œã—ã¦æ¬¡ã®ãƒˆãƒ©ã‚¤ã¾ã§ã®æ™‚é–“ã€‚openå‡¦ç†ã®æ™‚é–“ãŒã‚ã‚‹ã®ã§ä¸€å®šé–“éš”ã«ã¯ãªã‚‰ãªã„
 	const int CAMERA_AUTO_CONNECT_WAIT_TM = 1000 * 1000;//1sec
 	const int CAMERA_AUTO_CONNECT_INTERVAL = 5;//sec 
 	const int CAMERA_AUTO_CONNECT_RETRY_MAX = 10;
@@ -153,7 +153,7 @@ void CameraYCAM3D::CameraImageReceivedCallback::operator()(int camno, int frmidx
 #ifdef DEBUG_DETAIL
 	ROS_WARN(LOG_HEADER"on camera image received. camno=%d frmidx=%d lr_width=%d height=%d color=%d\n",camno,frmidx,lr_width, height, color);
 #endif
-	//ƒfƒoƒbƒO:raw‰æ‘œ•Û‘¶
+	//ãƒ‡ãƒãƒƒã‚°:rawç”»åƒä¿å­˜
 	//cv::Mat img(cv::Size(lr_width, height), CV_8UC1,mem );
 	//char path[256];
 	//sprintf(path,"/tmp/raw%02d.pgm",frmidx);
@@ -529,7 +529,7 @@ void CameraYCAM3D::close(){
 		stop_nw_delay_monitor_task();
 	}
 	{
-		//©“®Ú‘±
+		//è‡ªå‹•æ¥ç¶š
 		ROS_INFO(LOG_HEADER"#%d auto connect finish wait start.", m_camno);
 		if( is_auto_connect_running() ){
 			m_auto_connect_abort = true;
@@ -538,7 +538,7 @@ void CameraYCAM3D::close(){
 		// ********** m_auto_connect_mutex LOCKED **********
 		ROS_INFO(LOG_HEADER"#%d auto connect finish wait end.", m_camno);
 		
-		//B‰e‰æ‘œóMŠ®—¹‘Ò‚¿
+		//æ’®å½±ç”»åƒå—ä¿¡å®Œäº†å¾…ã¡
 		ROS_INFO(LOG_HEADER"#%d capture finish wait start.", m_camno);
 		std::lock_guard<std::timed_mutex> locker_capt(m_capt_finish_wait_mutex);
 		// ********** m_capt_finish_wait_mutex LOCKED **********
@@ -859,7 +859,7 @@ bool CameraYCAM3D::get_exposure_time_level_default(int *val)const{
 	return m_arv_ptr->get_exposure_time_level_default(val);
 }
 
-//exposure_time_level_min/max‚¾‚¯ŠÖ”‚Åæ“¾‚·‚é‚Ì‚Ísxga,vga‚Åİ’è‚Ì”‚ªˆÙ‚È‚é
+//exposure_time_level_min/maxã ã‘é–¢æ•°ã§å–å¾—ã™ã‚‹ã®ã¯sxga,vgaã§è¨­å®šã®æ•°ãŒç•°ãªã‚‹
 bool CameraYCAM3D::get_exposure_time_level_min(int *val)const{
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
@@ -923,7 +923,7 @@ bool CameraYCAM3D::set_gain_digital(const int val){
 		return m_arv_ptr->setGainD(l_val);
 	},val);
 	
-	/* ³‚µ‚¢’l‚ª•Ô‚Á‚Ä‚±‚È‚¢‚Ì‚Åƒm[ƒ`ƒFƒbƒNB
+	/* æ­£ã—ã„å€¤ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ãƒãƒ¼ãƒã‚§ãƒƒã‚¯ã€‚
 	bool ret=false;
 	int cval=-1;
 	if( result && get_gain_digital(&cval) &&  cval == val){
@@ -946,7 +946,7 @@ bool CameraYCAM3D::set_gain_analog(const int val){
 		return m_arv_ptr->setGainA(l_val);
 	},val);
 	
-	/* ³‚µ‚¢’l‚ª•Ô‚Á‚Ä‚±‚È‚¢‚Ì‚Åƒm[ƒ`ƒFƒbƒNB
+	/* æ­£ã—ã„å€¤ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ãƒãƒ¼ãƒã‚§ãƒƒã‚¯ã€‚
 	bool ret=false;
 	int cval=-1;
 	if( result && get_gain_analog(&cval) &&  cval == val){
@@ -970,7 +970,7 @@ bool CameraYCAM3D::set_projector_exposure_time(const int val){
 		return m_arv_ptr->setProjectorExposureTime(l_val);
 	},val);
 	
-	/* ³‚µ‚¢’l‚ª•Ô‚Á‚Ä‚±‚È‚¢‚Ì‚Åƒm[ƒ`ƒFƒbƒNB
+	/* æ­£ã—ã„å€¤ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ãƒãƒ¼ãƒã‚§ãƒƒã‚¯ã€‚
 	bool ret=false;
 	int cval=-1;
 	if( get_projector_exposure_time(&cval) &&  cval == val){
@@ -994,7 +994,7 @@ bool CameraYCAM3D::set_projector_intensity(const int val){
 		return m_arv_ptr->setProjectorIntensity(l_val);
 	},val);
 	
-	/* ³‚µ‚¢’l‚ª•Ô‚Á‚Ä‚±‚È‚¢‚Ì‚Åƒm[ƒ`ƒFƒbƒNB
+	/* æ­£ã—ã„å€¤ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ãƒãƒ¼ãƒã‚§ãƒƒã‚¯ã€‚
 	bool ret=false;
 	int cval=-1;
 	if( result && get_projector_intensity(&cval) &&  cval == val){
@@ -1121,10 +1121,10 @@ void CameraYCAM3D::start_nw_delay_monitor_task(const int interval,const int time
 			}else{
 				
 				std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
-				//B‰e‚â‘¼‚Ìˆ—‚Å‚·‚®‚ÉƒƒbƒN‚ªæ“¾‚Å‚«‚È‚¢‚¾‚ë‚¤‚©‚çƒƒbƒNæ“¾ŠÔ‚Íl—¶‚µ‚È‚¢B
+				//æ’®å½±ã‚„ä»–ã®å‡¦ç†ã§ã™ãã«ãƒ­ãƒƒã‚¯ãŒå–å¾—ã§ããªã„ã ã‚ã†ã‹ã‚‰ãƒ­ãƒƒã‚¯å–å¾—æ™‚é–“ã¯è€ƒæ…®ã—ãªã„ã€‚
 				tmr.restart();
 				if( ! m_arv_ptr->setHeartBeatTimeout(next_val) ){
-					//’x‰„‚Å‚Í‚È‚­AÚ‘±‚ªØ‚ê‚½ê‡‚Å‚à‚ ‚è‚¦‚é‚Ì‚Å–³‹
+					//é…å»¶ã§ã¯ãªãã€æ¥ç¶šãŒåˆ‡ã‚ŒãŸå ´åˆã§ã‚‚ã‚ã‚Šãˆã‚‹ã®ã§ç„¡è¦–
 					ROS_WARN(LOG_HEADER"network delay monitor: heart beat write failed.");
 				}else{
 					const int cur_val = m_arv_ptr->getHeartBeatTimeout();
@@ -1211,7 +1211,7 @@ bool CameraYCAM3D::set_projector_interval(const int val){
 		return m_arv_ptr->setProjectorFlashInterval(l_val);
 	},val);
 	
-	/* ³‚µ‚¢’l‚ª•Ô‚Á‚Ä‚±‚È‚¢‚Ì‚Åƒm[ƒ`ƒFƒbƒNB
+	/* æ­£ã—ã„å€¤ãŒè¿”ã£ã¦ã“ãªã„ã®ã§ãƒãƒ¼ãƒã‚§ãƒƒã‚¯ã€‚
 	bool ret=false;
 	int cval=-1;
 	if( result && get_projector_interval(&cval) &&  cval == val){
