@@ -149,10 +149,46 @@ void find_marker(sensor_msgs::Image buf, int label){
 	/** ３D座標への変換 **/
 	if (makL.seq == makR.seq)
 	{
+		cv::Mat pL(pvec[0]);
+		cv::Mat pR(pvec[1]);
+		cv::Mat_<double> PL = pL.reshape(1,3);
+		cv::Mat_<double> PR = pR.reshape(1,3);
 		if (makL.check_data() && makR.check_data())
 		{
 			// std::cout << "seq =" << buf.header.seq << std::endl;
-
+			// for( int camno=0; camno < CAMERA_NUM; ++camno )
+			// {
+			// 	cv::Mat pmat(pvec[camno]);
+			// 	// cv::Mat P=pmat.reshape(1,3);
+			// 	std::cout << "test_node::matrix P(" << GET_CAMERA_LABEL(camno) << ")=" << P << std::endl;
+    		// }
+			cv::Mat_<double> B = (cv::Mat_<double>(4,3) << 
+				PL(2,0)*makL.x-PL(0,0), PL(2,1)*makL.x-PL(0,1), PL(2,2)*makL.x-PL(0,2),
+				PL(2,0)*makL.y-PL(1,0), PL(2,1)*makL.y-PL(1,1), PL(2,2)*makL.y-PL(1,2),
+				PR(2,0)*makR.x-PR(0,0), PR(2,1)*makR.x-PR(0,1), PR(2,2)*makR.x-PR(0,2),
+				PR(2,0)*makR.y-PR(1,0), PR(2,1)*makR.y-PR(1,1), PR(2,2)*makR.y-PR(1,2)
+			 );
+			 std::cout << "Mat B 計算" << std::endl;
+			cv::Mat_<double> b = (cv::Mat_<double>(4,1) <<
+				PL(0,3)-PL(2,3)*makL.x,
+				PL(1,3)-PL(2,3)*makL.y,
+				PR(0,3)-PR(2,3)*makR.x,
+				PR(1,3)-PR(2,3)*makR.y
+			);
+			std::cout << "Mat b 計算" << std::endl;
+			cv::Mat_<double> BP = B.t() * B;
+			std::cout << "Mat BP 計算" << std::endl;
+			cv::Mat_<double> Mt = BP.inv() * B.t();
+			std::cout << "Mat Mt 計算" << std::endl;
+			std::cout << "Mt" << Mt << std::endl;
+			std::cout << "b" << b << std::endl;
+			// cv::Mat WP = (cv::Mat_<double>(1,3) <<
+			// 	Mt(0,0)*b(0,0) + Mt(0,1)*b(0,1) + Mt(0,2)*b(0,2) + Mt(0,3)*b(0,3),
+			// 	Mt(1,0)*b(0,0) + Mt(1,1)*b(0,1) + Mt(1,2)*b(0,2) + Mt(1,3)*b(0,3),
+			// 	Mt(2,0)*b(0,0) + Mt(2,1)*b(0,1) + Mt(2,2)*b(0,2) + Mt(2,3)*b(0,3)
+			// );
+			cv::Mat WP = Mt * b;
+			std::cout << "WP= " << WP << std::endl;
 		}
 		
 	}
