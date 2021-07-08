@@ -45,7 +45,7 @@ sudo apt-get install -y libeigen3-dev
 cd ~
 curl -sL https://deb.nodesource.com/setup_10.x | sudo -E bash -
 sudo apt-get install nodejs
-npm init
+#npm init
 npm install rosnodejs
 npm install js-yaml
 npm install mathjs
@@ -53,12 +53,10 @@ npm install terminate --save
 npm install ping
 
 #installing python package
-sudo apt install -y python3-pip
-#pip install pip==9.0.3
-#pip install numpy==1.15.0 --user
-pip3 install numpy --user
+#sudo apt install -y python3-pip
+#pip3 install numpy --user
 pip3 install scipy --user
-pip3 install wheel --user
+#pip3 install wheel --user
 #pip install ipython==5.7 --user
 pip3 install ipython --user
 #pip install ipykernel==4.10 --user
@@ -88,7 +86,7 @@ git clone -b noetic-devel https://github.com/YOODS/rtk_tools.git
 sudo apt install python-tk
 pip3 install tkfilebrowser --user
 
-
+sudo rm /usr/bin/python
 sudo ln -s /usr/bin/python3 /usr/bin/python
 
 #build
