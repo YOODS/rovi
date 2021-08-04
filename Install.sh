@@ -65,17 +65,6 @@ pip3 install ipykernel --user
 pip3 install open3d==0.11.1
 pip3 install pymsgbox
 
-#installing X-Tile
-#cd ~
-#git clone https://github.com/YOODS/x-tile.git
-#cd x-tile
-#./create_debian_package.sh
-#cd ..
-#sudo dpkg -i x-tile_3.3-0_all.deb
-sudo add-apt-repository ppa:giuspen/ppa
-sudo apt-get update
-sudo apt-get install -y x-tile
-
 #checkout rovi_utils
 cd $CATKIN_WS/src
 git clone -b noetic-devel https://github.com/YOODS/rovi_utils.git
