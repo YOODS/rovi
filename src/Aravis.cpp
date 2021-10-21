@@ -29,11 +29,12 @@ typedef std::vector<std::string> STRLIST;
 namespace aravis{
 namespace ycam3d{
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_SXGA = 
-		{ 0, 5, 1, 
+		{ 0, 6, 1, 
 			{
 				{  4000,  8333, 60 },
 				{  8000,  8333, 60 },
 				{ 16000, 16000, 60 },
+				{ 16000, 16000, 50 },
 				{ 24000, 24000, 40 },
 				{ 32000, 32000, 30 },
 				{ 49000, 50000, 20 },
@@ -41,11 +42,12 @@ namespace ycam3d{
 		};
 	
 	const ExposureTimeLevelSetting EXPOSURE_TIME_LV_SETTING_VGA  = 
-		{ 0, 5, 1, 
+		{ 0, 6, 1, 
 			{
 				{  4000,  8333, 116 },
 				{  8000,  8333, 116 },
 				{ 16000, 16000,  60 },
+				{ 16000, 16000,  50 },
 				{ 24000, 24000,  40 },
 				{ 32000, 32000,  30 },
 				{ 49000, 50000,  20 },
