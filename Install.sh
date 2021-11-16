@@ -53,7 +53,7 @@ npm install terminate --save
 npm install ping
 
 #installing python package
-#sudo apt install -y python3-pip
+sudo apt install -y python3-pip
 #pip3 install numpy --user
 pip3 install scipy --user
 #pip3 install wheel --user
