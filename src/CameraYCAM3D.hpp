@@ -18,10 +18,6 @@ class CameraYCAM3D;
 
 namespace camera{
 	namespace ycam3d{
-		//constexpr int CAM_EXPOSURE_TIME_DEFAULT   = aravis::ycam3d::CAM_EXPOSURE_TIME_DEFAULT;
-		//constexpr int CAM_EXPOSURE_TIME_MAX       = aravis::ycam3d::CAM_EXPOSURE_TIME_MAX;
-		//constexpr int CAM_EXPOSURE_TIME_MIN       = aravis::ycam3d::CAM_EXPOSURE_TIME_MIN;
-		
 		constexpr int CAM_DIGITAL_GAIN_DEFAULT   = aravis::ycam3d::CAM_DIGITAL_GAIN_DEFAULT;
 		constexpr int CAM_DIGITAL_GAIN_MAX       = aravis::ycam3d::CAM_DIGITAL_GAIN_MAX;
 		constexpr int CAM_DIGITAL_GAIN_MIN       = aravis::ycam3d::CAM_DIGITAL_GAIN_MIN;
@@ -30,20 +26,9 @@ namespace camera{
 		constexpr int CAM_ANALOG_GAIN_MAX       = aravis::ycam3d::CAM_ANALOG_GAIN_MAX;
 		constexpr int CAM_ANALOG_GAIN_MIN       = aravis::ycam3d::CAM_ANALOG_GAIN_MIN;
 		
-		//constexpr int PROJ_EXPOSURE_TIME_DEFAULT  = aravis::ycam3d::PROJ_EXPOSURE_TIME_DEFAULT;
-		//constexpr int PROJ_EXPOSURE_TIME_MIN      = aravis::ycam3d::PROJ_EXPOSURE_TIME_MIN;
-		//constexpr int PROJ_EXPOSURE_TIME_MAX      = aravis::ycam3d::PROJ_EXPOSURE_TIME_MAX;
-		
 		constexpr int PROJ_INTENSITY_DEFAULT     = aravis::ycam3d::PROJ_INTENSITY_DEFAULT;
 		constexpr int PROJ_INTENSITY_MIN         = aravis::ycam3d::PROJ_INTENSITY_MIN;
 		constexpr int PROJ_INTENSITY_MAX         = aravis::ycam3d::PROJ_INTENSITY_MAX;
-		
-		//constexpr int PROJ_FLASH_INTERVAL_DEFAULT = aravis::ycam3d::PROJ_FLASH_INTERVAL_DEFAULT;
-		//constexpr int PROJ_FLASH_INTERVAL_MIN     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MIN;
-		//constexpr int PROJ_FLASH_INTERVAL_MAX     = aravis::ycam3d::PROJ_FLASH_INTERVAL_MAX;
-		
-		
-		//constexpr int PATTERN_CAPTURE_NUM = aravis::ycam3d::PATTERN_CAPTURE_NUM;
 		
 		struct CameraImage {
 			bool result =false;
@@ -100,11 +85,6 @@ namespace camera{
 				const int32_t nsec = std::chrono::duration_cast<std::chrono::nanoseconds>(tstamp).count() % 1000000000UL;
 				img.header.stamp = ros::Time(sec, nsec);
 				
-				//char date[64];
-				//time_t t = img.header.stamp.sec;
-    			//strftime(date, sizeof(date), "%Y/%m/%d %a %H:%M:%S", localtime(&t));
-				//std::cerr << "!!!" <<  date << std::endl;
-								
 				if( ! frame_id.empty() ){
 					img.header.frame_id = frame_id;
 				}
@@ -198,15 +178,12 @@ namespace camera{
 		extern const int YCAM3D_RESET_INTERVAL;
 		extern const int YCAM3D_RESET_AFTER_WAIT;
 		
-		//void start_ycam3d_reset(const char *ipaddr);
-		bool reset_ycam3d(const char *ipaddr);
 		
 		using f_camera_open_finished = std::function<void(const bool result)>;
 		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
 		using f_pattern_img_received = std::function<void(const bool result,const int elapsed, const std::vector<camera::ycam3d::CameraImage> &imgs_l,const std::vector<camera::ycam3d::CameraImage> &imgs_r,const bool timeout,const int expsrLv)>;
 		using f_capture_img_received = std::function<void(const bool result,const int elapsed, camera::ycam3d::CameraImage &img_l,const camera::ycam3d::CameraImage &img_r,const bool timeout,const int expsrLv)>;
-		using f_network_delayed = std::function<void(void)>;
 		using f_auto_con_limit_exceeded=std::function<void(void)>;
 		using f_ros_error_published=std::function<void(std::string)>;
 	}
@@ -258,14 +235,11 @@ private:
 	std::thread m_capture_thread;
 	
 	int m_pre_heart_beat_val;
-	bool m_cancel_delay_mon;
-	std::thread m_delay_mon;
 	
 	camera::ycam3d::f_camera_open_finished m_callback_cam_open_finished;
 	camera::ycam3d::f_camera_closed m_callback_cam_closed;
 	camera::ycam3d::f_capture_img_received m_callback_capt_img_recv;
 	camera::ycam3d::f_pattern_img_received m_callback_trig_img_recv;
-	camera::ycam3d::f_network_delayed m_callback_nw_delayed;
 	camera::ycam3d::f_auto_con_limit_exceeded m_callback_auto_lm_excd;
 	camera::ycam3d::f_ros_error_published m_ros_err_pub;
 	
@@ -310,8 +284,6 @@ public:
 	
 	bool capture(const bool strobe);
 	
-	//bool capture_strobe();
-	
 	bool capture_pattern(const bool multi,const bool ptnCangeWaitShort);
 	
 	void start_auto_connect(const std::string ipaddr="");
@@ -325,7 +297,6 @@ public:
 	bool set_exposure_time_level(const int val);
 	
 	bool get_exposure_time(int *val);
-	//bool set_exposure_time(const int val);
 	
 	bool get_gain_digital(int *val);
 	bool set_gain_digital(const int val);
@@ -334,14 +305,9 @@ public:
 	bool set_gain_analog(const int val);
 	
 	bool get_projector_exposure_time(int *val);
-	//bool set_projector_exposure_time(const int val);
 	
 	bool get_projector_intensity(int *val);
 	bool set_projector_intensity(const int val);
-	
-	//bool get_projector_interval(int *val);
-	//bool set_projector_interval(const int val);
-	//void ser_projector_pattern(int val);
 	
 	void set_callback_ros_error_published(camera::ycam3d::f_ros_error_published callback);
 	void set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback);
@@ -350,9 +316,6 @@ public:
 	
 	bool get_capture_param(camera::ycam3d::CaptureParameter *capt_param);
 	bool update_capture_param(const camera::ycam3d::CaptureParameter &capt_param);
-	
-	void start_nw_delay_monitor_task(const int sec,const int timeout,camera::ycam3d::f_network_delayed callback,const bool ignUpdFail);
-	void stop_nw_delay_monitor_task();
 	
 	void set_callback_camera_open_finished(camera::ycam3d::f_camera_open_finished callback);
 	
