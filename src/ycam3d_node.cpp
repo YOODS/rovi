@@ -43,7 +43,6 @@ ros::NodeHandle *nh = nullptr;
 
 ros::Publisher pub_img_raws[2];
 ros::Publisher pub_Y1;
-//ros::Publisher pub_pcount;
 ros::Publisher pub_stat;
 ros::Publisher pub_error;
 ros::Publisher pub_info;
@@ -52,7 +51,6 @@ ros::Publisher pub_rects[2];
 ros::Publisher pub_rects0[2];
 ros::Publisher pub_rects1[2];
 ros::Publisher pub_diffs[2];
-//ros::Publisher pub_views[2];
 ros::Publisher pub_temperature;
 
 ros::ServiceClient svc_genpc;
@@ -69,21 +67,13 @@ const std::string PRM_EXPOSURE_TIME_LEVEL     = "ycam/ExposureTimeLevel";
 const std::string PRM_TEMP_MON_INTERVAL       = "ycam/TemperatureMonitorInterval";
 const std::string PRM_DRAW_CAMERA_ORIGIN      = "ycam/DrawCameraOrigin";
 const std::string PRM_PCGEN_PUBLISH           = "ycam/pcgen_publish";
-//const std::string PRM_CAM_EXPSR_TM          = "ycam/camera/ExposureTime";
 const std::string PRM_CAM_GAIN_D              = "ycam/camera/Gain";
-//const std::string PRM_CAM_GAIN_A            = "ycam/camera/GainA";
-//const std::string PRM_PROJ_EXPSR_TM         = "ycam/projector/ExposureTime";
 const std::string PRM_PROJ_INTENSITY          = "ycam/projector/Intensity";
 const std::string PRM_HDR_ENABLED             = "ycam/hdr/enabled";
 const std::string PRM_HDR_PCGEN_PUBLISH       = "ycam/hdr/pcgen_publish";
 const std::string PRM_HDR_EXPOSURE_TIME_LEVEL = "ycam/hdr/ExposureTimeLevel";
 const std::string PRM_HDR_CAM_GAIN_D          = "ycam/hdr/camera/Gain";
 const std::string PRM_HDR_PROJ_INTENSITY      = "ycam/hdr/projector/Intensity";
-
-const std::string PRM_NW_DELAY_MON_ENABLED       = "ycam/nw_delay_monitor/enabled";
-const std::string PRM_NW_DELAY_MON_INTERVAL      = "ycam/nw_delay_monitor/interval";
-const std::string PRM_NW_DELAY_MON_TIMEOUT       = "ycam/nw_delay_monitor/timeout";
-const std::string PRM_NW_DELAY_MON_IGN_UPD_FAIL  = "ycam/nw_delay_monitor/ignore_update_failure";
 
 const std::string PRM_CAPT_TIMEOUT_RESET         = "ycam/CaptureTimeoutReset";
 
@@ -129,7 +119,6 @@ bool cur_hdr_enabled=false;
 int g_node_exit_flg = 0;
 
 
-	
 struct RosCaptureParameter: public camera::ycam3d::CaptureParameter{
 	bool pcgen_publish = true;
 	
@@ -156,7 +145,6 @@ struct PatternImageData{
 };
 
 std::vector<PatternImageData> ptn_imgs;
-//int ptn_capt_num = 1;
 
 struct RosPatternImageData{
 	std::vector<sensor_msgs::Image> imgs[2];
@@ -535,10 +523,6 @@ void mode_monitor_task(const ros::TimerEvent& e){
 void on_camera_open_finished(const bool result){
 	ROS_INFO(LOG_HEADER"camera opened. result=%s",(result?"OK":"NG"));
 	
-	//expsr_tm_lv_ui_default = -1;
-	//expsr_tm_lv_ui_min = -1;
-	//expsr_tm_lv_ui_max = -1;
-	
 	if( ! result ){
 		return;
 	}
@@ -730,19 +714,13 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 	const ros::Time now = ros::Time::now();
 	
 	ElapsedTimer tmr;
-	//sensor_msgs::Image ros_imgs_darks[2];
 	sensor_msgs::Image ros_imgs_brights[2];
-		
-	//const camera::ycam3d::CameraImage cam_imgs_darks[2] = { imgs_l.at(0), imgs_r.at(0) };
 	
 	const camera::ycam3d::CameraImage cam_imgs_brights[2] = { img_l, img_r };
 	const bool drawCameraOriginCrossFlg =  get_param<bool>(PRM_DRAW_CAMERA_ORIGIN,false);
 	for (int i = 0 ; i < 2 ; ++i ){
 		cam_imgs_brights[i].to_ros_img(ros_imgs_brights[i],FRAME_ID);
 		pub_img_raws[i].publish(ros_imgs_brights[i]);
-		
-		//cam_imgs_darks[i].to_ros_img(ros_imgs_darks[i],FRAME_ID);
-		
 		
 		//remap
 		sensor_msgs::Image remap_img_bright;
@@ -776,22 +754,6 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 			}
 		}
 		
-//		{
-//			//remap-dark
-//			rovi::ImageFilter remap_img_filter;
-//			remap_img_filter.request.img = ros_imgs_darks[i];
-//			//ROS_INFO(LOG_HEADER"remap start. camno=%d",i);
-//			if( ! svc_remap[i].call(remap_img_filter) ){
-//				ROS_ERROR(LOG_HEADER"error:camera image remap failed. camno=%d",i);
-//			}else{
-//				//ROS_INFO(LOG_HEADER"remap end. camno=%d",i);
-//				remap_img_dark = remap_img_filter.response.img;
-//				pub_rects0[i].publish(remap_img_dark);
-//			}
-//		}
-//		//diff
-//		const sensor_msgs::Image diff_img = to_diff_img(remap_img_dark,remap_img_bright);
-//		pub_diffs[i].publish(diff_img);
 	}
 }
 
@@ -805,13 +767,9 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:pattern capture failed.");
 	}else{
-		//ptn_imgs_l = imgs_l;
-		//ptn_imgs_r = imgs_r;
 		ptn_imgs.push_back({imgs_l,imgs_r});
 	}
 
-	//ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr.elapsed_ms());
-	
 	ptn_capt_wait_cv.notify_one();
 	// ********** ptn_capt_wait_cv NOTIFY **********
 #ifdef DEBUG_DETAIL
@@ -858,13 +816,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	ROS_WARN(LOG_HEADER"exec_point_cloud_generation wait end.");
 #endif
 	int mode=get_param<int>(PRM_MODE,(int)Mode_StandBy);
-	//if( Mode_StandBy != mode){
-	//	ROS_WARN(LOG_HEADER"standby wait. mode=%d",mode);
-	//	usleep(500 * 1000);
-	//}
-	
-	//ptn_imgs_l.clear();
-	//ptn_imgs_r.clear();
 	ptn_imgs.clear();
 	
 	ROS_INFO(LOG_HEADER"point cloud generation start.");
@@ -876,11 +827,7 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 	ROS_INFO(LOG_HEADER"pcgen_mode=%d (%s)",pc_gen_mode,PCGEN_MODE_MAP[pc_gen_mode].c_str());
 	
 	std::stringstream  res_msg_str;
-	/*
-	if( pre_ycam_mode != Mode_StandBy){
-		ROS_WARN(LOG_HEADER"mode is not standby");
-		
-	}else */if( ! camera_ptr ){
+	if( ! camera_ptr ){
 		ROS_ERROR(LOG_HEADER"camera is null");
 		res_msg_str << "camera is null";
 		
@@ -932,7 +879,6 @@ bool exec_point_cloud_generation(std_srvs::TriggerRequest &req, std_srvs::Trigge
 				// ********** ptn_capt_wait_cv WAIT **********
 				const PatternImageData *ptn_img=ptn_imgs.data() + n;
 				
-				//if( ptn_imgs_l.size() != ptn_imgs_l.size() ){
 				if( ! validate_patten_image_data(*ptn_img) ){
 					ptn_capt_success=false;
 					ROS_ERROR(LOG_HEADER"<%d> pattern image num is different.",n);
@@ -1114,9 +1060,6 @@ void exec_get_ycam_temperature(){
 		ROS_ERROR(LOG_HEADER"camera is not open");
 		publish_bool(pub_Y1,false);
 		return;
-	//}else if( camera_ptr->is_busy() ){
-	//	ROS_WARN(LOG_HEADER"temperature get skipped. camera is busy.!!!!");
-	//	return;
 	}
 	
 	float tempF=NAN;
@@ -1138,7 +1081,6 @@ void exec_get_ycam_temperature(){
 	}
 	
 	publish_float32(pub_temperature, tempF);
-	//ROS_INFO(LOG_HEADER"<subscribe> ycam temperature . temperature=%4.1f",tempF);
 }
 	
 void sub_get_ycam_temperature(const std_msgs::Bool::ConstPtr &req){
@@ -1193,7 +1135,6 @@ int main(int argc, char **argv)
 	pub_img_raws[0] = n.advertise<sensor_msgs::Image>("left/image_raw", 1);
 	pub_img_raws[1] = n.advertise<sensor_msgs::Image>("right/image_raw", 1);
 	pub_Y1 = n.advertise<std_msgs::Bool>("Y1", 1);
-	//pub_pcount = n.advertise<std_msgs::Int32>("pcount", 1);
 	pub_stat = n.advertise<std_msgs::Bool>("stat", 1);
 	pub_error = n.advertise<std_msgs::String>("error", 1);
 	pub_info  = n.advertise<std_msgs::String>("message", 1);
@@ -1202,13 +1143,11 @@ int main(int argc, char **argv)
 	pub_rects0[0] = n.advertise<sensor_msgs::Image>("left/image_rect0", 1);
 	pub_rects1[0] = n.advertise<sensor_msgs::Image>("left/image_rect1", 1);
 	pub_diffs[0] = n.advertise<sensor_msgs::Image>("left/diff_rect", 1);
-	//pub_views[0] = n.advertise<sensor_msgs::Image>("left/view",1);
 	
 	pub_rects[1] = n.advertise<sensor_msgs::Image>("right/image_rect", 1);
 	pub_rects0[1] = n.advertise<sensor_msgs::Image>("right/image_rect0", 1);
 	pub_rects1[1] = n.advertise<sensor_msgs::Image>("right/image_rect1", 1);
 	pub_diffs[1] = n.advertise<sensor_msgs::Image>("right/diff_rect", 1);
-	//pub_views[1] = n.advertise<sensor_msgs::Image>("right/view",1);
 	
 	pub_temperature = n.advertise<std_msgs::Float32>("ycam/temperature",1);
 	
@@ -1239,31 +1178,11 @@ int main(int argc, char **argv)
 	});
 	camera_ptr->start_auto_connect(cam_ipaddr);
 	
-	bool activeDelyMonitor=false;
-	if( get_param<bool>(PRM_NW_DELAY_MON_ENABLED,false) ){
-		const int delayMonInterval= get_param<int>(PRM_NW_DELAY_MON_INTERVAL,1);
-		const int delayMonTimeout= get_param<int>(PRM_NW_DELAY_MON_TIMEOUT,500);
-		const bool delayMonIgnUpdFail = get_param<bool>(PRM_NW_DELAY_MON_IGN_UPD_FAIL,false);
-		ROS_INFO("delay monistor start. interval=%d",delayMonInterval);
-		camera_ptr->start_nw_delay_monitor_task(delayMonInterval,delayMonTimeout,[](){
-			ROS_ERROR(LOG_HEADER"network delay occurred !!!");
-			publish_string(pub_error,"network delay occurred.");
-			g_node_exit_flg = 1;
-		},delayMonIgnUpdFail);
-		activeDelyMonitor = true;
-	}
 	
 	ros::Duration interval(0.01);
-	//ros::spin();
 	while( ros::ok() && g_node_exit_flg == 0 ){
 		ros::spinOnce();
 		interval.sleep();
-	}
-	
-	
-	if( activeDelyMonitor ){
-		printf("delay monistor stop.\n");
-		camera_ptr->stop_nw_delay_monitor_task();
 	}
 	
 	mode_mon_timer.stop();
