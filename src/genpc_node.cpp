@@ -62,7 +62,8 @@ ros::Publisher pub_ps_floats[2];
 ros::Publisher pub_depth_imgs[2];
 ros::Publisher pub_ps_alls[2];
 ros::Publisher pub_pcounts[2];
-
+ros::Publisher pub_ps_pointclouds2[2];
+	
 ros::Publisher pub_rep;
 	
 const bool STEREO_CAM_IMG_SAVE_DEFAULT = true;
@@ -70,8 +71,9 @@ const bool PC_DATA_SAVE_DEFAULT = true;
 const bool QUANTIZE_POINTS_COUNT_ENABLED_DEFAULT = true;
 const bool DEPTH_MAP_IMG_ENABELED_DEFAULT = true;
 
-const bool PC_DATA_DENSE_DEFAULT = true;
-	
+const bool PC_DATA2_DENSE_DEFAULT = true;
+const bool PC_DATA2_ENABLED_DEFAULT = false;
+
 const bool VOXELIZED_PC_DATA_SAVE_ENABELED_DEFAULT = false;
 const float VOXEL_LEAF_MIN_SIZE     = 0.001f;
 const float VOXEL_LEAF_SIZE_DEFAULT = 1.0f;
@@ -784,7 +786,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		
 		const bool depthmap_enabled = get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_ENABELED_DEFAULT);
 		const bool quantize_count_enabled = get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_ENABLED_DEFAULT);
-		const bool pcdata_dense = get_param<bool>("genpc/point_cloud/dense",PC_DATA_DENSE_DEFAULT);
+		const bool pcdata2_enabled = get_param<bool>("genpc/point_cloud2/enabled",PC_DATA2_ENABLED_DEFAULT);
+		const bool pcdata2_dense = get_param<bool>("genpc/point_cloud2/dense",PC_DATA2_DENSE_DEFAULT);
 		
 		result=true;
 		
@@ -795,10 +798,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			
 			ElapsedTimer tmr_genpc;
 			sensor_msgs::PointCloud pts;
-			pts.header.stamp = ros::Time::now();
-			pts.header.frame_id = "camera";
 			rovi::Floats ds_points;
-
 			rovi::Floats pc_points;
 			
 			YPCData *ypcData=yds_pcs.data()+camno;
@@ -822,7 +822,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				//点群データ変換
 				ROS_INFO(LOG_HEADER"[%c] point cloud data convert start.",GET_CAMERA_LABEL(camno));
 				ElapsedTimer tmr_pcgen_conv;
-				if( ! ypcData->make_point_cloud(pts) ){
+				if( ! ypcData->make_point_cloud(pts,true) ){
 					ROS_ERROR(LOG_HEADER"[%c] point cloud data convert failed.",GET_CAMERA_LABEL(camno));
 				}else{
 					cur_pts[camno]=pts;
@@ -884,26 +884,30 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				std_msgs::Int32 pcnt;
 				pcnt.data=N;
 				
-				pub_pcounts[camno].publish(pcnt);
-				
-				if( pcdata_dense ){
-					pub_ps_pointclouds[camno].publish(pts);
-				}else{
+				if( pcdata2_enabled ){
 					//点群データ変換
-					ROS_INFO(LOG_HEADER"[%c] point cloud data dense make start.",GET_CAMERA_LABEL(camno));
-					sensor_msgs::PointCloud pts2;
-					pts2.header.stamp = ros::Time::now();
-					pts2.header.frame_id = "camera";
-					ElapsedTimer tmr_pcgen_conv;
-					if( ! ypcData->make_point_cloud(pts2,false)){
-						ROS_ERROR(LOG_HEADER"[%c] point cloud data dense make failed.",GET_CAMERA_LABEL(camno));
+					//ROS_INFO(LOG_HEADER"[%c] point cloud data dense make start.",GET_CAMERA_LABEL(camno));
+					//ElapsedTimer tmr_pcgen_conv;
+					sensor_msgs::PointCloud2 pcdata2;
+					if( ! ypcData->make_point_cloud2(pcdata2,pcdata2_dense) ){
+						ROS_ERROR(LOG_HEADER"[%c] point cloud data make failed. dense=%d",GET_CAMERA_LABEL(camno),pcdata2_dense);
 					}else{
-						ROS_INFO(LOG_HEADER"[%c] point cloud data dense make finished. point_count=%ld tm=%d",
-							GET_CAMERA_LABEL(camno), pts2.points.size(), tmr_pcgen_conv.elapsed_ms());
-						pub_ps_pointclouds[camno].publish(pts2);
+						pub_ps_pointclouds2[camno].publish(pcdata2);
+						//ROS_INFO(LOG_HEADER"[%c] point cloud data make finished. point_count=%d size=%dx%d tm=%d",
+						//	GET_CAMERA_LABEL(camno), pcdata2.width * pcdata2.height, pcdata2.width, pcdata2.height, tmr_pcgen_conv.elapsed_ms());
+						
+						
+						//*************::: debug
+						//pcl::PLYWriter ply_writer;
+						//pcl::PointCloud<pcl::PointXYZRGB> pts_pcl;
+						//pcl::fromROSMsg(pcdata2, pts_pcl);
+						//ply_writer.write("/tmp/pc2.ply", pts_pcl, true);
+						//*************::: debug
 					}
 				}
 				
+				pub_pcounts[camno].publish(pcnt);
+				pub_ps_pointclouds[camno].publish(pts);
 				pub_ps_floats[camno].publish(ds_points);
 				pub_depth_imgs[camno].publish(depth_imgs[camno]);
 				pub_ps_alls[camno].publish(pc_points);
@@ -1063,18 +1067,21 @@ int main(int argc, char **argv)
 	ros::ServiceServer svc1 = n.advertiseService("genpc", genpc);
 	
 	pub_ps_pointclouds[0]   = n.advertise<sensor_msgs::PointCloud>("ps_pc", 1);
+	pub_ps_pointclouds2[0]   = n.advertise<sensor_msgs::PointCloud2>("ps_pc2", 1);
+	
 	pub_ps_floats[0]        = n.advertise<rovi::Floats>("ps_floats", 1);
 	pub_depth_imgs[0]       = n.advertise<sensor_msgs::Image>("image_depth", 1);
 	pub_ps_alls[0]          = n.advertise<rovi::Floats>("ps_all", 1);
 	pub_pcounts[0]          = n.advertise<std_msgs::Int32>("pcount", 1);
 		
 	pub_ps_pointclouds[1]   = n.advertise<sensor_msgs::PointCloud>("ps_pc_r", 1);
+	pub_ps_pointclouds2[1]= n.advertise<sensor_msgs::PointCloud2>("ps_pc2_r", 1);
 	pub_ps_floats[1]        = n.advertise<rovi::Floats>("ps_floats_r", 1);
 	pub_depth_imgs[1]       = n.advertise<sensor_msgs::Image>("image_depth_r", 1);
 	pub_ps_alls[1]          = n.advertise<rovi::Floats>("ps_all_r", 1);
 	pub_pcounts[1]          = n.advertise<std_msgs::Int32>("pcount_r", 1);
 	
-	pub_rep              = n.advertise<std_msgs::String>("/report", 1);
+	pub_rep                 = n.advertise<std_msgs::String>("/report", 1);
 	
 	re_vx_monitor_timer = nh->createTimer(ros::Duration(RE_VOXEL_INTERVAL_DEFAULT), re_voxelization_monitor);
 	re_vx_monitor_timer.stop();

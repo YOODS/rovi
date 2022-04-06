@@ -1,15 +1,21 @@
 #include "YPCData.hpp"
 
+#include <numeric>
 #include <ros/types.h>
 #include <ros/ros.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <sensor_msgs/image_encodings.h>
 
 #include "YPCGenerator.hpp"
 
 namespace {
 	const int DEPTH_BASE=400;
 	const int DEPTH_UNIT=1;
-	
+	int isLittleEndian(void){
+	    unsigned i = 1;
+	    return *((char *)&i);
+	}
+	/*
 #pragma pack(1)
 	struct VertexXYZRGB{
 		//float x=0;
@@ -22,6 +28,7 @@ namespace {
 		float rgb=0;
 	} __attribute__((__packed__)) __attribute__((aligned(1)));
 #pragma pack()
+	*/
 }
 
 YPCData::YPCData():
@@ -61,6 +68,21 @@ void YPCData::operator()(
 }
 
 
+sensor_msgs::Image YPCData::texture_image()const{
+	sensor_msgs::Image img;
+	img.header.stamp     = ros::Time::now();
+	img.header.frame_id  = "camera";
+	img.height           = height;
+	img.width            = width;
+	img.encoding         = sensor_msgs::image_encodings::MONO8;
+	img.is_bigendian     = false;
+	img.step             = width;
+	const int len=width*height;
+	img.data.assign(len,0);
+	std::memcpy(img.data.data(),image,len);
+	return img;
+}
+	
 bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts,const bool dense){
 	
 	int point_count = this->n_valid;
@@ -68,6 +90,8 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts,const bool dense){
 		point_count = std::max(0, width * height);
 	}
 	
+	pts.header.stamp     = ros::Time::now();
+	pts.header.frame_id  = "camera";
 	pts.points.resize(point_count);
 
 	pts.channels.resize(1);
@@ -112,89 +136,101 @@ bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts,const bool dense){
 			*(pChRGB + i) = *reinterpret_cast<float*>(&rgb);
 		}
 	}
-
-	
 	
 	return true;
 }
 
 bool YPCData::make_point_cloud2(sensor_msgs::PointCloud2 &pts,const bool dense){
-	
-	int point_count = this->n_valid;
-	if( ! dense ){
-		point_count = std::max(0, width * height);
-	}
-	
+
 	
 	pts = sensor_msgs::PointCloud2();
 	pts.header.stamp = ros::Time::now();
-	pts.fields.resize(4);
+	pts.header.frame_id = "camera";
+	
+	const float field_data_size= 4;
+	const int field_num= 4;
+	
+	if( sizeof(float) != field_data_size ){
+		ROS_ERROR("sensor_msgs::PointCloud2 point field data size is different.");
+		return false;
+	}
+	
+	
+	pts.fields.resize(field_num);
 	pts.fields[0].name = "x";
 	pts.fields[0].offset = 0;
 	pts.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
 	pts.fields[0].count = 1;
 	pts.fields[1].name = "y";
-	pts.fields[1].offset = 4;
+	pts.fields[1].offset = field_data_size;
 	pts.fields[1].datatype =  sensor_msgs::PointField::FLOAT32;
 	pts.fields[1].count = 1;
 	pts.fields[2].name = "z";
-	pts.fields[2].offset = 8;
+	pts.fields[2].offset = field_data_size * 2;
 	pts.fields[2].datatype =  sensor_msgs::PointField::FLOAT32;
 	pts.fields[2].count = 1;
 	pts.fields[3].name = "rgb";
-	pts.fields[3].offset = 12;
+	pts.fields[3].offset = field_data_size * 3;
 	pts.fields[3].datatype =  sensor_msgs::PointField::FLOAT32;
 	pts.fields[3].count = 1;
 	
-	pts.point_step = 16;
-	pts.width = point_count;
-	pts.height = 1;
-	pts.row_step = point_count;
-	pts.is_dense= dense;
-	pts.is_bigendian = true;
-	const int data_size = sizeof(VertexXYZRGB);
-	pts.data.assign( point_count * data_size,{});
-
-	//std::cerr << "pts_size=" << point_count << std::endl;
+	pts.point_step = field_data_size * field_num ;
+		
+	int point_count = 0;
+	if( ! dense ){
+		point_count = std::max(0, width * height);
+		pts.width = width;
+		pts.height = height;
+		pts.row_step = width * pts.point_step;
+	}else{
+		point_count = this->n_valid;
+		pts.width = point_count;
+		pts.height = 1;
+		pts.row_step = point_count * pts.point_step;
+	}
 	
-	const Point3d *org_points = this->points.data();
-	VertexXYZRGB *vertices=(VertexXYZRGB*)pts.data.data();
+	pts.is_dense = dense;
+	pts.is_bigendian = isLittleEndian()?false:true;
+	
+	pts.data.assign( point_count * pts.point_step,{});
+		
+	const Point3d * pPoints = this->points.data();
+	const Point3d * pPoint = nullptr;
+	unsigned char pixel = 0;
+	float *vertices=(float*)pts.data.data();
 	int32_t rgb=0;
 	if( dense ){
 		for ( int i = 0,n = 0 ; i < this->points.size(); i++ ) {
-			const Point3d * org_point = org_points + i;
-			const unsigned char pixel = *(this->image + i);
+			pPoint = pPoints + i;
+			pixel = *(this->image + i);
 			
-			if( n  < point_count  && ! std::isnan(org_point->x) ){
-				VertexXYZRGB * vtx = vertices + n;
-				vtx->x = org_point->x;
-				vtx->y = org_point->y;
-				vtx->z = org_point->z;
+			if( n  < point_count  && ! std::isnan(pPoint->x) ){
+				float * vtx = vertices + n * field_num;
+				*(vtx) = pPoint->x;
+				*(vtx+1) = pPoint->y;
+				*(vtx+2) = pPoint->z;
 				
 				rgb = (pixel << 16) | (pixel << 8) | pixel; 
-				//vtx->rgb = *(float *)(&rgb);
-				vtx->rgb = *reinterpret_cast<float*>(&rgb);
+				*(vtx+3) = *reinterpret_cast<float*>(&rgb);
 				n++;
 			}
 		}
 	}else{
 		for ( int i = 0 ; i < this->points.size(); i++ ) {
-			const Point3d * org_point = org_points + i;
-			const unsigned char pixel = *(this->image + i);
+			pPoint = pPoints + i;
+			pixel = *(this->image + i);
 			
-			VertexXYZRGB * vtx = vertices + i;
-			vtx->x = org_point->x;
-			vtx->y = org_point->y;
-			vtx->z = org_point->z;
+			float * vtx = vertices + i * field_num;
+			*(vtx) = pPoint->x;
+			*(vtx+1) = pPoint->y;
+			*(vtx+2) = pPoint->z;
 			
 			rgb = (pixel << 16) | (pixel << 8) | pixel; 
-			//vtx->rgb = *(float *)(&rgb);
-			vtx->rgb = *reinterpret_cast<float*>(&rgb);
+			*(vtx+3) = *reinterpret_cast<float*>(&rgb);
 		}
 	}
 	
 	//std::cerr << "fileds=" <<  p2.fields.size() << std::endl;
-	
 	return true;
 }
 

@@ -3,6 +3,7 @@
 #include <vector>
 #include <sensor_msgs/PointCloud.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/Image.h>
 #include <opencv2/opencv.hpp>
 #include "rovi/Floats.h"
 #include "iPointCloudGenerator.hpp"
@@ -24,6 +25,8 @@ public:
 	bool is_empty()const;
 	
 	int count()const;
+	
+	sensor_msgs::Image texture_image()const;
 	
 	void operator()(unsigned char *image, const size_t step,const int width, const int height,std::vector<Point3d> &points, const int n_valid);
 	
