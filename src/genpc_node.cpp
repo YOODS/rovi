@@ -643,8 +643,7 @@ void re_voxelization_monitor(const ros::TimerEvent& e)
 	
 	if( ! get_param<bool>("genpc/voxelize/recalc/enabled",RE_VOXEL_ENABLED_DEFAULT) ){
 		//pre_vx_leaf_size = VoxelLeafSize();
-		ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
-		
+		//ROS_INFO(LOG_HEADER"re-voxelization is disabled.");
 	}else{
 		VoxelLeafSize vx_leaf_size = get_voxel_leaf_size();
 		
