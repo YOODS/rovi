@@ -772,6 +772,8 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	pcgen_ptr->reset();
 	
+	const bool pcdata2_dense = get_param<bool>("genpc/point_cloud2/dense",PC_DATA2_DENSE_DEFAULT);
+	
 	if( ! isready ){
 		ROS_ERROR(LOG_HEADER"camera calibration data load failed. elapsed=%d ms", tmr_proc.elapsed_ms());
 	
@@ -787,7 +789,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 		const bool depthmap_enabled = get_param<bool>("genpc/depthmap_img/enabled",DEPTH_MAP_IMG_ENABELED_DEFAULT);
 		const bool quantize_count_enabled = get_param<bool>("genpc/quantize_points_count/enabled",QUANTIZE_POINTS_COUNT_ENABLED_DEFAULT);
 		const bool pcdata2_enabled = get_param<bool>("genpc/point_cloud2/enabled",PC_DATA2_ENABLED_DEFAULT);
-		const bool pcdata2_dense = get_param<bool>("genpc/point_cloud2/dense",PC_DATA2_DENSE_DEFAULT);
 		
 		result=true;
 		
@@ -974,7 +975,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				}
 			}
 			
-			if( !  pcdata2_save_flg ){
+			if( pcdata2_dense || !  pcdata2_save_flg ){
 				//ROS_INFO(LOG_HEADER"[%c] non-dense ply file save skipped.",GET_CAMERA_LABEL(camno));
 			}else{
 				ElapsedTimer tmr_save_pcdata2;
