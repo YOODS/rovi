@@ -84,20 +84,21 @@ genpc:
   point_cloud2:
     enabled: On
     dense: Off
+    data_save: On
   depthmap_img:
     enabled: On
     img_save: On
   quantize_points_count:
     enabled: On
   voxelize:
-    data_save: On
+    data_save: Off
     leaf_size:
       x: 0
       y: 0
       z: 0
       v: 0
     recalc:
-      enabled: On
+      enabled: Off
       interval: 1
 ycam:
   Mode: 1

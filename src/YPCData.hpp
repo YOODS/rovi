@@ -36,7 +36,7 @@ public:
 	
 	bool make_depth_image(cv::Mat &img);
 		
-	bool save_ply(const std::string &file_path)const;
+	bool save_ply(const std::string &file_path,const bool dense=true)const;
 	
 	//range grid. X,Y,Z, X,Y,Z ...
 	rovi::Floats to_rg_floats()const;

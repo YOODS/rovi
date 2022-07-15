@@ -68,6 +68,7 @@ ros::Publisher pub_rep;
 	
 const bool STEREO_CAM_IMG_SAVE_DEFAULT = true;
 const bool PC_DATA_SAVE_DEFAULT = true;
+const bool PC_DATA2_SAVE_DEFAULT = false;
 const bool QUANTIZE_POINTS_COUNT_ENABLED_DEFAULT = true;
 const bool DEPTH_MAP_IMG_ENABELED_DEFAULT = true;
 
@@ -930,7 +931,9 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 	
 	//データ保存
 	if( ! file_dump.empty() ) {
-		const bool data_save_flg = get_param<bool>("genpc/point_cloud/data_save",PC_DATA_SAVE_DEFAULT);
+		const bool pcdata_save_flg = get_param<bool>("genpc/point_cloud/data_save",PC_DATA_SAVE_DEFAULT);
+		const bool pcdata2_save_flg = get_param<bool>("genpc/point_cloud2/data_save",PC_DATA2_SAVE_DEFAULT);
+		
 		const bool voxel_save_flg = get_param<bool>("genpc/voxelize/data_save",VOXELIZED_PC_DATA_SAVE_ENABELED_DEFAULT);
 		const bool depthmap_save_flg = get_param<bool>("genpc/depthmap_img/img_save",DEPTH_MAP_IMG_ENABELED_DEFAULT);
 		
@@ -941,7 +944,7 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 			
 			const YPCData *ypcData=yds_pcs.data()+camno;
 			
-			if( !  data_save_flg ){
+			if( !  pcdata_save_flg ){
 				ROS_INFO(LOG_HEADER"[%c] ply file save skipped.",GET_CAMERA_LABEL(camno));
 			}else{
 				ElapsedTimer tmr_save_pcdata;
@@ -971,6 +974,28 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 				}
 			}
 			
+			if( !  pcdata2_save_flg ){
+				//ROS_INFO(LOG_HEADER"[%c] non-dense ply file save skipped.",GET_CAMERA_LABEL(camno));
+			}else{
+				ElapsedTimer tmr_save_pcdata2;
+				std::string save_file_path;
+				if( camno == 0 ){
+					save_file_path = file_dump + "/test2.ply";
+				}else if( camno == 1 ){
+					save_file_path = file_dump + "/test2_r.ply";
+				}else{
+					ROS_ERROR(LOG_HEADER"[%c] non-dense ply data save failed. unknown camera no. ",GET_CAMERA_LABEL(camno));
+					break;
+				}
+				
+				if( ! ypcData->save_ply(save_file_path,false) ){
+					ROS_ERROR(LOG_HEADER"[%c] non-dense ply file save failed. proc_tm=%d ms, path=%s",
+						GET_CAMERA_LABEL(camno),tmr_save_pcdata2.elapsed_ms(), save_file_path.c_str());
+				}else{
+					ROS_INFO(LOG_HEADER"[%c] non-dense ply file save succeeded. proc_tm=%d ms, path=%s",
+						GET_CAMERA_LABEL(camno),tmr_save_pcdata2.elapsed_ms(), save_file_path.c_str());
+				}
+			}
 			//todo:************* pending *************
 			//writePLY(file_dump + "/testRG.ply", pcdP, N, pcgenerator->get_rangegrid(), width, height);
 			//ROS_INFO("after  outPLY");
@@ -1006,13 +1031,6 @@ bool genpc(rovi::GenPC::Request &req, rovi::GenPC::Response &res)
 					ROS_INFO(LOG_HEADER"voxelized point cloud data save succeeded. proc_tm=%d ms, path=%s",
 						tmr_save_voxel.elapsed_ms(), save_file_path.c_str());
 				}
-				
-				//sample:将来的にはPointCloud2へ
-				/*
-				pcl::PointCloud<pcl::PointXYZRGB> pts_vx_pcl2;
-				pcl::fromROSMsg(*pcdata.get_data(),pts_vx_pcl2);
-				ply_writer.write<pcl::PointXYZRGB> ("/tmp/zzzz.ply",pts_vx_pcl2 , true);
-				*/
 			}
 			
 			//depthmap image save

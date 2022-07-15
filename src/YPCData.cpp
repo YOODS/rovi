@@ -285,7 +285,7 @@ bool YPCData::make_depth_image(cv::Mat &img){
 	return true;
 }
 
-bool YPCData::save_ply(const std::string &file_path)const{
+bool YPCData::save_ply(const std::string &file_path,const bool dense)const{
 	//PLYSaver saver(file_path);
 	//saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
 	//return saver.is_ok();
@@ -297,8 +297,10 @@ bool YPCData::save_ply(const std::string &file_path)const{
 	
 	ofs << "ply\n";
 	ofs << "format binary_little_endian 1.0\n";
-	ofs << "comment VCGLIB generated\n";
-	ofs << "element vertex " << n_valid << std::endl;
+	//ofs << "comment VCGLIB generated\n";
+	ofs << "obj_info num_cols " << width << std::endl;
+	ofs << "obj_info num_rows " << height << std::endl;
+	ofs << "element vertex " << ( dense ? n_valid : points.size()) << std::endl;
 	ofs << "property float x\n";
 	ofs << "property float y\n";
 	ofs << "property float z\n";
@@ -311,13 +313,32 @@ bool YPCData::save_ply(const std::string &file_path)const{
 	unsigned char *pimage=image;
 	
 	int count=0;
-	for (int j = 0, n = 0; j < height; j++) {
-		unsigned char *iP = pimage;
-		for (int i = 0; i < width; i++, n++) {
-			float pos[3] = {0, 0, 0};
-			unsigned char col[3] = {iP[i], iP[i], iP[i]};
-				
-			if ( ! std::isnan(points[n].x) ) {
+	if(dense){
+		for (int j = 0, n = 0; j < height; j++) {
+			unsigned char *iP = pimage;
+			for (int i = 0; i < width; i++, n++) {
+				float pos[3] = {0, 0, 0};
+				unsigned char col[3] = {iP[i], iP[i], iP[i]};
+					
+				if ( ! std::isnan(points[n].x) ) {
+					pos[0] = points[n].x;
+					pos[1] = points[n].y;
+					pos[2] = points[n].z;
+					
+					ofs.write((char *)pos, sizeof(float) * 3);
+					ofs.write((char *)col, 3);
+					count++;
+				}
+			}
+			pimage += step;
+		}
+	}else{
+		for (int j = 0, n = 0; j < height; j++) {
+			unsigned char *iP = pimage;
+			for (int i = 0; i < width; i++, n++) {
+				float pos[3] = {0, 0, 0};
+				unsigned char col[3] = {iP[i], iP[i], iP[i]};
+					
 				pos[0] = points[n].x;
 				pos[1] = points[n].y;
 				pos[2] = points[n].z;
@@ -326,13 +347,19 @@ bool YPCData::save_ply(const std::string &file_path)const{
 				ofs.write((char *)col, 3);
 				count++;
 			}
+			pimage += step;
 		}
-		pimage += step;
 	}
+	
 
 	ofs.close();
-	
-	return count == n_valid;
+	bool ret=false;
+	if(dense){
+		ret = count == n_valid;
+	}else{
+		ret = count == points.size();
+	}
+	return ret;
 }
 
 rovi::Floats YPCData::to_rg_floats()const{
