@@ -77,8 +77,9 @@ genpc:
     img_save: On
     data_save: On
   point_cloud2:
-    enabled: On
+    enabled: Off
     dense: Off
+    data_save: On
   depthmap_img:
     enabled: On
     img_save: On
