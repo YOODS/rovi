@@ -23,8 +23,8 @@ namespace ycam3d{
 	constexpr int CAM_ANALOG_GAIN_MIN       = 0;
 	
 	constexpr int PROJ_EXPOSURE_TIME_DEFAULT = 8333;
-	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;      //?
-	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;//?
+	constexpr int PROJ_EXPOSURE_TIME_MIN     = 0;
+	constexpr int PROJ_EXPOSURE_TIME_MAX     = 9999999;
 	
 	constexpr int PROJ_INTENSITY_DEFAULT = 100;
 	constexpr int PROJ_INTENSITY_MIN     = 0;
@@ -117,7 +117,6 @@ class Aravis
 	int64_t packet_delay_;
 	uint16_t version_;
 	
-		
 	//2020/09/16 add by hato -------------------- start --------------------
 	const aravis::ycam3d::ExposureTimeLevelSetting *m_expsr_tm_lv_setting_;
 	int m_expsr_tm_lv;
@@ -219,6 +218,7 @@ public:
 	//2020/10/09 modified by hato -------------------- start --------------------
 	bool trigger(YCAM_PROJ_MODE mode);
 	//2020/10/09 modified by hato --------------------  end  --------------------
+	//
 	
 	//2020/11/06 add by hato -------------------- start --------------------
 	int getCaptureNum()const;
@@ -246,6 +246,8 @@ public:
 	//2020/11/10 add by hato -------------------- start --------------------
 	int getTemperature();
 	//2020/11/10 add by hato --------------------  end  --------------------
+	
+	float getCoreTemperature();
 	
 	//utilities
 	std::string uart_dump();

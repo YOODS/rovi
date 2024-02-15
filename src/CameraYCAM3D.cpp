@@ -18,18 +18,6 @@
 
 #define LOG_HEADER "(camera) "
 
-namespace camera{
-	namespace ycam3d{
-		const unsigned char YCAM3D_RESET_CMD[]      = { 0xD7,0x00,0x40,0x00 };
-		const unsigned char YCAM3D_RESET_REPLY_OK[] = { 0xD7,0x01,0x41,0x00 };
-		const int YCAM3D_RESET_REPLY_WAIT_INTERVAL = 1000;
-		const int YCAM3D_RESET_UDP_PORT = 0xF000;
-		const int YCAM3D_RESET_INTERVAL = 5;
-		const int YCAM3D_RESET_AFTER_WAIT = 12;
-		const int YCAM3D_RESET_TIMEOUT = 1000;
-		
-	}
-}
 
 namespace {
 	const std::map<std::string,YCAM_RES> YCAM_RES_MAP = { {"SXGA",YCAM_RES_SXGA},{"VGA",YCAM_RES_VGA} };
@@ -303,9 +291,6 @@ void CameraYCAM3D::open() {
 		ROS_ERROR(LOG_HEADER"#%d error:open failed.", m_camno);
 	}else{
 		ROS_INFO(LOG_HEADER"#%d open success.", m_camno );
-		//ROS_INFO(LOG_HEADER"#%d image: size=%d x %d, frame_size=%d", m_camno, m_arv_ptr->width(), m_arv_ptr->height(), m_arv_ptr->frameSize() );
-		//ROS_INFO(LOG_HEADER"#%d params: expsr_tm=%d gain_a=%d gain_d=%d", m_camno,m_arv_ptr->exposureTime(), m_arv_ptr->gainA(), m_arv_ptr->gainD() );
-		
 		ROS_INFO(LOG_HEADER"#%d stream open start.", m_camno);
 		if( ! m_arv_ptr->openStream(CAMERA_STREAM_BUF_SIZE) ){
 			ROS_ERROR(LOG_HEADER"#%d error:stream open failed.", m_camno);
@@ -372,7 +357,6 @@ void CameraYCAM3D::start_auto_connect(const std::string ipaddr){
 			}else{
 				
 				if(m_ros_err_pub){ m_ros_err_pub("camera reset start.");}
-				
 				int retry=0;
 				while( ! m_auto_connect_abort ){
 					
@@ -730,6 +714,22 @@ bool CameraYCAM3D::set_camera_param_int(const std::string &label,std::function<b
 	// ********** m_camera_mutex UNLOCKED **********
 }
 
+bool CameraYCAM3D::get_camera_param_float(const std::string &label,std::function<bool(float*)> func,float *val){
+	if( ! m_arv_ptr ){
+		ROS_ERROR(LOG_HEADER"#%d error:camera is null. name=%s", m_camno,label.c_str());
+		return false;
+	}else if( ! is_open() ){
+		ROS_ERROR(LOG_HEADER"#%d error:camera is not opened. name=%s", m_camno,label.c_str());
+		return false;
+	}
+	
+	// ********** m_camera_mutex LOCKED **********
+	std::lock_guard<std::timed_mutex> locker(m_camera_mutex);
+	bool ret= func(val);
+	return ret;
+	// ********** m_camera_mutex UNLOCKED **********
+}
+
 bool CameraYCAM3D::get_exposure_time_level_default(int *val)const{
 	if( ! m_arv_ptr ){
 		ROS_ERROR(LOG_HEADER"#%d error:camera is null.", m_camno);
@@ -843,6 +843,14 @@ bool CameraYCAM3D::get_temperature(int *val){
 		return *l_val >= 0;
 	},val);
 }
+
+bool CameraYCAM3D::get_core_temperature(float *val){
+	return get_camera_param_float("core_temperature",[&](float *l_val) {
+		*l_val =  m_arv_ptr->getCoreTemperature();
+		return *l_val >= 0;
+	},val);
+}
+
 
 bool CameraYCAM3D::get_capture_param(camera::ycam3d::CaptureParameter *capt_param){
 	bool ret=false;

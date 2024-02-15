@@ -74,13 +74,8 @@ const std::string PRM_HDR_PCGEN_PUBLISH       = "ycam/hdr/pcgen_publish";
 const std::string PRM_HDR_EXPOSURE_TIME_LEVEL = "ycam/hdr/ExposureTimeLevel";
 const std::string PRM_HDR_CAM_GAIN_D          = "ycam/hdr/camera/Gain";
 const std::string PRM_HDR_PROJ_INTENSITY      = "ycam/hdr/projector/Intensity";
-
-const std::string PRM_NW_DELAY_MON_ENABLED       = "ycam/nw_delay_monitor/enabled";
-const std::string PRM_NW_DELAY_MON_INTERVAL      = "ycam/nw_delay_monitor/interval";
-const std::string PRM_NW_DELAY_MON_TIMEOUT       = "ycam/nw_delay_monitor/timeout";
-const std::string PRM_NW_DELAY_MON_IGN_UPD_FAIL  = "ycam/nw_delay_monitor/ignore_update_failure";
-
-const std::string PRM_CAPT_TIMEOUT_RESET         = "ycam/CaptureTimeoutReset";
+const std::string PRM_LED_TEMPERATURE        = "ycam/led_temperature";
+const std::string PRM_CORE_TEMPERATURE        = "ycam/core_temperature";
 
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 
@@ -124,7 +119,6 @@ bool cur_hdr_enabled=false;
 int g_node_exit_flg = 0;
 
 
-	
 struct RosCaptureParameter: public camera::ycam3d::CaptureParameter{
 	bool pcgen_publish = true;
 	
@@ -638,8 +632,8 @@ sensor_msgs::Image drawCameraOriginCross(sensor_msgs::Image &inputImg,cv::Point 
 	const int cx = posCross.x;//width /2;
 	const int cy = posCross.y;//height/2;
 	
-	cv::line(colorImg.image, cv::Point(cx - cross_len/2  , cy) , cv::Point(cx + cross_len/2, cy), cv::Scalar(255,0,0),cross_width , CV_AA);
-	cv::line(colorImg.image, cv::Point(cx, cy - cross_len/2),    cv::Point(cx, cy + cross_len/2)   , cv::Scalar(255,0,0),cross_width , CV_AA);
+	cv::line(colorImg.image, cv::Point(cx - cross_len/2  , cy) , cv::Point(cx + cross_len/2, cy), cv::Scalar(255,0,0),cross_width , cv::LINE_AA);
+	cv::line(colorImg.image, cv::Point(cx, cy - cross_len/2),    cv::Point(cx, cy + cross_len/2)   , cv::Scalar(255,0,0),cross_width , cv::LINE_AA);
 	
 	sensor_msgs::Image outputImg;
 	outputImg=*colorImg.toImageMsg();
@@ -663,10 +657,6 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 #endif
 	if( timeout ){
 		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
-		if(get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
-			ROS_WARN(LOG_HEADER"reset ycam3d.");
-			g_node_exit_flg = 1;
-		}
 	}
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
@@ -721,7 +711,7 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 	
 	ElapsedTimer tmr;
 	sensor_msgs::Image ros_imgs_brights[2];
-		
+	
 	const camera::ycam3d::CameraImage cam_imgs_brights[2] = { img_l, img_r };
 	const bool drawCameraOriginCrossFlg =  get_param<bool>(PRM_DRAW_CAMERA_ORIGIN,false);
 	for (int i = 0 ; i < 2 ; ++i ){
@@ -759,6 +749,7 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 				pub_rects1[i].publish(remap_img_bright);
 			}
 		}
+		
 	}
 }
 
@@ -772,13 +763,9 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:pattern capture failed.");
 	}else{
-		//ptn_imgs_l = imgs_l;
-		//ptn_imgs_r = imgs_r;
 		ptn_imgs.push_back({imgs_l,imgs_r});
 	}
 
-	//ROS_INFO(LOG_HEADER"elapsed tm=%d",tmr.elapsed_ms());
-	
 	ptn_capt_wait_cv.notify_one();
 	// ********** ptn_capt_wait_cv NOTIFY **********
 #ifdef DEBUG_DETAIL
@@ -788,10 +775,6 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	if( timeout ){
 		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
 		publish_string(pub_error,"Image streaming timeout");
-		if( get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
-			ROS_WARN(LOG_HEADER"reset ycam3d.");
-			g_node_exit_flg = 1;
-		}
 	}
 }
 
@@ -1074,6 +1057,8 @@ void exec_get_ycam_temperature(){
 	float tempF=NAN;
 	int temp=0;
 	if( ! camera_ptr->get_temperature(&temp) ){
+		nh->setParam(PRM_LED_TEMPERATURE,0);
+		
 		if( temp_acq_failure_count > TEMP_ACQ_FAILURE_MSG_REPEAT_MAX ){
 			//skip
 		}else{
@@ -1085,12 +1070,24 @@ void exec_get_ycam_temperature(){
 		}
 		temp_acq_failure_count++;
 	}else{
+		nh->setParam(PRM_LED_TEMPERATURE,temp);
 		temp_acq_failure_count = 0;
 		tempF = temp;
 	}
+	//{
+	//	float core_temp=0;
+	//	if( ! camera_ptr->get_core_temperature(&core_temp)){
+	//		nh->setParam(PRM_CORE_TEMPERATURE,0);
+	//		ROS_ERROR(LOG_HEADER"Could not get the core temperature.");
+	//		
+	//	}else{
+	//		
+	//		nh->setParam(PRM_CORE_TEMPERATURE,core_temp);
+	//		//ROS_INFO(LOG_HEADER"core temperature = %f",core_temp);
+	//	}
+	//}
 	
 	publish_float32(pub_temperature, tempF);
-	//ROS_INFO(LOG_HEADER"<subscribe> ycam temperature . temperature=%4.1f",tempF);
 }
 	
 void sub_get_ycam_temperature(const std_msgs::Bool::ConstPtr &req){
@@ -1188,13 +1185,12 @@ int main(int argc, char **argv)
 	});
 	camera_ptr->start_auto_connect(cam_ipaddr);
 	
+	
 	ros::Duration interval(0.01);
-	//ros::spin();
 	while( ros::ok() && g_node_exit_flg == 0 ){
 		ros::spinOnce();
 		interval.sleep();
 	}
-	
 	
 	mode_mon_timer.stop();
 	printf(LOG_HEADER"mode monitor timer stopped.\n");

@@ -27,7 +27,7 @@ typedef union tagUART_DATA_FIELD {
 #define REG_TRANSFER_MODE		0x00101014
 #define REG_CLOCK_DELAY			0x00101100
 #define REG_FW_VERSION			0x00101110
-#define REG_HEAT_BEAT_TIMEOUT	0x00000938
+#define REG_CORE_TEMPERATURE	0x00101128	//コア温度 2023.6.8
 
 #define VER_ACAP		20		//このversionから非同期撮影を行う
 #define PHSFT_CAP_NUM	13		//位相シフト撮影回数

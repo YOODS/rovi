@@ -178,7 +178,6 @@ namespace camera{
 		extern const int YCAM3D_RESET_INTERVAL;
 		extern const int YCAM3D_RESET_AFTER_WAIT;
 		
-		
 		using f_camera_open_finished = std::function<void(const bool result)>;
 		using f_camera_disconnect = std::function<void(void)>;
 		using f_camera_closed = std::function<void(void)>;
@@ -247,6 +246,8 @@ private:
 	
 	bool get_camera_param_int(const std::string &label,std::function<bool(int*)> func,int *val);
 	bool set_camera_param_int(const std::string &label,std::function<bool(int)> func,const int val);
+	
+	bool get_camera_param_float(const std::string &label,std::function<bool(float*)> func,float *val);
 protected:
 	int m_camno;
 		
@@ -305,7 +306,7 @@ public:
 	bool set_gain_analog(const int val);
 	
 	bool get_projector_exposure_time(int *val);
-	
+
 	bool get_projector_intensity(int *val);
 	bool set_projector_intensity(const int val);
 	
@@ -313,6 +314,8 @@ public:
 	void set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_con_limit_exceeded callback);
 	
 	bool get_temperature(int *val);
+	
+	bool get_core_temperature(float *val);
 	
 	bool get_capture_param(camera::ycam3d::CaptureParameter *capt_param);
 	bool update_capture_param(const camera::ycam3d::CaptureParameter &capt_param);

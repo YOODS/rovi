@@ -1,22 +1,30 @@
 #include "YPCData.hpp"
 
+#include <numeric>
 #include <ros/types.h>
 #include <ros/ros.h>
 #include <sensor_msgs/point_cloud_conversion.h>
+#include <sensor_msgs/image_encodings.h>
 
 #include "YPCGenerator.hpp"
 
 namespace {
 	const int DEPTH_BASE=400;
 	const int DEPTH_UNIT=1;
-	
-	//sample:将来的にはPointCloud2へ
+	int isLittleEndian(void){
+	    unsigned i = 1;
+	    return *((char *)&i);
+	}
 	/*
 #pragma pack(1)
 	struct VertexXYZRGB{
-		float x=0;
-		float y=0;
-		float z=0;
+		//float x=0;
+		//float y=0;
+		//float z=0;
+		//float rgb=0;
+		float x=NAN;
+		float y=NAN;
+		float z=NAN;
 		float rgb=0;
 	} __attribute__((__packed__)) __attribute__((aligned(1)));
 #pragma pack()
@@ -43,13 +51,6 @@ int YPCData::count()const{
 	return n_valid;
 }
 
-//sample:将来的にはPointCloud2へ
-/*
-const sensor_msgs::PointCloud2 * YPCData::get_data() const{
-	return &pcdata;
-}
-*/
-
 void YPCData::operator()(
 	unsigned char *image, const size_t step,
 	const int width, const int height, 
@@ -67,93 +68,169 @@ void YPCData::operator()(
 }
 
 
-bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts){
+sensor_msgs::Image YPCData::texture_image()const{
+	sensor_msgs::Image img;
+	img.header.stamp     = ros::Time::now();
+	img.header.frame_id  = "camera";
+	img.height           = height;
+	img.width            = width;
+	img.encoding         = sensor_msgs::image_encodings::MONO8;
+	img.is_bigendian     = false;
+	img.step             = width;
+	const int len=width*height;
+	img.data.assign(len,0);
+	std::memcpy(img.data.data(),image,len);
+	return img;
+}
 	
-	const int N = this->n_valid;
+bool YPCData::make_point_cloud(sensor_msgs::PointCloud &pts,const bool dense){
 	
-	pts.points.resize(N);
-	pts.channels.resize(3);
-	pts.channels[0].name = "r";
-	pts.channels[0].values.resize(N);
-	pts.channels[1].name = "g";
-	pts.channels[1].values.resize(N);
-	pts.channels[2].name = "b";
-	pts.channels[2].values.resize(N);
+	int point_count = this->n_valid;
+	if( ! dense ){
+		point_count = std::max(0, width * height);
+	}
 	
-	if(N <= 0 ){
+	pts.header.stamp     = ros::Time::now();
+	pts.header.frame_id  = "camera";
+	pts.points.resize(point_count);
+
+	pts.channels.resize(1);
+	pts.channels[0].name = "rgb";
+	pts.channels[0].values.resize(point_count);
+	
+	if( point_count <= 0 ){
 		return true;
 	}
 	
-	// building point cloud, getting center of points, and getting norm from the center
+	float *pChRGB=pts.channels[0].values.data();
+	uint32_t rgb=0;
+	
 	const Point3d *org_points = this->points.data();
-	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
-		const Point3d * org_point = org_points + i;
-		const unsigned char * pixel = this->image + i ;
-		
-		if( n  < N  && ! std::isnan(org_point->x) ){
-			pts.points[n].x = org_point->x;
-			pts.points[n].y = org_point->y;
-			pts.points[n].z = org_point->z;
+	if( dense ){
+		for (int i = 0,n = 0 ; i < this->points.size(); i++) {
+			const Point3d * org_point = org_points + i;
+			const unsigned char * pixel = this->image + i ;
 			
-			//グレースケールしか対応していない
-			pts.channels[0].values[n] = pts.channels[1].values[n] = pts.channels[2].values[n] =  *pixel / 255.0;
-			n++;
+			if( n  < point_count  && ! std::isnan(org_point->x) ){
+				pts.points[n].x = org_point->x;
+				pts.points[n].y = org_point->y;
+				pts.points[n].z = org_point->z;
+
+				rgb = ( *pixel << 16 | *pixel << 8 | *pixel);
+				//pts.channels[0].values[n] =*reinterpret_cast<float*>(&rgb);
+				*(pChRGB + n) = *reinterpret_cast<float*>(&rgb);
+				n++;
+			}
+		}
+	}else{
+		for (int i = 0; i < this->points.size(); i++) {
+			const Point3d * org_point = org_points + i;
+			const unsigned char * pixel = this->image + i ;
+			
+			pts.points[i].x = org_point->x;
+			pts.points[i].y = org_point->y;
+			pts.points[i].z = org_point->z;
+
+			rgb = ( *pixel << 16 | *pixel << 8 | *pixel);
+			//pts.channels[0].values[n] =*reinterpret_cast<float*>(&rgb);
+			*(pChRGB + i) = *reinterpret_cast<float*>(&rgb);
 		}
 	}
-	//sample:将来的にはPointCloud2へ
-	/*
-	pcdata = sensor_msgs::PointCloud2();
-	pcdata.header.stamp = ros::Time::now();
-	pcdata.fields.resize(4);
-	pcdata.fields[0].name = "x";
-	pcdata.fields[0].offset = 0;
-	pcdata.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
-	pcdata.fields[0].count = 1;
-	pcdata.fields[1].name = "y";
-	pcdata.fields[1].offset = 4;
-	pcdata.fields[1].datatype =  sensor_msgs::PointField::FLOAT32;
-	pcdata.fields[1].count = 1;
-	pcdata.fields[2].name = "z";
-	pcdata.fields[2].offset = 8;
-	pcdata.fields[2].datatype =  sensor_msgs::PointField::FLOAT32;
-	pcdata.fields[2].count = 1;
-	pcdata.fields[3].name = "rgb";
-	pcdata.fields[3].offset = 12;
-	pcdata.fields[3].datatype =  sensor_msgs::PointField::FLOAT32;
-	pcdata.fields[3].count = 1;
 	
-	pcdata.point_step = 16;
-	pcdata.width = N;
-	pcdata.height = 1;
-	pcdata.row_step = N;
-	pcdata.is_dense= true;
-	pcdata.is_bigendian = true;
-	const int data_size = sizeof(VertexXYZRGB);
-	pcdata.data.assign(N * data_size,0);
+	return true;
+}
 
-	std::cerr << "pcdata_size=" << pcdata.data.size() << std::endl;
+bool YPCData::make_point_cloud2(sensor_msgs::PointCloud2 &pts,const bool dense){
+
 	
-	VertexXYZRGB *vertices=(VertexXYZRGB*)pcdata.data.data();
-	bool once=false;
-	for (int i = 0,n = 0 ; i < this->points.size(); i++) {
-		const Point3d * org_point = org_points + i;
-		const unsigned char pixel = *(this->image + i);
+	pts = sensor_msgs::PointCloud2();
+	pts.header.stamp = ros::Time::now();
+	pts.header.frame_id = "camera";
+	
+	const float field_data_size= 4;
+	const int field_num= 4;
+	
+	if( sizeof(float) != field_data_size ){
+		ROS_ERROR("sensor_msgs::PointCloud2 point field data size is different.");
+		return false;
+	}
+	
+	
+	pts.fields.resize(field_num);
+	pts.fields[0].name = "x";
+	pts.fields[0].offset = 0;
+	pts.fields[0].datatype = sensor_msgs::PointField::FLOAT32;
+	pts.fields[0].count = 1;
+	pts.fields[1].name = "y";
+	pts.fields[1].offset = field_data_size;
+	pts.fields[1].datatype =  sensor_msgs::PointField::FLOAT32;
+	pts.fields[1].count = 1;
+	pts.fields[2].name = "z";
+	pts.fields[2].offset = field_data_size * 2;
+	pts.fields[2].datatype =  sensor_msgs::PointField::FLOAT32;
+	pts.fields[2].count = 1;
+	pts.fields[3].name = "rgb";
+	pts.fields[3].offset = field_data_size * 3;
+	pts.fields[3].datatype =  sensor_msgs::PointField::FLOAT32;
+	pts.fields[3].count = 1;
+	
+	pts.point_step = field_data_size * field_num ;
 		
-		if( n  < N  && ! std::isnan(org_point->x) ){
-			VertexXYZRGB * vtx = vertices + n;
-			vtx->x = org_point->x;
-			vtx->y = org_point->y;
-			vtx->z = org_point->z;
+	int point_count = 0;
+	if( ! dense ){
+		point_count = std::max(0, width * height);
+		pts.width = width;
+		pts.height = height;
+		pts.row_step = width * pts.point_step;
+	}else{
+		point_count = this->n_valid;
+		pts.width = point_count;
+		pts.height = 1;
+		pts.row_step = point_count * pts.point_step;
+	}
+	
+	pts.is_dense = dense;
+	pts.is_bigendian = isLittleEndian()?false:true;
+	
+	pts.data.assign( point_count * pts.point_step,{});
+		
+	const Point3d * pPoints = this->points.data();
+	const Point3d * pPoint = nullptr;
+	unsigned char pixel = 0;
+	float *vertices=(float*)pts.data.data();
+	int32_t rgb=0;
+	if( dense ){
+		for ( int i = 0,n = 0 ; i < this->points.size(); i++ ) {
+			pPoint = pPoints + i;
+			pixel = *(this->image + i);
 			
-			int32_t rgb = (pixel << 16) | (pixel << 8) | pixel; 
-			vtx->rgb = *(float *)(&rgb);
-			n++;
+			if( n  < point_count  && ! std::isnan(pPoint->x) ){
+				float * vtx = vertices + n * field_num;
+				*(vtx) = pPoint->x;
+				*(vtx+1) = pPoint->y;
+				*(vtx+2) = pPoint->z;
+				
+				rgb = (pixel << 16) | (pixel << 8) | pixel; 
+				*(vtx+3) = *reinterpret_cast<float*>(&rgb);
+				n++;
+			}
+		}
+	}else{
+		for ( int i = 0 ; i < this->points.size(); i++ ) {
+			pPoint = pPoints + i;
+			pixel = *(this->image + i);
+			
+			float * vtx = vertices + i * field_num;
+			*(vtx) = pPoint->x;
+			*(vtx+1) = pPoint->y;
+			*(vtx+2) = pPoint->z;
+			
+			rgb = (pixel << 16) | (pixel << 8) | pixel; 
+			*(vtx+3) = *reinterpret_cast<float*>(&rgb);
 		}
 	}
 	
 	//std::cerr << "fileds=" <<  p2.fields.size() << std::endl;
-	*/
-	
 	return true;
 }
 
@@ -208,7 +285,7 @@ bool YPCData::make_depth_image(cv::Mat &img){
 	return true;
 }
 
-bool YPCData::save_ply(const std::string &file_path)const{
+bool YPCData::save_ply(const std::string &file_path,const bool dense)const{
 	//PLYSaver saver(file_path);
 	//saver(this->image, this->step, this->width, this->height, this->points, this->n_valid);
 	//return saver.is_ok();
@@ -220,8 +297,10 @@ bool YPCData::save_ply(const std::string &file_path)const{
 	
 	ofs << "ply\n";
 	ofs << "format binary_little_endian 1.0\n";
-	ofs << "comment VCGLIB generated\n";
-	ofs << "element vertex " << n_valid << std::endl;
+	//ofs << "comment VCGLIB generated\n";
+	ofs << "obj_info num_cols " << width << std::endl;
+	ofs << "obj_info num_rows " << height << std::endl;
+	ofs << "element vertex " << ( dense ? n_valid : points.size()) << std::endl;
 	ofs << "property float x\n";
 	ofs << "property float y\n";
 	ofs << "property float z\n";
@@ -234,13 +313,32 @@ bool YPCData::save_ply(const std::string &file_path)const{
 	unsigned char *pimage=image;
 	
 	int count=0;
-	for (int j = 0, n = 0; j < height; j++) {
-		unsigned char *iP = pimage;
-		for (int i = 0; i < width; i++, n++) {
-			float pos[3] = {0, 0, 0};
-			unsigned char col[3] = {iP[i], iP[i], iP[i]};
-				
-			if ( ! std::isnan(points[n].x) ) {
+	if(dense){
+		for (int j = 0, n = 0; j < height; j++) {
+			unsigned char *iP = pimage;
+			for (int i = 0; i < width; i++, n++) {
+				float pos[3] = {0, 0, 0};
+				unsigned char col[3] = {iP[i], iP[i], iP[i]};
+					
+				if ( ! std::isnan(points[n].x) ) {
+					pos[0] = points[n].x;
+					pos[1] = points[n].y;
+					pos[2] = points[n].z;
+					
+					ofs.write((char *)pos, sizeof(float) * 3);
+					ofs.write((char *)col, 3);
+					count++;
+				}
+			}
+			pimage += step;
+		}
+	}else{
+		for (int j = 0, n = 0; j < height; j++) {
+			unsigned char *iP = pimage;
+			for (int i = 0; i < width; i++, n++) {
+				float pos[3] = {0, 0, 0};
+				unsigned char col[3] = {iP[i], iP[i], iP[i]};
+					
 				pos[0] = points[n].x;
 				pos[1] = points[n].y;
 				pos[2] = points[n].z;
@@ -249,13 +347,19 @@ bool YPCData::save_ply(const std::string &file_path)const{
 				ofs.write((char *)col, 3);
 				count++;
 			}
+			pimage += step;
 		}
-		pimage += step;
 	}
+	
 
 	ofs.close();
-	
-	return count == n_valid;
+	bool ret=false;
+	if(dense){
+		ret = count == n_valid;
+	}else{
+		ret = count == points.size();
+	}
+	return ret;
 }
 
 rovi::Floats YPCData::to_rg_floats()const{
