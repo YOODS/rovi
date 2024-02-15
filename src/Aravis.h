@@ -247,6 +247,8 @@ public:
 	int getTemperature();
 	//2020/11/10 add by hato --------------------  end  --------------------
 	
+	float getCoreTemperature();
+	
 	//utilities
 	std::string uart_dump();
 	bool upload_camparam(YCAM_RES reso, YCAM_SIDE side, const char *yaml_path);

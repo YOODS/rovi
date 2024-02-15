@@ -74,8 +74,8 @@ const std::string PRM_HDR_PCGEN_PUBLISH       = "ycam/hdr/pcgen_publish";
 const std::string PRM_HDR_EXPOSURE_TIME_LEVEL = "ycam/hdr/ExposureTimeLevel";
 const std::string PRM_HDR_CAM_GAIN_D          = "ycam/hdr/camera/Gain";
 const std::string PRM_HDR_PROJ_INTENSITY      = "ycam/hdr/projector/Intensity";
-
-const std::string PRM_CAPT_TIMEOUT_RESET         = "ycam/CaptureTimeoutReset";
+const std::string PRM_LED_TEMPERATURE        = "ycam/led_temperature";
+const std::string PRM_CORE_TEMPERATURE        = "ycam/core_temperature";
 
 const std::string PRM_CAM_CALIB_MAT_K_LIST[]  = {"left/remap/Kn","right/remap/Kn"};
 
@@ -657,10 +657,6 @@ void on_capture_image_received(const bool result,const int elapsed, camera::ycam
 #endif
 	if( timeout ){
 		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
-		if(get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
-			ROS_WARN(LOG_HEADER"reset ycam3d.");
-			g_node_exit_flg = 1;
-		}
 	}
 	if( ! result ){
 		ROS_ERROR(LOG_HEADER"error:capture failed.");
@@ -779,10 +775,6 @@ void on_pattern_image_received(const bool result,const int proc_tm,const std::ve
 	if( timeout ){
 		ROS_ERROR(LOG_HEADER"error:capture timeout occurred.");
 		publish_string(pub_error,"Image streaming timeout");
-		if( get_param<bool>(PRM_CAPT_TIMEOUT_RESET,false) ){
-			ROS_WARN(LOG_HEADER"reset ycam3d.");
-			g_node_exit_flg = 1;
-		}
 	}
 }
 
@@ -1065,6 +1057,8 @@ void exec_get_ycam_temperature(){
 	float tempF=NAN;
 	int temp=0;
 	if( ! camera_ptr->get_temperature(&temp) ){
+		nh->setParam(PRM_LED_TEMPERATURE,0);
+		
 		if( temp_acq_failure_count > TEMP_ACQ_FAILURE_MSG_REPEAT_MAX ){
 			//skip
 		}else{
@@ -1076,9 +1070,22 @@ void exec_get_ycam_temperature(){
 		}
 		temp_acq_failure_count++;
 	}else{
+		nh->setParam(PRM_LED_TEMPERATURE,temp);
 		temp_acq_failure_count = 0;
 		tempF = temp;
 	}
+	//{
+	//	float core_temp=0;
+	//	if( ! camera_ptr->get_core_temperature(&core_temp)){
+	//		nh->setParam(PRM_CORE_TEMPERATURE,0);
+	//		ROS_ERROR(LOG_HEADER"Could not get the core temperature.");
+	//		
+	//	}else{
+	//		
+	//		nh->setParam(PRM_CORE_TEMPERATURE,core_temp);
+	//		//ROS_INFO(LOG_HEADER"core temperature = %f",core_temp);
+	//	}
+	//}
 	
 	publish_float32(pub_temperature, tempF);
 }

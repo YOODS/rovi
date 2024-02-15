@@ -1114,7 +1114,16 @@ int Aravis::getTemperature(){
 	return atoi(ret.c_str());
 }
 //2020/11/10 add by hato --------------------  end  --------------------
-	
+
+
+
+float Aravis::getCoreTemperature()
+{
+	uint32_t temp = reg_read(REG_CORE_TEMPERATURE);
+	//fprintf(stderr,"!!!!!!!! core temp float =%f\n", temp / 100.f);
+	return temp / 100.0f;
+}
+
 //////////////////////////////////////////////////////////
 //yamlテンプレート
 const std::string yaml_tmpl =
