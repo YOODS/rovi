@@ -941,3 +941,13 @@ void CameraYCAM3D::set_callback_auto_con_limit_exceeded(camera::ycam3d::f_auto_c
 	m_callback_auto_lm_excd=callback;
 }
 
+	
+void CameraYCAM3D::ger_micro_blaze_version(int *major,int *minor){
+	if(m_arv_ptr) m_arv_ptr->gerMicroBlazeVersion( major, minor );
+}
+
+void CameraYCAM3D::get_fpga_version(int *major,int *minor){
+	if(m_arv_ptr) m_arv_ptr->getFPGAVersion( major, minor );
+}
+	
+	

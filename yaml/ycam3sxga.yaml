@@ -19,7 +19,7 @@ pshift_genpc:
     max_parallax: 500
     min_parallax: -400
     ls_points: 3
-    pcgen_mode: 2
+    pcgen_mode: 1
     phase_wd_min: 8
     phase_wd_thr: 3
     gcode_variation: 2
@@ -81,20 +81,24 @@ genpc:
   point_cloud:
     img_save: On
     data_save: On
+  point_cloud2:
+    enabled: Off
+    dense: Off
+    data_save: On
   depthmap_img:
     enabled: On
     img_save: On
   quantize_points_count:
     enabled: On
   voxelize:
-    data_save: On
+    data_save: Off
     leaf_size:
       x: 0
       y: 0
       z: 0
       v: 0
     recalc:
-      enabled: On
+      enabled: Off
       interval: 1
 ycam:
   Mode: 1

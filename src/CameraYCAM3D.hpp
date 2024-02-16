@@ -329,5 +329,9 @@ public:
 	void set_callback_capture_img_received(camera::ycam3d::f_capture_img_received callback);
 	
 	void set_callback_pattern_img_received(camera::ycam3d::f_pattern_img_received callback);
+
+	
+	void ger_micro_blaze_version(int *major,int *minor);
+	void get_fpga_version(int *major,int *minor);
 	
 };

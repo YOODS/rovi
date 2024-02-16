@@ -87,6 +87,11 @@ constexpr int YCAM_STAND_BY_MODE_CYCLE = 3; //Hz
 
 constexpr int TEMP_MON_INTERVAL_DEFAULT = 5; //Sec
 	
+constexpr float CORE_TEMP_THR				= 90.0f;
+constexpr int CORE_TEMP_OVER_LOG_WRITE_COUNT= 10;
+constexpr int CORE_TEMP_IMPL_VER = 5;
+	
+	
 int pre_ycam_mode = (int)Mode_StandBy;
 
 std::string camera_res;
@@ -117,6 +122,10 @@ std::thread pc_gen_thread;
 bool cur_hdr_enabled=false;
 	
 int g_node_exit_flg = 0;
+
+int g_core_temp_over_count = 0;
+
+bool g_core_temp_msr_enabled = false;
 
 
 struct RosCaptureParameter: public camera::ycam3d::CaptureParameter{
@@ -560,7 +569,7 @@ void on_camera_open_finished(const bool result){
 			ROS_INFO(LOG_HEADER"temperature monitor timer disabled.");
 			temp_mon_timer.stop();
 		}else{
-			ROS_INFO(LOG_HEADER"temperature monitor timer restart.");
+			ROS_INFO(LOG_HEADER"temperature monitor timer restart. interval=%d Hz",tempMonInterval);
 			temp_mon_timer.stop();
 			temp_mon_timer.setPeriod(ros::Duration(tempMonInterval));
 			temp_mon_timer.start();
@@ -568,6 +577,18 @@ void on_camera_open_finished(const bool result){
 	}else{
 		ROS_WARN(LOG_HEADER"temperature monitor timer stop.");
 		temp_mon_timer.stop();
+	}
+	
+	int fpgaVerMajor = -1;
+	int fpgaVerMinor = -1;
+		
+	camera_ptr->get_fpga_version(&fpgaVerMajor,&fpgaVerMinor);
+	if(fpgaVerMajor < CORE_TEMP_IMPL_VER  ){
+		ROS_WARN(LOG_HEADER"Core temperature acquisition function is disabled.");
+		g_core_temp_msr_enabled = false;
+	}else{
+		ROS_INFO(LOG_HEADER"Core temperature acquisition function is enabled.");
+		g_core_temp_msr_enabled = true;
 	}
 }
 
@@ -1054,6 +1075,7 @@ void exec_get_ycam_temperature(){
 		return;
 	}
 	
+	
 	float tempF=NAN;
 	int temp=0;
 	if( ! camera_ptr->get_temperature(&temp) ){
@@ -1074,18 +1096,29 @@ void exec_get_ycam_temperature(){
 		temp_acq_failure_count = 0;
 		tempF = temp;
 	}
-	//{
-	//	float core_temp=0;
-	//	if( ! camera_ptr->get_core_temperature(&core_temp)){
-	//		nh->setParam(PRM_CORE_TEMPERATURE,0);
-	//		ROS_ERROR(LOG_HEADER"Could not get the core temperature.");
-	//		
-	//	}else{
-	//		
-	//		nh->setParam(PRM_CORE_TEMPERATURE,core_temp);
-	//		//ROS_INFO(LOG_HEADER"core temperature = %f",core_temp);
-	//	}
-	//}
+	if(g_core_temp_msr_enabled){
+		float core_temp=0;
+		if( ! camera_ptr->get_core_temperature(&core_temp)){
+			nh->setParam(PRM_CORE_TEMPERATURE,0);
+			ROS_ERROR(LOG_HEADER"Could not get the core temperature.");
+			
+		}else{
+			
+			nh->setParam(PRM_CORE_TEMPERATURE,core_temp);
+			//ROS_INFO(LOG_HEADER"core temperature = %f",core_temp);
+			if( core_temp >= CORE_TEMP_THR ){
+				g_core_temp_over_count++;
+				if( g_core_temp_over_count >= CORE_TEMP_OVER_LOG_WRITE_COUNT){
+					ROS_ERROR(LOG_HEADER"Core temperature exceeded threshold. temp=%f",core_temp);
+					g_core_temp_over_count = 0;
+				}
+			}else{
+				g_core_temp_over_count = 0;
+			}
+		}
+	
+		//else{ ROS_WARN("core temp measurement is not implements."); }
+	}
 	
 	publish_float32(pub_temperature, tempF);
 }
@@ -1137,6 +1170,7 @@ int main(int argc, char **argv)
 	camera_ptr->set_callback_camera_closed(on_camera_closed);
 	camera_ptr->set_callback_capture_img_received(on_capture_image_received);
 	camera_ptr->set_callback_pattern_img_received(on_pattern_image_received);
+	
 	
 	//publishers
 	pub_img_raws[0] = n.advertise<sensor_msgs::Image>("left/image_raw", 1);

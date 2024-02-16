@@ -110,6 +110,8 @@ class Aravis
 	int frame_index_;
 	pthread_cond_t cap_cond_;
 	pthread_mutex_t cap_mutex_;
+	int mVerMicroBlaze[2];
+	int mVerFPGA[2];
 
 	ArvBufferStatus buffer_status_;
 	bool lost_;
@@ -264,4 +266,9 @@ public:
 	* @param[in] onLost コールバック関数
 	*/
 	void addCallbackLost(OnLostCamera *onLost);
+	
+	
+	void gerMicroBlazeVersion(int *major,int *minor);
+	void getFPGAVersion(int *major,int *minor);
+	
 };

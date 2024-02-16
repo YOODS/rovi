@@ -140,6 +140,8 @@ Aravis::Aravis(YCAM_RES res, int ncam):resolution_(res),ncam_(ncam)
 	,cur_proj_ptn_(YCAM_PROJ_PTN_PHSFT)
 	,cur_proj_intensity_(0)
 	//2020/11/05 add by hato --------------------  end  --------------------
+	,mVerMicroBlaze{-1}
+	,mVerFPGA{-1}
 {
 	camno_ = static_camno_++;
 	camera_ = nullptr;
@@ -344,6 +346,11 @@ bool Aravis::openCamera(const char *name, const int packet_size)
 			dprintf(" ditigal gain      = %d", reg_read(REG_DIGITAL_GAIN));
 			dprintf(" YCAM3D SERIAL     = [%s]", get_description("YCam_Serial_No").c_str());
 			dprintf(" --------------------");
+			
+			mVerMicroBlaze[0] = v.b[3];
+			mVerMicroBlaze[1] = v.b[2];
+			mVerFPGA[0] = v.b[1];
+			mVerFPGA[1] = v.b[0];
 		}
 		
 		//2020/09/25 add by hato -------------------- start --------------------
@@ -381,7 +388,7 @@ bool Aravis::openStream(int nbuf)
 		//Packet timeout, in µs.
 		//Allowed values: [1000,10000000]
 		//Default value: 40000
-		g_object_set(stream_, "packet-timeout", (unsigned)(1 * 1e3), NULL);
+		g_object_set(stream_, "packet-timeout", (unsigned)(5 * 1e3), NULL);
 		g_object_set(stream_, "frame-retention", (unsigned)(200 * 1e3), NULL);
 	}
 	payload_ = arv_camera_get_payload(camera_);
@@ -1251,4 +1258,15 @@ bool Aravis::upload_camparam(YCAM_RES reso, YCAM_SIDE side, const char *yaml_pat
 		break;
 	}
 	return ret;
+}
+
+
+void Aravis::gerMicroBlazeVersion(int *major,int *minor){
+	*major=mVerMicroBlaze[0];
+	*minor=mVerMicroBlaze[1];
+}
+
+void Aravis::getFPGAVersion(int *major,int *minor){
+	*major=mVerFPGA[0];
+	*minor=mVerFPGA[1];
 }

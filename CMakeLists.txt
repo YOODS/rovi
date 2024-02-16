@@ -65,9 +65,7 @@ catkin_package(
 #  LIBRARIES
   CATKIN_DEPENDS roscpp std_msgs geometry_msgs sensor_msgs stereo_msgs cv_bridge tf2_ros image_geometry
   DEPENDS OpenCV
-#2020/09/18 add by hato ---------- start ----------
   OpenMP
-#2020/09/18 add by hato ----------  end  ----------
 )
 
 ###########
@@ -79,21 +77,18 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${EIGEN3_INCLUDE_DIRS}
-#2020/09/09 add by hato ---------- start ----------
   ${ARAVIS_INCLUDE_PATH}
   ${GLIB_INCLUDE_DIRS}
-#2020/09/09 add by hato ----------  end  ----------
 )
 
 link_directories(
   lib/${ARCH}
 )
 
-add_definitions("-std=c++11")
+#add_definitions("-std=c++11")
+add_definitions("-std=c++14")
 
-#2020/08/25 add by hato ---------- start ----------
 add_definitions("-DYAML_PARAM")
-#2020/08/25 add by hato ----------  end  ----------
 
 #add_library(${PROJECT_NAME}
 #   src/${PROJECT_NAME}/rovi.cpp
@@ -106,30 +101,24 @@ add_executable(remap_node src/remap_node.cpp)
 target_link_libraries(remap_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES})
 add_dependencies(remap_node rovi_gencpp)
 
-#2020/09/17 modified by hato ----------------- start ------------------
 #add_executable(genpc_node src/genpc_node.cpp)
 add_executable(genpc_node src/genpc_node.cpp src/YPCData.cpp src/ElapsedTimer.cpp)
 #target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 target_link_libraries(genpc_node ${catkin_LIBRARIES} yds3d yaml-cpp ${OpenCV_LIBRARIES})
-#2020/09/17 modified by hato -----------------  end ------------------
 add_dependencies(genpc_node rovi_gencpp)
 
 add_executable(grid_node src/grid_node.cpp)
-#2020/09/17 modified by hato ----------------- start ------------------
 #target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES})
 target_link_libraries(grid_node ${catkin_LIBRARIES} yds3d ${OpenCV_LIBRARIES} ${OpenMP_LIBS})
-#2020/09/17 modified by hato -----------------  end  ------------------
 add_dependencies(grid_node rovi_gencpp)
 
 add_executable(floats2pc src/floats2pc.cpp)
 target_link_libraries(floats2pc ${catkin_LIBRARIES})
 add_dependencies(floats2pc rovi_gencpp)
 
-#2020/09/09 modified by hato ----------------- start ------------------
 add_executable(ycam3d_node src/ycam3d_node.cpp src/Aravis.cpp src/CameraYCAM3D.cpp src/ElapsedTimer.cpp)
 target_link_libraries(ycam3d_node ${catkin_LIBRARIES} ${OpenCV_LIBRARIES} ${ARAVIS_LIBRARY} gobject-2.0 glib-2.0 )
 add_dependencies(ycam3d_node rovi_gencpp)
-#2020/09/09 modified by hato -----------------  end  ------------------
 
 #############
 ## Install ##
