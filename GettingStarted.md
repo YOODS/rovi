@@ -236,6 +236,8 @@ VGAモード
 roslaunch rovi ycam3vga.launch
 ~~~
 
+※カメラパラメータは/rovi/{left,right}から取得できます。
+
 ## テスト
 Rvizなど一式起動します
 ~~~
