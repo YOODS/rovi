@@ -238,21 +238,13 @@ catkin_make
 ~~~
 roslaunch rovi run-ycam3vga.launch
 ~~~
-VGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、  
-~/catkin_ws/src/rovi/yaml/ycam3vga.yaml  
-に保存されている。
-
-TODO ↑この文章要校正。（一部はカメラに入っているし。）
+※カメラパラメータは/rovi/{left,right}から取得できます。
 
 ### A-2. カメラ解像度を SXGA (1280x1024) にする場合
 ~~~
 roslaunch rovi run-ycam3sxga.launch
 ~~~
-SXGAで使用するカメラパラメータ(ライブ,キャプチャ), 位相シフト等の計測/計算パラメータについては、  
-~/catkin_ws/src/rovi/yaml/ycam3sxga.yaml  
-に保存されている。
-
-TODO ↑この文章要校正。（一部はカメラに入っているし。）
+※カメラパラメータは/rovi/{left,right}から取得できます。
 
 ### A-3. ライブのON/OFF (トリガーモードのOff/On) の切り替え方法
 RoVIのライブ仕様は以下：
